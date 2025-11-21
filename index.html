@@ -3,71 +3,334 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monitor Loto Chile</title>
+    <title>Loto Intelligence | Dashboard</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    
     <style>
-        body { font-family: sans-serif; padding: 20px; background: #f0f0f0; }
-        h1 { color: #333; }
-        table { width: 100%; border-collapse: collapse; background: white; font-size: 0.9em; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
-        th { background-color: #0044cc; color: white; position: sticky; top: 0; }
-        tr:nth-child(even) { background-color: #f2f2f2; }
-        .loto-num { font-weight: bold; color: #0044cc; }
-        .loading { font-size: 1.5em; color: #666; }
+        :root {
+            --bg-dark: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --accent: #3b82f6;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --ball-loto: linear-gradient(135deg, #facc15 0%, #eab308 100%);
+            --ball-text: #1e293b;
+            --glass-border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
+                radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), 
+                radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
+            color: var(--text-main);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        /* HEADER */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 3rem;
+            padding-bottom: 1rem;
+            border-bottom: var(--glass-border);
+        }
+
+        h1 { font-weight: 800; letter-spacing: -1px; font-size: 1.8rem; }
+        .badge {
+            background: rgba(59, 130, 246, 0.2);
+            color: #60a5fa;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        /* HERO CARD (Último Sorteo) */
+        .hero-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border-radius: 24px;
+            padding: 2.5rem;
+            border: var(--glass-border);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            margin-bottom: 3rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 4px;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899);
+        }
+
+        .draw-info {
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.85rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .balls-container {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+
+        .ball {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1.2rem;
+            color: var(--ball-text);
+            background: var(--ball-loto);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+            position: relative;
+        }
+        
+        .ball.comodin {
+            background: white;
+            border: 3px solid #facc15;
+        }
+
+        .ball.recargado {
+            background: #334155;
+            color: white;
+            font-size: 1rem;
+            width: 40px;
+            height: 40px;
+        }
+
+        .label-section {
+            margin-top: 2rem;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: center;
+        }
+
+        /* TABLA HISTORIAL */
+        .history-section h2 {
+            font-size: 1.2rem;
+            margin-bottom: 1.5rem;
+            color: var(--text-muted);
+        }
+
+        .table-container {
+            background: var(--card-bg);
+            border-radius: 16px;
+            border: var(--glass-border);
+            overflow: hidden;
+            backdrop-filter: blur(5px);
+        }
+
+        table { width: 100%; border-collapse: collapse; }
+        
+        th {
+            text-align: left;
+            padding: 1.2rem;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            background: rgba(0,0,0,0.2);
+        }
+
+        td {
+            padding: 1.2rem;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            color: var(--text-main);
+        }
+
+        tr:last-child td { border-bottom: none; }
+        tr:hover { background: rgba(255,255,255,0.03); }
+
+        .mini-ball {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            line-height: 24px;
+            text-align: center;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+            font-size: 0.75rem;
+            margin-right: 2px;
+            color: white;
+        }
+        
+        .mini-ball.highlight {
+            background: #eab308;
+            color: black;
+            font-weight: bold;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .balls-container { gap: 8px; }
+            .ball { width: 40px; height: 40px; font-size: 1rem; }
+            th, td { padding: 0.8rem; font-size: 0.9rem; }
+            .hide-mobile { display: none; }
+        }
+        
+        #loading {
+            text-align: center;
+            padding: 4rem;
+            color: var(--text-muted);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.5; }
+            50% { opacity: 1; }
+            100% { opacity: 0.5; }
+        }
     </style>
 </head>
 <body>
-    <h1>📊 Resultados Históricos Loto</h1>
-    <div id="loading" class="loading">Cargando base de datos maestra...</div>
-    <table id="lotoTable" style="display:none;">
-        <thead>
-            </thead>
-        <tbody></tbody>
-    </table>
+
+    <div class="container">
+        <header>
+            <div>
+                <h1>Loto Intelligence</h1>
+                <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">Base de Datos Chilena Automatizada</div>
+            </div>
+            <div class="badge">Live Data</div>
+        </header>
+
+        <div id="loading">Cargando Inteligencia...</div>
+
+        <div id="dashboard" style="display: none;">
+            <div class="hero-card">
+                <div class="draw-info" id="latest-info">SORTEO ??? • FECHA ???</div>
+                
+                <div style="margin-bottom: 0.5rem; font-weight: 600; color: #eab308;">LOTO + COMODÍN</div>
+                <div class="balls-container" id="latest-balls">
+                    </div>
+
+                <div style="margin-top: 1.5rem; margin-bottom: 0.5rem; font-weight: 600; color: #94a3b8; font-size: 0.9rem;">RECARGADO</div>
+                <div class="balls-container" id="latest-recargado">
+                    </div>
+            </div>
+
+            <div class="history-section">
+                <h2>Historial Reciente</h2>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Sorteo</th>
+                                <th>Fecha</th>
+                                <th>Números Loto</th>
+                                <th class="hide-mobile">Comodín</th>
+                                <th class="hide-mobile">Recargado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-body">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script>
-        // URL directa al archivo raw en tu repo
         const csvUrl = 'LOTO_HISTORIAL_MAESTRO.csv'; 
 
         Papa.parse(csvUrl, {
             download: true,
             header: true,
-            delimiter: ";", // Importante: Tu CSV usa punto y coma
+            delimiter: ";",
             skipEmptyLines: true,
             complete: function(results) {
                 const data = results.data;
-                const table = document.getElementById('lotoTable');
-                const thead = table.querySelector('thead');
-                const tbody = table.querySelector('tbody');
                 
                 if (data.length > 0) {
-                    // Crear Cabeceras (Solo las importantes para vista rápida)
-                    const headers = ['Sorteo', 'Fecha', 'LOTO', 'Comodín', 'Recargado'];
-                    let headerRow = '<tr>';
-                    headers.forEach(h => headerRow += `<th>${h}</th>`);
-                    headerRow += '</tr>';
-                    thead.innerHTML = headerRow;
+                    // Tomamos el último dato (asumiendo que está al final, si no, ordenamos)
+                    // CSV suele venir ordenado. Lo invertimos para tener el más reciente primero.
+                    const sortedData = data.reverse();
+                    const latest = sortedData[0];
 
-                    // Mostrar últimos 50 resultados (invertido)
-                    data.slice(-50).reverse().forEach(row => {
-                        const tr = document.createElement('tr');
-                        const fecha = `${row.dia}/${row.mes}/${row.anio}`;
-                        const lotoNums = [row.LOTO_n1, row.LOTO_n2, row.LOTO_n3, row.LOTO_n4, row.LOTO_n5, row.LOTO_n6].join(' - ');
-                        const recNums = [row.RECARGADO_n1, row.RECARGADO_n2, row.RECARGADO_n3, row.RECARGADO_n4, row.RECARGADO_n5, row.RECARGADO_n6].join(' - ');
-                        
-                        tr.innerHTML = `
-                            <td>${row.sorteo}</td>
-                            <td>${fecha}</td>
-                            <td class="loto-num">${lotoNums}</td>
-                            <td>${row.LOTO_comodin}</td>
-                            <td>${recNums}</td>
-                        `;
-                        tbody.appendChild(tr);
-                    });
+                    // 1. RENDER HERO (ÚLTIMO SORTEO)
+                    document.getElementById('latest-info').textContent = `SORTEO Nº ${latest.sorteo} • ${latest.dia} DE ${latest.mes}, ${latest.anio}`;
                     
+                    // Bolitas Loto
+                    const lotoContainer = document.getElementById('latest-balls');
+                    let lotoHtml = '';
+                    [latest.LOTO_n1, latest.LOTO_n2, latest.LOTO_n3, latest.LOTO_n4, latest.LOTO_n5, latest.LOTO_n6].forEach(n => {
+                        lotoHtml += `<div class="ball">${n}</div>`;
+                    });
+                    // Comodin
+                    lotoHtml += `<div class="ball comodin" title="Comodín">${latest.LOTO_comodin}</div>`;
+                    lotoContainer.innerHTML = lotoHtml;
+
+                    // Bolitas Recargado
+                    const recContainer = document.getElementById('latest-recargado');
+                    let recHtml = '';
+                    [latest.RECARGADO_n1, latest.RECARGADO_n2, latest.RECARGADO_n3, latest.RECARGADO_n4, latest.RECARGADO_n5, latest.RECARGADO_n6].forEach(n => {
+                        recHtml += `<div class="ball recargado">${n}</div>`;
+                    });
+                    recContainer.innerHTML = recHtml;
+
+                    // 2. RENDER TABLA (HISTORIAL, saltando el primero que ya mostramos)
+                    const historyBody = document.getElementById('history-body');
+                    const historyData = sortedData.slice(1, 21); // Solo mostrar últimos 20 en lista para velocidad
+
+                    historyData.forEach(row => {
+                        const tr = document.createElement('tr');
+                        
+                        // Formatear bolas pequeñas
+                        const lotoMini = [row.LOTO_n1, row.LOTO_n2, row.LOTO_n3, row.LOTO_n4, row.LOTO_n5, row.LOTO_n6]
+                            .map(n => `<span class="mini-ball highlight">${n}</span>`).join('');
+                            
+                        const recMini = [row.RECARGADO_n1, row.RECARGADO_n2, row.RECARGADO_n3, row.RECARGADO_n4, row.RECARGADO_n5, row.RECARGADO_n6]
+                            .map(n => `<span class="mini-ball">${n}</span>`).join('');
+
+                        tr.innerHTML = `
+                            <td style="font-weight:bold; color:white;">#${row.sorteo}</td>
+                            <td style="color: #94a3b8;">${row.dia}/${row.mes}/${row.anio}</td>
+                            <td>${lotoMini}</td>
+                            <td class="hide-mobile" style="font-weight:bold; color:#facc15;">${row.LOTO_comodin}</td>
+                            <td class="hide-mobile">${recMini}</td>
+                        `;
+                        historyBody.appendChild(tr);
+                    });
+
+                    // Mostrar Dashboard
                     document.getElementById('loading').style.display = 'none';
-                    table.style.display = 'table';
+                    document.getElementById('dashboard').style.display = 'block';
                 }
+            },
+            error: function(err) {
+                document.getElementById('loading').innerHTML = "Error cargando datos: " + err;
             }
         });
     </script>
