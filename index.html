@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Loto Intelligence | Analytics</title>
+    <title>Loto Intelligence | Live Monitor</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,18 +12,19 @@
     
     <style>
         :root {
-            --bg-dark: #0f172a;
-            --card-bg: rgba(30, 41, 59, 0.6);
+            --bg-dark: #020617;
+            --card-bg: rgba(30, 41, 59, 0.4);
             --text-main: #f8fafc;
             --text-muted: #94a3b8;
-            --glass-border: 1px solid rgba(255, 255, 255, 0.08);
+            --glass-border: 1px solid rgba(255, 255, 255, 0.05);
             
-            /* Identidad de Juegos */
-            --loto-color: #facc15;     /* Amarillo */
-            --recargado-color: #38bdf8; /* Celeste */
-            --revancha-color: #f472b6; /* Rosado */
-            --desquite-color: #4ade80; /* Verde */
-            --accent-stat: #8b5cf6;    /* Violeta para stats */
+            /* Colores de Identidad */
+            --loto-glow: rgba(250, 204, 21, 0.5);
+            --loto-color: #facc15;
+            --recargado-color: #38bdf8;
+            --revancha-color: #f472b6;
+            --desquite-color: #4ade80;
+            --money-green: #10b981;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -31,184 +32,111 @@
         body {
             font-family: 'Inter', sans-serif;
             background-color: var(--bg-dark);
+            /* Fondo nebulosa */
             background-image: 
-                radial-gradient(circle at 15% 50%, rgba(56, 189, 248, 0.08), transparent 25%), 
-                radial-gradient(circle at 85% 30%, rgba(244, 114, 182, 0.08), transparent 25%);
+                radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.1) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(244, 114, 182, 0.1) 0px, transparent 50%);
             color: var(--text-main);
             min-height: 100vh;
             padding: 2rem;
+            overflow-x: hidden;
         }
 
-        .container { max-width: 1100px; margin: 0 auto; }
+        .container { max-width: 1000px; margin: 0 auto; }
+
+        /* ANIMACIONES */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes popIn { 0% { transform: scale(0); opacity: 0; } 80% { transform: scale(1.1); } 100% { transform: scale(1); opacity: 1; } }
+        @keyframes pulseRed { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); } 70% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+        @keyframes shimmer { 0% { background-position: -1000px 0; } 100% { background-position: 1000px 0; } }
 
         /* HEADER */
         header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
-            padding-bottom: 1rem;
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 2.5rem; padding-bottom: 1rem;
             border-bottom: var(--glass-border);
+            animation: fadeIn 0.8s ease-out;
         }
-        h1 { font-weight: 800; letter-spacing: -0.5px; font-size: 1.5rem; }
+        h1 { font-weight: 900; letter-spacing: -1px; font-size: 1.8rem; background: linear-gradient(to right, #fff, #cbd5e1); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         
-        .badge {
-            background: rgba(16, 185, 129, 0.1);
-            border: 1px solid rgba(16, 185, 129, 0.2);
-            color: #34d399;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 6px;
+        .badge-live {
+            background: rgba(239, 68, 68, 0.1); color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            padding: 6px 12px; border-radius: 20px;
+            font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+            display: flex; align-items: center; gap: 8px;
         }
-        
-        .badge::before {
-            content: ''; display: block; width: 8px; height: 8px; 
-            background: #34d399; border-radius: 50%;
-            box-shadow: 0 0 8px #34d399;
-        }
+        .dot { width: 8px; height: 8px; background: #ef4444; border-radius: 50%; animation: pulseRed 2s infinite; }
 
-        /* --- NUEVO: BARRA DE ESTADÍSTICAS (DB STATS) --- */
-        .stats-row {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 1rem;
-            margin-bottom: 2rem;
-        }
-
-        .stat-card {
-            background: rgba(15, 23, 42, 0.4);
-            border: var(--glass-border);
-            border-radius: 12px;
-            padding: 1rem;
-            display: flex;
-            flex-direction: column;
-            /* Borde izquierdo de color para decorar */
-            border-left: 3px solid var(--accent-stat);
-        }
-
-        .stat-value {
-            font-size: 1.5rem;
-            font-weight: 800;
-            color: var(--text-main);
-        }
-        
-        .stat-label {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-top: 4px;
-        }
-
-        /* HERO SECTION */
-        .dashboard-grid {
-            display: grid;
-            gap: 1.5rem;
-            margin-bottom: 3rem;
-        }
-
+        /* HERO (LOTO) */
         .main-card {
-            background: linear-gradient(180deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.9) 100%);
-            backdrop-filter: blur(10px);
-            border-radius: 24px;
-            padding: 2rem;
-            border: var(--glass-border);
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            background: linear-gradient(145deg, rgba(30, 41, 59, 0.6), rgba(15, 23, 42, 0.8));
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 24px; padding: 2.5rem;
+            text-align: center; position: relative; overflow: hidden;
+            box-shadow: 0 20px 50px -20px rgba(0,0,0,0.5);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            animation: fadeIn 1s ease-out;
         }
+        .main-card:hover { transform: translateY(-5px); box-shadow: 0 30px 60px -20px rgba(250, 204, 21, 0.15); border-color: rgba(250, 204, 21, 0.3); }
+
+        /* Money Badge */
+        .money-badge {
+            display: inline-block; margin-top: 1.5rem;
+            background: rgba(16, 185, 129, 0.1); color: var(--money-green);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            padding: 8px 16px; border-radius: 12px;
+            font-weight: 700; font-size: 0.9rem; letter-spacing: 0.5px;
+        }
+        .money-badge.vacante { color: var(--text-muted); background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); }
+
+        /* BALLS */
+        .balls-row { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin-top: 1rem; }
         
-        .main-card::after {
-            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
-            background: linear-gradient(90deg, transparent, var(--loto-color), transparent);
-        }
-
-        .draw-meta {
-            color: var(--text-muted);
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            margin-bottom: 1.5rem;
-            font-weight: 600;
-        }
-
-        /* SUB JUEGOS */
-        .sub-games-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1rem;
-        }
-
-        .game-card {
-            background: var(--card-bg);
-            border: var(--glass-border);
-            border-radius: 16px;
-            padding: 1.5rem;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            transition: transform 0.2s;
-        }
-        .game-card:hover { transform: translateY(-2px); background: rgba(40, 55, 75, 0.7); }
-
-        .game-title {
-            font-size: 0.8rem; font-weight: 700;
-            text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1rem;
-        }
-
-        /* BOLAS */
-        .balls-row { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; }
         .ball {
-            width: 42px; height: 42px; border-radius: 50%;
+            width: 48px; height: 48px; border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
-            font-weight: 700; font-size: 1.1rem; color: #1e293b;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+            font-weight: 800; font-size: 1.2rem; color: #1e293b;
+            box-shadow: inset -2px -2px 6px rgba(0,0,0,0.2), 2px 2px 6px rgba(255,255,255,0.2);
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) backwards;
         }
 
-        .b-loto { background: var(--loto-color); width: 54px; height: 54px; font-size: 1.4rem; }
-        .b-comodin { background: white; border: 3px solid var(--loto-color); }
-        .b-recargado { background: var(--recargado-color); color: #0f172a; }
-        .b-revancha { background: var(--revancha-color); color: #0f172a; }
-        .b-desquite { background: var(--desquite-color); color: #0f172a; }
+        /* Estilos Específicos de Bolas */
+        .b-loto { background: var(--loto-color); box-shadow: 0 0 15px var(--loto-glow); width: 56px; height: 56px; font-size: 1.5rem; }
+        .b-comodin { background: #fff; border: 4px solid var(--loto-color); color: var(--loto-color); }
+        .b-recargado { background: var(--recargado-color); }
+        .b-revancha { background: var(--revancha-color); }
+        .b-desquite { background: var(--desquite-color); }
 
-        /* TABLA HISTORIAL */
-        .history-section { margin-top: 3rem; }
-        .history-header { font-size: 1.1rem; color: var(--text-muted); margin-bottom: 1rem; }
+        /* GRID JUEGOS SECUNDARIOS */
+        .sub-games-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; margin-top: 2rem; }
         
-        .table-wrapper {
-            background: var(--card-bg);
-            border-radius: 16px;
-            border: var(--glass-border);
-            overflow-x: auto; 
+        .game-card {
+            background: var(--card-bg); border: var(--glass-border); border-radius: 16px; padding: 1.5rem;
+            display: flex; flex-direction: column; align-items: center;
+            transition: all 0.3s ease; animation: fadeIn 1.2s ease-out;
         }
+        .game-card:hover { background: rgba(40, 55, 75, 0.6); transform: translateY(-3px); border-color: rgba(255,255,255,0.2); }
+
+        /* HISTORIAL */
+        .history-section { margin-top: 4rem; animation: fadeIn 1.5s ease-out; }
+        .table-container { background: var(--card-bg); border-radius: 16px; border: var(--glass-border); overflow: hidden; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        th { background: rgba(0,0,0,0.3); color: var(--text-muted); padding: 1rem; text-align: left; font-size: 0.75rem; text-transform: uppercase; }
+        td { padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        tr:last-child td { border-bottom: none; }
         
-        table { width: 100%; border-collapse: collapse; min-width: 600px; }
-        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        th { background: rgba(0,0,0,0.2); color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; }
-        td { font-size: 0.9rem; }
-        
-        .mini-set { display: flex; gap: 2px; }
-        .mini-ball {
-            width: 20px; height: 20px; border-radius: 50%;
-            background: rgba(255,255,255,0.1);
-            text-align: center; line-height: 20px; font-size: 0.65rem; color: #ccc;
-        }
+        .empty-state { padding: 3rem; text-align: center; color: var(--text-muted); font-style: italic; }
+
+        /* UTILIDADES */
+        .mini-balls { display: flex; gap: 4px; }
+        .mini-ball { width: 22px; height: 22px; border-radius: 50%; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; }
         .mini-ball.active { background: var(--loto-color); color: black; font-weight: bold; }
-
-        #loading { text-align: center; padding: 4rem; color: var(--text-muted); }
 
         @media (max-width: 768px) {
             body { padding: 1rem; }
-            .b-loto { width: 40px; height: 40px; font-size: 1rem; }
-            .ball { width: 32px; height: 32px; font-size: 0.9rem; }
-            .stats-row { grid-template-columns: 1fr 1fr; } /* 2 col en móvil */
+            .b-loto { width: 42px; height: 42px; font-size: 1.1rem; }
+            .ball { width: 36px; height: 36px; font-size: 1rem; }
         }
     </style>
 </head>
@@ -216,67 +144,65 @@
 
     <div class="container">
         <header>
-            <h1>Loto Intelligence</h1>
-            <div class="badge" id="system-status">System Active</div>
+            <div>
+                <h1>Loto Intelligence</h1>
+                <div style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Algoritmo de Monitoreo Nacional</div>
+            </div>
+            <div class="badge-live"><div class="dot"></div> ONLINE</div>
         </header>
 
-        <div class="stats-row" id="stats-panel" style="display:none;">
-            <div class="stat-card">
-                <div class="stat-value" id="stat-total">0</div>
-                <div class="stat-label">Total Sorteos</div>
-            </div>
-            <div class="stat-card" style="border-left-color: #3b82f6;">
-                <div class="stat-value" id="stat-first-year">----</div>
-                <div class="stat-label">Datos Desde</div>
-            </div>
-            <div class="stat-card" style="border-left-color: #10b981;">
-                <div class="stat-value" id="stat-last-date">--/--</div>
-                <div class="stat-label">Última Actualización</div>
-            </div>
+        <div id="loading" style="text-align:center; padding: 3rem; color: var(--text-muted);">
+            Conectando con el Mainframe...
         </div>
-
-        <div id="loading">Iniciando análisis de datos...</div>
 
         <div id="dashboard" style="display: none;">
             
-            <div class="dashboard-grid">
-                <div class="main-card">
-                    <div class="draw-meta" id="meta-info">Cargando...</div>
-                    <div style="color: var(--loto-color); margin-bottom: 10px; font-weight:600;">LOTO CLÁSICO</div>
-                    <div class="balls-row" id="loto-balls"></div>
+            <div class="main-card">
+                <div style="text-transform: uppercase; letter-spacing: 2px; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 1rem;" id="draw-date">
+                    FECHA DESCONOCIDA
                 </div>
+                
+                <div style="font-size: 2rem; font-weight: 900; margin-bottom: 0.5rem;">LOTO</div>
+                <div style="color: var(--loto-color); font-size: 0.9rem; letter-spacing: 1px; margin-bottom: 1.5rem;" id="draw-number">SORTEO #0000</div>
 
-                <div class="sub-games-grid">
-                    <div class="game-card">
-                        <div class="game-title" style="color: var(--recargado-color)">Recargado</div>
-                        <div class="balls-row" id="recargado-balls"></div>
-                    </div>
-                    <div class="game-card">
-                        <div class="game-title" style="color: var(--revancha-color)">Revancha</div>
-                        <div class="balls-row" id="revancha-balls"></div>
-                    </div>
-                    <div class="game-card">
-                        <div class="game-title" style="color: var(--desquite-color)">Desquite</div>
-                        <div class="balls-row" id="desquite-balls"></div>
-                    </div>
+                <div class="balls-row" id="loto-balls"></div>
+
+                <div id="loto-money" class="money-badge">Analizando Pozo...</div>
+            </div>
+
+            <div class="sub-games-grid">
+                <div class="game-card">
+                    <div style="color:var(--recargado-color); font-weight:700; text-transform:uppercase; font-size:0.8rem; margin-bottom:1rem;">Recargado</div>
+                    <div class="balls-row" id="recargado-balls"></div>
+                </div>
+                <div class="game-card">
+                    <div style="color:var(--revancha-color); font-weight:700; text-transform:uppercase; font-size:0.8rem; margin-bottom:1rem;">Revancha</div>
+                    <div class="balls-row" id="revancha-balls"></div>
+                </div>
+                <div class="game-card">
+                    <div style="color:var(--desquite-color); font-weight:700; text-transform:uppercase; font-size:0.8rem; margin-bottom:1rem;">Desquite</div>
+                    <div class="balls-row" id="desquite-balls"></div>
                 </div>
             </div>
 
             <div class="history-section">
-                <div class="history-header">Historial Reciente</div>
-                <div class="table-wrapper">
+                <h3 style="margin-bottom: 1rem; font-weight: 400; color: var(--text-muted);">Base de Datos Histórica</h3>
+                <div class="table-container">
                     <table>
                         <thead>
                             <tr>
                                 <th>Sorteo</th>
                                 <th>Fecha</th>
-                                <th>Loto</th>
-                                <th>Recargado</th>
-                                <th>Revancha</th>
+                                <th>Combinación Ganadora</th>
+                                <th>Resultado</th>
                             </tr>
                         </thead>
                         <tbody id="history-body"></tbody>
                     </table>
+                    <div id="empty-history" class="empty-state" style="display:none;">
+                        No hay suficientes datos históricos para mostrar el archivo.
+                        <br><span style="font-size:0.8rem">El sistema acumulará datos automáticamente en el próximo sorteo.</span>
+                    </div>
                 </div>
             </div>
 
@@ -286,90 +212,48 @@
     <script>
         const csvUrl = 'LOTO_HISTORIAL_MAESTRO.csv'; 
 
-        function renderBalls(row, prefix, cssClass, count=6) {
+        // Formateador de Dinero Chileno
+        const formatMoney = (amount) => {
+            return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
+        };
+
+        // Renderizado con delay para animación
+        function renderBalls(row, prefix, cssClass, delayStart = 0) {
             let html = '';
-            for(let i=1; i<=count; i++) {
+            for(let i=1; i<=6; i++) {
                 const val = row[`${prefix}_n${i}`];
                 if(val !== undefined && val !== "") {
-                    html += `<div class="ball ${cssClass}">${val}</div>`;
+                    // style="animation-delay: 0.1s"
+                    const delay = delayStart + (i * 0.1); 
+                    html += `<div class="ball ${cssClass}" style="animation-delay: ${delay}s">${val}</div>`;
                 }
             }
             return html;
         }
 
         Papa.parse(csvUrl, {
-            download: true,
-            header: true,
-            delimiter: ";",
-            skipEmptyLines: true,
+            download: true, header: true, delimiter: ";", skipEmptyLines: true,
             complete: function(results) {
                 const data = results.data;
-                
                 if (data.length > 0) {
-                    // 1. LÓGICA DE ESTADÍSTICAS (NUEVO)
-                    // Ordenamos para tener el último primero en la visual, 
-                    // pero necesitamos encontrar el "más antiguo" para el año.
-                    
-                    // Clonamos para no afectar orden si quisiéramos
-                    const sortedData = [...data].reverse(); 
+                    const sortedData = data.reverse();
                     const latest = sortedData[0];
-                    const oldest = sortedData[sortedData.length - 1];
 
-                    // Inyectar Stats
-                    document.getElementById('stat-total').textContent = data.length.toLocaleString();
-                    document.getElementById('stat-first-year').textContent = oldest.anio || '????';
-                    document.getElementById('stat-last-date').textContent = `${latest.dia}/${latest.mes}`;
-                    
-                    document.getElementById('stats-panel').style.display = 'grid';
+                    // 1. HERO SECTION
+                    document.getElementById('draw-date').textContent = `${latest.dia} DE ${getMesNombre(latest.mes)} DEL ${latest.anio}`;
+                    document.getElementById('draw-number').textContent = `SORTEO Nº ${latest.sorteo}`;
 
-
-                    // 2. UI DASHBOARD
-                    document.getElementById('meta-info').textContent = `SORTEO Nº ${latest.sorteo} • ${latest.dia}/${latest.mes}/${latest.anio}`;
-
-                    // Bolas
-                    let lotoHtml = renderBalls(latest, 'LOTO', 'b-loto');
-                    lotoHtml += `<div class="ball b-loto b-comodin" title="Comodín">${latest.LOTO_comodin}</div>`;
+                    // Bolas Loto (Delay 0s)
+                    let lotoHtml = renderBalls(latest, 'LOTO', 'b-loto', 0);
+                    lotoHtml += `<div class="ball b-loto b-comodin" title="Comodín" style="animation-delay: 0.7s">${latest.LOTO_comodin}</div>`;
                     document.getElementById('loto-balls').innerHTML = lotoHtml;
 
-                    document.getElementById('recargado-balls').innerHTML = renderBalls(latest, 'RECARGADO', 'b-recargado');
-                    document.getElementById('revancha-balls').innerHTML = renderBalls(latest, 'REVANCHA', 'b-revancha') || '<span style="opacity:0.5; font-size:0.8rem">No disponible</span>';
-                    document.getElementById('desquite-balls').innerHTML = renderBalls(latest, 'DESQUITE', 'b-desquite') || '<span style="opacity:0.5; font-size:0.8rem">No disponible</span>';
-
-                    // Tabla Historial
-                    const historyBody = document.getElementById('history-body');
-                    const historyData = sortedData.slice(1, 16); 
-
-                    historyData.forEach(row => {
-                        const tr = document.createElement('tr');
-                        const miniHTML = (prefix) => {
-                            let h = '<div class="mini-set">';
-                            for(let i=1; i<=6; i++) {
-                                let v = row[`${prefix}_n${i}`];
-                                if(v) h += `<div class="mini-ball ${prefix === 'LOTO' ? 'active' : ''}">${v}</div>`;
-                            }
-                            return h + '</div>';
-                        };
-
-                        tr.innerHTML = `
-                            <td style="font-weight:bold; color:white;">#${row.sorteo}</td>
-                            <td style="color: #94a3b8;">${row.dia}/${row.mes}</td>
-                            <td>${miniHTML('LOTO')}</td>
-                            <td>${miniHTML('RECARGADO')}</td>
-                            <td>${miniHTML('REVANCHA')}</td>
-                        `;
-                        historyBody.appendChild(tr);
-                    });
-
-                    document.getElementById('loading').style.display = 'none';
-                    document.getElementById('dashboard').style.display = 'block';
-                }
-            },
-            error: function(err) {
-                document.getElementById('loading').innerHTML = "Error crítico de lectura: " + err;
-                document.getElementById('system-status').style.color = 'red';
-                document.getElementById('system-status').textContent = 'Offline';
-            }
-        });
-    </script>
-</body>
-</html>
+                    // Dinero Loto (Lógica inteligente)
+                    const ganadores = parseInt(latest.LOTO_GANADORES || 0);
+                    const monto = parseInt(latest.LOTO_MONTO || 0);
+                    const badge = document.getElementById('loto-money');
+                    
+                    if (ganadores > 0) {
+                        badge.className = 'money-badge';
+                        badge.innerHTML = `🚨 ¡${ganadores} GANADOR(ES)! - ${formatMoney(monto)}`;
+                    }
