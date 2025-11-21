@@ -3,167 +3,371 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Loto Intelligence | Debug Mode</title>
+    <title>Loto Intelligence | Pro</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800;900&display=swap" rel="stylesheet">
     
     <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
     
     <style>
-        /* Estilos Base iguales pero simplificados para asegurar carga */
-        :root { --bg-dark: #020617; --text-main: #f8fafc; --loto-color: #facc15; }
-        body { background-color: var(--bg-dark); color: var(--text-main); font-family: 'Inter', sans-serif; padding: 1.5rem; }
-        .container { max-width: 800px; margin: 0 auto; }
-        
-        /* Debug Box Styles */
-        #debug-console {
-            background: #330000; color: #ff9999; 
-            padding: 1rem; border: 1px solid red; 
-            margin-bottom: 1rem; font-family: monospace; 
-            font-size: 0.8rem; display: none; word-wrap: break-word;
+        :root {
+            --bg-dark: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            
+            /* Colores Identidad */
+            --loto-color: #facc15;
+            --recargado-color: #38bdf8;
+            --revancha-color: #f472b6;
+            --desquite-color: #4ade80;
+            --money-green: #10b981;
+            
+            --glass-border: 1px solid rgba(255, 255, 255, 0.08);
         }
 
-        /* Estilos Visuales (Resumidos del anterior) */
-        .main-card { background: rgba(30,41,59,0.5); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 2rem; text-align: center; margin-bottom: 2rem; }
-        .ball { width: 45px; height: 45px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: 800; color: #1e293b; margin: 4px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
-        .b-loto { background: var(--loto-color); width: 50px; height: 50px; font-size: 1.2rem; }
-        .b-recargado { background: #38bdf8; }
-        .b-revancha { background: #f472b6; }
-        .b-desquite { background: #4ade80; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            /* Fondo Cyberpunk sutil */
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(56, 189, 248, 0.15), transparent 20%), 
+                radial-gradient(circle at 90% 80%, rgba(244, 114, 182, 0.15), transparent 20%);
+            color: var(--text-main);
+            min-height: 100vh;
+            padding: 2rem;
+            overflow-x: hidden; /* Evita scroll horizontal en animaciones */
+        }
+
+        .container { max-width: 1000px; margin: 0 auto; }
+
+        /* --- ANIMACIONES (MICROINTERACCIONES) --- */
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes bounceIn { 0% { transform: scale(0.3); opacity: 0; } 50% { transform: scale(1.05); } 70% { transform: scale(0.9); } 100% { transform: scale(1); opacity: 1; } }
+        @keyframes pulseGlow { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
+
+        /* HEADER */
+        header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: var(--glass-border);
+            animation: fadeInUp 0.8s ease-out;
+        }
+        h1 { font-weight: 900; font-size: 1.6rem; letter-spacing: -1px; }
+        .status-badge { 
+            background: rgba(16, 185, 129, 0.1); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.2);
+            padding: 5px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .status-dot { width: 8px; height: 8px; background: #34d399; border-radius: 50%; animation: pulseGlow 2s infinite; }
+
+        /* STATS ROW */
+        .stats-row {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin-bottom: 2.5rem;
+            animation: fadeInUp 1s ease-out 0.2s backwards; /* Delay */
+        }
+        .stat-card {
+            background: rgba(15, 23, 42, 0.6); border: var(--glass-border); border-radius: 12px; padding: 1rem;
+            border-left: 3px solid #6366f1; transition: transform 0.2s;
+        }
+        .stat-card:hover { transform: translateY(-3px); background: rgba(30, 41, 59, 0.8); }
+        .stat-value { font-size: 1.4rem; font-weight: 800; }
+        .stat-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+
+        /* HERO CARD */
+        .main-card {
+            background: linear-gradient(160deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9));
+            border-radius: 24px; padding: 2.5rem; border: var(--glass-border);
+            text-align: center; position: relative; overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3);
+            margin-bottom: 2rem;
+            animation: fadeInUp 1s ease-out 0.4s backwards;
+        }
+        /* Efecto Brillo Superior */
+        .main-card::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+        }
+
+        .draw-date { color: var(--text-muted); font-size: 0.85rem; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 1rem; font-weight: 600; }
         
-        #loading { font-size: 1.2rem; color: #94a3b8; text-align: center; padding: 2rem; animation: pulse 1s infinite; }
-        @keyframes pulse { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
+        /* BOLAS */
+        .balls-container { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin: 1.5rem 0; }
+        
+        .ball {
+            width: 48px; height: 48px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 800; font-size: 1.2rem; color: #1e293b;
+            box-shadow: inset -2px -2px 6px rgba(0,0,0,0.2), 2px 2px 6px rgba(255,255,255,0.3), 0 4px 6px rgba(0,0,0,0.2);
+            animation: bounceIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) backwards;
+        }
+
+        .b-loto { background: var(--loto-color); width: 56px; height: 56px; font-size: 1.4rem; }
+        .b-comodin { background: white; border: 4px solid var(--loto-color); color: #ca8a04; }
+        
+        .b-recargado { background: var(--recargado-color); }
+        .b-revancha { background: var(--revancha-color); }
+        .b-desquite { background: var(--desquite-color); }
+
+        /* MONEY BADGE */
+        .money-pill {
+            display: inline-block; padding: 8px 20px; border-radius: 50px;
+            font-weight: 700; font-size: 0.95rem; letter-spacing: 0.5px;
+            border: 1px solid transparent;
+            transition: all 0.3s;
+        }
+        .money-winner { background: rgba(16, 185, 129, 0.15); color: #34d399; border-color: rgba(16, 185, 129, 0.3); box-shadow: 0 0 15px rgba(16, 185, 129, 0.1); }
+        .money-vacante { background: rgba(255, 255, 255, 0.05); color: var(--text-muted); border-color: rgba(255, 255, 255, 0.1); }
+
+        /* SUB GAMES */
+        .games-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 3rem; animation: fadeInUp 1s ease-out 0.6s backwards; }
+        .game-card {
+            background: var(--card-bg); border: var(--glass-border); border-radius: 16px; padding: 1.5rem;
+            display: flex; flex-direction: column; align-items: center; transition: transform 0.3s;
+        }
+        .game-card:hover { transform: translateY(-5px); background: rgba(40, 55, 75, 0.7); }
+        .game-title { font-size: 0.8rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1rem; }
+
+        /* HISTORIAL */
+        .history-section { animation: fadeInUp 1s ease-out 0.8s backwards; }
+        .table-wrap { background: var(--card-bg); border-radius: 16px; border: var(--glass-border); overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 600px; }
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.9rem; }
+        th { background: rgba(0,0,0,0.2); color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; }
+        
+        .mini-row { display: flex; gap: 4px; }
+        .mini-ball { width: 24px; height: 24px; border-radius: 50%; background: rgba(255,255,255,0.1); text-align: center; line-height: 24px; font-size: 0.7rem; }
+        .mini-ball.active { background: var(--loto-color); color: black; font-weight: bold; }
+
+        /* ERROR & LOADING */
+        #error-box { background: rgba(220, 38, 38, 0.1); color: #f87171; padding: 1rem; border: 1px solid #f87171; border-radius: 8px; display: none; margin-bottom: 2rem; font-family: monospace; }
+        #loading { text-align: center; padding: 3rem; color: var(--text-muted); font-style: italic; }
+
+        @media (max-width: 768px) {
+            body { padding: 1rem; }
+            .b-loto { width: 44px; height: 44px; font-size: 1.1rem; }
+            .ball { width: 38px; height: 38px; font-size: 1rem; }
+            .stats-row { grid-template-columns: 1fr 1fr; }
+        }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <h1 style="text-align:center; margin-bottom:1rem;">Loto Monitor</h1>
-        
-        <div id="debug-console"></div>
+        <header>
+            <div>
+                <h1>Loto Intelligence</h1>
+                <div style="font-size:0.8rem; color:var(--text-muted);">Panel de Control Maestro</div>
+            </div>
+            <div class="status-badge"><div class="status-dot"></div> ONLINE</div>
+        </header>
 
-        <div id="loading">
-            Iniciando sistema...<br>
-            <span style="font-size:0.8rem">Paso 1: Cargando Librerías...</span>
-        </div>
+        <div id="error-box"></div>
+
+        <div id="loading">Sincronizando Base de Datos...</div>
 
         <div id="dashboard" style="display: none;">
-            <div class="main-card">
-                <div id="meta-info" style="color:#94a3b8; margin-bottom:1rem; text-transform:uppercase; font-size:0.8rem; letter-spacing:1px;">CARGANDO...</div>
-                <div style="font-size:2rem; font-weight:900; margin-bottom:10px;">LOTO</div>
-                <div id="loto-balls"></div>
+            
+            <div class="stats-row">
+                <div class="stat-card">
+                    <div class="stat-value" id="stat-total">0</div>
+                    <div class="stat-label">Total Sorteos</div>
+                </div>
+                <div class="stat-card" style="border-color: #3b82f6;">
+                    <div class="stat-value" id="stat-year">----</div>
+                    <div class="stat-label">Año Inicio</div>
+                </div>
+                <div class="stat-card" style="border-color: #10b981;">
+                    <div class="stat-value" id="stat-last">--/--</div>
+                    <div class="stat-label">Última Carga</div>
+                </div>
             </div>
 
-            <h3 style="text-align:center; color:#64748b; margin-bottom:1rem;">Resultados Adicionales</h3>
-            <div style="text-align:center; margin-bottom:2rem;">
-                <div style="color:#38bdf8; font-weight:bold; margin-bottom:5px;">RECARGADO</div>
-                <div id="recargado-balls"></div>
+            <div class="main-card">
+                <div class="draw-date" id="hero-date">FECHA DESCONOCIDA</div>
+                <div style="font-size: 2.2rem; font-weight: 900; margin-bottom: 0.5rem;">LOTO</div>
+                <div style="color: var(--loto-color); font-size: 0.9rem; margin-bottom: 1rem;" id="hero-sorteo">SORTEO #</div>
+                
+                <div class="balls-container" id="hero-balls"></div>
+                
+                <div id="hero-money" class="money-pill">Verificando premios...</div>
             </div>
-            
-            <div style="background:rgba(255,255,255,0.05); padding:1rem; border-radius:10px;">
-                <h4 style="margin:0 0 10px 0; border-bottom:1px solid #333; padding-bottom:5px;">Últimos Registros</h4>
-                <div id="history-list" style="font-size:0.9rem; color:#cbd5e1;"></div>
+
+            <div class="games-grid">
+                <div class="game-card">
+                    <div class="game-title" style="color:var(--recargado-color)">Recargado</div>
+                    <div class="balls-container" id="recargado-balls" style="margin:0;"></div>
+                </div>
+                <div class="game-card">
+                    <div class="game-title" style="color:var(--revancha-color)">Revancha</div>
+                    <div class="balls-container" id="revancha-balls" style="margin:0;"></div>
+                </div>
+                <div class="game-card">
+                    <div class="game-title" style="color:var(--desquite-color)">Desquite</div>
+                    <div class="balls-container" id="desquite-balls" style="margin:0;"></div>
+                </div>
+            </div>
+
+            <div class="history-section">
+                <h3 style="margin-bottom:1rem; color:var(--text-muted); font-weight:400;">Archivo Histórico</h3>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Sorteo</th>
+                                <th>Fecha</th>
+                                <th>Combinación</th>
+                                <th>Resultado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-body"></tbody>
+                    </table>
+                    <div id="empty-history-msg" style="padding:2rem; text-align:center; color:var(--text-muted); display:none;">
+                        El sistema está recolectando más datos históricos. <br>
+                        <span style="font-size:0.8rem">Vuelve tras el próximo sorteo.</span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
-        // --- SISTEMA DE DIAGNÓSTICO DE ERRORES ---
-        function logError(msg) {
-            const consoleDiv = document.getElementById('debug-console');
-            const loadingDiv = document.getElementById('loading');
-            consoleDiv.style.display = 'block';
-            consoleDiv.innerHTML += "> " + msg + "<br>";
-            loadingDiv.innerHTML = "⚠️ DETENIDO POR ERROR";
-            loadingDiv.style.color = "#ff6b6b";
+        // --- CONFIGURACIÓN Y UTILIDADES ---
+        const CSV_URL = 'LOTO_HISTORIAL_MAESTRO.csv';
+        
+        // Función segura para mostrar errores sin romper la página
+        function showError(msg) {
+            const box = document.getElementById('error-box');
+            const loading = document.getElementById('loading');
+            loading.style.display = 'none';
+            box.style.display = 'block';
+            box.innerHTML += `⚠️ ERROR: ${msg}<br>`;
         }
 
-        window.onerror = function(message, source, lineno, colno, error) {
-            logError(`JS Error: ${message} (Línea ${lineno})`);
-            return true;
+        // Formateador de Moneda (CLP)
+        const formatMoney = (val) => {
+            if(!val) return "$0";
+            return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(val);
         };
 
-        // --- INICIO DEL PROGRAMA ---
-        document.getElementById('loading').innerHTML = "Paso 2: Verificando PapaParse...";
+        // Renderizador de Bolas con Animación
+        // delayBase: Tiempo base antes de empezar
+        // colorClass: Clase CSS del color
+        function renderBalls(row, prefix, colorClass, delayBase = 0) {
+            let html = '';
+            for (let i = 1; i <= 6; i++) {
+                const num = row[`${prefix}_n${i}`];
+                if (num) {
+                    // Microinteracción: Retraso escalonado
+                    const delay = delayBase + (i * 0.05); 
+                    html += `<div class="ball ${colorClass}" style="animation-delay: ${delay}s">${num}</div>`;
+                }
+            }
+            return html;
+        }
 
-        if (typeof Papa === 'undefined') {
-            logError("FATAL: La librería PapaParse no cargó. Revisa tu conexión o bloqueo de scripts.");
-        } else {
-            document.getElementById('loading').innerHTML = "Paso 3: Descargando CSV...";
-            
-            // Agregamos '?t=' + Date.now() para OBLIGAR al celular a descargar la versión nueva y no usar caché
-            const csvUrl = 'LOTO_HISTORIAL_MAESTRO.csv?t=' + Date.now(); 
-
-            Papa.parse(csvUrl, {
+        // --- LÓGICA PRINCIPAL ---
+        try {
+            // Truco '?v=' + Date.now() evita que el celular use datos viejos (caché)
+            Papa.parse(CSV_URL + '?v=' + Date.now(), {
                 download: true,
                 header: true,
-                delimiter: ";", // Tu archivo usa punto y coma
+                delimiter: ";",
                 skipEmptyLines: true,
                 complete: function(results) {
-                    document.getElementById('loading').innerHTML = "Paso 4: Procesando Datos...";
-                    
                     try {
                         const data = results.data;
-                        if (!data || data.length === 0) {
-                            throw new Error("El archivo CSV se descargó pero está VACÍO.");
-                        }
+                        if (!data || data.length === 0) throw new Error("Archivo CSV vacío o corrupto.");
 
-                        // Ordenar (Más reciente primero)
-                        const sortedData = data.reverse();
-                        const latest = sortedData[0];
+                        // 1. PREPARAR DATOS
+                        // Invertimos una COPIA para no dañar el original si lo necesitamos
+                        const sortedData = [...data].reverse();
+                        const latest = sortedData[0];       // El más nuevo
+                        const oldest = sortedData[sortedData.length - 1]; // El más viejo
 
-                        // Verificar si tenemos columnas válidas
-                        if (!latest.LOTO_n1) {
-                            throw new Error("No encuentro la columna 'LOTO_n1'. ¿El CSV usa punto y coma?");
-                        }
+                        // 2. LLENAR ESTADÍSTICAS (STATS)
+                        document.getElementById('stat-total').textContent = data.length;
+                        document.getElementById('stat-year').textContent = oldest.anio || "----";
+                        document.getElementById('stat-last').textContent = `${latest.dia}/${latest.mes}`;
 
-                        // --- RENDERIZAR UI ---
+                        // 3. LLENAR HERO SECTION (LOTO)
+                        document.getElementById('hero-date').textContent = `${latest.dia}/${latest.mes}/${latest.anio}`;
+                        document.getElementById('hero-sorteo').textContent = `SORTEO Nº ${latest.sorteo}`;
                         
-                        // Fecha y Sorteo
-                        document.getElementById('meta-info').textContent = `SORTEO ${latest.sorteo} • ${latest.dia}/${latest.mes}/${latest.anio}`;
+                        // Bolas Loto (Delay 0s)
+                        let lotoHtml = renderBalls(latest, 'LOTO', 'b-loto', 0);
+                        // Comodín
+                        if (latest.LOTO_comodin) {
+                            lotoHtml += `<div class="ball b-loto b-comodin" title="Comodín" style="animation-delay: 0.4s">${latest.LOTO_comodin}</div>`;
+                        }
+                        document.getElementById('hero-balls').innerHTML = lotoHtml;
 
-                        // Render Helper
-                        const render = (row, prefix, cls) => {
-                            let html = '';
-                            for(let i=1; i<=6; i++) {
-                                const val = row[`${prefix}_n${i}`];
-                                if(val) html += `<div class="ball ${cls}">${val}</div>`;
-                            }
-                            return html;
-                        };
-
-                        // Loto
-                        let lotoHtml = render(latest, 'LOTO', 'b-loto');
-                        if(latest.LOTO_comodin) lotoHtml += `<div class="ball b-loto" style="background:white; border:3px solid #facc15;">${latest.LOTO_comodin}</div>`;
-                        document.getElementById('loto-balls').innerHTML = lotoHtml;
-
-                        // Recargado
-                        document.getElementById('recargado-balls').innerHTML = render(latest, 'RECARGADO', 'b-recargado');
-
-                        // Historial simple (Texto)
-                        const historyDiv = document.getElementById('history-list');
-                        if (sortedData.length > 1) {
-                            sortedData.slice(1, 6).forEach(row => {
-                                historyDiv.innerHTML += `<div style="padding:5px 0; border-bottom:1px solid #333;">#${row.sorteo} (${row.dia}/${row.mes})</div>`;
-                            });
+                        // Dinero / Ganadores
+                        const winCount = parseInt(latest.LOTO_GANADORES || 0);
+                        const winMoney = parseInt(latest.LOTO_MONTO || 0);
+                        const moneyBadge = document.getElementById('hero-money');
+                        
+                        if (winCount > 0) {
+                            moneyBadge.className = "money-pill money-winner";
+                            moneyBadge.innerHTML = `★ ${winCount} GANADOR(ES): ${formatMoney(winMoney)}`;
                         } else {
-                            historyDiv.innerHTML = "<i>No hay historial anterior disponible.</i>";
+                            moneyBadge.className = "money-pill money-vacante";
+                            moneyBadge.innerHTML = "POZO VACANTE";
                         }
 
-                        // ÉXITO FINAL
+                        // 4. OTROS JUEGOS
+                        document.getElementById('recargado-balls').innerHTML = renderBalls(latest, 'RECARGADO', 'b-recargado', 0.5);
+                        document.getElementById('revancha-balls').innerHTML = renderBalls(latest, 'REVANCHA', 'b-revancha', 0.6);
+                        document.getElementById('desquite-balls').innerHTML = renderBalls(latest, 'DESQUITE', 'b-desquite', 0.7);
+
+                        // 5. HISTORIAL INTELIGENTE
+                        // Intentamos mostrar desde el segundo registro
+                        const historyList = sortedData.slice(1, 16); 
+                        const historyBody = document.getElementById('history-body');
+
+                        if (historyList.length === 0) {
+                            document.getElementById('empty-history-msg').style.display = 'block';
+                        } else {
+                            historyList.forEach(row => {
+                                const tr = document.createElement('tr');
+                                
+                                // Mini bolas para tabla
+                                let minis = '<div class="mini-row">';
+                                for(let i=1; i<=6; i++) {
+                                    if(row[`LOTO_n${i}`]) minis += `<div class="mini-ball active">${row[`LOTO_n${i}`]}</div>`;
+                                }
+                                minis += `<div class="mini-ball" style="background:transparent; color:#facc15; border:1px solid #facc15">${row.LOTO_comodin}</div></div>`;
+
+                                // Resultado texto
+                                const g = parseInt(row.LOTO_GANADORES || 0);
+                                const res = g > 0 ? `<span style="color:#34d399; font-weight:bold">${g} Gana</span>` : `<span style="color:#94a3b8">Vacante</span>`;
+
+                                tr.innerHTML = `
+                                    <td style="font-weight:bold; color:white">#${row.sorteo}</td>
+                                    <td style="color:#94a3b8">${row.dia}/${row.mes}</td>
+                                    <td>${minis}</td>
+                                    <td>${res}</td>
+                                `;
+                                historyBody.appendChild(tr);
+                            });
+                        }
+
+                        // FINALIZAR CARGA
                         document.getElementById('loading').style.display = 'none';
                         document.getElementById('dashboard').style.display = 'block';
 
-                    } catch (e) {
-                        logError("Error procesando datos: " + e.message);
+                    } catch (innerErr) {
+                        showError("Error procesando datos: " + innerErr.message);
                     }
                 },
                 error: function(err) {
-                    // Este error suele ser un 404 (No encontrado)
-                    logError("Fallo descarga CSV: " + err.name + " - " + err.message + ". <br>Verifica que el archivo 'LOTO_HISTORIAL_MAESTRO.csv' exista en el repo.");
+                    showError("No se pudo descargar el CSV. Verifica que el archivo exista en GitHub.");
                 }
             });
+        } catch (e) {
+            showError("Error crítico de inicio: " + e.message);
         }
     </script>
 </body>
