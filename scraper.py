@@ -6,83 +6,93 @@ import time
 import random
 import sys
 import json
-import os
+import re
 
-# CONFIGURACIÓN
+# --- CONFIGURACIÓN ---
 CSV_FILE = 'LOTO_HISTORIAL_MAESTRO.csv'
-URL = 'https://www.polla.cl/es/view/loto_ultimo_sorteo'
+# URL corregida según tu indicación
+URL = 'https://www.polla.cl/es/view/resultados' 
+
+# Archivos de reporte para ver en el celular
 DEBUG_HTML_FILE = 'debug_view.html'
 STATUS_FILE = 'system_status.json'
 
 def save_status(status, message, details=None):
-    """Guarda un JSON que tu página web podrá leer"""
+    """Escribe el estado para que tu página web lo muestre"""
     report = {
         "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "status": status, # "OK", "ERROR", "WARNING"
+        "status": status, 
         "message": message,
         "details": details or ""
     }
+    print(f"[{status}] {message}")
     with open(STATUS_FILE, 'w', encoding='utf-8') as f:
         json.dump(report, f, ensure_ascii=False)
 
 def get_soup_robust(url):
-    scraper = cloudscraper.create_scraper()
+    scraper = cloudscraper.create_scraper(browser={'browser': 'chrome', 'platform': 'windows', 'mobile': False})
     try:
-        print(f"Intentando acceder a: {url}")
-        response = scraper.get(url)
+        print(f"Conectando a: {url} ...")
+        response = scraper.get(url, timeout=30)
         
-        # --- EVIDENCIA FORENSE ---
-        # Guardamos EXACTAMENTE lo que ve el robot
+        # 1. GUARDAR EVIDENCIA (Vital para depurar desde el celular)
         with open(DEBUG_HTML_FILE, 'w', encoding='utf-8') as f:
             f.write(f"\n")
             f.write(response.text)
-        print(f"Evidencia guardada en {DEBUG_HTML_FILE}")
-        # -------------------------
-
-        if response.status_code == 200:
-            return BeautifulSoup(response.text, 'lxml')
-        else:
-            save_status("ERROR", f"Status Code {response.status_code}", "El sitio rechazó la conexión")
+        
+        if response.status_code != 200:
+            save_status("ERROR", f"Error {response.status_code}", "La página no cargó correctamente.")
             return None
+
+        return BeautifulSoup(response.text, 'lxml')
+
     except Exception as e:
         save_status("ERROR", "Fallo de Conexión", str(e))
         return None
 
+def extract_json_from_scripts(soup):
+    """Intenta encontrar la 'base interna' oculta en el HTML"""
+    scripts = soup.find_all('script')
+    for i, script in enumerate(scripts):
+        if script.string:
+            # Buscamos patrones comunes de datos embebidos
+            if 'Loto' in script.string or 'results' in script.string:
+                return f"¡Datos detectados en Script #{i}! (Ver debug_view.html)"
+    return None
+
 def main():
-    print("--- INICIO DIAGNÓSTICO ---")
-    soup = get_soup_robust(URL)
+    print("--- INICIANDO PROTOCOLO DE DIAGNÓSTICO V2 ---")
     
+    # 1. Obtener Web
+    soup = get_soup_robust(URL)
     if not soup:
         sys.exit(1)
 
-    # BÚSQUEDA DE NÚMEROS (TEST)
-    # Buscamos cualquier indicio de número de sorteo para ver si renderizó
-    try:
-        # Intentamos buscar el bloque de números típico
-        balls = soup.find_all('div', class_='balls-content')
-        
-        if not balls:
-            msg = "No se encontraron bolas (Posible sitio dinámico/JS)"
-            print(msg)
-            # Analizamos si hay scripts que contengan datos JSON ocultos
-            scripts = soup.find_all('script')
-            has_json_data = any('Loto' in str(s) for s in scripts)
-            
-            detail = "Se detectaron scripts con datos posibles." if has_json_data else "HTML parece vacío de datos."
-            save_status("WARNING", msg, f"Revisa {DEBUG_HTML_FILE}. {detail}")
-            sys.exit(0) # Salimos sin romper, solo reportando
-            
-        # Si llegamos aquí, ¡SÍ HAY DATOS!
-        title = soup.find('h2', class_='title-page').text.strip()
-        save_status("OK", "Datos detectados correctamente", f"Se encontró: {title} y {len(balls)} grupos de bolas.")
-        print("¡ÉXITO! El sitio parece estático o cloudscraper funcionó.")
+    # 2. Análisis Forense
+    page_title = soup.title.string.strip() if soup.title else "Sin Título"
+    print(f"Título de la página: {page_title}")
 
-        # (Aquí iría el resto de tu lógica de guardado CSV que ya tenías...)
-        # Por ahora cortamos aquí para validar el diagnóstico.
+    # Buscamos las bolas visualmente
+    balls = soup.find_all('div', class_='balls-content')
+    
+    if balls:
+        # CASO 1: Datos Visibles (Fácil)
+        msg = f"ÉXITO: Se encontraron {len(balls)} grupos de bolas en el HTML."
+        save_status("OK", "Conexión Exitosa", msg)
+        print(msg)
+        # (Aquí iría la lógica de extracción normal, por ahora validamos conexión)
         
-    except Exception as e:
-        save_status("ERROR", "Error analizando HTML", str(e))
-        print(e)
+    else:
+        # CASO 2: Datos Ocultos / Dinámicos (Difícil)
+        print("⚠️ No se vieron bolas en el HTML simple.")
+        
+        # Intentamos detectar si los datos están escondidos en un JSON
+        json_hint = extract_json_from_scripts(soup)
+        
+        if json_hint:
+            save_status("WARNING", "Sitio Dinámico Detectado", f"HTML vacío pero {json_hint}")
+        else:
+            save_status("ERROR", "HTML Vacío", "La página cargó pero no tiene datos visibles ni scripts obvios.")
 
 if __name__ == "__main__":
     main()
