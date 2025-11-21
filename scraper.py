@@ -65,34 +65,35 @@ def main():
     
     # 1. Obtener Web
     soup = get_soup_robust(URL)
+    
+    # CAMBIO CLAVE: Si falla, no matamos el proceso. 
+    # Dejamos que siga para que el archivo debug se guarde en el repo.
     if not soup:
-        sys.exit(1)
+        print("Terminando ejecución controlada para guardar logs.")
+        sys.exit(0) # <--- IMPORTANTE: Salida exitosa (0) para que GitHub guarde los cambios
 
     # 2. Análisis Forense
-    page_title = soup.title.string.strip() if soup.title else "Sin Título"
-    print(f"Título de la página: {page_title}")
+    try:
+        page_title = soup.title.string.strip() if soup.title else "Sin Título"
+        print(f"Título de la página: {page_title}")
 
-    # Buscamos las bolas visualmente
-    balls = soup.find_all('div', class_='balls-content')
-    
-    if balls:
-        # CASO 1: Datos Visibles (Fácil)
-        msg = f"ÉXITO: Se encontraron {len(balls)} grupos de bolas en el HTML."
-        save_status("OK", "Conexión Exitosa", msg)
-        print(msg)
-        # (Aquí iría la lógica de extracción normal, por ahora validamos conexión)
+        balls = soup.find_all('div', class_='balls-content')
         
-    else:
-        # CASO 2: Datos Ocultos / Dinámicos (Difícil)
-        print("⚠️ No se vieron bolas en el HTML simple.")
-        
-        # Intentamos detectar si los datos están escondidos en un JSON
-        json_hint = extract_json_from_scripts(soup)
-        
-        if json_hint:
-            save_status("WARNING", "Sitio Dinámico Detectado", f"HTML vacío pero {json_hint}")
+        if balls:
+            msg = f"ÉXITO: Se encontraron {len(balls)} grupos de bolas."
+            save_status("OK", "Conexión Exitosa", msg)
         else:
-            save_status("ERROR", "HTML Vacío", "La página cargó pero no tiene datos visibles ni scripts obvios.")
+            json_hint = extract_json_from_scripts(soup)
+            if json_hint:
+                save_status("WARNING", "Sitio Dinámico Detectado", f"HTML vacío pero {json_hint}")
+            else:
+                save_status("ERROR", "HTML Vacío", "La página cargó pero no tiene datos visibles.")
+                
+    except Exception as e:
+        save_status("ERROR", "Error de Análisis", str(e))
+
+    # Siempre salimos con éxito para que el paso "Commit" se ejecute
+    sys.exit(0) 
 
 if __name__ == "__main__":
     main()
