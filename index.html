@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Loto Intelligence | Full Dashboard</title>
+    <title>Loto Intelligence | Analytics</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -23,6 +23,7 @@
             --recargado-color: #38bdf8; /* Celeste */
             --revancha-color: #f472b6; /* Rosado */
             --desquite-color: #4ade80; /* Verde */
+            --accent-stat: #8b5cf6;    /* Violeta para stats */
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -30,7 +31,6 @@
         body {
             font-family: 'Inter', sans-serif;
             background-color: var(--bg-dark);
-            /* Fondo más sofisticado */
             background-image: 
                 radial-gradient(circle at 15% 50%, rgba(56, 189, 248, 0.08), transparent 25%), 
                 radial-gradient(circle at 85% 30%, rgba(244, 114, 182, 0.08), transparent 25%);
@@ -51,24 +51,68 @@
             border-bottom: var(--glass-border);
         }
         h1 { font-weight: 800; letter-spacing: -0.5px; font-size: 1.5rem; }
+        
         .badge {
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            color: #34d399;
             padding: 6px 12px;
             border-radius: 20px;
             font-size: 0.75rem;
             text-transform: uppercase;
             letter-spacing: 1px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .badge::before {
+            content: ''; display: block; width: 8px; height: 8px; 
+            background: #34d399; border-radius: 50%;
+            box-shadow: 0 0 8px #34d399;
         }
 
-        /* HERO SECTION (Contenedor Principal) */
+        /* --- NUEVO: BARRA DE ESTADÍSTICAS (DB STATS) --- */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: rgba(15, 23, 42, 0.4);
+            border: var(--glass-border);
+            border-radius: 12px;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            /* Borde izquierdo de color para decorar */
+            border-left: 3px solid var(--accent-stat);
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--text-main);
+        }
+        
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 4px;
+        }
+
+        /* HERO SECTION */
         .dashboard-grid {
             display: grid;
             gap: 1.5rem;
             margin-bottom: 3rem;
         }
 
-        /* TARJETA PRINCIPAL (LOTO) */
         .main-card {
             background: linear-gradient(180deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.9) 100%);
             backdrop-filter: blur(10px);
@@ -95,7 +139,7 @@
             font-weight: 600;
         }
 
-        /* GRID DE SUB-JUEGOS */
+        /* SUB JUEGOS */
         .sub-games-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -115,34 +159,21 @@
         .game-card:hover { transform: translateY(-2px); background: rgba(40, 55, 75, 0.7); }
 
         .game-title {
-            font-size: 0.8rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 1rem;
+            font-size: 0.8rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1rem;
         }
 
-        /* ESTILOS DE BOLAS */
-        .balls-row {
-            display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-
+        /* BOLAS */
+        .balls-row { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; }
         .ball {
-            width: 42px; height: 42px;
-            border-radius: 50%;
+            width: 42px; height: 42px; border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
-            font-weight: 700; font-size: 1.1rem;
-            color: #1e293b;
+            font-weight: 700; font-size: 1.1rem; color: #1e293b;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
         }
 
-        /* Variantes de Bolas */
         .b-loto { background: var(--loto-color); width: 54px; height: 54px; font-size: 1.4rem; }
         .b-comodin { background: white; border: 3px solid var(--loto-color); }
-        
         .b-recargado { background: var(--recargado-color); color: #0f172a; }
         .b-revancha { background: var(--revancha-color); color: #0f172a; }
         .b-desquite { background: var(--desquite-color); color: #0f172a; }
@@ -155,7 +186,7 @@
             background: var(--card-bg);
             border-radius: 16px;
             border: var(--glass-border);
-            overflow-x: auto; /* Scroll horizontal en móvil */
+            overflow-x: auto; 
         }
         
         table { width: 100%; border-collapse: collapse; min-width: 600px; }
@@ -171,14 +202,13 @@
         }
         .mini-ball.active { background: var(--loto-color); color: black; font-weight: bold; }
 
-        /* Loading */
         #loading { text-align: center; padding: 4rem; color: var(--text-muted); }
 
         @media (max-width: 768px) {
             body { padding: 1rem; }
             .b-loto { width: 40px; height: 40px; font-size: 1rem; }
             .ball { width: 32px; height: 32px; font-size: 0.9rem; }
-            .main-card { padding: 1.5rem 1rem; }
+            .stats-row { grid-template-columns: 1fr 1fr; } /* 2 col en móvil */
         }
     </style>
 </head>
@@ -187,10 +217,25 @@
     <div class="container">
         <header>
             <h1>Loto Intelligence</h1>
-            <div class="badge" id="last-update">Offline</div>
+            <div class="badge" id="system-status">System Active</div>
         </header>
 
-        <div id="loading">Desencriptando base de datos...</div>
+        <div class="stats-row" id="stats-panel" style="display:none;">
+            <div class="stat-card">
+                <div class="stat-value" id="stat-total">0</div>
+                <div class="stat-label">Total Sorteos</div>
+            </div>
+            <div class="stat-card" style="border-left-color: #3b82f6;">
+                <div class="stat-value" id="stat-first-year">----</div>
+                <div class="stat-label">Datos Desde</div>
+            </div>
+            <div class="stat-card" style="border-left-color: #10b981;">
+                <div class="stat-value" id="stat-last-date">--/--</div>
+                <div class="stat-label">Última Actualización</div>
+            </div>
+        </div>
+
+        <div id="loading">Iniciando análisis de datos...</div>
 
         <div id="dashboard" style="display: none;">
             
@@ -206,12 +251,10 @@
                         <div class="game-title" style="color: var(--recargado-color)">Recargado</div>
                         <div class="balls-row" id="recargado-balls"></div>
                     </div>
-                    
                     <div class="game-card">
                         <div class="game-title" style="color: var(--revancha-color)">Revancha</div>
                         <div class="balls-row" id="revancha-balls"></div>
                     </div>
-                    
                     <div class="game-card">
                         <div class="game-title" style="color: var(--desquite-color)">Desquite</div>
                         <div class="balls-row" id="desquite-balls"></div>
@@ -220,7 +263,7 @@
             </div>
 
             <div class="history-section">
-                <div class="history-header">Historial de Sorteos</div>
+                <div class="history-header">Historial Reciente</div>
                 <div class="table-wrapper">
                     <table>
                         <thead>
@@ -243,13 +286,10 @@
     <script>
         const csvUrl = 'LOTO_HISTORIAL_MAESTRO.csv'; 
 
-        // Función auxiliar para generar HTML de bolas
         function renderBalls(row, prefix, cssClass, count=6) {
             let html = '';
             for(let i=1; i<=count; i++) {
-                // Buscamos la columna ej: LOTO_n1, RECARGADO_n1
                 const val = row[`${prefix}_n${i}`];
-                // Si no existe el dato (ej. sorteo antiguo sin desquite), mostramos guión o nada
                 if(val !== undefined && val !== "") {
                     html += `<div class="ball ${cssClass}">${val}</div>`;
                 }
@@ -266,36 +306,41 @@
                 const data = results.data;
                 
                 if (data.length > 0) {
-                    // Invertir para tener el más reciente primero
-                    const sortedData = data.reverse();
+                    // 1. LÓGICA DE ESTADÍSTICAS (NUEVO)
+                    // Ordenamos para tener el último primero en la visual, 
+                    // pero necesitamos encontrar el "más antiguo" para el año.
+                    
+                    // Clonamos para no afectar orden si quisiéramos
+                    const sortedData = [...data].reverse(); 
                     const latest = sortedData[0];
+                    const oldest = sortedData[sortedData.length - 1];
 
-                    // --- ACTUALIZAR UI ---
-                    document.getElementById('last-update').textContent = "Actualizado";
+                    // Inyectar Stats
+                    document.getElementById('stat-total').textContent = data.length.toLocaleString();
+                    document.getElementById('stat-first-year').textContent = oldest.anio || '????';
+                    document.getElementById('stat-last-date').textContent = `${latest.dia}/${latest.mes}`;
+                    
+                    document.getElementById('stats-panel').style.display = 'grid';
+
+
+                    // 2. UI DASHBOARD
                     document.getElementById('meta-info').textContent = `SORTEO Nº ${latest.sorteo} • ${latest.dia}/${latest.mes}/${latest.anio}`;
 
-                    // 1. Loto + Comodín
+                    // Bolas
                     let lotoHtml = renderBalls(latest, 'LOTO', 'b-loto');
                     lotoHtml += `<div class="ball b-loto b-comodin" title="Comodín">${latest.LOTO_comodin}</div>`;
                     document.getElementById('loto-balls').innerHTML = lotoHtml;
 
-                    // 2. Recargado
                     document.getElementById('recargado-balls').innerHTML = renderBalls(latest, 'RECARGADO', 'b-recargado');
+                    document.getElementById('revancha-balls').innerHTML = renderBalls(latest, 'REVANCHA', 'b-revancha') || '<span style="opacity:0.5; font-size:0.8rem">No disponible</span>';
+                    document.getElementById('desquite-balls').innerHTML = renderBalls(latest, 'DESQUITE', 'b-desquite') || '<span style="opacity:0.5; font-size:0.8rem">No disponible</span>';
 
-                    // 3. Revancha (Manejo de error por si CSV viejo no tiene columna)
-                    document.getElementById('revancha-balls').innerHTML = renderBalls(latest, 'REVANCHA', 'b-revancha') || '<span style="font-size:0.8rem; opacity:0.5">No disponible</span>';
-
-                    // 4. Desquite
-                    document.getElementById('desquite-balls').innerHTML = renderBalls(latest, 'DESQUITE', 'b-desquite') || '<span style="font-size:0.8rem; opacity:0.5">No disponible</span>';
-
-                    // --- TABLA HISTORIAL (Últimos 15) ---
+                    // Tabla Historial
                     const historyBody = document.getElementById('history-body');
                     const historyData = sortedData.slice(1, 16); 
 
                     historyData.forEach(row => {
                         const tr = document.createElement('tr');
-                        
-                        // Función mini para tabla
                         const miniHTML = (prefix) => {
                             let h = '<div class="mini-set">';
                             for(let i=1; i<=6; i++) {
@@ -320,7 +365,9 @@
                 }
             },
             error: function(err) {
-                document.getElementById('loading').innerHTML = "Error de lectura: " + err;
+                document.getElementById('loading').innerHTML = "Error crítico de lectura: " + err;
+                document.getElementById('system-status').style.color = 'red';
+                document.getElementById('system-status').textContent = 'Offline';
             }
         });
     </script>
