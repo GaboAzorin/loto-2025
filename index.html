@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitor Loto Chile</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #f0f0f0; }
+        h1 { color: #333; }
+        table { width: 100%; border-collapse: collapse; background: white; font-size: 0.9em; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+        th { background-color: #0044cc; color: white; position: sticky; top: 0; }
+        tr:nth-child(even) { background-color: #f2f2f2; }
+        .loto-num { font-weight: bold; color: #0044cc; }
+        .loading { font-size: 1.5em; color: #666; }
+    </style>
+</head>
+<body>
+    <h1>📊 Resultados Históricos Loto</h1>
+    <div id="loading" class="loading">Cargando base de datos maestra...</div>
+    <table id="lotoTable" style="display:none;">
+        <thead>
+            </thead>
+        <tbody></tbody>
+    </table>
+
+    <script>
+        // URL directa al archivo raw en tu repo
+        const csvUrl = 'LOTO_HISTORIAL_MAESTRO.csv'; 
+
+        Papa.parse(csvUrl, {
+            download: true,
+            header: true,
+            delimiter: ";", // Importante: Tu CSV usa punto y coma
+            skipEmptyLines: true,
+            complete: function(results) {
+                const data = results.data;
+                const table = document.getElementById('lotoTable');
+                const thead = table.querySelector('thead');
+                const tbody = table.querySelector('tbody');
+                
+                if (data.length > 0) {
+                    // Crear Cabeceras (Solo las importantes para vista rápida)
+                    const headers = ['Sorteo', 'Fecha', 'LOTO', 'Comodín', 'Recargado'];
+                    let headerRow = '<tr>';
+                    headers.forEach(h => headerRow += `<th>${h}</th>`);
+                    headerRow += '</tr>';
+                    thead.innerHTML = headerRow;
+
+                    // Mostrar últimos 50 resultados (invertido)
+                    data.slice(-50).reverse().forEach(row => {
+                        const tr = document.createElement('tr');
+                        const fecha = `${row.dia}/${row.mes}/${row.anio}`;
+                        const lotoNums = [row.LOTO_n1, row.LOTO_n2, row.LOTO_n3, row.LOTO_n4, row.LOTO_n5, row.LOTO_n6].join(' - ');
+                        const recNums = [row.RECARGADO_n1, row.RECARGADO_n2, row.RECARGADO_n3, row.RECARGADO_n4, row.RECARGADO_n5, row.RECARGADO_n6].join(' - ');
+                        
+                        tr.innerHTML = `
+                            <td>${row.sorteo}</td>
+                            <td>${fecha}</td>
+                            <td class="loto-num">${lotoNums}</td>
+                            <td>${row.LOTO_comodin}</td>
+                            <td>${recNums}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                    
+                    document.getElementById('loading').style.display = 'none';
+                    table.style.display = 'table';
+                }
+            }
+        });
+    </script>
+</body>
+</html>
