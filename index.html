@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Loto Intelligence | Pro</title>
+    <title>Predictor de Loto | Pro</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
@@ -23,7 +23,7 @@
             --revancha-color: #f472b6;
             --desquite-color: #4ade80;
             --money-green: #10b981;
-            --timer-color: #f43f5e; /* Rojo/Rosado neón para el timer */
+            --timer-color: #f43f5e; 
             
             --glass-border: 1px solid rgba(255, 255, 255, 0.08);
         }
@@ -33,7 +33,6 @@
         body {
             font-family: 'Inter', sans-serif;
             background-color: var(--bg-dark);
-            /* Fondo Cyberpunk sutil */
             background-image: 
                 radial-gradient(circle at 10% 20%, rgba(56, 189, 248, 0.15), transparent 20%), 
                 radial-gradient(circle at 90% 80%, rgba(244, 114, 182, 0.15), transparent 20%);
@@ -69,118 +68,57 @@
         }
         .status-dot { width: 8px; height: 8px; background: #34d399; border-radius: 50%; animation: pulseGlow 2s infinite; }
 
-        /* --- NUEVO: COUNTDOWN TIMER --- */
+        /* COUNTDOWN */
         .countdown-wrapper {
             background: rgba(15, 23, 42, 0.6);
             border: 1px solid rgba(255,255,255,0.05);
-            border-radius: 16px;
-            padding: 1rem;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
+            border-radius: 16px; padding: 1rem;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%;
         }
+        .countdown-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 0.5rem; }
+        .timer-display { display: flex; gap: 1.5rem; font-family: 'JetBrains Mono', monospace; }
+        .time-unit { display: flex; flex-direction: column; align-items: center; }
+        .time-value { font-size: 1.8rem; font-weight: 700; color: var(--timer-color); line-height: 1; text-shadow: 0 0 10px rgba(244, 63, 94, 0.3); }
+        .time-label { font-size: 0.65rem; color: var(--text-muted); margin-top: 4px; }
 
-        .countdown-label {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            margin-bottom: 0.5rem;
-        }
-
-        .timer-display {
-            display: flex;
-            gap: 1.5rem;
-            font-family: 'JetBrains Mono', monospace; /* Fuente tipo reloj digital */
-        }
-
-        .time-unit {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .time-value {
-            font-size: 1.8rem;
-            font-weight: 700;
-            color: var(--timer-color);
-            line-height: 1;
-            text-shadow: 0 0 10px rgba(244, 63, 94, 0.3);
-        }
-
-        .time-label {
-            font-size: 0.65rem;
-            color: var(--text-muted);
-            margin-top: 4px;
-        }
-
-        /* STATS ROW */
-        .stats-row {
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin-bottom: 2.5rem;
-            animation: fadeInUp 1s ease-out 0.2s backwards;
-        }
-        .stat-card {
-            background: rgba(15, 23, 42, 0.6); border: var(--glass-border); border-radius: 12px; padding: 1rem;
-            border-left: 3px solid #6366f1; transition: transform 0.2s;
-        }
+        /* STATS */
+        .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin-bottom: 2.5rem; animation: fadeInUp 1s ease-out 0.2s backwards; }
+        .stat-card { background: rgba(15, 23, 42, 0.6); border: var(--glass-border); border-radius: 12px; padding: 1rem; border-left: 3px solid #6366f1; transition: transform 0.2s; }
         .stat-card:hover { transform: translateY(-3px); background: rgba(30, 41, 59, 0.8); }
         .stat-value { font-size: 1.4rem; font-weight: 800; }
         .stat-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
 
-        /* HERO CARD */
+        /* HERO */
         .main-card {
             background: linear-gradient(160deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9));
-            border-radius: 24px; padding: 2.5rem; border: var(--glass-border);
-            text-align: center; position: relative; overflow: hidden;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3);
-            margin-bottom: 2rem;
-            animation: fadeInUp 1s ease-out 0.4s backwards;
+            border-radius: 24px; padding: 2.5rem; border: var(--glass-border); text-align: center; position: relative; overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3); margin-bottom: 2rem; animation: fadeInUp 1s ease-out 0.4s backwards;
         }
-        .main-card::before {
-            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-        }
-
+        .main-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent); }
         .draw-date { color: var(--text-muted); font-size: 0.85rem; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 1rem; font-weight: 600; }
-        
         .balls-container { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin: 1.5rem 0; }
         
         .ball {
-            width: 48px; height: 48px; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            font-weight: 800; font-size: 1.2rem; color: #1e293b;
-            box-shadow: inset -2px -2px 6px rgba(0,0,0,0.2), 2px 2px 6px rgba(255,255,255,0.3), 0 4px 6px rgba(0,0,0,0.2);
-            animation: bounceIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) backwards;
+            width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.2rem; color: #1e293b;
+            box-shadow: inset -2px -2px 6px rgba(0,0,0,0.2), 2px 2px 6px rgba(255,255,255,0.3), 0 4px 6px rgba(0,0,0,0.2); animation: bounceIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) backwards;
         }
-
         .b-loto { background: var(--loto-color); width: 56px; height: 56px; font-size: 1.4rem; }
         .b-comodin { background: white; border: 4px solid var(--loto-color); color: #ca8a04; }
-        
         .b-recargado { background: var(--recargado-color); }
         .b-revancha { background: var(--revancha-color); }
         .b-desquite { background: var(--desquite-color); }
 
-        .money-pill {
-            display: inline-block; padding: 8px 20px; border-radius: 50px;
-            font-weight: 700; font-size: 0.95rem; letter-spacing: 0.5px;
-            border: 1px solid transparent;
-            transition: all 0.3s;
-        }
+        .money-pill { display: inline-block; padding: 8px 20px; border-radius: 50px; font-weight: 700; font-size: 0.95rem; letter-spacing: 0.5px; border: 1px solid transparent; transition: all 0.3s; }
         .money-winner { background: rgba(16, 185, 129, 0.15); color: #34d399; border-color: rgba(16, 185, 129, 0.3); box-shadow: 0 0 15px rgba(16, 185, 129, 0.1); }
         .money-vacante { background: rgba(255, 255, 255, 0.05); color: var(--text-muted); border-color: rgba(255, 255, 255, 0.1); }
 
-        /* SUB GAMES */
+        /* GRID */
         .games-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 3rem; animation: fadeInUp 1s ease-out 0.6s backwards; }
-        .game-card {
-            background: var(--card-bg); border: var(--glass-border); border-radius: 16px; padding: 1.5rem;
-            display: flex; flex-direction: column; align-items: center; transition: transform 0.3s;
-        }
+        .game-card { background: var(--card-bg); border: var(--glass-border); border-radius: 16px; padding: 1.5rem; display: flex; flex-direction: column; align-items: center; transition: transform 0.3s; }
         .game-card:hover { transform: translateY(-5px); background: rgba(40, 55, 75, 0.7); }
         .game-title { font-size: 0.8rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1rem; }
 
-        /* HISTORIAL */
+        /* TABLA */
         .history-section { animation: fadeInUp 1s ease-out 0.8s backwards; }
         .table-wrap { background: var(--card-bg); border-radius: 16px; border: var(--glass-border); overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; min-width: 600px; }
@@ -190,6 +128,17 @@
         .mini-row { display: flex; gap: 4px; }
         .mini-ball { width: 24px; height: 24px; border-radius: 50%; background: rgba(255,255,255,0.1); text-align: center; line-height: 24px; font-size: 0.7rem; }
         .mini-ball.active { background: var(--loto-color); color: black; font-weight: bold; }
+
+        /* CLASE NUEVA PARA EL TOOLTIP DE DINERO */
+        .winner-text {
+            cursor: help;
+            border-bottom: 1px dotted #34d399;
+            transition: all 0.2s;
+        }
+        .winner-text:hover {
+            color: #10b981;
+            text-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+        }
 
         #error-box { background: rgba(220, 38, 38, 0.1); color: #f87171; padding: 1rem; border: 1px solid #f87171; border-radius: 8px; display: none; margin-bottom: 2rem; font-family: monospace; }
         #loading { text-align: center; padding: 3rem; color: var(--text-muted); font-style: italic; }
@@ -210,8 +159,8 @@
         <header>
             <div class="header-top">
                 <div>
-                    <h1>Loto Intelligence</h1>
-                    <div style="font-size:0.8rem; color:var(--text-muted);">Panel de Control Maestro</div>
+                    <h1>Predictor de Loto | Pro</h1>
+                    <div style="font-size:0.8rem; color:var(--text-muted);">Panel de control maestro</div>
                 </div>
                 <div class="status-badge"><div class="status-dot"></div> ONLINE</div>
             </div>
@@ -223,23 +172,17 @@
                         <span class="time-value" id="cd-days">00</span>
                         <span class="time-label">DÍAS</span>
                     </div>
-                    <div class="time-unit">
-                        <span class="time-value" style="color:#64748b;">:</span>
-                    </div>
+                    <div class="time-unit"><span class="time-value" style="color:#64748b;">:</span></div>
                     <div class="time-unit">
                         <span class="time-value" id="cd-hours">00</span>
                         <span class="time-label">HRS</span>
                     </div>
-                    <div class="time-unit">
-                        <span class="time-value" style="color:#64748b;">:</span>
-                    </div>
+                    <div class="time-unit"><span class="time-value" style="color:#64748b;">:</span></div>
                     <div class="time-unit">
                         <span class="time-value" id="cd-min">00</span>
                         <span class="time-label">MIN</span>
                     </div>
-                    <div class="time-unit">
-                        <span class="time-value" style="color:#64748b;">:</span>
-                    </div>
+                    <div class="time-unit"><span class="time-value" style="color:#64748b;">:</span></div>
                     <div class="time-unit">
                         <span class="time-value" id="cd-sec">00</span>
                         <span class="time-label">SEG</span>
@@ -249,11 +192,9 @@
         </header>
 
         <div id="error-box"></div>
-
         <div id="loading">Sincronizando Base de Datos...</div>
 
         <div id="dashboard" style="display: none;">
-            
             <div class="stats-row">
                 <div class="stat-card">
                     <div class="stat-value" id="stat-total">0</div>
@@ -273,9 +214,7 @@
                 <div class="draw-date" id="hero-date">FECHA DESCONOCIDA</div>
                 <div style="font-size: 2.2rem; font-weight: 900; margin-bottom: 0.5rem;">LOTO</div>
                 <div style="color: var(--loto-color); font-size: 0.9rem; margin-bottom: 1rem;" id="hero-sorteo">SORTEO #</div>
-                
                 <div class="balls-container" id="hero-balls"></div>
-                
                 <div id="hero-money" class="money-pill">Verificando premios...</div>
             </div>
 
@@ -317,21 +256,15 @@
     </div>
 
     <script>
-        // --- CONFIGURACIÓN ---
         const CSV_URL = 'LOTO_HISTORIAL_MAESTRO.csv';
         
-        // --- LÓGICA DEL RELOJ (COUNTDOWN) ---
+        // RELOJ
         function updateTimer() {
-            // 1. Hora actual en CHILE
-            // Usamos toLocaleString para forzar la zona horaria de Chile aunque el usuario esté en China
             const chileNowString = new Date().toLocaleString("en-US", {timeZone: "America/Santiago"});
             const now = new Date(chileNowString);
-
-            // 2. Definir próximos sorteos posibles: Dom (0), Mar (2), Jue (4) a las 21:00
             const targets = [0, 2, 4]; 
             let nextDraw = null;
 
-            // Buscar el sorteo más próximo en el futuro (hasta 7 días adelante)
             for (let i = 0; i <= 7; i++) {
                 const candidate = new Date(now);
                 candidate.setDate(now.getDate() + i);
@@ -345,13 +278,11 @@
 
             if (nextDraw) {
                 const diff = nextDraw - now;
-
                 const days = Math.floor(diff / (1000 * 60 * 60 * 24));
                 const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                 const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
                 const seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
-                // Actualizar HTML con ceros a la izquierda
                 document.getElementById('cd-days').textContent = days.toString().padStart(2, '0');
                 document.getElementById('cd-hours').textContent = hours.toString().padStart(2, '0');
                 document.getElementById('cd-min').textContent = minutes.toString().padStart(2, '0');
@@ -359,11 +290,10 @@
             }
         }
         
-        // Actualizar reloj cada segundo
         setInterval(updateTimer, 1000);
-        updateTimer(); // Primera llamada inmediata
+        updateTimer(); 
 
-        // --- LÓGICA DE DATOS (IGUAL QUE ANTES) ---
+        // DATOS
         function showError(msg) {
             const box = document.getElementById('error-box');
             document.getElementById('loading').style.display = 'none';
@@ -396,20 +326,19 @@
                 skipEmptyLines: true,
                 complete: function(results) {
                     try {
-                        const data = results.data;
+                        let data = results.data;
                         if (!data || data.length === 0) throw new Error("CSV vacío.");
-
-                        // Asumiendo que ya viene ordenado por el scraper, pero por si acaso:
-                        // El script python ya lo ordena descendente (más reciente primero)
+                        
+                        // Orden Descendente (Más reciente primero)
+                        data.sort((a, b) => parseInt(b.sorteo) - parseInt(a.sorteo));
+                        
                         const latest = data[0];
                         const oldest = data[data.length - 1];
 
-                        // STATS
                         document.getElementById('stat-total').textContent = data.length;
                         document.getElementById('stat-year').textContent = oldest.anio || "----";
                         document.getElementById('stat-last').textContent = `${latest.dia}/${latest.mes}`;
 
-                        // HERO
                         document.getElementById('hero-date').textContent = `${latest.dia}/${latest.mes}/${latest.anio}`;
                         document.getElementById('hero-sorteo').textContent = `SORTEO Nº ${latest.sorteo}`;
                         
@@ -431,12 +360,10 @@
                             moneyBadge.innerHTML = "POZO VACANTE";
                         }
 
-                        // OTROS JUEGOS
                         document.getElementById('recargado-balls').innerHTML = renderBalls(latest, 'RECARGADO', 'b-recargado', 0.5);
                         document.getElementById('revancha-balls').innerHTML = renderBalls(latest, 'REVANCHA', 'b-revancha', 0.6);
                         document.getElementById('desquite-balls').innerHTML = renderBalls(latest, 'DESQUITE', 'b-desquite', 0.7);
 
-                        // HISTORIAL
                         const historyList = data.slice(1, 21); 
                         const historyBody = document.getElementById('history-body');
 
@@ -452,7 +379,15 @@
                                 minis += `<div class="mini-ball" style="background:transparent; color:#facc15; border:1px solid #facc15">${row.LOTO_comodin}</div></div>`;
 
                                 const g = parseInt(row.LOTO_GANADORES || 0);
-                                const res = g > 0 ? `<span style="color:#34d399; font-weight:bold">${g} Gana</span>` : `<span style="color:#94a3b8">Vacante</span>`;
+                                const m = parseInt(row.LOTO_MONTO || 0);
+                                
+                                // Lógica de Tooltip para dinero
+                                let res = '<span style="color:#94a3b8">Vacante</span>';
+                                if (g > 0) {
+                                    // Agregamos title y clase CSS
+                                    const moneyStr = formatMoney(m);
+                                    res = `<span class="winner-text" style="color:#34d399; font-weight:bold" title="Premio: ${moneyStr}">${g} Gana</span>`;
+                                }
 
                                 tr.innerHTML = `
                                     <td style="font-weight:bold; color:white">#${row.sorteo}</td>
