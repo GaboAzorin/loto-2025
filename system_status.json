@@ -1,8 +1,8 @@
 {
-  "last_update": "2025-11-22 22:48:32",
+  "last_update": "2025-11-22 22:48:33",
   "current_target": {
-    "sorteo": 5249,
-    "fecha": "30-03-2025"
+    "sorteo": 5250,
+    "fecha": "01-04-2025"
   },
   "status": "BUSCANDO",
   "message": "Consultando URL..."
