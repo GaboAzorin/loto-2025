@@ -2,9 +2,11 @@ name: Actualizar Loto DB
 
 on:
   schedule:
-    # Ejecutar a las 09:00 UTC (aprox 6:00 AM Chile) todos los días
-    - cron: '0 9 * * *'
-  workflow_dispatch: # Permite ejecutar manualmente desde un botón
+    - cron: '0 9 * * *' # 6:00 AM Chile aprox
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -23,12 +25,19 @@ jobs:
         run: |
           pip install -r requirements.txt
 
+      # AQUÍ ESTÁ EL TRUCO:
       - name: Ejecutar Scraper
+        id: run_script
+        continue-on-error: true   # <--- ¡ESTO ES VITAL! Si falla, sigue igual.
         run: python scraper.py
 
-      - name: Commit y Push si hay cambios
+      # ESTE PASO SE EJECUTA SIEMPRE, AUNQUE EL ANTERIOR FALLE
+      - name: Subir Evidencia (Commit Forense)
+        if: always()              # <--- Obliga a guardar cambios pase lo que pase
         run: |
           git config --global user.name 'LotoBot'
           git config --global user.email 'bot@noreply.github.com'
-          git add .    # <--- EL PUNTO ES VITAL
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Diagnóstico guardado" && git push)
+          git add .
+          # El comando "|| echo" evita que falle si no hay cambios
+          git commit -m "Reporte de ejecución (Éxito o Fallo)" || echo "Nada nuevo que guardar"
+          git push
