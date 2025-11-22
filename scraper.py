@@ -29,54 +29,25 @@ def git_push_live(sorteo_num):
     except Exception as e:
         log(f"Git push error: {e}", "WARN")
 
-def get_html(url):
-    try:
-        # Timeout generoso
-        response = cureq.get(url, impersonate="chrome110", timeout=20)
-        return response.text if response.status_code == 200 else None
-    except: return None
-
-# --- PLAN A: CONSTRUCCIÓN DIRECTA (FRANCOTIRADOR) ---
-def generate_direct_url(sorteo_num, date_obj):
-    # Estructura estándar: /AAAA/MM/DD/resultados-loto-sorteo-NNNN-fecha-DD-MM-AAAA/
+def generate_url(sorteo_num, date_obj):
+    # Formato estricto: /2024/12/29/resultados-loto-sorteo-5210-fecha-29-12-2024/
     yyyy = date_obj.strftime("%Y")
     mm = date_obj.strftime("%m")
     dd = date_obj.strftime("%d")
     slug_date = f"{dd}-{mm}-{yyyy}"
     return f"https://resultadoslotochile.com/{yyyy}/{mm}/{dd}/resultados-loto-sorteo-{sorteo_num}-fecha-{slug_date}/"
 
-# --- PLAN B: BUSCADOR INTERNO (RESPALDO) ---
-def find_link_by_internal_search(sorteo_num):
-    search_url = f"https://resultadoslotochile.com/?s={sorteo_num}"
-    log(f"Plan A falló (404). Activando Plan B (Búsqueda): {search_url}", "SEARCH")
-    
-    html = get_html(search_url)
-    if not html: return None
-    
-    soup = BeautifulSoup(html, 'lxml')
-    
-    # Buscar artículos
-    articles = soup.find_all('article')
-    if not articles:
-        links = soup.find_all('a', href=True)
-    else:
-        links = [art.find('a', href=True) for art in articles if art.find('a', href=True)]
-
-    for a in links:
-        if not a: continue
-        text = a.get_text(" ", strip=True).lower()
-        href = a['href']
-        
-        # Verificamos que sea el sorteo correcto
-        if str(sorteo_num) in text and "resultados loto" in text:
-            log(f"¡Encontrado vía búsqueda! -> {href}", "SUCCESS")
-            return href
-            
-    return None
+def get_html(url):
+    try:
+        response = cureq.get(url, impersonate="chrome110", timeout=15)
+        return response.text if response.status_code == 200 else None
+    except: return None
 
 def parse_html(html, expected_sorteo):
     soup = BeautifulSoup(html, 'lxml')
     
+    # Validación: Si el HTML cargó, asumimos que es el correcto 
+    # (aunque la URL tenga typos, si carga, sirve)
     data = {'sorteo': expected_sorteo}
     
     def get_nums(header):
@@ -85,12 +56,12 @@ def parse_html(html, expected_sorteo):
         return [int(p.text) for p in div.find_all('p')] if div else []
 
     data['LOTO'] = get_nums('Loto')
-    # Fallback
     if not data['LOTO']: 
         f = soup.find('div', class_='bolitas')
         if f: data['LOTO'] = [int(p.text) for p in f.find_all('p')]
 
-    if not data['LOTO']: return None # Abortar si no hay números
+    # Si no hay bolas, es un falso positivo
+    if not data['LOTO']: return None 
 
     c_div = soup.find('div', class_='comodin')
     data['COMODIN'] = int(c_div.find('p').text) if c_div else 0
@@ -148,7 +119,7 @@ def save_to_csv(data_dict, date_obj):
         new_df = pd.DataFrame([row])
         df_final = pd.concat([df, new_df], ignore_index=True)
         
-        # ORDEN ASCENDENTE (Antiguo -> Nuevo)
+        # ORDEN ASCENDENTE (1, 2, 3...) como pediste
         df_final['sorteo'] = df_final['sorteo'].astype(int)
         df_final.sort_values(by='sorteo', ascending=True, inplace=True)
         
@@ -159,7 +130,7 @@ def save_to_csv(data_dict, date_obj):
         return False
 
 def run_historical_mode():
-    log(f"--- MODO HISTÓRICO V11 (DIRECTO + BÚSQUEDA) ---")
+    log(f"--- MODO FRANCOTIRADOR (V12) ---")
     log(f"Objetivo: Sorteo {HISTORY_START_SORTEO} en {HISTORY_START_DATE.date()}")
     
     existing = set()
@@ -173,57 +144,41 @@ def run_historical_mode():
     end_date = datetime.datetime.now()
 
     while current_date <= end_date:
-        if current_date.weekday() in [1, 3, 6]: # Mar, Jue, Dom
+        # Solo Martes (1), Jueves (3), Domingo (6)
+        if current_date.weekday() in [1, 3, 6]: 
             
             if current_sorteo in existing:
-                log(f"[SALTAR] {current_date.date()} (Ya existe)")
+                log(f"[YA EXISTE] Sorteo {current_sorteo} ({current_date.date()})")
+                # Avanzamos sorteo porque ya lo tenemos
                 current_sorteo += 1
             else:
-                # ====================================================
-                # ESTRATEGIA DOBLE
-                # ====================================================
-                
-                target_url = None
-                
-                # 1. PLAN A: URL DIRECTA
-                direct_url = generate_direct_url(current_sorteo, current_date)
-                html = get_html(direct_url)
+                url = generate_url(current_sorteo, current_date)
+                html = get_html(url)
                 
                 if html:
-                    # Validamos si la URL directa cargó el sorteo correcto
                     data = parse_html(html, current_sorteo)
-                    if data:
-                        # ¡Éxito a la primera!
-                        log(f"Plan A Exitoso: {direct_url}")
+                    if data and data['LOTO']:
+                        if save_to_csv(data, current_date):
+                            log(f"*** [EXITO] Sorteo {current_sorteo} recuperado ***", "SUCCESS")
+                            git_push_live(current_sorteo)
+                            # Éxito: Pasamos al siguiente sorteo
+                            current_sorteo += 1
                     else:
-                        html = None # Invalido, forzar Plan B
-                
-                # 2. PLAN B: SI PLAN A FALLÓ, USAR BÚSQUEDA
-                if not html:
-                    search_link = find_link_by_internal_search(current_sorteo)
-                    if search_link:
-                        html = get_html(search_link)
-                        if html:
-                            data = parse_html(html, current_sorteo)
-                        else:
-                            data = None
-                    else:
-                        data = None
-
-                # 3. PROCESAMIENTO FINAL
-                if data:
-                    if save_to_csv(data, current_date):
-                        log(f"*** [CAPTURADO] Sorteo {current_sorteo} ***", "SUCCESS")
-                        git_push_live(current_sorteo)
+                        log(f"[ERROR CONTENIDO] URL cargó pero sin datos válidos.")
+                        # PLAN B: SALTARSE AL SIGUIENTE
+                        log(f"--> Saltando Sorteo {current_sorteo}...")
                         current_sorteo += 1
-                    else:
-                        log("Error guardando CSV")
                 else:
-                    log(f"[404 FINAL] No se encontró Sorteo {current_sorteo} hoy.")
-                    # No avanzamos sorteo
+                    log(f"[404] URL No encontrada para {current_sorteo}")
+                    # PLAN B: SALTARSE AL SIGUIENTE
+                    # Si la URL está rota (caso 5210), asumimos perdido y avanzamos
+                    # para no perder la sincronía del calendario con el 5211.
+                    log(f"--> Saltando Sorteo {current_sorteo}...")
+                    current_sorteo += 1
                 
-                time.sleep(1) # Pausa
+                time.sleep(0.5)
         
+        # Avanzar calendario
         current_date += datetime.timedelta(days=1)
 
 if __name__ == "__main__":
