@@ -93,7 +93,7 @@ def main():
         save_status("ERROR", "Error de Análisis", str(e))
 
     # Siempre salimos con éxito para que el paso "Commit" se ejecute
-    sys.exit(0) 
+    sys.exit(0)
 
 if __name__ == "__main__":
     main()
