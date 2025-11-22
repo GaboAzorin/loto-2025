@@ -16,16 +16,15 @@
             --card-bg: rgba(30, 41, 59, 0.7);
             --text-main: #f8fafc;
             --text-muted: #94a3b8;
-            
-            /* Colores Identidad */
             --loto-color: #facc15;
             --recargado-color: #38bdf8;
             --revancha-color: #f472b6;
             --desquite-color: #4ade80;
             --money-green: #10b981;
             --timer-color: #f43f5e; 
-            
             --glass-border: 1px solid rgba(255, 255, 255, 0.08);
+            --danger: #ef4444;
+            --warning: #f59e0b;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -55,11 +54,7 @@
             margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: var(--glass-border);
             animation: fadeInUp 0.8s ease-out;
         }
-        
-        .header-top {
-            display: flex; justify-content: space-between; align-items: center; width: 100%;
-        }
-
+        .header-top { display: flex; justify-content: space-between; align-items: center; width: 100%; }
         h1 { font-weight: 900; font-size: 1.6rem; letter-spacing: -1px; }
         .status-badge { 
             background: rgba(16, 185, 129, 0.1); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.2);
@@ -70,9 +65,7 @@
 
         /* COUNTDOWN */
         .countdown-wrapper {
-            background: rgba(15, 23, 42, 0.6);
-            border: 1px solid rgba(255,255,255,0.05);
-            border-radius: 16px; padding: 1rem;
+            background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; padding: 1rem;
             display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%;
         }
         .countdown-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 0.5rem; }
@@ -97,7 +90,6 @@
         .main-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent); }
         .draw-date { color: var(--text-muted); font-size: 0.85rem; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 1rem; font-weight: 600; }
         .balls-container { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin: 1.5rem 0; }
-        
         .ball {
             width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.2rem; color: #1e293b;
             box-shadow: inset -2px -2px 6px rgba(0,0,0,0.2), 2px 2px 6px rgba(255,255,255,0.3), 0 4px 6px rgba(0,0,0,0.2); animation: bounceIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) backwards;
@@ -112,32 +104,79 @@
         .money-winner { background: rgba(16, 185, 129, 0.15); color: #34d399; border-color: rgba(16, 185, 129, 0.3); box-shadow: 0 0 15px rgba(16, 185, 129, 0.1); }
         .money-vacante { background: rgba(255, 255, 255, 0.05); color: var(--text-muted); border-color: rgba(255, 255, 255, 0.1); }
 
-        /* GRID */
         .games-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 3rem; animation: fadeInUp 1s ease-out 0.6s backwards; }
         .game-card { background: var(--card-bg); border: var(--glass-border); border-radius: 16px; padding: 1.5rem; display: flex; flex-direction: column; align-items: center; transition: transform 0.3s; }
-        .game-card:hover { transform: translateY(-5px); background: rgba(40, 55, 75, 0.7); }
         .game-title { font-size: 0.8rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1rem; }
 
-        /* TABLA */
-        .history-section { animation: fadeInUp 1s ease-out 0.8s backwards; }
-        .table-wrap { background: var(--card-bg); border-radius: 16px; border: var(--glass-border); overflow-x: auto; }
+        /* --- TABLE STICKY HEADER MODIFICADO --- */
+        .history-section { animation: fadeInUp 1s ease-out 0.8s backwards; margin-bottom: 3rem; }
+        
+        .table-wrap { 
+            background: var(--card-bg); 
+            border-radius: 16px; 
+            border: var(--glass-border); 
+            /* STICKY MAGIC: Altura máxima y scroll vertical */
+            max-height: 60vh; 
+            overflow-y: auto; 
+            position: relative;
+        }
+        
         table { width: 100%; border-collapse: collapse; min-width: 600px; }
+        
         th, td { padding: 1rem; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.9rem; }
-        th { background: rgba(0,0,0,0.2); color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; }
+        
+        th { 
+            /* STICKY HEADER PROPERTIES */
+            position: sticky;
+            top: 0;
+            background: #1e293b; /* Color sólido (no transparente) para tapar lo de abajo */
+            z-index: 10;
+            color: var(--text-muted); 
+            font-size: 0.75rem; 
+            text-transform: uppercase;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
         
         .mini-row { display: flex; gap: 4px; }
         .mini-ball { width: 24px; height: 24px; border-radius: 50%; background: rgba(255,255,255,0.1); text-align: center; line-height: 24px; font-size: 0.7rem; }
         .mini-ball.active { background: var(--loto-color); color: black; font-weight: bold; }
+        
+        .winner-text { cursor: help; border-bottom: 1px dotted #34d399; transition: all 0.2s; }
+        .winner-text:hover { color: #10b981; text-shadow: 0 0 8px rgba(16, 185, 129, 0.6); }
 
-        /* CLASE NUEVA PARA EL TOOLTIP DE DINERO */
-        .winner-text {
-            cursor: help;
-            border-bottom: 1px dotted #34d399;
-            transition: all 0.2s;
+        /* --- NUEVA SECCIÓN: AUDITORÍA --- */
+        .audit-section {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid var(--glass-border);
+            border-top: 3px solid #f59e0b;
+            border-radius: 16px;
+            padding: 2rem;
+            margin-top: 3rem;
+            animation: fadeInUp 1s ease-out 1s backwards;
         }
-        .winner-text:hover {
-            color: #10b981;
-            text-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+        .audit-header { font-size: 1.2rem; font-weight: 800; margin-bottom: 1.5rem; color: #f8fafc; display: flex; align-items: center; gap: 10px; }
+        .audit-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; }
+        .audit-item h4 { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem; }
+        .audit-item p { font-size: 1.1rem; font-weight: 600; }
+        .audit-ok { color: #34d399; }
+        .audit-warn { color: #f59e0b; }
+        .audit-err { color: #ef4444; }
+        
+        .progress-bar { width: 100%; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; margin-top: 10px; overflow: hidden; }
+        .progress-fill { height: 100%; background: #3b82f6; width: 0%; transition: width 1s ease-out; }
+
+        .missing-list {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: #fca5a5;
+            max-height: 150px;
+            overflow-y: auto;
+            display: none; /* Se activa si hay faltantes */
         }
 
         #error-box { background: rgba(220, 38, 38, 0.1); color: #f87171; padding: 1rem; border: 1px solid #f87171; border-radius: 8px; display: none; margin-bottom: 2rem; font-family: monospace; }
@@ -148,8 +187,7 @@
             .b-loto { width: 44px; height: 44px; font-size: 1.1rem; }
             .ball { width: 38px; height: 38px; font-size: 1rem; }
             .stats-row { grid-template-columns: 1fr 1fr; }
-            .timer-display { gap: 0.8rem; }
-            .time-value { font-size: 1.4rem; }
+            .audit-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -168,25 +206,13 @@
             <div class="countdown-wrapper">
                 <div class="countdown-label">Próximo Sorteo</div>
                 <div class="timer-display" id="countdown">
-                    <div class="time-unit">
-                        <span class="time-value" id="cd-days">00</span>
-                        <span class="time-label">DÍAS</span>
-                    </div>
+                    <div class="time-unit"><span class="time-value" id="cd-days">00</span><span class="time-label">DÍAS</span></div>
                     <div class="time-unit"><span class="time-value" style="color:#64748b;">:</span></div>
-                    <div class="time-unit">
-                        <span class="time-value" id="cd-hours">00</span>
-                        <span class="time-label">HRS</span>
-                    </div>
+                    <div class="time-unit"><span class="time-value" id="cd-hours">00</span><span class="time-label">HRS</span></div>
                     <div class="time-unit"><span class="time-value" style="color:#64748b;">:</span></div>
-                    <div class="time-unit">
-                        <span class="time-value" id="cd-min">00</span>
-                        <span class="time-label">MIN</span>
-                    </div>
+                    <div class="time-unit"><span class="time-value" id="cd-min">00</span><span class="time-label">MIN</span></div>
                     <div class="time-unit"><span class="time-value" style="color:#64748b;">:</span></div>
-                    <div class="time-unit">
-                        <span class="time-value" id="cd-sec">00</span>
-                        <span class="time-label">SEG</span>
-                    </div>
+                    <div class="time-unit"><span class="time-value" id="cd-sec">00</span><span class="time-label">SEG</span></div>
                 </div>
             </div>
         </header>
@@ -252,6 +278,36 @@
                     </div>
                 </div>
             </div>
+
+            <div class="audit-section">
+                <div class="audit-header">
+                    <span style="font-size:1.5rem">🛡️</span> Estado de la Base de Datos
+                </div>
+                <div class="audit-grid">
+                    <div class="audit-item">
+                        <h4>Cobertura (Desde Ene 2016)</h4>
+                        <p id="audit-coverage">Calculando...</p>
+                        <div class="progress-bar"><div class="progress-fill" id="audit-bar"></div></div>
+                    </div>
+                    <div class="audit-item">
+                        <h4>Datos Esperados</h4>
+                        <p id="audit-expected">0</p>
+                    </div>
+                    <div class="audit-item">
+                        <h4>Datos Faltantes</h4>
+                        <p id="audit-missing">0</p>
+                    </div>
+                    <div class="audit-item">
+                        <h4>Integridad (Campos Vacíos)</h4>
+                        <p id="audit-integrity">Verificando...</p>
+                    </div>
+                </div>
+                <div id="missing-list-container" class="missing-list">
+                    <strong>⚠️ Gaps Detectados (Sorteos no encontrados):</strong><br>
+                    <span id="missing-ids"></span>
+                </div>
+            </div>
+
         </div>
     </div>
 
@@ -269,7 +325,6 @@
                 const candidate = new Date(now);
                 candidate.setDate(now.getDate() + i);
                 candidate.setHours(21, 0, 0, 0);
-
                 if (targets.includes(candidate.getDay()) && candidate > now) {
                     nextDraw = candidate;
                     break;
@@ -289,23 +344,20 @@
                 document.getElementById('cd-sec').textContent = seconds.toString().padStart(2, '0');
             }
         }
-        
         setInterval(updateTimer, 1000);
         updateTimer(); 
 
-        // DATOS
+        // HELPERS
         function showError(msg) {
             const box = document.getElementById('error-box');
             document.getElementById('loading').style.display = 'none';
             box.style.display = 'block';
             box.innerHTML += `⚠️ ERROR: ${msg}<br>`;
         }
-
         const formatMoney = (val) => {
             if(!val) return "$0";
             return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(val);
         };
-
         function renderBalls(row, prefix, colorClass, delayBase = 0) {
             let html = '';
             for (let i = 1; i <= 6; i++) {
@@ -316,6 +368,96 @@
                 }
             }
             return html;
+        }
+
+        // --- AUDITORIA DE DATOS ---
+        function runDataAudit(data) {
+            // 1. Rango de Fechas (3 Ene 2016 hasta Hoy)
+            const startDate = new Date(2016, 0, 3); // Mes 0 es Enero
+            const now = new Date();
+            let expectedCount = 0;
+            
+            // Calculamos cuántos sorteos (Mar, Jue, Dom) debieron ocurrir
+            let cursor = new Date(startDate);
+            while (cursor <= now) {
+                const day = cursor.getDay();
+                if (day === 0 || day === 2 || day === 4) { // Dom, Mar, Jue
+                    expectedCount++;
+                }
+                cursor.setDate(cursor.getDate() + 1);
+            }
+
+            // 2. Datos Reales
+            const actualCount = data.length;
+            const coverage = Math.min(100, Math.round((actualCount / expectedCount) * 100));
+            
+            // 3. Búsqueda de Gaps (Sorteos faltantes en la secuencia)
+            // Asumimos que los sorteos son secuenciales numéricamente
+            const sorteos = data.map(r => parseInt(r.sorteo)).filter(n => !isNaN(n)).sort((a,b) => a-b);
+            const minSorteo = sorteos[0];
+            const maxSorteo = sorteos[sorteos.length - 1];
+            
+            let missingIds = [];
+            // Solo buscamos gaps si tenemos una cantidad razonable de datos
+            if (sorteos.length > 1) {
+                for (let i = 0; i < sorteos.length - 1; i++) {
+                    // Si la diferencia entre uno y el siguiente es > 1, hay hueco
+                    if (sorteos[i+1] - sorteos[i] > 1) {
+                        for (let j = sorteos[i] + 1; j < sorteos[i+1]; j++) {
+                            missingIds.push(j);
+                        }
+                    }
+                }
+            }
+
+            // 4. Integridad (Filas con datos vacíos en Loto)
+            let corruptedRows = 0;
+            data.forEach(r => {
+                if (!r.LOTO_n1 || r.LOTO_n1 === '0') corruptedRows++;
+            });
+
+            // --- RENDERIZADO ---
+            document.getElementById('audit-expected').textContent = expectedCount.toLocaleString();
+            document.getElementById('audit-missing').textContent = (expectedCount - actualCount).toLocaleString();
+            
+            const bar = document.getElementById('audit-bar');
+            const covText = document.getElementById('audit-coverage');
+            bar.style.width = `${coverage}%`;
+            covText.textContent = `${coverage}% Completo`;
+            
+            if (coverage >= 98) {
+                bar.style.background = "#34d399"; 
+                covText.className = "audit-ok";
+            } else if (coverage > 80) {
+                bar.style.background = "#f59e0b";
+                covText.className = "audit-warn";
+            } else {
+                bar.style.background = "#ef4444";
+                covText.className = "audit-err";
+            }
+
+            // Integridad
+            const intText = document.getElementById('audit-integrity');
+            if (corruptedRows === 0) {
+                intText.innerHTML = "✅ Datos Sanos";
+                intText.className = "audit-ok";
+            } else {
+                intText.innerHTML = `❌ ${corruptedRows} Filas Corruptas`;
+                intText.className = "audit-err";
+            }
+
+            // Mostrar lista de faltantes si no son demasiados (limite visual)
+            if (missingIds.length > 0) {
+                const container = document.getElementById('missing-list-container');
+                const listSpan = document.getElementById('missing-ids');
+                container.style.display = 'block';
+                
+                if (missingIds.length > 50) {
+                    listSpan.textContent = missingIds.slice(0, 50).join(', ') + ` ... y ${missingIds.length - 50} más.`;
+                } else {
+                    listSpan.textContent = missingIds.join(', ');
+                }
+            }
         }
 
         try {
@@ -329,16 +471,18 @@
                         let data = results.data;
                         if (!data || data.length === 0) throw new Error("CSV vacío.");
                         
-                        // Orden Descendente (Más reciente primero)
+                        // Orden Descendente
                         data.sort((a, b) => parseInt(b.sorteo) - parseInt(a.sorteo));
                         
                         const latest = data[0];
                         const oldest = data[data.length - 1];
 
+                        // STATS
                         document.getElementById('stat-total').textContent = data.length;
                         document.getElementById('stat-year').textContent = oldest.anio || "----";
                         document.getElementById('stat-last').textContent = `${latest.dia}/${latest.mes}`;
 
+                        // HERO
                         document.getElementById('hero-date').textContent = `${latest.dia}/${latest.mes}/${latest.anio}`;
                         document.getElementById('hero-sorteo').textContent = `SORTEO Nº ${latest.sorteo}`;
                         
@@ -364,7 +508,8 @@
                         document.getElementById('revancha-balls').innerHTML = renderBalls(latest, 'REVANCHA', 'b-revancha', 0.6);
                         document.getElementById('desquite-balls').innerHTML = renderBalls(latest, 'DESQUITE', 'b-desquite', 0.7);
 
-                        const historyList = data.slice(1, 21); 
+                        // HISTORIAL
+                        const historyList = data.slice(1, 100); // Mostrar más filas ahora que hay scroll
                         const historyBody = document.getElementById('history-body');
 
                         if (historyList.length === 0) {
@@ -380,13 +525,9 @@
 
                                 const g = parseInt(row.LOTO_GANADORES || 0);
                                 const m = parseInt(row.LOTO_MONTO || 0);
-                                
-                                // Lógica de Tooltip para dinero
                                 let res = '<span style="color:#94a3b8">Vacante</span>';
                                 if (g > 0) {
-                                    // Agregamos title y clase CSS
-                                    const moneyStr = formatMoney(m);
-                                    res = `<span class="winner-text" style="color:#34d399; font-weight:bold" title="Premio: ${moneyStr}">${g} Gana</span>`;
+                                    res = `<span class="winner-text" style="color:#34d399; font-weight:bold" title="Premio: ${formatMoney(m)}">${g} Gana</span>`;
                                 }
 
                                 tr.innerHTML = `
@@ -398,6 +539,9 @@
                                 historyBody.appendChild(tr);
                             });
                         }
+
+                        // EJECUTAR AUDITORÍA
+                        runDataAudit(data);
 
                         document.getElementById('loading').style.display = 'none';
                         document.getElementById('dashboard').style.display = 'block';
