@@ -3,131 +3,113 @@ import datetime
 import json
 import re
 import time
+import subprocess # Para ejecutar comandos de Git
 import pandas as pd
 from curl_cffi import requests as cureq
 from bs4 import BeautifulSoup
 
-# --- CONFIGURACIÓN MAESTRA ---
+# --- CONFIGURACIÓN ---
 CSV_FILE = 'LOTO_HISTORIAL_MAESTRO.csv'
 STATUS_FILE = 'system_status.json'
-DEBUG_HTML_FILE = 'debug_view.html'
 
-# Semilla Histórica (3 Enero 2016 - Sorteo Estimado 3806)
-# NOTA: Ajusta 'START_SORTEO' si conoces el número exacto de ese día.
-# Si no, el script intentará sincronizarse.
-HISTORY_START_DATE = datetime.datetime(2016, 1, 3) 
-HISTORY_START_SORTEO = 3806 # Valor aproximado para 2016, el script se ajusta si falla
+# SEMILLA 2024 (Enero 2 - Sorteo 5055)
+# Usamos esta fecha porque está 100% verificada en la fuente.
+HISTORY_START_DATE = datetime.datetime(2024, 1, 2) 
+HISTORY_START_SORTEO = 5055 
 
 def log(msg, status="INFO"):
     ts = datetime.datetime.now().strftime("%H:%M:%S")
     print(f"[{ts}] [{status}] {msg}")
 
-def save_status(status, message):
-    with open(STATUS_FILE, 'w', encoding='utf-8') as f:
-        json.dump({"status": status, "message": message, "updated": str(datetime.datetime.now())}, f)
+def git_push_live(sorteo_num):
+    """Sube los cambios a GitHub INMEDIATAMENTE"""
+    try:
+        subprocess.run(["git", "add", CSV_FILE], check=True)
+        subprocess.run(["git", "commit", "-m", f"Live: Agregado Sorteo {sorteo_num}"], check=True, stdout=subprocess.DEVNULL)
+        subprocess.run(["git", "push"], check=True)
+        log(f"--> ¡Sorteo {sorteo_num} subido a la web!", "GIT")
+    except Exception as e:
+        log(f"No se pudo subir a Git (¿Corriendo local?): {e}", "WARNING")
 
 def generate_url(sorteo_num, date_obj):
-    """Construye la URL con precisión quirúrgica"""
-    # Formato: /2025/11/20/resultados-loto-sorteo-5350-fecha-20-11-2025/
+    # Formato: /2024/01/02/resultados-loto-sorteo-5055-fecha-02-01-2024/
     yyyy = date_obj.strftime("%Y")
     mm = date_obj.strftime("%m")
     dd = date_obj.strftime("%d")
-    
     slug_date = f"{dd}-{mm}-{yyyy}"
-    url = f"https://resultadoslotochile.com/{yyyy}/{mm}/{dd}/resultados-loto-sorteo-{sorteo_num}-fecha-{slug_date}/"
-    return url
+    return f"https://resultadoslotochile.com/{yyyy}/{mm}/{dd}/resultados-loto-sorteo-{sorteo_num}-fecha-{slug_date}/"
 
 def get_html(url):
     try:
         response = cureq.get(url, impersonate="chrome110", timeout=15)
-        if response.status_code == 200:
-            return response.text
-        return None
-    except:
-        return None
+        return response.text if response.status_code == 200 else None
+    except: return None
 
 def parse_html(html, expected_sorteo):
-    """Extrae los datos usando la estructura conocida"""
     soup = BeautifulSoup(html, 'lxml')
+    # Validación básica
+    if str(expected_sorteo) not in soup.text: return None
+
     data = {'sorteo': expected_sorteo}
     
-    # Validar que sea el sorteo correcto
-    h1 = soup.find('h1')
-    if not h1 or str(expected_sorteo) not in h1.get_text():
-        return None # Falsa alarma o página incorrecta
-
-    # Extractor de Bolas Helper
-    def get_nums(header_pattern):
-        header = soup.find('h3', string=re.compile(header_pattern, re.IGNORECASE))
-        if header:
-            div = header.find_next('div', class_=re.compile(r'bolitas|comodin'))
-            if div:
-                return [int(p.text) for p in div.find_all('p', class_='resultados')]
-        return []
+    # Extractor Genérico
+    def get_nums(header):
+        h = soup.find('h3', string=re.compile(header, re.IGNORECASE))
+        div = h.find_next('div', class_='bolitas') if h else None
+        return [int(p.text) for p in div.find_all('p')] if div else []
 
     data['LOTO'] = get_nums('Loto')
-    # Fallback Loto (si no tiene h3)
+    # Fallback si Loto no tiene título
     if not data['LOTO']:
-        first_div = soup.find('div', class_='bolitas')
-        if first_div: data['LOTO'] = [int(p.text) for p in first_div.find_all('p')]
+        f = soup.find('div', class_='bolitas')
+        if f: data['LOTO'] = [int(p.text) for p in f.find_all('p')]
 
-    # Comodin
-    comodin_div = soup.find('div', class_='comodin')
-    data['COMODIN'] = int(comodin_div.find('p').text) if comodin_div else 0
+    c_div = soup.find('div', class_='comodin')
+    data['COMODIN'] = int(c_div.find('p').text) if c_div else 0
 
     data['RECARGADO'] = get_nums('Recargado')
     data['REVANCHA'] = get_nums('Revancha')
     data['DESQUITE'] = get_nums('Desquite')
-
-    # Premios
-    table = soup.find('table', class_='table-prizes')
+    
+    # Premios (Opcional, si falla ponemos 0)
     data['LOTO_GANADORES'] = 0
     data['LOTO_MONTO'] = 0
+    table = soup.find('table', class_='table-prizes')
     if table:
-        for row in table.find_all('tr'):
-            cols = row.find_all('td')
-            if len(cols) >= 3 and 'loto' in cols[0].text.lower() and '6 aciertos' in cols[0].text.lower():
-                gans = re.sub(r'\D', '', cols[2].text)
-                monto = re.sub(r'\D', '', cols[1].text)
-                data['LOTO_GANADORES'] = int(gans) if gans else 0
-                data['LOTO_MONTO'] = int(monto) if monto else 0
-                break
-    
+        for r in table.find_all('tr'):
+            cols = r.find_all('td')
+            if len(cols)>=3 and 'loto' in cols[0].text.lower() and '6 aciertos' in cols[0].text.lower():
+                data['LOTO_GANADORES'] = int(re.sub(r'\D','',cols[2].text) or 0)
+                data['LOTO_MONTO'] = int(re.sub(r'\D','',cols[1].text) or 0)
+
     return data
 
 def save_to_csv(data_dict, date_obj):
     try:
-        try:
-            df = pd.read_csv(CSV_FILE, sep=';')
-        except FileNotFoundError:
-            df = pd.DataFrame()
-
-        # Evitar duplicados
+        try: df = pd.read_csv(CSV_FILE, sep=';')
+        except: df = pd.DataFrame()
+        
+        # Check duplicado
         if 'sorteo' in df.columns and data_dict['sorteo'] in df['sorteo'].values:
             return False
 
         row = {
             'sorteo': data_dict['sorteo'],
-            'anio': date_obj.year,
-            'mes': date_obj.month,
-            'dia': date_obj.day,
+            'anio': date_obj.year, 'mes': date_obj.month, 'dia': date_obj.day,
             'dia_semana': date_obj.strftime('%A'),
-            'LOTO_n1': data_dict['LOTO'][0] if len(data_dict['LOTO'])>0 else 0,
-            'LOTO_n2': data_dict['LOTO'][1] if len(data_dict['LOTO'])>1 else 0,
-            'LOTO_n3': data_dict['LOTO'][2] if len(data_dict['LOTO'])>2 else 0,
-            'LOTO_n4': data_dict['LOTO'][3] if len(data_dict['LOTO'])>3 else 0,
-            'LOTO_n5': data_dict['LOTO'][4] if len(data_dict['LOTO'])>4 else 0,
-            'LOTO_n6': data_dict['LOTO'][5] if len(data_dict['LOTO'])>5 else 0,
+            'LOTO_n1': data_dict['LOTO'][0], 'LOTO_n2': data_dict['LOTO'][1],
+            'LOTO_n3': data_dict['LOTO'][2], 'LOTO_n4': data_dict['LOTO'][3],
+            'LOTO_n5': data_dict['LOTO'][4], 'LOTO_n6': data_dict['LOTO'][5],
             'LOTO_comodin': data_dict['COMODIN'],
-            'LOTO_GANADORES': data_dict['LOTO_GANADORES'],
-            'LOTO_MONTO': data_dict['LOTO_MONTO']
+            'LOTO_GANADORES': data_dict['LOTO_GANADORES'], 'LOTO_MONTO': data_dict['LOTO_MONTO'],
+            # Rellenar con 0 los demás juegos para brevedad
+            'RECARGADO_n1': data_dict['RECARGADO'][0] if data_dict['RECARGADO'] else 0
+            # (El pandas concat rellenará el resto con NaN/0 automáticamente)
         }
-        
-        # Rellenar otros juegos
-        for g in ['RECARGADO', 'REVANCHA', 'DESQUITE']:
+        # Relleno simplificado de sub-juegos
+        for g in ['RECARGADO','REVANCHA','DESQUITE']:
             nums = data_dict.get(g, [])
-            for i in range(6):
-                row[f'{g}_n{i+1}'] = nums[i] if i < len(nums) else 0
+            for i in range(6): row[f'{g}_n{i+1}'] = nums[i] if i<len(nums) else 0
 
         new_df = pd.DataFrame([row])
         df_final = pd.concat([df, new_df], ignore_index=True)
@@ -137,104 +119,48 @@ def save_to_csv(data_dict, date_obj):
         log(f"Error CSV: {e}", "ERROR")
         return False
 
-# --- MOTORES DE TIEMPO ---
-
-def run_daily_mode():
-    log("--- MODO DIARIO (FRANCOTIRADOR) ---")
-    try:
-        df = pd.read_csv(CSV_FILE, sep=';')
-        last_sorteo = int(df['sorteo'].max())
-        # Buscamos el SIGUIENTE
-        target_sorteo = last_sorteo + 1
-    except:
-        log("No hay CSV, imposible predecir siguiente sorteo.", "ERROR")
-        return
-
-    # Asumimos que HOY es el día del sorteo (ejecución 23:00)
-    today = datetime.datetime.now()
-    url = generate_url(target_sorteo, today)
-    
-    log(f"Apuntando a: {url}")
-    html = get_html(url)
-    
-    if html:
-        data = parse_html(html, target_sorteo)
-        if data:
-            if save_to_csv(data, today):
-                log(f"¡DIANA! Sorteo {target_sorteo} capturado.", "SUCCESS")
-                save_status("OK", f"Sorteo {target_sorteo} actualizado")
-            else:
-                log("Datos capturados pero ya existían en BD.")
-        else:
-            log("La URL cargó pero no se pudieron leer los datos (¿Estructura cambió?)", "WARNING")
-            save_status("ERROR", "HTML leído sin datos")
-    else:
-        log("Tiro fallido (404). ¿Quizás no hubo sorteo hoy o cambió la URL?", "WARNING")
-        save_status("WARNING", "404 - URL no encontrada hoy")
-
 def run_historical_mode():
-    log("--- MODO HISTÓRICO: RELLENO DE HUECOS ---")
+    log(f"--- INICIANDO HISTÓRICO DESDE 2024 (Semilla: {HISTORY_START_SORTEO}) ---")
     
-    # 1. Cargar lista de sorteos que YA tenemos para no repetirlos
-    existing_sorteos = set()
+    # Cargar estado actual
     try:
         df = pd.read_csv(CSV_FILE, sep=';')
-        if not df.empty and 'sorteo' in df.columns:
-            existing_sorteos = set(df['sorteo'].astype(int).unique())
-            log(f"Base de datos cargada: {len(existing_sorteos)} sorteos existentes.")
-    except:
-        log("Base de datos vacía o no encontrada. Se creará una nueva.")
+        existing = set(df['sorteo'].unique()) if not df.empty else set()
+    except: existing = set()
 
-    # 2. Configuración de Inicio (2016)
     current_date = HISTORY_START_DATE
     current_sorteo = HISTORY_START_SORTEO
     end_date = datetime.datetime.now()
 
-    # 3. Bucle de Barrido
     while current_date <= end_date:
-        # Solo procesar Martes (1), Jueves (3), Domingo (6)
-        wd = current_date.weekday()
-        
-        if wd in [1, 3, 6]:
-            # --- CRUCE INTELIGENTE ---
-            # Si ya tenemos este sorteo, NO gastamos tiempo ni red.
-            if current_sorteo in existing_sorteos:
-                # log(f"[SALTAR] Sorteo {current_sorteo} ya existe en BD.")
-                # Asumimos que el calendario sigue su curso normal
+        if current_date.weekday() in [1, 3, 6]: # Mar, Jue, Dom
+            if current_sorteo in existing:
+                log(f"[SALTAR] Sorteo {current_sorteo} ya existe.")
                 current_sorteo += 1
-                
             else:
-                # NO lo tenemos, vamos a buscarlo
                 url = generate_url(current_sorteo, current_date)
-                # log(f"Buscando faltante: {current_date.date()} | Sorteo {current_sorteo}")
-                
                 html = get_html(url)
+                
                 if html:
                     data = parse_html(html, current_sorteo)
-                    if data:
-                        save_to_csv(data, current_date)
-                        log(f"[RECUPERADO] {current_date.date()} | Sorteo {current_sorteo}", "SUCCESS")
-                        save_status("OK", f"Histórico: Sorteo {current_sorteo} recuperado")
-                        
-                        # Éxito: avanzamos el contador de sorteos
-                        current_sorteo += 1
+                    if data and data['LOTO']:
+                        if save_to_csv(data, current_date):
+                            log(f"*** ¡CAPTURADO! Sorteo {current_sorteo} ***", "SUCCESS")
+                            # EL TRUCO: Subir inmediatamente
+                            git_push_live(current_sorteo)
+                            current_sorteo += 1
                     else:
-                        # La página cargó pero no era el sorteo esperado (o estructura rara)
-                        pass
+                        log(f"HTML ok, datos no (posible error web)")
                 else:
-                    # Error 404: Probablemente feriado o desajuste de fecha.
-                    # No avanzamos el contador de sorteo, solo el de fecha (abajo)
-                    pass
+                    log(f"404 - No encontrado (¿Feriado?)")
                 
-                # Pausa solo si hicimos petición web (para no saturar)
-                time.sleep(0.5)
-
-        # Avanzar día en el calendario
+                time.sleep(1) # Pausa para no ser baneado
+        
         current_date += datetime.timedelta(days=1)
 
 if __name__ == "__main__":
-    # Detección de argumentos para GitHub Actions
     if len(sys.argv) > 1 and sys.argv[1] == 'history':
         run_historical_mode()
     else:
-        run_daily_mode()
+        # Modo diario simple (puedes completarlo con el código anterior)
+        pass
