@@ -1,98 +1,52 @@
-import cloudscraper
-from bs4 import BeautifulSoup
-import pandas as pd
-import datetime
-import time
-import random
 import sys
-import json
-import re
+import datetime
+import traceback
 
-# --- CONFIGURACIÓN ---
-CSV_FILE = 'LOTO_HISTORIAL_MAESTRO.csv'
-# URL corregida según tu indicación
-URL = 'https://www.polla.cl/es/view/resultados' 
-
-# Archivos de reporte para ver en el celular
+# Definimos los archivos de salida al principio
 DEBUG_HTML_FILE = 'debug_view.html'
 STATUS_FILE = 'system_status.json'
 
-def save_status(status, message, details=None):
-    """Escribe el estado para que tu página web lo muestre"""
-    report = {
-        "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "status": status, 
-        "message": message,
-        "details": details or ""
-    }
-    print(f"[{status}] {message}")
-    with open(STATUS_FILE, 'w', encoding='utf-8') as f:
-        json.dump(report, f, ensure_ascii=False)
-
-def get_soup_robust(url):
-    scraper = cloudscraper.create_scraper(browser={'browser': 'chrome', 'platform': 'windows', 'mobile': False})
-    try:
-        print(f"Conectando a: {url} ...")
-        response = scraper.get(url, timeout=30)
-        
-        # 1. GUARDAR EVIDENCIA (Vital para depurar desde el celular)
-        with open(DEBUG_HTML_FILE, 'w', encoding='utf-8') as f:
-            f.write(f"\n")
-            f.write(response.text)
-        
-        if response.status_code != 200:
-            save_status("ERROR", f"Error {response.status_code}", "La página no cargó correctamente.")
-            return None
-
-        return BeautifulSoup(response.text, 'lxml')
-
-    except Exception as e:
-        save_status("ERROR", "Fallo de Conexión", str(e))
-        return None
-
-def extract_json_from_scripts(soup):
-    """Intenta encontrar la 'base interna' oculta en el HTML"""
-    scripts = soup.find_all('script')
-    for i, script in enumerate(scripts):
-        if script.string:
-            # Buscamos patrones comunes de datos embebidos
-            if 'Loto' in script.string or 'results' in script.string:
-                return f"¡Datos detectados en Script #{i}! (Ver debug_view.html)"
-    return None
+def write_debug(content):
+    with open(DEBUG_HTML_FILE, 'w', encoding='utf-8') as f:
+        f.write(content)
 
 def main():
-    print("--- INICIANDO PROTOCOLO DE DIAGNÓSTICO V2 ---")
-    
-    # 1. Obtener Web
-    soup = get_soup_robust(URL)
-    
-    # CAMBIO CLAVE: Si falla, no matamos el proceso. 
-    # Dejamos que siga para que el archivo debug se guarde en el repo.
-    if not soup:
-        print("Terminando ejecución controlada para guardar logs.")
-        sys.exit(0) # <--- IMPORTANTE: Salida exitosa (0) para que GitHub guarde los cambios
-
-    # 2. Análisis Forense
+    print("--- INICIO MODO INDESTRUCTIBLE ---")
     try:
-        page_title = soup.title.string.strip() if soup.title else "Sin Título"
-        print(f"Título de la página: {page_title}")
+        # Intentamos importar las librerías peligrosas DENTRO del try
+        import cloudscraper
+        from bs4 import BeautifulSoup
+        import json
 
-        balls = soup.find_all('div', class_='balls-content')
+        URL = 'https://www.polla.cl/es/view/resultados'
         
-        if balls:
-            msg = f"ÉXITO: Se encontraron {len(balls)} grupos de bolas."
-            save_status("OK", "Conexión Exitosa", msg)
-        else:
-            json_hint = extract_json_from_scripts(soup)
-            if json_hint:
-                save_status("WARNING", "Sitio Dinámico Detectado", f"HTML vacío pero {json_hint}")
-            else:
-                save_status("ERROR", "HTML Vacío", "La página cargó pero no tiene datos visibles.")
-                
-    except Exception as e:
-        save_status("ERROR", "Error de Análisis", str(e))
+        # 1. Intentar conectar
+        print(f"Conectando a {URL}...")
+        scraper = cloudscraper.create_scraper()
+        response = scraper.get(URL, timeout=60)
+        
+        # 2. GUARDAR HTML (Lo logre o no)
+        html_content = f"\n" + response.text
+        write_debug(html_content)
+        print(f"HTML guardado. Tamaño: {len(response.text)} bytes")
 
-    # Siempre salimos con éxito para que el paso "Commit" se ejecute
+        # 3. Buscar pistas
+        if "balls-content" in response.text:
+            print("¡BOLAS ENCONTRADAS EN EL HTML!")
+        else:
+            print("No se ven bolas. Sitio dinámico confirmado.")
+
+    except Exception as e:
+        # SI ALGO FALLA, LO ESCRIBIMOS EN EL HTML PARA QUE LO VEAS
+        error_msg = f"""
+        <h1>ERROR FATAL DEL SCRIPT</h1>
+        <pre>{traceback.format_exc()}</pre>
+        """
+        print("¡ERROR CAPTURADO!")
+        print(e)
+        write_debug(error_msg)
+    
+    # Salimos siempre con éxito para no asustar a GitHub
     sys.exit(0)
 
 if __name__ == "__main__":
