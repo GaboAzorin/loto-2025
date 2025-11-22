@@ -1,9 +1,9 @@
 {
-  "last_update": "2025-11-22 22:48:15",
+  "last_update": "2025-11-22 22:48:17",
   "current_target": {
-    "sorteo": 5224,
-    "fecha": "30-01-2025"
+    "sorteo": 5225,
+    "fecha": "02-02-2025"
   },
-  "status": "MISSING",
-  "message": "URL 404 - Saltando al siguiente"
+  "status": "BUSCANDO",
+  "message": "Consultando URL..."
 }
