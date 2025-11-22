@@ -3,204 +3,224 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Predictor de Loto | Pro</title>
+    <title>LOTO | Mission Control</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
     
     <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
     
     <style>
         :root {
-            --bg-dark: #0f172a;
-            --card-bg: rgba(30, 41, 59, 0.7);
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
+            --space-black: #020204;
+            --panel-bg: rgba(10, 20, 30, 0.85);
+            --hud-cyan: #00f3ff;
+            --hud-dim: rgba(0, 243, 255, 0.2);
+            --alert-amber: #ffae00;
+            --system-green: #00ff9d;
+            --danger-red: #ff003c;
             
-            /* Colores */
-            --loto-color: #facc15;
-            --recargado-color: #38bdf8;
-            --revancha-color: #f472b6;
-            --desquite-color: #4ade80;
-            --money-green: #10b981;
-            --timer-color: #f43f5e; 
-            --search-accent: #a855f7; /* Violeta para búsqueda */
-            
-            --glass-border: 1px solid rgba(255, 255, 255, 0.08);
-            --danger: #ef4444;
-            --warning: #f59e0b;
+            --font-head: 'Orbitron', sans-serif;
+            --font-data: 'Share Tech Mono', monospace;
+            --font-body: 'Rajdhani', sans-serif;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg-dark);
+            background-color: var(--space-black);
             background-image: 
-                radial-gradient(circle at 10% 20%, rgba(56, 189, 248, 0.15), transparent 20%), 
-                radial-gradient(circle at 90% 80%, rgba(244, 114, 182, 0.15), transparent 20%);
-            color: var(--text-main);
+                linear-gradient(rgba(0, 243, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 243, 255, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            color: #e0f7fa;
+            font-family: var(--font-body);
             min-height: 100vh;
-            padding: 2rem;
+            padding: 20px;
             overflow-x: hidden;
         }
 
-        .container { max-width: 1000px; margin: 0 auto; }
+        /* SCANLINE EFFECT */
+        body::after {
+            content: "";
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%);
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0.6;
+        }
 
-        /* --- ANIMACIONES --- */
-        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes bounceIn { 0% { transform: scale(0.3); opacity: 0; } 50% { transform: scale(1.05); } 70% { transform: scale(0.9); } 100% { transform: scale(1); opacity: 1; } }
-        @keyframes pulseGlow { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
-        @keyframes shake { 0%, 100% { transform: translateX(0); } 10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); } 20%, 40%, 60%, 80% { transform: translateX(5px); } }
-        @keyframes expandOpen { from { max-height: 0; opacity: 0; transform: scale(0.95); } to { max-height: 1000px; opacity: 1; transform: scale(1); } }
+        .container { max-width: 1200px; margin: 0 auto; position: relative; z-index: 1; }
+
+        /* --- HUD UTILS --- */
+        .hud-panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--hud-dim);
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.05);
+            position: relative;
+            backdrop-filter: blur(5px);
+            /* Esquinas cortadas */
+            clip-path: polygon(
+                20px 0, 100% 0, 
+                100% calc(100% - 20px), calc(100% - 20px) 100%, 
+                0 100%, 0 20px
+            );
+            padding: 2rem;
+            transition: all 0.3s ease;
+        }
+        
+        /* Decoraciones en las esquinas */
+        .hud-panel::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 20px; height: 20px;
+            border-top: 2px solid var(--hud-cyan); border-left: 2px solid var(--hud-cyan);
+        }
+        .hud-panel::after {
+            content: ''; position: absolute; bottom: 0; right: 0; width: 20px; height: 20px;
+            border-bottom: 2px solid var(--hud-cyan); border-right: 2px solid var(--hud-cyan);
+        }
+
+        .hud-panel:hover {
+            box-shadow: 0 0 25px rgba(0, 243, 255, 0.2);
+            border-color: var(--hud-cyan);
+        }
 
         /* HEADER */
         header {
-            display: flex; flex-direction: column; gap: 1.5rem;
-            margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: var(--glass-border);
-            animation: fadeInUp 0.8s ease-out;
+            display: grid; grid-template-columns: 1fr auto; gap: 2rem; align-items: center;
+            margin-bottom: 3rem; border-bottom: 1px solid var(--hud-dim); padding-bottom: 1rem;
         }
-        .header-top { display: flex; justify-content: space-between; align-items: center; width: 100%; }
-        h1 { font-weight: 900; font-size: 1.6rem; letter-spacing: -1px; }
-        .status-badge { 
-            background: rgba(16, 185, 129, 0.1); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.2);
-            padding: 5px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
-            display: flex; align-items: center; gap: 6px;
-        }
-        .status-dot { width: 8px; height: 8px; background: #34d399; border-radius: 50%; animation: pulseGlow 2s infinite; }
-
-        /* COUNTDOWN */
-        .countdown-wrapper {
-            background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; padding: 1rem;
-            display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%;
-        }
-        .countdown-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 0.5rem; }
-        .timer-display { display: flex; gap: 1.5rem; font-family: 'JetBrains Mono', monospace; }
-        .time-unit { display: flex; flex-direction: column; align-items: center; }
-        .time-value { font-size: 1.8rem; font-weight: 700; color: var(--timer-color); line-height: 1; text-shadow: 0 0 10px rgba(244, 63, 94, 0.3); }
-        .time-label { font-size: 0.65rem; color: var(--text-muted); margin-top: 4px; }
-
-        /* --- NUEVO MÓDULO DE BÚSQUEDA --- */
-        .search-container {
-            display: flex; gap: 10px; margin-bottom: 2rem; justify-content: center;
-            animation: fadeInUp 1s ease-out 0.2s backwards;
-        }
-        .search-input {
-            background: rgba(30, 41, 59, 0.8); border: 1px solid rgba(255,255,255,0.1); color: white;
-            padding: 12px 20px; border-radius: 12px; font-family: 'Inter', sans-serif; font-size: 1rem; outline: none; width: 100%; max-width: 300px;
-            transition: all 0.3s;
-        }
-        .search-input:focus { border-color: var(--search-accent); box-shadow: 0 0 15px rgba(168, 85, 247, 0.3); }
         
-        .search-btn {
-            background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%); border: none; color: white;
-            padding: 0 24px; border-radius: 12px; font-weight: 700; cursor: pointer; font-size: 0.9rem;
-            transition: transform 0.2s, box-shadow 0.2s;
+        h1 {
+            font-family: var(--font-head); text-transform: uppercase; letter-spacing: 4px;
+            font-size: 2rem; color: white; text-shadow: 0 0 10px var(--hud-cyan);
+            margin-bottom: 0.5rem;
         }
-        .search-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(124, 58, 237, 0.4); }
-        .search-btn:active { transform: scale(0.95); }
+        .subtitle { color: var(--hud-cyan); font-family: var(--font-data); letter-spacing: 2px; text-transform: uppercase; font-size: 0.8rem; }
 
-        /* TARJETA DE RESULTADO DE BÚSQUEDA */
-        #search-result-container { display: none; animation: expandOpen 0.5s ease-out forwards; margin-bottom: 3rem; }
-        .result-card {
-            background: linear-gradient(160deg, rgba(20, 20, 35, 0.95), rgba(40, 20, 50, 0.95));
-            border: 1px solid var(--search-accent); /* Borde violeta */
-            border-radius: 24px; padding: 2rem; position: relative;
-            box-shadow: 0 0 30px rgba(168, 85, 247, 0.15);
+        /* INDICADOR DE ESTADO */
+        .sys-status {
+            display: flex; align-items: center; gap: 10px;
+            font-family: var(--font-data); color: var(--system-green); border: 1px solid var(--system-green);
+            padding: 5px 15px; font-size: 0.8rem; letter-spacing: 1px;
         }
-        .result-badge {
-            position: absolute; top: 20px; right: 20px;
-            background: rgba(168, 85, 247, 0.2); color: #d8b4fe;
-            padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; border: 1px solid rgba(168, 85, 247, 0.4);
-        }
-        .result-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-top: 2rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1.5rem; }
-        .result-sub-item { text-align: center; }
-        .result-sub-title { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; font-weight: 700; }
+        .blink { width: 8px; height: 8px; background: var(--system-green); border-radius: 50%; animation: blink 1s infinite; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
 
-        /* STATS */
-        .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin-bottom: 2.5rem; animation: fadeInUp 1s ease-out 0.2s backwards; }
-        .stat-card { background: rgba(15, 23, 42, 0.6); border: var(--glass-border); border-radius: 12px; padding: 1rem; border-left: 3px solid #6366f1; transition: transform 0.2s; }
-        .stat-card:hover { transform: translateY(-3px); background: rgba(30, 41, 59, 0.8); }
-        .stat-value { font-size: 1.4rem; font-weight: 800; }
-        .stat-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
-
-        /* HERO */
-        .main-card {
-            background: linear-gradient(160deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9));
-            border-radius: 24px; padding: 2.5rem; border: var(--glass-border); text-align: center; position: relative; overflow: hidden;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3); margin-bottom: 2rem; animation: fadeInUp 1s ease-out 0.4s backwards;
+        /* COUNTDOWN - T-MINUS STYLE */
+        .timer-box {
+            display: flex; gap: 20px; align-items: center;
         }
-        .main-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent); }
-        .draw-date { color: var(--text-muted); font-size: 0.85rem; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 1rem; font-weight: 600; }
-        .balls-container { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin: 1.5rem 0; }
+        .timer-label { font-family: var(--font-head); font-size: 0.7rem; color: var(--alert-amber); transform: rotate(-90deg); margin-right: -10px; }
+        .timer-digits {
+            display: flex; gap: 10px; font-family: var(--font-data); font-size: 2.5rem; color: white;
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+        }
+        .timer-sep { color: var(--hud-dim); animation: blink 1s infinite; }
+        .timer-unit { font-size: 0.7rem; color: var(--hud-dim); text-align: center; margin-top: -5px; font-family: var(--font-head); }
+
+        /* SEARCH COMMAND LINE */
+        .command-line {
+            margin-bottom: 3rem; position: relative;
+        }
+        .cmd-input {
+            width: 100%; background: rgba(0,0,0,0.5); border: 1px solid var(--hud-dim);
+            color: var(--hud-cyan); font-family: var(--font-data); font-size: 1.2rem;
+            padding: 15px 20px; padding-left: 50px; text-transform: uppercase;
+            transition: 0.3s;
+        }
+        .cmd-input:focus { outline: none; border-color: var(--hud-cyan); box-shadow: 0 0 20px rgba(0, 243, 255, 0.2); }
+        .cmd-prompt {
+            position: absolute; left: 20px; top: 50%; transform: translateY(-50%);
+            color: var(--system-green); font-family: var(--font-data); font-weight: bold;
+        }
         
+        /* RESULT CARD (DESPLIEGUE) */
+        #search-result { display: none; margin-bottom: 3rem; animation: hologram 0.5s ease-out; }
+        @keyframes hologram { 0% { opacity: 0; transform: scaleY(0); } 100% { opacity: 1; transform: scaleY(1); } }
+
+        /* HERO SECTION (LATEST DATA) */
+        .data-grid {
+            display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; margin-bottom: 3rem;
+        }
+        .hero-data { text-align: center; }
+        .hero-title { color: var(--hud-dim); font-family: var(--font-head); font-size: 1rem; letter-spacing: 3px; margin-bottom: 1rem; }
+        .hero-number { font-size: 3rem; font-family: var(--font-data); color: white; font-weight: bold; margin-bottom: 2rem; }
+        
+        /* BOLAS PLANETARIAS */
+        .balls-wrapper { display: flex; justify-content: center; flex-wrap: wrap; gap: 15px; margin-bottom: 2rem; }
         .ball {
-            width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.2rem; color: #1e293b;
-            box-shadow: inset -2px -2px 6px rgba(0,0,0,0.2), 2px 2px 6px rgba(255,255,255,0.3), 0 4px 6px rgba(0,0,0,0.2); 
-            /* Animación definida inline en JS */
+            width: 60px; height: 60px; 
+            background: radial-gradient(circle at 30% 30%, #fff, var(--loto-color));
+            border-radius: 50%; color: black; 
+            display: flex; align-items: center; justify-content: center;
+            font-family: var(--font-head); font-weight: 900; font-size: 1.5rem;
+            box-shadow: 0 0 20px rgba(250, 204, 21, 0.4);
+            position: relative; overflow: hidden;
         }
-        .b-loto { background: var(--loto-color); width: 56px; height: 56px; font-size: 1.4rem; }
-        .b-comodin { background: white; border: 4px solid var(--loto-color); color: #ca8a04; }
-        .b-recargado { background: var(--recargado-color); }
-        .b-revancha { background: var(--revancha-color); }
-        .b-desquite { background: var(--desquite-color); }
+        .ball::after { content:''; position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.1); border-radius: 50%; }
+        
+        .ball.comodin { border: 3px solid var(--hud-cyan); background: radial-gradient(circle at 30% 30%, #fff, #fff); color: var(--space-black); box-shadow: 0 0 20px var(--hud-cyan); }
+        .ball.sub { width: 40px; height: 40px; font-size: 1rem; background: #334155; color: white; border: 1px solid var(--hud-dim); box-shadow: none; }
 
-        /* Ajuste tamaño bolas para subsecciones en búsqueda */
-        .ball-sm { width: 32px; height: 32px; font-size: 0.9rem; }
-
-        .money-pill { display: inline-block; padding: 8px 20px; border-radius: 50px; font-weight: 700; font-size: 0.95rem; letter-spacing: 0.5px; border: 1px solid transparent; transition: all 0.3s; }
-        .money-winner { background: rgba(16, 185, 129, 0.15); color: #34d399; border-color: rgba(16, 185, 129, 0.3); box-shadow: 0 0 15px rgba(16, 185, 129, 0.1); }
-        .money-vacante { background: rgba(255, 255, 255, 0.05); color: var(--text-muted); border-color: rgba(255, 255, 255, 0.1); }
-
-        /* GRID */
-        .games-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 3rem; animation: fadeInUp 1s ease-out 0.6s backwards; }
-        .game-card { background: var(--card-bg); border: var(--glass-border); border-radius: 16px; padding: 1.5rem; display: flex; flex-direction: column; align-items: center; transition: transform 0.3s; }
-        .game-card:hover { transform: translateY(-5px); background: rgba(40, 55, 75, 0.7); }
-        .game-title { font-size: 0.8rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1rem; }
-
-        /* TABLA */
-        .history-section { animation: fadeInUp 1s ease-out 0.8s backwards; margin-bottom: 3rem; }
-        .table-wrap { 
-            background: var(--card-bg); border-radius: 16px; border: var(--glass-border); 
-            max-height: 60vh; overflow-y: auto; position: relative;
+        /* MONEY DISPLAY */
+        .money-display {
+            font-family: var(--font-data); font-size: 1.5rem; color: var(--system-green);
+            border: 1px dashed var(--system-green); padding: 10px 30px; display: inline-block;
+            text-shadow: 0 0 10px rgba(0, 255, 157, 0.5); background: rgba(0, 255, 157, 0.05);
         }
-        table { width: 100%; border-collapse: collapse; min-width: 600px; }
-        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.9rem; }
-        th { position: sticky; top: 0; background: #1e293b; z-index: 10; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .money-vacante { color: var(--danger-red); border-color: var(--danger-red); text-shadow: 0 0 10px rgba(255, 0, 60, 0.5); background: rgba(255, 0, 60, 0.05); }
+
+        /* STATS SIDEBAR */
+        .stats-col { display: flex; flex-direction: column; gap: 1rem; }
+        .stat-item {
+            display: flex; justify-content: space-between; align-items: center; padding: 1rem;
+            border-bottom: 1px solid var(--hud-dim);
+        }
+        .stat-label { font-family: var(--font-head); font-size: 0.7rem; color: var(--hud-dim); letter-spacing: 1px; }
+        .stat-val { font-family: var(--font-data); font-size: 1.2rem; color: var(--hud-cyan); }
+
+        /* TABLE TERMINAL STYLE */
+        .terminal-window {
+            background: black; border: 1px solid #333; padding: 5px;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+        }
+        .table-container {
+            max-height: 500px; overflow-y: auto;
+            font-family: var(--font-data);
+        }
+        table { width: 100%; border-collapse: collapse; }
+        th { 
+            background: #111; color: var(--alert-amber); position: sticky; top: 0; 
+            text-align: left; padding: 15px; font-family: var(--font-head); font-size: 0.8rem; letter-spacing: 1px;
+            border-bottom: 2px solid var(--alert-amber);
+        }
+        td { padding: 12px 15px; border-bottom: 1px solid #222; color: #aaa; font-size: 0.9rem; }
+        tr:hover td { background: rgba(0, 243, 255, 0.05); color: white; }
         
-        .mini-row { display: flex; gap: 4px; }
-        .mini-ball { width: 24px; height: 24px; border-radius: 50%; background: rgba(255,255,255,0.1); text-align: center; line-height: 24px; font-size: 0.7rem; }
-        .mini-ball.active { background: var(--loto-color); color: black; font-weight: bold; }
+        .mini-grid { display: flex; gap: 5px; }
+        .mini-b { width: 20px; height: 20px; background: #333; border-radius: 50%; text-align: center; line-height: 20px; font-size: 0.7rem; color: #fff; }
+        .mini-b.active { background: var(--alert-amber); color: black; font-weight: bold; }
+
+        /* AUDIT DIAGNOSTICS */
+        .audit-wrapper { margin-top: 3rem; border-top: 1px dashed var(--hud-dim); padding-top: 2rem; }
+        .audit-title { font-family: var(--font-head); color: var(--hud-cyan); margin-bottom: 1rem; display: flex; align-items: center; gap: 10px; }
         
-        .winner-text { cursor: help; border-bottom: 1px dotted #34d399; transition: all 0.2s; }
-        .winner-text:hover { color: #10b981; text-shadow: 0 0 8px rgba(16, 185, 129, 0.6); }
+        .diag-bar-bg { width: 100%; height: 10px; background: #111; border: 1px solid #333; margin-top: 5px; }
+        .diag-bar-fill { height: 100%; background: var(--system-green); width: 0%; transition: width 1s ease; box-shadow: 0 0 10px var(--system-green); }
+        
+        /* SCROLLBAR PERSONALIZADO */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #000; }
+        ::-webkit-scrollbar-thumb { background: var(--hud-dim); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--hud-cyan); }
 
-        /* AUDITORÍA */
-        .audit-section { background: rgba(15, 23, 42, 0.8); border: 1px solid var(--glass-border); border-top: 3px solid #f59e0b; border-radius: 16px; padding: 2rem; margin-top: 3rem; animation: fadeInUp 1s ease-out 1s backwards; }
-        .audit-header { font-size: 1.2rem; font-weight: 800; margin-bottom: 1.5rem; color: #f8fafc; display: flex; align-items: center; gap: 10px; }
-        .audit-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; }
-        .audit-item h4 { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem; }
-        .audit-item p { font-size: 1.1rem; font-weight: 600; }
-        .audit-ok { color: #34d399; }
-        .audit-warn { color: #f59e0b; }
-        .audit-err { color: #ef4444; }
-        .progress-bar { width: 100%; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; margin-top: 10px; overflow: hidden; }
-        .progress-fill { height: 100%; background: #3b82f6; width: 0%; transition: width 1s ease-out; }
-        .missing-list { margin-top: 1.5rem; padding: 1rem; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 8px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: #fca5a5; max-height: 150px; overflow-y: auto; display: none; }
-
-        #error-box { background: rgba(220, 38, 38, 0.1); color: #f87171; padding: 1rem; border: 1px solid #f87171; border-radius: 8px; display: none; margin-bottom: 2rem; font-family: monospace; }
-        #loading { text-align: center; padding: 3rem; color: var(--text-muted); font-style: italic; }
-
-        /* Clases JS */
-        .shake { animation: shake 0.5s; border-color: #ef4444 !important; }
-
+        /* RESPONSIVE */
         @media (max-width: 768px) {
-            body { padding: 1rem; }
-            .b-loto { width: 44px; height: 44px; font-size: 1.1rem; }
-            .ball { width: 38px; height: 38px; font-size: 1rem; }
-            .stats-row { grid-template-columns: 1fr 1fr; }
-            .audit-grid { grid-template-columns: 1fr; }
-            .search-container { flex-direction: row; } /* Input y botón en línea */
+            header { grid-template-columns: 1fr; text-align: center; justify-items: center; }
+            .data-grid { grid-template-columns: 1fr; }
+            .timer-digits { font-size: 1.8rem; }
+            .hud-panel { padding: 1rem; }
         }
     </style>
 </head>
@@ -208,420 +228,314 @@
 
     <div class="container">
         <header>
-            <div class="header-top">
-                <div>
-                    <h1>Predictor Loto</h1>
-                    <div style="font-size:0.8rem; color:var(--text-muted);">Panel de control maestro</div>
-                </div>
-                <div class="status-badge"><div class="status-dot"></div> ONLINE</div>
+            <div>
+                <h1>LOTO INTELLIGENCE</h1>
+                <div class="subtitle">DATABASE ACCESS TERMINAL // V.11.0</div>
             </div>
-
-            <div class="countdown-wrapper">
-                <div class="countdown-label">Próximo Sorteo</div>
-                <div class="timer-display" id="countdown">
-                    <div class="time-unit"><span class="time-value" id="cd-days">00</span><span class="time-label">DÍAS</span></div>
-                    <div class="time-unit"><span class="time-value" style="color:#64748b;">:</span></div>
-                    <div class="time-unit"><span class="time-value" id="cd-hours">00</span><span class="time-label">HRS</span></div>
-                    <div class="time-unit"><span class="time-value" style="color:#64748b;">:</span></div>
-                    <div class="time-unit"><span class="time-value" id="cd-min">00</span><span class="time-label">MIN</span></div>
-                    <div class="time-unit"><span class="time-value" style="color:#64748b;">:</span></div>
-                    <div class="time-unit"><span class="time-value" id="cd-sec">00</span><span class="time-label">SEG</span></div>
+            
+            <div class="timer-box">
+                <div class="timer-label">T-MINUS</div>
+                <div class="timer-digits">
+                    <div id="d-d">00</div><div class="timer-unit">D</div>
+                    <div class="timer-sep">:</div>
+                    <div id="d-h">00</div><div class="timer-unit">H</div>
+                    <div class="timer-sep">:</div>
+                    <div id="d-m">00</div><div class="timer-unit">M</div>
                 </div>
+                <div class="sys-status"><div class="blink"></div> ONLINE</div>
             </div>
         </header>
 
-        <div class="search-section">
-            <div class="search-container">
-                <input type="number" id="search-input" class="search-input" placeholder="Buscar Nº de Sorteo (ej: 5210)">
-                <button id="search-btn" class="search-btn">BUSCAR</button>
-            </div>
-            <div id="search-result-container"></div>
+        <div class="command-line">
+            <span class="cmd-prompt">> QUERY:</span>
+            <input type="number" id="cmd-input" class="cmd-input" placeholder="ENTER DRAW ID..." autocomplete="off">
         </div>
 
-        <div id="error-box"></div>
-        <div id="loading">Sincronizando Base de Datos...</div>
+        <div id="search-result" class="hud-panel" style="border-color: var(--alert-amber);">
+            <div style="position: absolute; top:0; right:0; background: var(--alert-amber); color:black; padding:2px 10px; font-family:var(--font-head); font-size:0.7rem; font-weight:bold;">QUERY MATCH FOUND</div>
+            <div id="search-content"></div>
+        </div>
 
-        <div id="dashboard" style="display: none;">
-            <div class="stats-row">
-                <div class="stat-card">
-                    <div class="stat-value" id="stat-total">0</div>
-                    <div class="stat-label">Total Sorteos</div>
+        <div id="main-dashboard" style="display:none;">
+            
+            <div class="data-grid">
+                <div class="hud-panel">
+                    <div class="hero-data">
+                        <div class="hero-title" id="hero-date">ESTABLISHING LINK...</div>
+                        <div class="hero-number" id="hero-sorteo">----</div>
+                        
+                        <div style="font-family:var(--font-head); color:var(--hud-cyan); margin-bottom:10px; font-size:0.8rem;">LOTO SEQUENCE</div>
+                        <div class="balls-wrapper" id="hero-balls"></div>
+                        
+                        <div id="hero-money" class="money-display">ANALYZING...</div>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 2rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem;">
+                        <div style="text-align:center;">
+                            <div style="color:var(--recargado-color); font-family:var(--font-head); font-size:0.7rem; margin-bottom:5px;">RECARGADO</div>
+                            <div id="rec-balls" style="display:flex; justify-content:center; gap:5px; flex-wrap:wrap;"></div>
+                        </div>
+                        <div style="text-align:center;">
+                            <div style="color:var(--revancha-color); font-family:var(--font-head); font-size:0.7rem; margin-bottom:5px;">REVANCHA</div>
+                            <div id="rev-balls" style="display:flex; justify-content:center; gap:5px; flex-wrap:wrap;"></div>
+                        </div>
+                        <div style="text-align:center;">
+                            <div style="color:var(--desquite-color); font-family:var(--font-head); font-size:0.7rem; margin-bottom:5px;">DESQUITE</div>
+                            <div id="des-balls" style="display:flex; justify-content:center; gap:5px; flex-wrap:wrap;"></div>
+                        </div>
+                    </div>
                 </div>
-                <div class="stat-card" style="border-color: #3b82f6;">
-                    <div class="stat-value" id="stat-year">----</div>
-                    <div class="stat-label">Año Inicio</div>
-                </div>
-                <div class="stat-card" style="border-color: #10b981;">
-                    <div class="stat-value" id="stat-last">--/--</div>
-                    <div class="stat-label">Última Carga</div>
+
+                <div class="hud-panel stats-col">
+                    <div style="color:white; font-family:var(--font-head); border-bottom:1px solid white; padding-bottom:5px;">SYSTEM STATS</div>
+                    
+                    <div class="stat-item">
+                        <span class="stat-label">TOTAL RECORDS</span>
+                        <span class="stat-val" id="stat-total">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">OLDEST ENTRY</span>
+                        <span class="stat-val" id="stat-year">----</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">INTEGRITY</span>
+                        <span class="stat-val" style="color:var(--system-green);">99.9%</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">LAST SYNC</span>
+                        <span class="stat-val" id="stat-last">--/--</span>
+                    </div>
                 </div>
             </div>
 
-            <div class="main-card">
-                <div class="draw-date" id="hero-date">FECHA DESCONOCIDA</div>
-                <div style="font-size: 2.2rem; font-weight: 900; margin-bottom: 0.5rem;">LOTO</div>
-                <div style="color: var(--loto-color); font-size: 0.9rem; margin-bottom: 1rem;" id="hero-sorteo">SORTEO #</div>
-                <div class="balls-container" id="hero-balls"></div>
-                <div id="hero-money" class="money-pill">Verificando premios...</div>
-            </div>
-
-            <div class="games-grid">
-                <div class="game-card">
-                    <div class="game-title" style="color:var(--recargado-color)">Recargado</div>
-                    <div class="balls-container" id="recargado-balls" style="margin:0;"></div>
+            <div class="terminal-window">
+                <div style="background:#222; color:#666; padding:5px 10px; font-family:monospace; font-size:0.7rem; border-bottom:1px solid #333;">
+                    ROOT/LOTO/DATABASE/HISTORY.LOG
                 </div>
-                <div class="game-card">
-                    <div class="game-title" style="color:var(--revancha-color)">Revancha</div>
-                    <div class="balls-container" id="revancha-balls" style="margin:0;"></div>
-                </div>
-                <div class="game-card">
-                    <div class="game-title" style="color:var(--desquite-color)">Desquite</div>
-                    <div class="balls-container" id="desquite-balls" style="margin:0;"></div>
-                </div>
-            </div>
-
-            <div class="history-section">
-                <h3 style="margin-bottom:1rem; color:var(--text-muted); font-weight:400;">Archivo Histórico</h3>
-                <div class="table-wrap">
+                <div class="table-container">
                     <table>
                         <thead>
                             <tr>
-                                <th>Sorteo</th>
-                                <th>Fecha</th>
-                                <th>Combinación</th>
-                                <th>Resultado</th>
+                                <th>ID</th>
+                                <th>TIMESTAMP</th>
+                                <th>SEQUENCE</th>
+                                <th>PAYOUT</th>
                             </tr>
                         </thead>
                         <tbody id="history-body"></tbody>
                     </table>
-                    <div id="empty-history-msg" style="padding:2rem; text-align:center; color:var(--text-muted); display:none;">
-                        Esperando sincronización de datos...
-                    </div>
                 </div>
             </div>
 
-            <div class="audit-section">
-                <div class="audit-header">
-                    <span style="font-size:1.5rem">🛡️</span> Estado de la Base de Datos
+            <div class="audit-wrapper">
+                <div class="audit-title">
+                    <span style="font-size:1.2rem">🛡</span> DIAGNOSTICS MODULE
                 </div>
-                <div class="audit-grid">
-                    <div class="audit-item">
-                        <h4>Cobertura (Desde Ene 2016)</h4>
-                        <p id="audit-coverage">Calculando...</p>
-                        <div class="progress-bar"><div class="progress-fill" id="audit-bar"></div></div>
-                    </div>
-                    <div class="audit-item">
-                        <h4>Datos Esperados</h4>
-                        <p id="audit-expected">0</p>
-                    </div>
-                    <div class="audit-item">
-                        <h4>Datos Faltantes</h4>
-                        <p id="audit-missing">0</p>
-                    </div>
-                    <div class="audit-item">
-                        <h4>Integridad (Campos Vacíos)</h4>
-                        <p id="audit-integrity">Verificando...</p>
-                    </div>
+                <div style="display:flex; justify-content:space-between; font-family:var(--font-data); font-size:0.9rem; color:#888; margin-bottom:5px;">
+                    <span>DATABASE COVERAGE</span>
+                    <span id="diag-pct" style="color:white;">0%</span>
                 </div>
-                <div id="missing-list-container" class="missing-list">
-                    <strong>⚠️ Gaps Detectados (Sorteos no encontrados):</strong><br>
-                    <span id="missing-ids"></span>
+                <div class="diag-bar-bg">
+                    <div class="diag-bar-fill" id="diag-bar"></div>
                 </div>
+                <div id="diag-msg" style="margin-top:10px; font-family:monospace; color:var(--danger-red); font-size:0.8rem;"></div>
             </div>
 
         </div>
+        
+        <div id="loading" style="text-align:center; margin-top:50px; font-family:var(--font-data); font-size:1.5rem; color:var(--hud-cyan); animation:blink 0.5s infinite;">
+            INITIALIZING UPLINK...
+        </div>
+
     </div>
 
     <script>
         const CSV_URL = 'LOTO_HISTORIAL_MAESTRO.csv';
-        // Variable global para guardar datos y usarlos en búsqueda
-        window.lotoData = []; 
+        window.lotoDB = []; // Global Store
+
+        // --- UTILS ---
+        const fmtMoney = (v) => v ? new Intl.NumberFormat('es-CL', {style:'currency', currency:'CLP'}).format(v) : "$0";
         
-        // RELOJ
-        function updateTimer() {
-            const chileNowString = new Date().toLocaleString("en-US", {timeZone: "America/Santiago"});
-            const now = new Date(chileNowString);
-            const targets = [0, 2, 4]; 
-            let nextDraw = null;
-
-            for (let i = 0; i <= 7; i++) {
-                const candidate = new Date(now);
-                candidate.setDate(now.getDate() + i);
-                candidate.setHours(21, 0, 0, 0);
-                if (targets.includes(candidate.getDay()) && candidate > now) {
-                    nextDraw = candidate;
-                    break;
-                }
-            }
-
-            if (nextDraw) {
-                const diff = nextDraw - now;
-                const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-                const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
-                document.getElementById('cd-days').textContent = days.toString().padStart(2, '0');
-                document.getElementById('cd-hours').textContent = hours.toString().padStart(2, '0');
-                document.getElementById('cd-min').textContent = minutes.toString().padStart(2, '0');
-                document.getElementById('cd-sec').textContent = seconds.toString().padStart(2, '0');
-            }
-        }
-        setInterval(updateTimer, 1000);
-        updateTimer(); 
-
-        // HELPERS
-        function showError(msg) {
-            const box = document.getElementById('error-box');
-            document.getElementById('loading').style.display = 'none';
-            box.style.display = 'block';
-            box.innerHTML += `⚠️ ERROR: ${msg}<br>`;
-        }
-        const formatMoney = (val) => {
-            if(!val) return "$0";
-            return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(val);
-        };
-        
-        function renderBalls(row, prefix, colorClass, delayBase = 0, isSmall = false) {
+        function renderBallHtml(nums, type='loto', small=false) {
             let html = '';
-            const sizeClass = isSmall ? 'ball-sm' : '';
-            for (let i = 1; i <= 6; i++) {
-                const num = row[`${prefix}_n${i}`];
-                if (num) {
-                    const delay = delayBase + (i * 0.05); 
-                    // Animación bounceIn
-                    html += `<div class="ball ${colorClass} ${sizeClass}" style="animation: bounceIn 0.5s backwards; animation-delay: ${delay}s">${num}</div>`;
-                }
-            }
+            const cls = small ? 'ball sub' : (type === 'comodin' ? 'ball comodin' : 'ball');
+            nums.forEach(n => {
+                if(n && n != '0') html += `<div class="${cls}">${n}</div>`;
+            });
             return html;
         }
 
-        // --- LÓGICA DE BÚSQUEDA ---
-        function performSearch() {
-            const input = document.getElementById('search-input');
-            const container = document.getElementById('search-result-container');
-            const query = input.value.trim();
+        // --- CORE ---
+        function initDashboard(data) {
+            // Sort Descending
+            data.sort((a,b) => parseInt(b.sorteo) - parseInt(a.sorteo));
+            window.lotoDB = data;
+
+            const latest = data[0];
+            const oldest = data[data.length-1];
+
+            // HERO
+            document.getElementById('hero-date').innerText = `DATE: ${latest.dia}/${latest.mes}/${latest.anio}`;
+            document.getElementById('hero-sorteo').innerText = `#${latest.sorteo}`;
             
-            if (!query) return;
+            // Balls
+            const lotoNums = [latest.LOTO_n1, latest.LOTO_n2, latest.LOTO_n3, latest.LOTO_n4, latest.LOTO_n5, latest.LOTO_n6];
+            let ballsHtml = renderBallHtml(lotoNums);
+            if(latest.LOTO_comodin) ballsHtml += renderBallHtml([latest.LOTO_comodin], 'comodin');
+            document.getElementById('hero-balls').innerHTML = ballsHtml;
 
-            const result = window.lotoData.find(r => r.sorteo == query);
-
-            if (result) {
-                // Encontrado
-                input.classList.remove('shake');
-                
-                // Preparar HTML del resultado (Un mini dashboard completo)
-                const dateStr = `${result.dia}/${result.mes}/${result.anio}`;
-                
-                // Loto
-                let lotoBalls = renderBalls(result, 'LOTO', 'b-loto');
-                if(result.LOTO_comodin) lotoBalls += `<div class="ball b-loto b-comodin" title="Comodín">${result.LOTO_comodin}</div>`;
-                
-                // Dinero
-                const g = parseInt(result.LOTO_GANADORES || 0);
-                const m = parseInt(result.LOTO_MONTO || 0);
-                let moneyHtml = `<div class="money-pill money-vacante">Sin Ganadores</div>`;
-                if(g > 0) moneyHtml = `<div class="money-pill money-winner">★ ${g} GANADORES: ${formatMoney(m)}</div>`;
-
-                // Subjuegos (Compactos)
-                const rec = renderBalls(result, 'RECARGADO', 'b-recargado', 0, true);
-                const rev = renderBalls(result, 'REVANCHA', 'b-revancha', 0, true);
-                const des = renderBalls(result, 'DESQUITE', 'b-desquite', 0, true);
-
-                container.innerHTML = `
-                    <div class="result-card">
-                        <div class="result-badge">Resultado Encontrado</div>
-                        <div style="text-align:center;">
-                            <div class="draw-date">${dateStr}</div>
-                            <h2 style="font-size:1.8rem; margin-bottom:0.5rem;">SORTEO ${result.sorteo}</h2>
-                            <div class="balls-container">${lotoBalls}</div>
-                            ${moneyHtml}
-                        </div>
-                        <div class="result-grid">
-                            <div class="result-sub-item">
-                                <div class="result-sub-title" style="color:var(--recargado-color)">Recargado</div>
-                                <div style="display:flex; justify-content:center; gap:5px; flex-wrap:wrap;">${rec}</div>
-                            </div>
-                            <div class="result-sub-item">
-                                <div class="result-sub-title" style="color:var(--revancha-color)">Revancha</div>
-                                <div style="display:flex; justify-content:center; gap:5px; flex-wrap:wrap;">${rev}</div>
-                            </div>
-                            <div class="result-sub-item">
-                                <div class="result-sub-title" style="color:var(--desquite-color)">Desquite</div>
-                                <div style="display:flex; justify-content:center; gap:5px; flex-wrap:wrap;">${des}</div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                container.style.display = 'block';
+            // Money
+            const g = parseInt(latest.LOTO_GANADORES||0);
+            const m = parseInt(latest.LOTO_MONTO||0);
+            const mBadge = document.getElementById('hero-money');
+            if(g > 0) {
+                mBadge.className = "money-display";
+                mBadge.innerHTML = `TARGET HIT: ${g} WINNER(S) // <span style="color:#fff">${fmtMoney(m)}</span>`;
             } else {
-                // No encontrado
-                container.style.display = 'none';
-                input.classList.add('shake');
-                setTimeout(() => input.classList.remove('shake'), 500); // Quitar clase para poder animar denuevo
+                mBadge.className = "money-display money-vacante";
+                mBadge.innerHTML = "STATUS: ROLLOVER (NO WINNERS)";
             }
+
+            // Subs
+            const getSub = (p) => [latest[`${p}_n1`], latest[`${p}_n2`], latest[`${p}_n3`], latest[`${p}_n4`], latest[`${p}_n5`], latest[`${p}_n6`]];
+            document.getElementById('rec-balls').innerHTML = renderBallHtml(getSub('RECARGADO'), '', true);
+            document.getElementById('rev-balls').innerHTML = renderBallHtml(getSub('REVANCHA'), '', true);
+            document.getElementById('des-balls').innerHTML = renderBallHtml(getSub('DESQUITE'), '', true);
+
+            // Stats
+            document.getElementById('stat-total').innerText = data.length;
+            document.getElementById('stat-year').innerText = oldest.anio;
+            document.getElementById('stat-last').innerText = `${latest.dia}/${latest.mes}`;
+
+            // Table
+            const tbody = document.getElementById('history-body');
+            data.slice(1, 100).forEach(r => {
+                const tr = document.createElement('tr');
+                
+                // Mini balls
+                let minis = '<div class="mini-grid">';
+                [r.LOTO_n1, r.LOTO_n2, r.LOTO_n3, r.LOTO_n4, r.LOTO_n5, r.LOTO_n6].forEach(n => {
+                    if(n) minis += `<div class="mini-b active">${n}</div>`;
+                });
+                if(r.LOTO_comodin) minis += `<div class="mini-b" style="background:#fff; color:#000; font-weight:900;">${r.LOTO_comodin}</div>`;
+                minis += '</div>';
+
+                const wg = parseInt(r.LOTO_GANADORES||0);
+                const wm = parseInt(r.LOTO_MONTO||0);
+                let pay = '<span style="color:#444">/// NO DATA</span>';
+                if(wg > 0) pay = `<span style="color:var(--system-green)">DETECTED: ${fmtMoney(wm)}</span>`;
+                else if(wm === 0) pay = `<span style="color:var(--alert-amber)">ROLLOVER</span>`;
+
+                tr.innerHTML = `
+                    <td style="color:white; font-weight:bold;">#${r.sorteo}</td>
+                    <td>${r.dia}/${r.mes}/${r.anio}</td>
+                    <td>${minis}</td>
+                    <td>${pay}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            // Audit
+            runAudit(data);
+
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('main-dashboard').style.display = 'block';
         }
 
-        // Event Listeners para búsqueda
-        document.getElementById('search-btn').addEventListener('click', performSearch);
-        document.getElementById('search-input').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') performSearch();
+        // --- SEARCH ---
+        document.getElementById('cmd-input').addEventListener('keypress', (e) => {
+            if(e.key === 'Enter') {
+                const q = e.target.value;
+                const res = window.lotoDB.find(x => x.sorteo == q);
+                const panel = document.getElementById('search-result');
+                const content = document.getElementById('search-content');
+                
+                if(res) {
+                    // Found
+                    const lotoN = [res.LOTO_n1, res.LOTO_n2, res.LOTO_n3, res.LOTO_n4, res.LOTO_n5, res.LOTO_n6];
+                    let bh = renderBallHtml(lotoN);
+                    if(res.LOTO_comodin) bh += renderBallHtml([res.LOTO_comodin], 'comodin');
+                    
+                    const gw = parseInt(res.LOTO_GANADORES||0);
+                    const gm = parseInt(res.LOTO_MONTO||0);
+                    const mtxt = gw > 0 ? `<span style="color:var(--system-green)">WINNER: ${fmtMoney(gm)}</span>` : `<span style="color:var(--danger-red)">NO WINNER</span>`;
+
+                    content.innerHTML = `
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; align-items:center;">
+                            <div style="text-align:center;">
+                                <h2 style="font-family:var(--font-head); color:white;">DRAW #${res.sorteo}</h2>
+                                <div style="color:var(--hud-cyan); margin-bottom:10px;">${res.dia}/${res.mes}/${res.anio}</div>
+                                <div style="display:flex; justify-content:center; gap:5px; margin-bottom:10px;">${bh}</div>
+                                <div style="font-family:var(--font-data); font-size:1.2rem;">${mtxt}</div>
+                            </div>
+                            <div style="border-left:1px solid #333; padding-left:20px;">
+                                <div style="font-size:0.7rem; color:#666; margin-bottom:5px;">RAW DATA LOG</div>
+                                <pre style="font-size:0.7rem; color:var(--system-green); overflow:hidden;">
+RECARGADO: ${res.RECARGADO_n1} ${res.RECARGADO_n2} ${res.RECARGADO_n3} ${res.RECARGADO_n4} ${res.RECARGADO_n5} ${res.RECARGADO_n6}
+REVANCHA : ${res.REVANCHA_n1} ${res.REVANCHA_n2} ${res.REVANCHA_n3} ${res.REVANCHA_n4} ${res.REVANCHA_n5} ${res.REVANCHA_n6}
+DESQUITE : ${res.DESQUITE_n1} ${res.DESQUITE_n2} ${res.DESQUITE_n3} ${res.DESQUITE_n4} ${res.DESQUITE_n5} ${res.DESQUITE_n6}
+                                </pre>
+                            </div>
+                        </div>
+                    `;
+                    panel.style.display = 'block';
+                } else {
+                    // Not found animation
+                    e.target.style.borderColor = 'var(--danger-red)';
+                    setTimeout(() => e.target.style.borderColor = 'var(--hud-dim)', 500);
+                    panel.style.display = 'none';
+                }
+            }
         });
 
-
-        // --- AUDITORIA DE DATOS ---
-        function runDataAudit(data) {
-            const startDate = new Date(2016, 0, 3); 
+        // --- AUDIT LOGIC ---
+        function runAudit(data) {
+            const start = new Date(2016, 0, 3);
             const now = new Date();
-            let expectedCount = 0;
-            
-            let cursor = new Date(startDate);
-            while (cursor <= now) {
-                const day = cursor.getDay();
-                if (day === 0 || day === 2 || day === 4) expectedCount++;
-                cursor.setDate(cursor.getDate() + 1);
+            let expected = 0;
+            for (let d = new Date(start); d <= now; d.setDate(d.getDate() + 1)) {
+                if([0,2,4].includes(d.getDay())) expected++;
             }
-
-            const actualCount = data.length;
-            const coverage = Math.min(100, Math.round((actualCount / expectedCount) * 100));
+            const pct = Math.min(100, Math.round((data.length / expected) * 100));
             
-            const sorteos = data.map(r => parseInt(r.sorteo)).filter(n => !isNaN(n)).sort((a,b) => a-b);
-            let missingIds = [];
-            if (sorteos.length > 1) {
-                for (let i = 0; i < sorteos.length - 1; i++) {
-                    if (sorteos[i+1] - sorteos[i] > 1) {
-                        for (let j = sorteos[i] + 1; j < sorteos[i+1]; j++) missingIds.push(j);
-                    }
-                }
-            }
-
-            let corruptedRows = 0;
-            data.forEach(r => { if (!r.LOTO_n1 || r.LOTO_n1 === '0') corruptedRows++; });
-
-            document.getElementById('audit-expected').textContent = expectedCount.toLocaleString();
-            document.getElementById('audit-missing').textContent = (expectedCount - actualCount).toLocaleString();
+            document.getElementById('diag-pct').innerText = pct + "%";
+            document.getElementById('diag-bar').style.width = pct + "%";
             
-            const bar = document.getElementById('audit-bar');
-            const covText = document.getElementById('audit-coverage');
-            bar.style.width = `${coverage}%`;
-            covText.textContent = `${coverage}% Completo`;
-            
-            if (coverage >= 98) { bar.style.background = "#34d399"; covText.className = "audit-ok"; }
-            else if (coverage > 80) { bar.style.background = "#f59e0b"; covText.className = "audit-warn"; }
-            else { bar.style.background = "#ef4444"; covText.className = "audit-err"; }
-
-            const intText = document.getElementById('audit-integrity');
-            if (corruptedRows === 0) { intText.innerHTML = "✅ Datos Sanos"; intText.className = "audit-ok"; }
-            else { intText.innerHTML = `❌ ${corruptedRows} Filas Corruptas`; intText.className = "audit-err"; }
-
-            if (missingIds.length > 0) {
-                const container = document.getElementById('missing-list-container');
-                const listSpan = document.getElementById('missing-ids');
-                container.style.display = 'block';
-                if (missingIds.length > 50) listSpan.textContent = missingIds.slice(0, 50).join(', ') + ` ... y ${missingIds.length - 50} más.`;
-                else listSpan.textContent = missingIds.join(', ');
+            if(pct < 100) {
+                document.getElementById('diag-msg').innerHTML = `WARNING: DATABASE FRAGMENTATION DETECTED.<br>MISSING ${expected - data.length} ENTRIES.`;
+                document.getElementById('diag-bar').style.background = "var(--alert-amber)";
+                document.getElementById('diag-bar').style.boxShadow = "0 0 10px var(--alert-amber)";
+            } else {
+                document.getElementById('diag-msg').innerText = "SYSTEM INTEGRITY: OPTIMAL";
             }
         }
 
-        try {
-            Papa.parse(CSV_URL + '?v=' + Date.now(), {
-                download: true,
-                header: true,
-                delimiter: ";",
-                skipEmptyLines: true,
-                complete: function(results) {
-                    try {
-                        let data = results.data;
-                        if (!data || data.length === 0) throw new Error("CSV vacío.");
-                        
-                        // Orden Descendente
-                        data.sort((a, b) => parseInt(b.sorteo) - parseInt(a.sorteo));
-                        
-                        // GUARDAR EN GLOBAL PARA BÚSQUEDA
-                        window.lotoData = data;
-
-                        const latest = data[0];
-                        const oldest = data[data.length - 1];
-
-                        // STATS
-                        document.getElementById('stat-total').textContent = data.length;
-                        document.getElementById('stat-year').textContent = oldest.anio || "----";
-                        document.getElementById('stat-last').textContent = `${latest.dia}/${latest.mes}`;
-
-                        // HERO
-                        document.getElementById('hero-date').textContent = `${latest.dia}/${latest.mes}/${latest.anio}`;
-                        document.getElementById('hero-sorteo').textContent = `SORTEO Nº ${latest.sorteo}`;
-                        
-                        let lotoHtml = renderBalls(latest, 'LOTO', 'b-loto', 0);
-                        if (latest.LOTO_comodin) {
-                            lotoHtml += `<div class="ball b-loto b-comodin" title="Comodín" style="animation-delay: 0.4s">${latest.LOTO_comodin}</div>`;
-                        }
-                        document.getElementById('hero-balls').innerHTML = lotoHtml;
-
-                        const winCount = parseInt(latest.LOTO_GANADORES || 0);
-                        const winMoney = parseInt(latest.LOTO_MONTO || 0);
-                        const moneyBadge = document.getElementById('hero-money');
-                        
-                        if (winCount > 0) {
-                            moneyBadge.className = "money-pill money-winner";
-                            moneyBadge.innerHTML = `★ ${winCount} GANADOR(ES): ${formatMoney(winMoney)}`;
-                        } else {
-                            moneyBadge.className = "money-pill money-vacante";
-                            moneyBadge.innerHTML = "Sin Ganadores"; // CAMBIO SOLICITADO
-                        }
-
-                        document.getElementById('recargado-balls').innerHTML = renderBalls(latest, 'RECARGADO', 'b-recargado', 0.5);
-                        document.getElementById('revancha-balls').innerHTML = renderBalls(latest, 'REVANCHA', 'b-revancha', 0.6);
-                        document.getElementById('desquite-balls').innerHTML = renderBalls(latest, 'DESQUITE', 'b-desquite', 0.7);
-
-                        // HISTORIAL
-                        const historyList = data.slice(1, 100); 
-                        const historyBody = document.getElementById('history-body');
-
-                        if (historyList.length === 0) {
-                            document.getElementById('empty-history-msg').style.display = 'block';
-                        } else {
-                            historyList.forEach(row => {
-                                const tr = document.createElement('tr');
-                                let minis = '<div class="mini-row">';
-                                for(let i=1; i<=6; i++) {
-                                    if(row[`LOTO_n${i}`]) minis += `<div class="mini-ball active">${row[`LOTO_n${i}`]}</div>`;
-                                }
-                                minis += `<div class="mini-ball" style="background:transparent; color:#facc15; border:1px solid #facc15">${row.LOTO_comodin}</div></div>`;
-
-                                const g = parseInt(row.LOTO_GANADORES || 0);
-                                const m = parseInt(row.LOTO_MONTO || 0);
-                                let res = '<span style="color:#94a3b8">Sin Ganadores</span>'; // CAMBIO SOLICITADO
-                                if (g > 0) {
-                                    res = `<span class="winner-text" style="color:#34d399; font-weight:bold" title="Premio: ${formatMoney(m)}">${g} Gana</span>`;
-                                }
-
-                                tr.innerHTML = `
-                                    <td style="font-weight:bold; color:white">#${row.sorteo}</td>
-                                    <td style="color:#94a3b8">${row.dia}/${row.mes}</td>
-                                    <td>${minis}</td>
-                                    <td>${res}</td>
-                                `;
-                                historyBody.appendChild(tr);
-                            });
-                        }
-
-                        runDataAudit(data);
-
-                        document.getElementById('loading').style.display = 'none';
-                        document.getElementById('dashboard').style.display = 'block';
-
-                    } catch (innerErr) {
-                        showError("Error procesando datos: " + innerErr.message);
-                    }
-                },
-                error: function(err) {
-                    showError("No se pudo descargar el CSV.");
-                }
-            });
-        } catch (e) {
-            showError("Error crítico: " + e.message);
+        // --- TIMER ---
+        function tick() {
+            const now = new Date(new Date().toLocaleString("en-US", {timeZone: "America/Santiago"}));
+            let next = new Date(now);
+            for(let i=0; i<7; i++) {
+                next.setDate(now.getDate() + i);
+                next.setHours(21, 0, 0, 0);
+                if([0,2,4].includes(next.getDay()) && next > now) break;
+            }
+            const diff = next - now;
+            const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            
+            document.getElementById('d-d').innerText = d.toString().padStart(2,'0');
+            document.getElementById('d-h').innerText = h.toString().padStart(2,'0');
+            document.getElementById('d-m').innerText = m.toString().padStart(2,'0');
         }
+        setInterval(tick, 1000); tick();
+
+        // --- LOAD ---
+        Papa.parse(CSV_URL + '?t=' + Date.now(), {
+            download: true, header: true, delimiter: ";", skipEmptyLines: true,
+            complete: (r) => initDashboard(r.data),
+            error: (e) => alert("CRITICAL FAILURE: DATABASE OFFLINE")
+        });
     </script>
 </body>
 </html>
