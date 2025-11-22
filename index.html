@@ -16,12 +16,16 @@
             --card-bg: rgba(30, 41, 59, 0.7);
             --text-main: #f8fafc;
             --text-muted: #94a3b8;
+            
+            /* Colores */
             --loto-color: #facc15;
             --recargado-color: #38bdf8;
             --revancha-color: #f472b6;
             --desquite-color: #4ade80;
             --money-green: #10b981;
             --timer-color: #f43f5e; 
+            --search-accent: #a855f7; /* Violeta para búsqueda */
+            
             --glass-border: 1px solid rgba(255, 255, 255, 0.08);
             --danger: #ef4444;
             --warning: #f59e0b;
@@ -47,6 +51,8 @@
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes bounceIn { 0% { transform: scale(0.3); opacity: 0; } 50% { transform: scale(1.05); } 70% { transform: scale(0.9); } 100% { transform: scale(1); opacity: 1; } }
         @keyframes pulseGlow { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); } 20%, 40%, 60%, 80% { transform: translateX(5px); } }
+        @keyframes expandOpen { from { max-height: 0; opacity: 0; transform: scale(0.95); } to { max-height: 1000px; opacity: 1; transform: scale(1); } }
 
         /* HEADER */
         header {
@@ -74,6 +80,43 @@
         .time-value { font-size: 1.8rem; font-weight: 700; color: var(--timer-color); line-height: 1; text-shadow: 0 0 10px rgba(244, 63, 94, 0.3); }
         .time-label { font-size: 0.65rem; color: var(--text-muted); margin-top: 4px; }
 
+        /* --- NUEVO MÓDULO DE BÚSQUEDA --- */
+        .search-container {
+            display: flex; gap: 10px; margin-bottom: 2rem; justify-content: center;
+            animation: fadeInUp 1s ease-out 0.2s backwards;
+        }
+        .search-input {
+            background: rgba(30, 41, 59, 0.8); border: 1px solid rgba(255,255,255,0.1); color: white;
+            padding: 12px 20px; border-radius: 12px; font-family: 'Inter', sans-serif; font-size: 1rem; outline: none; width: 100%; max-width: 300px;
+            transition: all 0.3s;
+        }
+        .search-input:focus { border-color: var(--search-accent); box-shadow: 0 0 15px rgba(168, 85, 247, 0.3); }
+        
+        .search-btn {
+            background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%); border: none; color: white;
+            padding: 0 24px; border-radius: 12px; font-weight: 700; cursor: pointer; font-size: 0.9rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .search-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(124, 58, 237, 0.4); }
+        .search-btn:active { transform: scale(0.95); }
+
+        /* TARJETA DE RESULTADO DE BÚSQUEDA */
+        #search-result-container { display: none; animation: expandOpen 0.5s ease-out forwards; margin-bottom: 3rem; }
+        .result-card {
+            background: linear-gradient(160deg, rgba(20, 20, 35, 0.95), rgba(40, 20, 50, 0.95));
+            border: 1px solid var(--search-accent); /* Borde violeta */
+            border-radius: 24px; padding: 2rem; position: relative;
+            box-shadow: 0 0 30px rgba(168, 85, 247, 0.15);
+        }
+        .result-badge {
+            position: absolute; top: 20px; right: 20px;
+            background: rgba(168, 85, 247, 0.2); color: #d8b4fe;
+            padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; border: 1px solid rgba(168, 85, 247, 0.4);
+        }
+        .result-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-top: 2rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1.5rem; }
+        .result-sub-item { text-align: center; }
+        .result-sub-title { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; font-weight: 700; }
+
         /* STATS */
         .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin-bottom: 2.5rem; animation: fadeInUp 1s ease-out 0.2s backwards; }
         .stat-card { background: rgba(15, 23, 42, 0.6); border: var(--glass-border); border-radius: 12px; padding: 1rem; border-left: 3px solid #6366f1; transition: transform 0.2s; }
@@ -90,9 +133,11 @@
         .main-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent); }
         .draw-date { color: var(--text-muted); font-size: 0.85rem; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 1rem; font-weight: 600; }
         .balls-container { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin: 1.5rem 0; }
+        
         .ball {
             width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.2rem; color: #1e293b;
-            box-shadow: inset -2px -2px 6px rgba(0,0,0,0.2), 2px 2px 6px rgba(255,255,255,0.3), 0 4px 6px rgba(0,0,0,0.2); animation: bounceIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) backwards;
+            box-shadow: inset -2px -2px 6px rgba(0,0,0,0.2), 2px 2px 6px rgba(255,255,255,0.3), 0 4px 6px rgba(0,0,0,0.2); 
+            /* Animación definida inline en JS */
         }
         .b-loto { background: var(--loto-color); width: 56px; height: 56px; font-size: 1.4rem; }
         .b-comodin { background: white; border: 4px solid var(--loto-color); color: #ca8a04; }
@@ -100,42 +145,28 @@
         .b-revancha { background: var(--revancha-color); }
         .b-desquite { background: var(--desquite-color); }
 
+        /* Ajuste tamaño bolas para subsecciones en búsqueda */
+        .ball-sm { width: 32px; height: 32px; font-size: 0.9rem; }
+
         .money-pill { display: inline-block; padding: 8px 20px; border-radius: 50px; font-weight: 700; font-size: 0.95rem; letter-spacing: 0.5px; border: 1px solid transparent; transition: all 0.3s; }
         .money-winner { background: rgba(16, 185, 129, 0.15); color: #34d399; border-color: rgba(16, 185, 129, 0.3); box-shadow: 0 0 15px rgba(16, 185, 129, 0.1); }
         .money-vacante { background: rgba(255, 255, 255, 0.05); color: var(--text-muted); border-color: rgba(255, 255, 255, 0.1); }
 
+        /* GRID */
         .games-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 3rem; animation: fadeInUp 1s ease-out 0.6s backwards; }
         .game-card { background: var(--card-bg); border: var(--glass-border); border-radius: 16px; padding: 1.5rem; display: flex; flex-direction: column; align-items: center; transition: transform 0.3s; }
+        .game-card:hover { transform: translateY(-5px); background: rgba(40, 55, 75, 0.7); }
         .game-title { font-size: 0.8rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1rem; }
 
-        /* --- TABLE STICKY HEADER MODIFICADO --- */
+        /* TABLA */
         .history-section { animation: fadeInUp 1s ease-out 0.8s backwards; margin-bottom: 3rem; }
-        
         .table-wrap { 
-            background: var(--card-bg); 
-            border-radius: 16px; 
-            border: var(--glass-border); 
-            /* STICKY MAGIC: Altura máxima y scroll vertical */
-            max-height: 60vh; 
-            overflow-y: auto; 
-            position: relative;
+            background: var(--card-bg); border-radius: 16px; border: var(--glass-border); 
+            max-height: 60vh; overflow-y: auto; position: relative;
         }
-        
         table { width: 100%; border-collapse: collapse; min-width: 600px; }
-        
         th, td { padding: 1rem; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.9rem; }
-        
-        th { 
-            /* STICKY HEADER PROPERTIES */
-            position: sticky;
-            top: 0;
-            background: #1e293b; /* Color sólido (no transparente) para tapar lo de abajo */
-            z-index: 10;
-            color: var(--text-muted); 
-            font-size: 0.75rem; 
-            text-transform: uppercase;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }
+        th { position: sticky; top: 0; background: #1e293b; z-index: 10; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
         
         .mini-row { display: flex; gap: 4px; }
         .mini-ball { width: 24px; height: 24px; border-radius: 50%; background: rgba(255,255,255,0.1); text-align: center; line-height: 24px; font-size: 0.7rem; }
@@ -144,16 +175,8 @@
         .winner-text { cursor: help; border-bottom: 1px dotted #34d399; transition: all 0.2s; }
         .winner-text:hover { color: #10b981; text-shadow: 0 0 8px rgba(16, 185, 129, 0.6); }
 
-        /* --- NUEVA SECCIÓN: AUDITORÍA --- */
-        .audit-section {
-            background: rgba(15, 23, 42, 0.8);
-            border: 1px solid var(--glass-border);
-            border-top: 3px solid #f59e0b;
-            border-radius: 16px;
-            padding: 2rem;
-            margin-top: 3rem;
-            animation: fadeInUp 1s ease-out 1s backwards;
-        }
+        /* AUDITORÍA */
+        .audit-section { background: rgba(15, 23, 42, 0.8); border: 1px solid var(--glass-border); border-top: 3px solid #f59e0b; border-radius: 16px; padding: 2rem; margin-top: 3rem; animation: fadeInUp 1s ease-out 1s backwards; }
         .audit-header { font-size: 1.2rem; font-weight: 800; margin-bottom: 1.5rem; color: #f8fafc; display: flex; align-items: center; gap: 10px; }
         .audit-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; }
         .audit-item h4 { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem; }
@@ -161,26 +184,15 @@
         .audit-ok { color: #34d399; }
         .audit-warn { color: #f59e0b; }
         .audit-err { color: #ef4444; }
-        
         .progress-bar { width: 100%; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; margin-top: 10px; overflow: hidden; }
         .progress-fill { height: 100%; background: #3b82f6; width: 0%; transition: width 1s ease-out; }
-
-        .missing-list {
-            margin-top: 1.5rem;
-            padding: 1rem;
-            background: rgba(239, 68, 68, 0.1);
-            border: 1px solid rgba(239, 68, 68, 0.2);
-            border-radius: 8px;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.8rem;
-            color: #fca5a5;
-            max-height: 150px;
-            overflow-y: auto;
-            display: none; /* Se activa si hay faltantes */
-        }
+        .missing-list { margin-top: 1.5rem; padding: 1rem; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 8px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: #fca5a5; max-height: 150px; overflow-y: auto; display: none; }
 
         #error-box { background: rgba(220, 38, 38, 0.1); color: #f87171; padding: 1rem; border: 1px solid #f87171; border-radius: 8px; display: none; margin-bottom: 2rem; font-family: monospace; }
         #loading { text-align: center; padding: 3rem; color: var(--text-muted); font-style: italic; }
+
+        /* Clases JS */
+        .shake { animation: shake 0.5s; border-color: #ef4444 !important; }
 
         @media (max-width: 768px) {
             body { padding: 1rem; }
@@ -188,6 +200,7 @@
             .ball { width: 38px; height: 38px; font-size: 1rem; }
             .stats-row { grid-template-columns: 1fr 1fr; }
             .audit-grid { grid-template-columns: 1fr; }
+            .search-container { flex-direction: row; } /* Input y botón en línea */
         }
     </style>
 </head>
@@ -216,6 +229,14 @@
                 </div>
             </div>
         </header>
+
+        <div class="search-section">
+            <div class="search-container">
+                <input type="number" id="search-input" class="search-input" placeholder="Buscar Nº de Sorteo (ej: 5210)">
+                <button id="search-btn" class="search-btn">BUSCAR</button>
+            </div>
+            <div id="search-result-container"></div>
+        </div>
 
         <div id="error-box"></div>
         <div id="loading">Sincronizando Base de Datos...</div>
@@ -313,6 +334,8 @@
 
     <script>
         const CSV_URL = 'LOTO_HISTORIAL_MAESTRO.csv';
+        // Variable global para guardar datos y usarlos en búsqueda
+        window.lotoData = []; 
         
         // RELOJ
         function updateTimer() {
@@ -358,65 +381,123 @@
             if(!val) return "$0";
             return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(val);
         };
-        function renderBalls(row, prefix, colorClass, delayBase = 0) {
+        
+        function renderBalls(row, prefix, colorClass, delayBase = 0, isSmall = false) {
             let html = '';
+            const sizeClass = isSmall ? 'ball-sm' : '';
             for (let i = 1; i <= 6; i++) {
                 const num = row[`${prefix}_n${i}`];
                 if (num) {
                     const delay = delayBase + (i * 0.05); 
-                    html += `<div class="ball ${colorClass}" style="animation-delay: ${delay}s">${num}</div>`;
+                    // Animación bounceIn
+                    html += `<div class="ball ${colorClass} ${sizeClass}" style="animation: bounceIn 0.5s backwards; animation-delay: ${delay}s">${num}</div>`;
                 }
             }
             return html;
         }
 
+        // --- LÓGICA DE BÚSQUEDA ---
+        function performSearch() {
+            const input = document.getElementById('search-input');
+            const container = document.getElementById('search-result-container');
+            const query = input.value.trim();
+            
+            if (!query) return;
+
+            const result = window.lotoData.find(r => r.sorteo == query);
+
+            if (result) {
+                // Encontrado
+                input.classList.remove('shake');
+                
+                // Preparar HTML del resultado (Un mini dashboard completo)
+                const dateStr = `${result.dia}/${result.mes}/${result.anio}`;
+                
+                // Loto
+                let lotoBalls = renderBalls(result, 'LOTO', 'b-loto');
+                if(result.LOTO_comodin) lotoBalls += `<div class="ball b-loto b-comodin" title="Comodín">${result.LOTO_comodin}</div>`;
+                
+                // Dinero
+                const g = parseInt(result.LOTO_GANADORES || 0);
+                const m = parseInt(result.LOTO_MONTO || 0);
+                let moneyHtml = `<div class="money-pill money-vacante">Sin Ganadores</div>`;
+                if(g > 0) moneyHtml = `<div class="money-pill money-winner">★ ${g} GANADORES: ${formatMoney(m)}</div>`;
+
+                // Subjuegos (Compactos)
+                const rec = renderBalls(result, 'RECARGADO', 'b-recargado', 0, true);
+                const rev = renderBalls(result, 'REVANCHA', 'b-revancha', 0, true);
+                const des = renderBalls(result, 'DESQUITE', 'b-desquite', 0, true);
+
+                container.innerHTML = `
+                    <div class="result-card">
+                        <div class="result-badge">Resultado Encontrado</div>
+                        <div style="text-align:center;">
+                            <div class="draw-date">${dateStr}</div>
+                            <h2 style="font-size:1.8rem; margin-bottom:0.5rem;">SORTEO ${result.sorteo}</h2>
+                            <div class="balls-container">${lotoBalls}</div>
+                            ${moneyHtml}
+                        </div>
+                        <div class="result-grid">
+                            <div class="result-sub-item">
+                                <div class="result-sub-title" style="color:var(--recargado-color)">Recargado</div>
+                                <div style="display:flex; justify-content:center; gap:5px; flex-wrap:wrap;">${rec}</div>
+                            </div>
+                            <div class="result-sub-item">
+                                <div class="result-sub-title" style="color:var(--revancha-color)">Revancha</div>
+                                <div style="display:flex; justify-content:center; gap:5px; flex-wrap:wrap;">${rev}</div>
+                            </div>
+                            <div class="result-sub-item">
+                                <div class="result-sub-title" style="color:var(--desquite-color)">Desquite</div>
+                                <div style="display:flex; justify-content:center; gap:5px; flex-wrap:wrap;">${des}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.style.display = 'block';
+            } else {
+                // No encontrado
+                container.style.display = 'none';
+                input.classList.add('shake');
+                setTimeout(() => input.classList.remove('shake'), 500); // Quitar clase para poder animar denuevo
+            }
+        }
+
+        // Event Listeners para búsqueda
+        document.getElementById('search-btn').addEventListener('click', performSearch);
+        document.getElementById('search-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') performSearch();
+        });
+
+
         // --- AUDITORIA DE DATOS ---
         function runDataAudit(data) {
-            // 1. Rango de Fechas (3 Ene 2016 hasta Hoy)
-            const startDate = new Date(2016, 0, 3); // Mes 0 es Enero
+            const startDate = new Date(2016, 0, 3); 
             const now = new Date();
             let expectedCount = 0;
             
-            // Calculamos cuántos sorteos (Mar, Jue, Dom) debieron ocurrir
             let cursor = new Date(startDate);
             while (cursor <= now) {
                 const day = cursor.getDay();
-                if (day === 0 || day === 2 || day === 4) { // Dom, Mar, Jue
-                    expectedCount++;
-                }
+                if (day === 0 || day === 2 || day === 4) expectedCount++;
                 cursor.setDate(cursor.getDate() + 1);
             }
 
-            // 2. Datos Reales
             const actualCount = data.length;
             const coverage = Math.min(100, Math.round((actualCount / expectedCount) * 100));
             
-            // 3. Búsqueda de Gaps (Sorteos faltantes en la secuencia)
-            // Asumimos que los sorteos son secuenciales numéricamente
             const sorteos = data.map(r => parseInt(r.sorteo)).filter(n => !isNaN(n)).sort((a,b) => a-b);
-            const minSorteo = sorteos[0];
-            const maxSorteo = sorteos[sorteos.length - 1];
-            
             let missingIds = [];
-            // Solo buscamos gaps si tenemos una cantidad razonable de datos
             if (sorteos.length > 1) {
                 for (let i = 0; i < sorteos.length - 1; i++) {
-                    // Si la diferencia entre uno y el siguiente es > 1, hay hueco
                     if (sorteos[i+1] - sorteos[i] > 1) {
-                        for (let j = sorteos[i] + 1; j < sorteos[i+1]; j++) {
-                            missingIds.push(j);
-                        }
+                        for (let j = sorteos[i] + 1; j < sorteos[i+1]; j++) missingIds.push(j);
                     }
                 }
             }
 
-            // 4. Integridad (Filas con datos vacíos en Loto)
             let corruptedRows = 0;
-            data.forEach(r => {
-                if (!r.LOTO_n1 || r.LOTO_n1 === '0') corruptedRows++;
-            });
+            data.forEach(r => { if (!r.LOTO_n1 || r.LOTO_n1 === '0') corruptedRows++; });
 
-            // --- RENDERIZADO ---
             document.getElementById('audit-expected').textContent = expectedCount.toLocaleString();
             document.getElementById('audit-missing').textContent = (expectedCount - actualCount).toLocaleString();
             
@@ -425,38 +506,20 @@
             bar.style.width = `${coverage}%`;
             covText.textContent = `${coverage}% Completo`;
             
-            if (coverage >= 98) {
-                bar.style.background = "#34d399"; 
-                covText.className = "audit-ok";
-            } else if (coverage > 80) {
-                bar.style.background = "#f59e0b";
-                covText.className = "audit-warn";
-            } else {
-                bar.style.background = "#ef4444";
-                covText.className = "audit-err";
-            }
+            if (coverage >= 98) { bar.style.background = "#34d399"; covText.className = "audit-ok"; }
+            else if (coverage > 80) { bar.style.background = "#f59e0b"; covText.className = "audit-warn"; }
+            else { bar.style.background = "#ef4444"; covText.className = "audit-err"; }
 
-            // Integridad
             const intText = document.getElementById('audit-integrity');
-            if (corruptedRows === 0) {
-                intText.innerHTML = "✅ Datos Sanos";
-                intText.className = "audit-ok";
-            } else {
-                intText.innerHTML = `❌ ${corruptedRows} Filas Corruptas`;
-                intText.className = "audit-err";
-            }
+            if (corruptedRows === 0) { intText.innerHTML = "✅ Datos Sanos"; intText.className = "audit-ok"; }
+            else { intText.innerHTML = `❌ ${corruptedRows} Filas Corruptas`; intText.className = "audit-err"; }
 
-            // Mostrar lista de faltantes si no son demasiados (limite visual)
             if (missingIds.length > 0) {
                 const container = document.getElementById('missing-list-container');
                 const listSpan = document.getElementById('missing-ids');
                 container.style.display = 'block';
-                
-                if (missingIds.length > 50) {
-                    listSpan.textContent = missingIds.slice(0, 50).join(', ') + ` ... y ${missingIds.length - 50} más.`;
-                } else {
-                    listSpan.textContent = missingIds.join(', ');
-                }
+                if (missingIds.length > 50) listSpan.textContent = missingIds.slice(0, 50).join(', ') + ` ... y ${missingIds.length - 50} más.`;
+                else listSpan.textContent = missingIds.join(', ');
             }
         }
 
@@ -474,6 +537,9 @@
                         // Orden Descendente
                         data.sort((a, b) => parseInt(b.sorteo) - parseInt(a.sorteo));
                         
+                        // GUARDAR EN GLOBAL PARA BÚSQUEDA
+                        window.lotoData = data;
+
                         const latest = data[0];
                         const oldest = data[data.length - 1];
 
@@ -501,7 +567,7 @@
                             moneyBadge.innerHTML = `★ ${winCount} GANADOR(ES): ${formatMoney(winMoney)}`;
                         } else {
                             moneyBadge.className = "money-pill money-vacante";
-                            moneyBadge.innerHTML = "POZO VACANTE";
+                            moneyBadge.innerHTML = "Sin Ganadores"; // CAMBIO SOLICITADO
                         }
 
                         document.getElementById('recargado-balls').innerHTML = renderBalls(latest, 'RECARGADO', 'b-recargado', 0.5);
@@ -509,7 +575,7 @@
                         document.getElementById('desquite-balls').innerHTML = renderBalls(latest, 'DESQUITE', 'b-desquite', 0.7);
 
                         // HISTORIAL
-                        const historyList = data.slice(1, 100); // Mostrar más filas ahora que hay scroll
+                        const historyList = data.slice(1, 100); 
                         const historyBody = document.getElementById('history-body');
 
                         if (historyList.length === 0) {
@@ -525,7 +591,7 @@
 
                                 const g = parseInt(row.LOTO_GANADORES || 0);
                                 const m = parseInt(row.LOTO_MONTO || 0);
-                                let res = '<span style="color:#94a3b8">Vacante</span>';
+                                let res = '<span style="color:#94a3b8">Sin Ganadores</span>'; // CAMBIO SOLICITADO
                                 if (g > 0) {
                                     res = `<span class="winner-text" style="color:#34d399; font-weight:bold" title="Premio: ${formatMoney(m)}">${g} Gana</span>`;
                                 }
@@ -540,7 +606,6 @@
                             });
                         }
 
-                        // EJECUTAR AUDITORÍA
                         runDataAudit(data);
 
                         document.getElementById('loading').style.display = 'none';
