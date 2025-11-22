@@ -4,6 +4,6 @@
     "sorteo": 5328,
     "fecha": "30-09-2025"
   },
-  "status": "BUSCANDO",
-  "message": "Consultando URL..."
+  "status": "MISSING",
+  "message": "URL 404 - Saltando al siguiente"
 }
