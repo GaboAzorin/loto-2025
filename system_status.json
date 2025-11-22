@@ -1,1 +1,9 @@
-{"status": "WARNING", "message": "404 - URL no encontrada hoy", "updated": "2025-11-22 14:33:25.232196"}
+{
+  "last_update": "2025-11-22 22:47:58",
+  "current_target": {
+    "sorteo": 5210,
+    "fecha": "29-12-2024"
+  },
+  "status": "BUSCANDO",
+  "message": "Consultando URL..."
+}
