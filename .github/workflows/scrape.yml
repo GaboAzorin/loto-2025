@@ -1,22 +1,17 @@
-name: Loto Sniper System
+name: Loto Sniper Live
 
 on:
   schedule:
-    # 02:00 UTC = 23:00 Chile (aprox)
-    # Ejecutar días Martes, Jueves, Domingo (y Lunes, Miercoles, Viernes UTC por el cambio de hora)
-    # Para seguridad, corremos todos los días a las 23:00 Chile
     - cron: '0 2 * * *' 
-  
   workflow_dispatch:
     inputs:
       mode:
-        description: 'Modo de Ejecución'
-        required: true
-        default: 'daily'
+        description: 'Modo'
+        default: 'history'
         type: choice
         options:
-        - daily
         - history
+        - daily
 
 permissions:
   contents: write
@@ -35,19 +30,11 @@ jobs:
       - name: Instalar deps
         run: pip install pandas beautifulsoup4 lxml curl_cffi
 
-      - name: Ejecutar Sniper
-        # Si es schedule, corre daily. Si es manual, usa el input.
-        run: |
-          if [ "${{ github.event_name }}" == "schedule" ]; then
-            python scraper.py daily
-          else
-            python scraper.py ${{ inputs.mode }}
-          fi
-
-      - name: Guardar Evidencia
-        if: always()
+      # CONFIGURAMOS GIT ANTES DE CORRER PYTHON
+      - name: Configurar Git Global
         run: |
           git config --global user.name 'LotoBot'
           git config --global user.email 'bot@noreply.github.com'
-          git add .
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Update Loto DB [${{ inputs.mode || 'daily' }}]" && git push)
+
+      - name: Ejecutar Sniper (Con Live Push)
+        run: python scraper.py history
