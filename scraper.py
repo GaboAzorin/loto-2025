@@ -173,45 +173,64 @@ def run_daily_mode():
         save_status("WARNING", "404 - URL no encontrada hoy")
 
 def run_historical_mode():
-    log("--- MODO HISTÓRICO (RECONSTRUCCIÓN) ---")
+    log("--- MODO HISTÓRICO: RELLENO DE HUECOS ---")
     
-    # Punteros iniciales
+    # 1. Cargar lista de sorteos que YA tenemos para no repetirlos
+    existing_sorteos = set()
+    try:
+        df = pd.read_csv(CSV_FILE, sep=';')
+        if not df.empty and 'sorteo' in df.columns:
+            existing_sorteos = set(df['sorteo'].astype(int).unique())
+            log(f"Base de datos cargada: {len(existing_sorteos)} sorteos existentes.")
+    except:
+        log("Base de datos vacía o no encontrada. Se creará una nueva.")
+
+    # 2. Configuración de Inicio (2016)
     current_date = HISTORY_START_DATE
     current_sorteo = HISTORY_START_SORTEO
     end_date = datetime.datetime.now()
 
-    consecutive_fails = 0
-
+    # 3. Bucle de Barrido
     while current_date <= end_date:
         # Solo procesar Martes (1), Jueves (3), Domingo (6)
         wd = current_date.weekday()
-        if wd in [1, 3, 6]:
-            url = generate_url(current_sorteo, current_date)
-            # log(f"Probando: {current_date.date()} - Sorteo {current_sorteo}")
-            
-            html = get_html(url)
-            if html:
-                data = parse_html(html, current_sorteo)
-                if data:
-                    save_to_csv(data, current_date)
-                    log(f"[OK] {current_date.date()} | Sorteo {current_sorteo}")
-                    consecutive_fails = 0
-                    # Solo si tuvimos éxito incrementamos el sorteo esperado
-                    current_sorteo += 1 
-                else:
-                     # HTML existe pero no es sorteo válido
-                     log(f"[SKIP] HTML inválido {current_date.date()}")
-            else:
-                # 404 - Probablemente feriado o error de cálculo
-                # No incrementamos sorteo, solo fecha
-                consecutive_fails += 1
-                # log(f"[404] No encontrado {current_date.date()}")
-
-        # Avanzar al siguiente día
-        current_date += datetime.timedelta(days=1)
         
-        # Pausa de cortesía para no bloquear
-        time.sleep(0.1)
+        if wd in [1, 3, 6]:
+            # --- CRUCE INTELIGENTE ---
+            # Si ya tenemos este sorteo, NO gastamos tiempo ni red.
+            if current_sorteo in existing_sorteos:
+                # log(f"[SALTAR] Sorteo {current_sorteo} ya existe en BD.")
+                # Asumimos que el calendario sigue su curso normal
+                current_sorteo += 1
+                
+            else:
+                # NO lo tenemos, vamos a buscarlo
+                url = generate_url(current_sorteo, current_date)
+                # log(f"Buscando faltante: {current_date.date()} | Sorteo {current_sorteo}")
+                
+                html = get_html(url)
+                if html:
+                    data = parse_html(html, current_sorteo)
+                    if data:
+                        save_to_csv(data, current_date)
+                        log(f"[RECUPERADO] {current_date.date()} | Sorteo {current_sorteo}", "SUCCESS")
+                        save_status("OK", f"Histórico: Sorteo {current_sorteo} recuperado")
+                        
+                        # Éxito: avanzamos el contador de sorteos
+                        current_sorteo += 1
+                    else:
+                        # La página cargó pero no era el sorteo esperado (o estructura rara)
+                        pass
+                else:
+                    # Error 404: Probablemente feriado o desajuste de fecha.
+                    # No avanzamos el contador de sorteo, solo el de fecha (abajo)
+                    pass
+                
+                # Pausa solo si hicimos petición web (para no saturar)
+                time.sleep(0.5)
+
+        # Avanzar día en el calendario
+        current_date += datetime.timedelta(days=1)
 
 if __name__ == "__main__":
     # Detección de argumentos para GitHub Actions
