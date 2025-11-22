@@ -1,43 +1,53 @@
-name: Actualizar Loto DB
+name: Loto Sniper System
 
 on:
   schedule:
-    - cron: '0 9 * * *' # 6:00 AM Chile aprox
+    # 02:00 UTC = 23:00 Chile (aprox)
+    # Ejecutar días Martes, Jueves, Domingo (y Lunes, Miercoles, Viernes UTC por el cambio de hora)
+    # Para seguridad, corremos todos los días a las 23:00 Chile
+    - cron: '0 2 * * *' 
+  
   workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Modo de Ejecución'
+        required: true
+        default: 'daily'
+        type: choice
+        options:
+        - daily
+        - history
 
 permissions:
   contents: write
 
 jobs:
-  build:
+  run-scraper:
     runs-on: ubuntu-latest
-    
     steps:
-      - name: Checkout código
-        uses: actions/checkout@v3
-
+      - uses: actions/checkout@v3
+      
       - name: Configurar Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
+          
+      - name: Instalar deps
+        run: pip install pandas beautifulsoup4 lxml curl_cffi
 
-      - name: Instalar dependencias
+      - name: Ejecutar Sniper
+        # Si es schedule, corre daily. Si es manual, usa el input.
         run: |
-          pip install -r requirements.txt
+          if [ "${{ github.event_name }}" == "schedule" ]; then
+            python scraper.py daily
+          else
+            python scraper.py ${{ inputs.mode }}
+          fi
 
-      # AQUÍ ESTÁ EL TRUCO:
-      - name: Ejecutar Scraper
-        id: run_script
-        continue-on-error: true   # <--- ¡ESTO ES VITAL! Si falla, sigue igual.
-        run: python scraper.py
-
-      # ESTE PASO SE EJECUTA SIEMPRE, AUNQUE EL ANTERIOR FALLE
-      - name: Subir Evidencia (Commit Forense)
-        if: always()              # <--- Obliga a guardar cambios pase lo que pase
+      - name: Guardar Evidencia
+        if: always()
         run: |
           git config --global user.name 'LotoBot'
           git config --global user.email 'bot@noreply.github.com'
           git add .
-          # El comando "|| echo" evita que falle si no hay cambios
-          git commit -m "Reporte de ejecución (Éxito o Fallo)" || echo "Nada nuevo que guardar"
-          git push
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Update Loto DB [${{ inputs.mode || 'daily' }}]" && git push)
