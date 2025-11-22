@@ -166,7 +166,7 @@ def save_to_csv(data_dict, date_obj):
         
         # --- ORDENAMIENTO MAYOR A MENOR ---
         df_final['sorteo'] = df_final['sorteo'].astype(int)
-        df_final.sort_values(by='sorteo', ascending=False, inplace=True)
+        df_final.sort_values(by='sorteo', ascending=True, inplace=True)
         
         # Guardar
         df_final.to_csv(CSV_FILE, sep=';', index=False)
