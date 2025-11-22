@@ -1,1 +1,1 @@
-{"timestamp": "2025-11-22 13:51:16", "status": "ERROR", "message": "Bloqueo de Incapsula detectado aun con suplantación."}
+{"timestamp": "2025-11-22 13:55:08", "status": "ERROR", "message": "Lectura incompleta", "details": "Se encontró el artículo pero no los números del Loto."}
