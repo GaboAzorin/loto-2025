@@ -6,7 +6,7 @@
     <title>Loto Intelligence | Pro</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
     
     <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
     
@@ -23,6 +23,7 @@
             --revancha-color: #f472b6;
             --desquite-color: #4ade80;
             --money-green: #10b981;
+            --timer-color: #f43f5e; /* Rojo/Rosado neón para el timer */
             
             --glass-border: 1px solid rgba(255, 255, 255, 0.08);
         }
@@ -39,22 +40,27 @@
             color: var(--text-main);
             min-height: 100vh;
             padding: 2rem;
-            overflow-x: hidden; /* Evita scroll horizontal en animaciones */
+            overflow-x: hidden;
         }
 
         .container { max-width: 1000px; margin: 0 auto; }
 
-        /* --- ANIMACIONES (MICROINTERACCIONES) --- */
+        /* --- ANIMACIONES --- */
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes bounceIn { 0% { transform: scale(0.3); opacity: 0; } 50% { transform: scale(1.05); } 70% { transform: scale(0.9); } 100% { transform: scale(1); opacity: 1; } }
         @keyframes pulseGlow { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
 
         /* HEADER */
         header {
-            display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: var(--glass-border);
+            display: flex; flex-direction: column; gap: 1.5rem;
+            margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: var(--glass-border);
             animation: fadeInUp 0.8s ease-out;
         }
+        
+        .header-top {
+            display: flex; justify-content: space-between; align-items: center; width: 100%;
+        }
+
         h1 { font-weight: 900; font-size: 1.6rem; letter-spacing: -1px; }
         .status-badge { 
             background: rgba(16, 185, 129, 0.1); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.2);
@@ -63,10 +69,57 @@
         }
         .status-dot { width: 8px; height: 8px; background: #34d399; border-radius: 50%; animation: pulseGlow 2s infinite; }
 
+        /* --- NUEVO: COUNTDOWN TIMER --- */
+        .countdown-wrapper {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 16px;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .countdown-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 0.5rem;
+        }
+
+        .timer-display {
+            display: flex;
+            gap: 1.5rem;
+            font-family: 'JetBrains Mono', monospace; /* Fuente tipo reloj digital */
+        }
+
+        .time-unit {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .time-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--timer-color);
+            line-height: 1;
+            text-shadow: 0 0 10px rgba(244, 63, 94, 0.3);
+        }
+
+        .time-label {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
         /* STATS ROW */
         .stats-row {
             display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin-bottom: 2.5rem;
-            animation: fadeInUp 1s ease-out 0.2s backwards; /* Delay */
+            animation: fadeInUp 1s ease-out 0.2s backwards;
         }
         .stat-card {
             background: rgba(15, 23, 42, 0.6); border: var(--glass-border); border-radius: 12px; padding: 1rem;
@@ -85,7 +138,6 @@
             margin-bottom: 2rem;
             animation: fadeInUp 1s ease-out 0.4s backwards;
         }
-        /* Efecto Brillo Superior */
         .main-card::before {
             content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
             background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
@@ -93,7 +145,6 @@
 
         .draw-date { color: var(--text-muted); font-size: 0.85rem; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 1rem; font-weight: 600; }
         
-        /* BOLAS */
         .balls-container { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin: 1.5rem 0; }
         
         .ball {
@@ -111,7 +162,6 @@
         .b-revancha { background: var(--revancha-color); }
         .b-desquite { background: var(--desquite-color); }
 
-        /* MONEY BADGE */
         .money-pill {
             display: inline-block; padding: 8px 20px; border-radius: 50px;
             font-weight: 700; font-size: 0.95rem; letter-spacing: 0.5px;
@@ -141,7 +191,6 @@
         .mini-ball { width: 24px; height: 24px; border-radius: 50%; background: rgba(255,255,255,0.1); text-align: center; line-height: 24px; font-size: 0.7rem; }
         .mini-ball.active { background: var(--loto-color); color: black; font-weight: bold; }
 
-        /* ERROR & LOADING */
         #error-box { background: rgba(220, 38, 38, 0.1); color: #f87171; padding: 1rem; border: 1px solid #f87171; border-radius: 8px; display: none; margin-bottom: 2rem; font-family: monospace; }
         #loading { text-align: center; padding: 3rem; color: var(--text-muted); font-style: italic; }
 
@@ -150,6 +199,8 @@
             .b-loto { width: 44px; height: 44px; font-size: 1.1rem; }
             .ball { width: 38px; height: 38px; font-size: 1rem; }
             .stats-row { grid-template-columns: 1fr 1fr; }
+            .timer-display { gap: 0.8rem; }
+            .time-value { font-size: 1.4rem; }
         }
     </style>
 </head>
@@ -157,11 +208,44 @@
 
     <div class="container">
         <header>
-            <div>
-                <h1>Loto Intelligence</h1>
-                <div style="font-size:0.8rem; color:var(--text-muted);">Panel de Control Maestro</div>
+            <div class="header-top">
+                <div>
+                    <h1>Loto Intelligence</h1>
+                    <div style="font-size:0.8rem; color:var(--text-muted);">Panel de Control Maestro</div>
+                </div>
+                <div class="status-badge"><div class="status-dot"></div> ONLINE</div>
             </div>
-            <div class="status-badge"><div class="status-dot"></div> ONLINE</div>
+
+            <div class="countdown-wrapper">
+                <div class="countdown-label">Próximo Sorteo</div>
+                <div class="timer-display" id="countdown">
+                    <div class="time-unit">
+                        <span class="time-value" id="cd-days">00</span>
+                        <span class="time-label">DÍAS</span>
+                    </div>
+                    <div class="time-unit">
+                        <span class="time-value" style="color:#64748b;">:</span>
+                    </div>
+                    <div class="time-unit">
+                        <span class="time-value" id="cd-hours">00</span>
+                        <span class="time-label">HRS</span>
+                    </div>
+                    <div class="time-unit">
+                        <span class="time-value" style="color:#64748b;">:</span>
+                    </div>
+                    <div class="time-unit">
+                        <span class="time-value" id="cd-min">00</span>
+                        <span class="time-label">MIN</span>
+                    </div>
+                    <div class="time-unit">
+                        <span class="time-value" style="color:#64748b;">:</span>
+                    </div>
+                    <div class="time-unit">
+                        <span class="time-value" id="cd-sec">00</span>
+                        <span class="time-label">SEG</span>
+                    </div>
+                </div>
+            </div>
         </header>
 
         <div id="error-box"></div>
@@ -225,8 +309,7 @@
                         <tbody id="history-body"></tbody>
                     </table>
                     <div id="empty-history-msg" style="padding:2rem; text-align:center; color:var(--text-muted); display:none;">
-                        El sistema está recolectando más datos históricos. <br>
-                        <span style="font-size:0.8rem">Vuelve tras el próximo sorteo.</span>
+                        Esperando sincronización de datos...
                     </div>
                 </div>
             </div>
@@ -234,33 +317,70 @@
     </div>
 
     <script>
-        // --- CONFIGURACIÓN Y UTILIDADES ---
+        // --- CONFIGURACIÓN ---
         const CSV_URL = 'LOTO_HISTORIAL_MAESTRO.csv';
         
-        // Función segura para mostrar errores sin romper la página
+        // --- LÓGICA DEL RELOJ (COUNTDOWN) ---
+        function updateTimer() {
+            // 1. Hora actual en CHILE
+            // Usamos toLocaleString para forzar la zona horaria de Chile aunque el usuario esté en China
+            const chileNowString = new Date().toLocaleString("en-US", {timeZone: "America/Santiago"});
+            const now = new Date(chileNowString);
+
+            // 2. Definir próximos sorteos posibles: Dom (0), Mar (2), Jue (4) a las 21:00
+            const targets = [0, 2, 4]; 
+            let nextDraw = null;
+
+            // Buscar el sorteo más próximo en el futuro (hasta 7 días adelante)
+            for (let i = 0; i <= 7; i++) {
+                const candidate = new Date(now);
+                candidate.setDate(now.getDate() + i);
+                candidate.setHours(21, 0, 0, 0);
+
+                if (targets.includes(candidate.getDay()) && candidate > now) {
+                    nextDraw = candidate;
+                    break;
+                }
+            }
+
+            if (nextDraw) {
+                const diff = nextDraw - now;
+
+                const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+                // Actualizar HTML con ceros a la izquierda
+                document.getElementById('cd-days').textContent = days.toString().padStart(2, '0');
+                document.getElementById('cd-hours').textContent = hours.toString().padStart(2, '0');
+                document.getElementById('cd-min').textContent = minutes.toString().padStart(2, '0');
+                document.getElementById('cd-sec').textContent = seconds.toString().padStart(2, '0');
+            }
+        }
+        
+        // Actualizar reloj cada segundo
+        setInterval(updateTimer, 1000);
+        updateTimer(); // Primera llamada inmediata
+
+        // --- LÓGICA DE DATOS (IGUAL QUE ANTES) ---
         function showError(msg) {
             const box = document.getElementById('error-box');
-            const loading = document.getElementById('loading');
-            loading.style.display = 'none';
+            document.getElementById('loading').style.display = 'none';
             box.style.display = 'block';
             box.innerHTML += `⚠️ ERROR: ${msg}<br>`;
         }
 
-        // Formateador de Moneda (CLP)
         const formatMoney = (val) => {
             if(!val) return "$0";
             return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(val);
         };
 
-        // Renderizador de Bolas con Animación
-        // delayBase: Tiempo base antes de empezar
-        // colorClass: Clase CSS del color
         function renderBalls(row, prefix, colorClass, delayBase = 0) {
             let html = '';
             for (let i = 1; i <= 6; i++) {
                 const num = row[`${prefix}_n${i}`];
                 if (num) {
-                    // Microinteracción: Retraso escalonado
                     const delay = delayBase + (i * 0.05); 
                     html += `<div class="ball ${colorClass}" style="animation-delay: ${delay}s">${num}</div>`;
                 }
@@ -268,9 +388,7 @@
             return html;
         }
 
-        // --- LÓGICA PRINCIPAL ---
         try {
-            // Truco '?v=' + Date.now() evita que el celular use datos viejos (caché)
             Papa.parse(CSV_URL + '?v=' + Date.now(), {
                 download: true,
                 header: true,
@@ -279,32 +397,28 @@
                 complete: function(results) {
                     try {
                         const data = results.data;
-                        if (!data || data.length === 0) throw new Error("Archivo CSV vacío o corrupto.");
+                        if (!data || data.length === 0) throw new Error("CSV vacío.");
 
-                        // 1. PREPARAR DATOS
-                        // Invertimos una COPIA para no dañar el original si lo necesitamos
-                        const sortedData = [...data].reverse();
-                        const latest = sortedData[0];       // El más nuevo
-                        const oldest = sortedData[sortedData.length - 1]; // El más viejo
+                        // Asumiendo que ya viene ordenado por el scraper, pero por si acaso:
+                        // El script python ya lo ordena descendente (más reciente primero)
+                        const latest = data[0];
+                        const oldest = data[data.length - 1];
 
-                        // 2. LLENAR ESTADÍSTICAS (STATS)
+                        // STATS
                         document.getElementById('stat-total').textContent = data.length;
                         document.getElementById('stat-year').textContent = oldest.anio || "----";
                         document.getElementById('stat-last').textContent = `${latest.dia}/${latest.mes}`;
 
-                        // 3. LLENAR HERO SECTION (LOTO)
+                        // HERO
                         document.getElementById('hero-date').textContent = `${latest.dia}/${latest.mes}/${latest.anio}`;
                         document.getElementById('hero-sorteo').textContent = `SORTEO Nº ${latest.sorteo}`;
                         
-                        // Bolas Loto (Delay 0s)
                         let lotoHtml = renderBalls(latest, 'LOTO', 'b-loto', 0);
-                        // Comodín
                         if (latest.LOTO_comodin) {
                             lotoHtml += `<div class="ball b-loto b-comodin" title="Comodín" style="animation-delay: 0.4s">${latest.LOTO_comodin}</div>`;
                         }
                         document.getElementById('hero-balls').innerHTML = lotoHtml;
 
-                        // Dinero / Ganadores
                         const winCount = parseInt(latest.LOTO_GANADORES || 0);
                         const winMoney = parseInt(latest.LOTO_MONTO || 0);
                         const moneyBadge = document.getElementById('hero-money');
@@ -317,14 +431,13 @@
                             moneyBadge.innerHTML = "POZO VACANTE";
                         }
 
-                        // 4. OTROS JUEGOS
+                        // OTROS JUEGOS
                         document.getElementById('recargado-balls').innerHTML = renderBalls(latest, 'RECARGADO', 'b-recargado', 0.5);
                         document.getElementById('revancha-balls').innerHTML = renderBalls(latest, 'REVANCHA', 'b-revancha', 0.6);
                         document.getElementById('desquite-balls').innerHTML = renderBalls(latest, 'DESQUITE', 'b-desquite', 0.7);
 
-                        // 5. HISTORIAL INTELIGENTE
-                        // Intentamos mostrar desde el segundo registro
-                        const historyList = sortedData.slice(1, 16); 
+                        // HISTORIAL
+                        const historyList = data.slice(1, 21); 
                         const historyBody = document.getElementById('history-body');
 
                         if (historyList.length === 0) {
@@ -332,15 +445,12 @@
                         } else {
                             historyList.forEach(row => {
                                 const tr = document.createElement('tr');
-                                
-                                // Mini bolas para tabla
                                 let minis = '<div class="mini-row">';
                                 for(let i=1; i<=6; i++) {
                                     if(row[`LOTO_n${i}`]) minis += `<div class="mini-ball active">${row[`LOTO_n${i}`]}</div>`;
                                 }
                                 minis += `<div class="mini-ball" style="background:transparent; color:#facc15; border:1px solid #facc15">${row.LOTO_comodin}</div></div>`;
 
-                                // Resultado texto
                                 const g = parseInt(row.LOTO_GANADORES || 0);
                                 const res = g > 0 ? `<span style="color:#34d399; font-weight:bold">${g} Gana</span>` : `<span style="color:#94a3b8">Vacante</span>`;
 
@@ -354,7 +464,6 @@
                             });
                         }
 
-                        // FINALIZAR CARGA
                         document.getElementById('loading').style.display = 'none';
                         document.getElementById('dashboard').style.display = 'block';
 
@@ -363,11 +472,11 @@
                     }
                 },
                 error: function(err) {
-                    showError("No se pudo descargar el CSV. Verifica que el archivo exista en GitHub.");
+                    showError("No se pudo descargar el CSV.");
                 }
             });
         } catch (e) {
-            showError("Error crítico de inicio: " + e.message);
+            showError("Error crítico: " + e.message);
         }
     </script>
 </body>
