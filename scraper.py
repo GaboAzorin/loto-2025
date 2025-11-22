@@ -3,7 +3,7 @@ import datetime
 import json
 import re
 import time
-import subprocess # Para ejecutar comandos de Git
+import subprocess
 import pandas as pd
 from curl_cffi import requests as cureq
 from bs4 import BeautifulSoup
@@ -12,10 +12,9 @@ from bs4 import BeautifulSoup
 CSV_FILE = 'LOTO_HISTORIAL_MAESTRO.csv'
 STATUS_FILE = 'system_status.json'
 
-# SEMILLA 2024 (Enero 2 - Sorteo 5055)
-# Usamos esta fecha porque está 100% verificada en la fuente.
-HISTORY_START_DATE = datetime.datetime(2024, 1, 2) 
-HISTORY_START_SORTEO = 5055 
+# SEMILLA 2025 (Jueves 2 de Enero - Sorteo 5212)
+HISTORY_START_DATE = datetime.datetime(2025, 1, 2)
+HISTORY_START_SORTEO = 5212
 
 def log(msg, status="INFO"):
     ts = datetime.datetime.now().strftime("%H:%M:%S")
@@ -32,7 +31,7 @@ def git_push_live(sorteo_num):
         log(f"No se pudo subir a Git (¿Corriendo local?): {e}", "WARNING")
 
 def generate_url(sorteo_num, date_obj):
-    # Formato: /2024/01/02/resultados-loto-sorteo-5055-fecha-02-01-2024/
+    # Formato: /2025/01/02/resultados-loto-sorteo-5212-fecha-02-01-2025/
     yyyy = date_obj.strftime("%Y")
     mm = date_obj.strftime("%m")
     dd = date_obj.strftime("%d")
@@ -47,19 +46,21 @@ def get_html(url):
 
 def parse_html(html, expected_sorteo):
     soup = BeautifulSoup(html, 'lxml')
-    # Validación básica
-    if str(expected_sorteo) not in soup.text: return None
+    
+    # 1. Validación de Sorteo Correcto
+    # Buscamos el sorteo en el título o en el texto para asegurar que no es una página de error soft
+    if str(expected_sorteo) not in soup.text: 
+        return None
 
     data = {'sorteo': expected_sorteo}
     
-    # Extractor Genérico
+    # 2. Extracción de Bolas
     def get_nums(header):
         h = soup.find('h3', string=re.compile(header, re.IGNORECASE))
         div = h.find_next('div', class_='bolitas') if h else None
         return [int(p.text) for p in div.find_all('p')] if div else []
 
     data['LOTO'] = get_nums('Loto')
-    # Fallback si Loto no tiene título
     if not data['LOTO']:
         f = soup.find('div', class_='bolitas')
         if f: data['LOTO'] = [int(p.text) for p in f.find_all('p')]
@@ -71,16 +72,57 @@ def parse_html(html, expected_sorteo):
     data['REVANCHA'] = get_nums('Revancha')
     data['DESQUITE'] = get_nums('Desquite')
     
-    # Premios (Opcional, si falla ponemos 0)
-    data['LOTO_GANADORES'] = 0
-    data['LOTO_MONTO'] = 0
+    # 3. EXTRACCIÓN DETALLADA DE PREMIOS (NUEVO)
+    # Inicializamos todo en 0
+    prize_cols = [
+        'LOTO', 'SUPER_QUINA_5_ACIERTOS_COMODIN', 'QUINA_5_ACIERTOS', 
+        'SUPER_CUATERNA_4_ACIERTOS_COMODIN', 'CUATERNA_4_ACIERTOS', 
+        'SUPER_TERNA_3_ACIERTOS_COMODIN', 'TERNA_3_ACIERTOS', 
+        'SUPER_DUPLA_2_ACIERTOS_COMODIN', 'RECARGADO_6_ACIERTOS', 
+        'REVANCHA', 'DESQUITE'
+    ]
+    for col in prize_cols:
+        data[f'{col}_GANADORES'] = 0
+        data[f'{col}_MONTO'] = 0
+
+    # Mapeo de texto HTML a columnas CSV
+    # La clave es el texto en minúsculas que aparece en la primera columna de la tabla
+    category_map = {
+        'loto 6 aciertos': 'LOTO',
+        'súper quina 5 aciertos + comodín': 'SUPER_QUINA_5_ACIERTOS_COMODIN',
+        'quina 5 aciertos': 'QUINA_5_ACIERTOS',
+        'súper cuaterna 4 aciertos + comodín': 'SUPER_CUATERNA_4_ACIERTOS_COMODIN',
+        'cuaterna 4 aciertos': 'CUATERNA_4_ACIERTOS',
+        'súper terna 3 aciertos + comodín': 'SUPER_TERNA_3_ACIERTOS_COMODIN',
+        'terna 3 aciertos': 'TERNA_3_ACIERTOS',
+        'súper dupla 2 aciertos + comodín': 'SUPER_DUPLA_2_ACIERTOS_COMODIN',
+        'recargado 6 aciertos': 'RECARGADO_6_ACIERTOS',
+        'revancha': 'REVANCHA',
+        'desquite': 'DESQUITE'
+    }
+
     table = soup.find('table', class_='table-prizes')
     if table:
-        for r in table.find_all('tr'):
-            cols = r.find_all('td')
-            if len(cols)>=3 and 'loto' in cols[0].text.lower() and '6 aciertos' in cols[0].text.lower():
-                data['LOTO_GANADORES'] = int(re.sub(r'\D','',cols[2].text) or 0)
-                data['LOTO_MONTO'] = int(re.sub(r'\D','',cols[1].text) or 0)
+        for row in table.find_all('tr'):
+            cols = row.find_all('td')
+            if len(cols) >= 3:
+                # Texto de la categoría (Columna 1)
+                cat_text = cols[0].get_text(" ", strip=True).lower()
+                
+                # Monto (Columna 2) - Limpiamos '$' y '.'
+                monto_text = cols[1].get_text(strip=True)
+                monto = int(re.sub(r'\D', '', monto_text) or 0)
+                
+                # Ganadores (Columna 3)
+                gan_text = cols[2].get_text(strip=True)
+                ganadores = int(re.sub(r'\D', '', gan_text) or 0)
+
+                # Buscamos coincidencia en el mapa
+                for key, col_name in category_map.items():
+                    if key in cat_text:
+                        data[f'{col_name}_GANADORES'] = ganadores
+                        data[f'{col_name}_MONTO'] = monto
+                        break
 
     return data
 
@@ -97,22 +139,36 @@ def save_to_csv(data_dict, date_obj):
             'sorteo': data_dict['sorteo'],
             'anio': date_obj.year, 'mes': date_obj.month, 'dia': date_obj.day,
             'dia_semana': date_obj.strftime('%A'),
-            'LOTO_n1': data_dict['LOTO'][0], 'LOTO_n2': data_dict['LOTO'][1],
-            'LOTO_n3': data_dict['LOTO'][2], 'LOTO_n4': data_dict['LOTO'][3],
-            'LOTO_n5': data_dict['LOTO'][4], 'LOTO_n6': data_dict['LOTO'][5],
+            # Bolas Loto
+            'LOTO_n1': data_dict['LOTO'][0] if len(data_dict['LOTO'])>0 else 0,
+            'LOTO_n2': data_dict['LOTO'][1] if len(data_dict['LOTO'])>1 else 0,
+            'LOTO_n3': data_dict['LOTO'][2] if len(data_dict['LOTO'])>2 else 0,
+            'LOTO_n4': data_dict['LOTO'][3] if len(data_dict['LOTO'])>3 else 0,
+            'LOTO_n5': data_dict['LOTO'][4] if len(data_dict['LOTO'])>4 else 0,
+            'LOTO_n6': data_dict['LOTO'][5] if len(data_dict['LOTO'])>5 else 0,
             'LOTO_comodin': data_dict['COMODIN'],
-            'LOTO_GANADORES': data_dict['LOTO_GANADORES'], 'LOTO_MONTO': data_dict['LOTO_MONTO'],
-            # Rellenar con 0 los demás juegos para brevedad
-            'RECARGADO_n1': data_dict['RECARGADO'][0] if data_dict['RECARGADO'] else 0
-            # (El pandas concat rellenará el resto con NaN/0 automáticamente)
         }
-        # Relleno simplificado de sub-juegos
+
+        # Agregamos dinámicamente todos los datos de premios que extrajimos
+        for key, val in data_dict.items():
+            if key.endswith('_GANADORES') or key.endswith('_MONTO'):
+                row[key] = val
+
+        # Relleno de sub-juegos (Recargado, etc)
         for g in ['RECARGADO','REVANCHA','DESQUITE']:
             nums = data_dict.get(g, [])
             for i in range(6): row[f'{g}_n{i+1}'] = nums[i] if i<len(nums) else 0
 
         new_df = pd.DataFrame([row])
+        
+        # Concatenar
         df_final = pd.concat([df, new_df], ignore_index=True)
+        
+        # --- ORDENAMIENTO MAYOR A MENOR ---
+        df_final['sorteo'] = df_final['sorteo'].astype(int)
+        df_final.sort_values(by='sorteo', ascending=False, inplace=True)
+        
+        # Guardar
         df_final.to_csv(CSV_FILE, sep=';', index=False)
         return True
     except Exception as e:
@@ -120,7 +176,7 @@ def save_to_csv(data_dict, date_obj):
         return False
 
 def run_historical_mode():
-    log(f"--- INICIANDO HISTÓRICO DESDE 2024 (Semilla: {HISTORY_START_SORTEO}) ---")
+    log(f"--- INICIANDO HISTÓRICO 2025 (Semilla: {HISTORY_START_SORTEO}) ---")
     
     # Cargar estado actual
     try:
@@ -146,7 +202,6 @@ def run_historical_mode():
                     if data and data['LOTO']:
                         if save_to_csv(data, current_date):
                             log(f"*** ¡CAPTURADO! Sorteo {current_sorteo} ***", "SUCCESS")
-                            # EL TRUCO: Subir inmediatamente
                             git_push_live(current_sorteo)
                             current_sorteo += 1
                     else:
@@ -154,7 +209,7 @@ def run_historical_mode():
                 else:
                     log(f"404 - No encontrado (¿Feriado?)")
                 
-                time.sleep(1) # Pausa para no ser baneado
+                time.sleep(1) 
         
         current_date += datetime.timedelta(days=1)
 
@@ -162,5 +217,5 @@ if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == 'history':
         run_historical_mode()
     else:
-        # Modo diario simple (puedes completarlo con el código anterior)
+        # Modo diario
         pass
