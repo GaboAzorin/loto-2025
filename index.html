@@ -3,225 +3,147 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LOTO | Mission Control</title>
+    <title>Loto Analytics | Financial Dashboard</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     
     <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
     
     <style>
         :root {
-            --space-black: #020204;
-            --panel-bg: rgba(10, 20, 30, 0.85);
-            --hud-cyan: #00f3ff;
-            --hud-dim: rgba(0, 243, 255, 0.2);
-            --alert-amber: #ffae00;
-            --system-green: #00ff9d;
-            --danger-red: #ff003c;
+            --bg-app: #0f1115;
+            --bg-panel: #181b21;
+            --border-color: #2d333b;
             
-            --font-head: 'Orbitron', sans-serif;
-            --font-data: 'Share Tech Mono', monospace;
-            --font-body: 'Rajdhani', sans-serif;
+            --text-primary: #e6edf3;
+            --text-secondary: #8b949e;
+            
+            --accent-blue: #2f81f7;
+            --accent-green: #2ea043;
+            --accent-red: #da3633;
+            --accent-gold: #d29922;
+            
+            --loto-color: #fbbf24;
+            --recargado-color: #38bdf8;
+            --revancha-color: #f472b6;
+            --desquite-color: #4ade80;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
-            background-color: var(--space-black);
-            background-image: 
-                linear-gradient(rgba(0, 243, 255, 0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0, 243, 255, 0.03) 1px, transparent 1px);
-            background-size: 40px 40px;
-            color: #e0f7fa;
-            font-family: var(--font-body);
-            min-height: 100vh;
-            padding: 20px;
-            overflow-x: hidden;
-        }
-
-        /* SCANLINE EFFECT */
-        body::after {
-            content: "";
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%);
-            background-size: 100% 4px;
-            pointer-events: none;
-            z-index: 9999;
-            opacity: 0.6;
-        }
-
-        .container { max-width: 1200px; margin: 0 auto; position: relative; z-index: 1; }
-
-        /* --- HUD UTILS --- */
-        .hud-panel {
-            background: var(--panel-bg);
-            border: 1px solid var(--hud-dim);
-            box-shadow: 0 0 15px rgba(0, 243, 255, 0.05);
-            position: relative;
-            backdrop-filter: blur(5px);
-            /* Esquinas cortadas */
-            clip-path: polygon(
-                20px 0, 100% 0, 
-                100% calc(100% - 20px), calc(100% - 20px) 100%, 
-                0 100%, 0 20px
-            );
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-app);
+            color: var(--text-primary);
             padding: 2rem;
-            transition: all 0.3s ease;
-        }
-        
-        /* Decoraciones en las esquinas */
-        .hud-panel::before {
-            content: ''; position: absolute; top: 0; left: 0; width: 20px; height: 20px;
-            border-top: 2px solid var(--hud-cyan); border-left: 2px solid var(--hud-cyan);
-        }
-        .hud-panel::after {
-            content: ''; position: absolute; bottom: 0; right: 0; width: 20px; height: 20px;
-            border-bottom: 2px solid var(--hud-cyan); border-right: 2px solid var(--hud-cyan);
+            min-height: 100vh;
         }
 
-        .hud-panel:hover {
-            box-shadow: 0 0 25px rgba(0, 243, 255, 0.2);
-            border-color: var(--hud-cyan);
-        }
+        .container { max-width: 1200px; margin: 0 auto; }
 
-        /* HEADER */
+        /* --- HEADER & SEARCH --- */
         header {
-            display: grid; grid-template-columns: 1fr auto; gap: 2rem; align-items: center;
-            margin-bottom: 3rem; border-bottom: 1px solid var(--hud-dim); padding-bottom: 1rem;
+            display: flex; justify-content: space-between; align-items: flex-end;
+            padding-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); margin-bottom: 2rem;
         }
-        
-        h1 {
-            font-family: var(--font-head); text-transform: uppercase; letter-spacing: 4px;
-            font-size: 2rem; color: white; text-shadow: 0 0 10px var(--hud-cyan);
-            margin-bottom: 0.5rem;
-        }
-        .subtitle { color: var(--hud-cyan); font-family: var(--font-data); letter-spacing: 2px; text-transform: uppercase; font-size: 0.8rem; }
+        h1 { font-size: 1.5rem; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 10px; }
+        .badge-live { background: rgba(46, 160, 67, 0.15); color: var(--accent-green); font-size: 0.75rem; padding: 4px 10px; border-radius: 20px; border: 1px solid rgba(46, 160, 67, 0.4); }
 
-        /* INDICADOR DE ESTADO */
-        .sys-status {
-            display: flex; align-items: center; gap: 10px;
-            font-family: var(--font-data); color: var(--system-green); border: 1px solid var(--system-green);
-            padding: 5px 15px; font-size: 0.8rem; letter-spacing: 1px;
+        .search-bar { display: flex; gap: 10px; background: var(--bg-panel); padding: 5px; border: 1px solid var(--border-color); border-radius: 8px; }
+        .search-input {
+            background: transparent; border: none; color: var(--text-primary); font-family: 'JetBrains Mono';
+            font-size: 0.9rem; padding: 8px 12px; outline: none; width: 200px;
         }
-        .blink { width: 8px; height: 8px; background: var(--system-green); border-radius: 50%; animation: blink 1s infinite; }
-        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        .search-btn {
+            background: var(--border-color); color: var(--text-primary); border: none; padding: 0 15px;
+            border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.8rem; transition: background 0.2s;
+        }
+        .search-btn:hover { background: var(--accent-blue); color: white; }
 
-        /* COUNTDOWN - T-MINUS STYLE */
-        .timer-box {
-            display: flex; gap: 20px; align-items: center;
+        /* --- GRID LAYOUT --- */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr; /* 2/3 para datos, 1/3 para insights */
+            gap: 2rem;
         }
-        .timer-label { font-family: var(--font-head); font-size: 0.7rem; color: var(--alert-amber); transform: rotate(-90deg); margin-right: -10px; }
-        .timer-digits {
-            display: flex; gap: 10px; font-family: var(--font-data); font-size: 2.5rem; color: white;
-            text-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
-        }
-        .timer-sep { color: var(--hud-dim); animation: blink 1s infinite; }
-        .timer-unit { font-size: 0.7rem; color: var(--hud-dim); text-align: center; margin-top: -5px; font-family: var(--font-head); }
 
-        /* SEARCH COMMAND LINE */
-        .command-line {
-            margin-bottom: 3rem; position: relative;
+        /* PANELS */
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
         }
-        .cmd-input {
-            width: 100%; background: rgba(0,0,0,0.5); border: 1px solid var(--hud-dim);
-            color: var(--hud-cyan); font-family: var(--font-data); font-size: 1.2rem;
-            padding: 15px 20px; padding-left: 50px; text-transform: uppercase;
-            transition: 0.3s;
+        .panel-header {
+            font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;
+            color: var(--text-secondary); margin-bottom: 1rem; display: flex; justify-content: space-between;
         }
-        .cmd-input:focus { outline: none; border-color: var(--hud-cyan); box-shadow: 0 0 20px rgba(0, 243, 255, 0.2); }
-        .cmd-prompt {
-            position: absolute; left: 20px; top: 50%; transform: translateY(-50%);
-            color: var(--system-green); font-family: var(--font-data); font-weight: bold;
-        }
-        
-        /* RESULT CARD (DESPLIEGUE) */
-        #search-result { display: none; margin-bottom: 3rem; animation: hologram 0.5s ease-out; }
-        @keyframes hologram { 0% { opacity: 0; transform: scaleY(0); } 100% { opacity: 1; transform: scaleY(1); } }
 
-        /* HERO SECTION (LATEST DATA) */
-        .data-grid {
-            display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; margin-bottom: 3rem;
-        }
-        .hero-data { text-align: center; }
-        .hero-title { color: var(--hud-dim); font-family: var(--font-head); font-size: 1rem; letter-spacing: 3px; margin-bottom: 1rem; }
-        .hero-number { font-size: 3rem; font-family: var(--font-data); color: white; font-weight: bold; margin-bottom: 2rem; }
-        
-        /* BOLAS PLANETARIAS */
-        .balls-wrapper { display: flex; justify-content: center; flex-wrap: wrap; gap: 15px; margin-bottom: 2rem; }
+        /* DRAW INFO (HERO) */
+        .draw-meta { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1.5rem; }
+        .draw-id { font-size: 2rem; font-weight: 700; color: white; font-family: 'JetBrains Mono'; }
+        .draw-date { color: var(--text-secondary); font-size: 1rem; }
+
+        .balls-display { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 2rem; }
         .ball {
-            width: 60px; height: 60px; 
-            background: radial-gradient(circle at 30% 30%, #fff, var(--loto-color));
-            border-radius: 50%; color: black; 
+            width: 56px; height: 56px; border-radius: 50%;
+            background: #21262d; border: 2px solid var(--border-color);
+            color: var(--text-primary); font-weight: 700; font-size: 1.2rem;
             display: flex; align-items: center; justify-content: center;
-            font-family: var(--font-head); font-weight: 900; font-size: 1.5rem;
-            box-shadow: 0 0 20px rgba(250, 204, 21, 0.4);
-            position: relative; overflow: hidden;
+            font-family: 'JetBrains Mono';
         }
-        .ball::after { content:''; position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.1); border-radius: 50%; }
-        
-        .ball.comodin { border: 3px solid var(--hud-cyan); background: radial-gradient(circle at 30% 30%, #fff, #fff); color: var(--space-black); box-shadow: 0 0 20px var(--hud-cyan); }
-        .ball.sub { width: 40px; height: 40px; font-size: 1rem; background: #334155; color: white; border: 1px solid var(--hud-dim); box-shadow: none; }
+        .ball.loto { border-color: var(--loto-color); color: var(--loto-color); background: rgba(251, 191, 36, 0.1); }
+        .ball.comodin { background: var(--text-primary); color: var(--bg-app); border-color: white; font-weight: 800; }
 
-        /* MONEY DISPLAY */
-        .money-display {
-            font-family: var(--font-data); font-size: 1.5rem; color: var(--system-green);
-            border: 1px dashed var(--system-green); padding: 10px 30px; display: inline-block;
-            text-shadow: 0 0 10px rgba(0, 255, 157, 0.5); background: rgba(0, 255, 157, 0.05);
-        }
-        .money-vacante { color: var(--danger-red); border-color: var(--danger-red); text-shadow: 0 0 10px rgba(255, 0, 60, 0.5); background: rgba(255, 0, 60, 0.05); }
+        /* SUB GAMES ROWS */
+        .sub-games { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color); }
+        .sub-col h4 { color: var(--text-secondary); font-size: 0.7rem; margin-bottom: 8px; text-transform: uppercase; }
+        .mini-balls { display: flex; gap: 6px; }
+        .m-ball { width: 28px; height: 28px; background: #21262d; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-family: 'JetBrains Mono'; color: #8b949e; }
+        .m-ball.active { color: white; font-weight: bold; }
 
-        /* STATS SIDEBAR */
-        .stats-col { display: flex; flex-direction: column; gap: 1rem; }
-        .stat-item {
-            display: flex; justify-content: space-between; align-items: center; padding: 1rem;
-            border-bottom: 1px solid var(--hud-dim);
-        }
-        .stat-label { font-family: var(--font-head); font-size: 0.7rem; color: var(--hud-dim); letter-spacing: 1px; }
-        .stat-val { font-family: var(--font-data); font-size: 1.2rem; color: var(--hud-cyan); }
+        /* FINANCIAL INTELLIGENCE PANEL */
+        .metric-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border-color); }
+        .metric-row:last-child { border-bottom: none; }
+        .metric-label { font-size: 0.9rem; color: var(--text-secondary); }
+        .metric-val { font-family: 'JetBrains Mono'; font-weight: 600; font-size: 1rem; }
+        .metric-val.money { color: var(--accent-green); }
+        .metric-val.vacante { color: var(--text-secondary); font-style: italic; }
 
-        /* TABLE TERMINAL STYLE */
-        .terminal-window {
-            background: black; border: 1px solid #333; padding: 5px;
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+        .insight-box {
+            background: rgba(47, 129, 247, 0.1); border: 1px solid rgba(47, 129, 247, 0.3);
+            border-radius: 8px; padding: 1rem; margin-top: 1rem;
         }
-        .table-container {
-            max-height: 500px; overflow-y: auto;
-            font-family: var(--font-data);
+        .insight-title { color: var(--accent-blue); font-size: 0.75rem; font-weight: 700; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 6px;}
+        .insight-text { font-size: 0.9rem; line-height: 1.4; color: var(--text-primary); }
+        .insight-sub { font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px; }
+
+        /* REPETITION ALERT */
+        .alert-box {
+            background: rgba(218, 54, 51, 0.1); border: 1px solid rgba(218, 54, 51, 0.3);
+            border-radius: 8px; padding: 1rem; margin-top: 1rem; display: none;
         }
+        .alert-title { color: var(--accent-red); font-weight: 700; font-size: 0.8rem; margin-bottom: 5px; }
+
+        /* TABLE */
+        .table-wrap { border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; max-height: 500px; overflow-y: auto; }
         table { width: 100%; border-collapse: collapse; }
-        th { 
-            background: #111; color: var(--alert-amber); position: sticky; top: 0; 
-            text-align: left; padding: 15px; font-family: var(--font-head); font-size: 0.8rem; letter-spacing: 1px;
-            border-bottom: 2px solid var(--alert-amber);
-        }
-        td { padding: 12px 15px; border-bottom: 1px solid #222; color: #aaa; font-size: 0.9rem; }
-        tr:hover td { background: rgba(0, 243, 255, 0.05); color: white; }
-        
-        .mini-grid { display: flex; gap: 5px; }
-        .mini-b { width: 20px; height: 20px; background: #333; border-radius: 50%; text-align: center; line-height: 20px; font-size: 0.7rem; color: #fff; }
-        .mini-b.active { background: var(--alert-amber); color: black; font-weight: bold; }
-
-        /* AUDIT DIAGNOSTICS */
-        .audit-wrapper { margin-top: 3rem; border-top: 1px dashed var(--hud-dim); padding-top: 2rem; }
-        .audit-title { font-family: var(--font-head); color: var(--hud-cyan); margin-bottom: 1rem; display: flex; align-items: center; gap: 10px; }
-        
-        .diag-bar-bg { width: 100%; height: 10px; background: #111; border: 1px solid #333; margin-top: 5px; }
-        .diag-bar-fill { height: 100%; background: var(--system-green); width: 0%; transition: width 1s ease; box-shadow: 0 0 10px var(--system-green); }
-        
-        /* SCROLLBAR PERSONALIZADO */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #000; }
-        ::-webkit-scrollbar-thumb { background: var(--hud-dim); border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--hud-cyan); }
+        thead { background: var(--bg-panel); position: sticky; top: 0; z-index: 1; }
+        th { text-align: left; padding: 12px 15px; font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; border-bottom: 1px solid var(--border-color); }
+        td { padding: 12px 15px; border-bottom: 1px solid var(--border-color); font-size: 0.9rem; font-family: 'JetBrains Mono'; color: var(--text-secondary); }
+        tr:hover { background: rgba(255,255,255,0.02); }
+        .winner-hl { color: var(--accent-green); font-weight: 700; cursor: help; border-bottom: 1px dotted var(--accent-green); }
 
         /* RESPONSIVE */
-        @media (max-width: 768px) {
-            header { grid-template-columns: 1fr; text-align: center; justify-items: center; }
-            .data-grid { grid-template-columns: 1fr; }
-            .timer-digits { font-size: 1.8rem; }
-            .hud-panel { padding: 1rem; }
+        @media (max-width: 900px) {
+            .dashboard-grid { grid-template-columns: 1fr; }
+            header { flex-direction: column; align-items: flex-start; }
+            .sub-games { grid-template-columns: 1fr; gap: 20px; }
         }
+        
+        #loading { text-align: center; padding: 4rem; color: var(--text-secondary); }
     </style>
 </head>
 <body>
@@ -229,312 +151,359 @@
     <div class="container">
         <header>
             <div>
-                <h1>LOTO INTELLIGENCE</h1>
-                <div class="subtitle">DATABASE ACCESS TERMINAL // V.11.0</div>
+                <h1><span style="font-size:1.2rem">📊</span> LOTO ANALYTICS <span class="badge-live">PRO</span></h1>
+                <div style="color:var(--text-secondary); font-size:0.9rem; margin-top:5px;">Inteligencia de Datos & Análisis Financiero</div>
             </div>
-            
-            <div class="timer-box">
-                <div class="timer-label">T-MINUS</div>
-                <div class="timer-digits">
-                    <div id="d-d">00</div><div class="timer-unit">D</div>
-                    <div class="timer-sep">:</div>
-                    <div id="d-h">00</div><div class="timer-unit">H</div>
-                    <div class="timer-sep">:</div>
-                    <div id="d-m">00</div><div class="timer-unit">M</div>
-                </div>
-                <div class="sys-status"><div class="blink"></div> ONLINE</div>
+            <div class="search-bar">
+                <input type="number" id="search-input" class="search-input" placeholder="Buscar Sorteo #">
+                <button id="search-btn" class="search-btn">BUSCAR</button>
             </div>
         </header>
 
-        <div class="command-line">
-            <span class="cmd-prompt">> QUERY:</span>
-            <input type="number" id="cmd-input" class="cmd-input" placeholder="ENTER DRAW ID..." autocomplete="off">
-        </div>
+        <div id="loading">Cargando Base de Datos Maestra...</div>
 
-        <div id="search-result" class="hud-panel" style="border-color: var(--alert-amber);">
-            <div style="position: absolute; top:0; right:0; background: var(--alert-amber); color:black; padding:2px 10px; font-family:var(--font-head); font-size:0.7rem; font-weight:bold;">QUERY MATCH FOUND</div>
-            <div id="search-content"></div>
-        </div>
-
-        <div id="main-dashboard" style="display:none;">
-            
-            <div class="data-grid">
-                <div class="hud-panel">
-                    <div class="hero-data">
-                        <div class="hero-title" id="hero-date">ESTABLISHING LINK...</div>
-                        <div class="hero-number" id="hero-sorteo">----</div>
+        <div id="main-ui" style="display: none;">
+            <div class="dashboard-grid">
+                
+                <div class="left-col">
+                    <div class="panel">
+                        <div class="panel-header">Resumen del Sorteo</div>
                         
-                        <div style="font-family:var(--font-head); color:var(--hud-cyan); margin-bottom:10px; font-size:0.8rem;">LOTO SEQUENCE</div>
-                        <div class="balls-wrapper" id="hero-balls"></div>
+                        <div class="draw-meta">
+                            <div class="draw-id" id="hero-id">#----</div>
+                            <div class="draw-date" id="hero-date">--/--/----</div>
+                        </div>
+
+                        <div style="margin-bottom: 10px; font-size: 0.8rem; color: var(--loto-color); font-weight: 700;">LOTO CLÁSICO</div>
+                        <div class="balls-display" id="hero-balls"></div>
+
+                        <div class="sub-games">
+                            <div class="sub-col">
+                                <h4 style="color:var(--recargado-color)">Recargado</h4>
+                                <div class="mini-balls" id="rec-balls"></div>
+                            </div>
+                            <div class="sub-col">
+                                <h4 style="color:var(--revancha-color)">Revancha</h4>
+                                <div class="mini-balls" id="rev-balls"></div>
+                            </div>
+                            <div class="sub-col">
+                                <h4 style="color:var(--desquite-color)">Desquite</h4>
+                                <div class="mini-balls" id="des-balls"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="panel" style="padding:0; overflow:hidden;">
+                        <div style="padding:1.5rem; border-bottom:1px solid var(--border-color); display:flex; justify-content:space-between;">
+                            <span class="panel-header" style="margin:0">Registro Histórico</span>
+                            <span style="font-size:0.75rem; color:var(--text-secondary);" id="total-rows">0 Registros</span>
+                        </div>
+                        <div class="table-wrap" style="border:none; border-radius:0;">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Sorteo</th>
+                                        <th>Fecha</th>
+                                        <th>Números Loto</th>
+                                        <th>Resultado</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="history-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="right-col">
+                    
+                    <div class="panel">
+                        <div class="panel-header">Análisis Económico</div>
                         
-                        <div id="hero-money" class="money-display">ANALYZING...</div>
-                    </div>
-                    
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 2rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem;">
-                        <div style="text-align:center;">
-                            <div style="color:var(--recargado-color); font-family:var(--font-head); font-size:0.7rem; margin-bottom:5px;">RECARGADO</div>
-                            <div id="rec-balls" style="display:flex; justify-content:center; gap:5px; flex-wrap:wrap;"></div>
+                        <div class="metric-row">
+                            <span class="metric-label">Premio Mayor (6 Aciertos)</span>
+                            <span class="metric-val" id="stat-jackpot">$0</span>
                         </div>
-                        <div style="text-align:center;">
-                            <div style="color:var(--revancha-color); font-family:var(--font-head); font-size:0.7rem; margin-bottom:5px;">REVANCHA</div>
-                            <div id="rev-balls" style="display:flex; justify-content:center; gap:5px; flex-wrap:wrap;"></div>
+                        
+                        <div class="insight-box" id="winner-insight" style="display:none;">
+                            <div class="insight-title">💰 PODER ADQUISITIVO DEL GANADOR</div>
+                            <div class="insight-text" id="purchasing-power"></div>
+                            <div style="margin-top:10px; border-top:1px solid rgba(47,129,247,0.2); padding-top:10px;">
+                                <div class="insight-title">📈 INVERSIÓN (DAP 0.4%)</div>
+                                <div class="insight-text" id="investment-return"></div>
+                                <div class="insight-sub">Retorno mensual estimado libre de riesgo.</div>
+                            </div>
                         </div>
-                        <div style="text-align:center;">
-                            <div style="color:var(--desquite-color); font-family:var(--font-head); font-size:0.7rem; margin-bottom:5px;">DESQUITE</div>
-                            <div id="des-balls" style="display:flex; justify-content:center; gap:5px; flex-wrap:wrap;"></div>
-                        </div>
-                    </div>
-                </div>
 
-                <div class="hud-panel stats-col">
-                    <div style="color:white; font-family:var(--font-head); border-bottom:1px solid white; padding-bottom:5px;">SYSTEM STATS</div>
-                    
-                    <div class="stat-item">
-                        <span class="stat-label">TOTAL RECORDS</span>
-                        <span class="stat-val" id="stat-total">0</span>
+                        <div id="vacante-msg" style="text-align:center; padding:1rem; color:var(--text-secondary); font-style:italic;">
+                            Pozo acumulado. Sin ganadores de 6 aciertos.
+                        </div>
+
+                        <div style="margin-top: 1.5rem;">
+                            <div class="metric-row">
+                                <span class="metric-label">Dinero Total Repartido</span>
+                                <span class="metric-val money" id="stat-total-dist">$0</span>
+                            </div>
+                            <div style="font-size:0.7rem; color:var(--text-secondary); margin-top:5px;">
+                                *Suma de todas las categorías y juegos adicionales.
+                            </div>
+                        </div>
                     </div>
-                    <div class="stat-item">
-                        <span class="stat-label">OLDEST ENTRY</span>
-                        <span class="stat-val" id="stat-year">----</span>
+
+                    <div class="panel">
+                        <div class="panel-header">Análisis de Patrones</div>
+                        
+                        <div class="metric-row">
+                            <span class="metric-label">Suma de Números</span>
+                            <span class="metric-val" id="pat-sum">0</span>
+                        </div>
+                        <div class="metric-row">
+                            <span class="metric-label">Pares / Impares</span>
+                            <span class="metric-val" id="pat-parity">0 / 0</span>
+                        </div>
+
+                        <div id="repetition-box" class="alert-box">
+                            <div class="alert-title">⚠️ COINCIDENCIA DETECTADA</div>
+                            <div style="font-size:0.85rem; color:var(--text-secondary);">
+                                Esta combinación exacta ya salió anteriormente en los siguientes sorteos:
+                            </div>
+                            <ul id="rep-list" style="margin-top:8px; padding-left:20px; font-family:'JetBrains Mono'; font-size:0.9rem; color:var(--text-primary);"></ul>
+                        </div>
+                        
+                        <div id="unique-msg" style="margin-top:1rem; font-size:0.85rem; color:var(--accent-green); display:flex; gap:5px;">
+                            <span>✨</span> Combinación Única en la Base de Datos.
+                        </div>
                     </div>
-                    <div class="stat-item">
-                        <span class="stat-label">INTEGRITY</span>
-                        <span class="stat-val" style="color:var(--system-green);">99.9%</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">LAST SYNC</span>
-                        <span class="stat-val" id="stat-last">--/--</span>
-                    </div>
+
                 </div>
             </div>
-
-            <div class="terminal-window">
-                <div style="background:#222; color:#666; padding:5px 10px; font-family:monospace; font-size:0.7rem; border-bottom:1px solid #333;">
-                    ROOT/LOTO/DATABASE/HISTORY.LOG
-                </div>
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>TIMESTAMP</th>
-                                <th>SEQUENCE</th>
-                                <th>PAYOUT</th>
-                            </tr>
-                        </thead>
-                        <tbody id="history-body"></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div class="audit-wrapper">
-                <div class="audit-title">
-                    <span style="font-size:1.2rem">🛡</span> DIAGNOSTICS MODULE
-                </div>
-                <div style="display:flex; justify-content:space-between; font-family:var(--font-data); font-size:0.9rem; color:#888; margin-bottom:5px;">
-                    <span>DATABASE COVERAGE</span>
-                    <span id="diag-pct" style="color:white;">0%</span>
-                </div>
-                <div class="diag-bar-bg">
-                    <div class="diag-bar-fill" id="diag-bar"></div>
-                </div>
-                <div id="diag-msg" style="margin-top:10px; font-family:monospace; color:var(--danger-red); font-size:0.8rem;"></div>
-            </div>
-
-        </div>
-        
-        <div id="loading" style="text-align:center; margin-top:50px; font-family:var(--font-data); font-size:1.5rem; color:var(--hud-cyan); animation:blink 0.5s infinite;">
-            INITIALIZING UPLINK...
         </div>
 
     </div>
 
     <script>
         const CSV_URL = 'LOTO_HISTORIAL_MAESTRO.csv';
-        window.lotoDB = []; // Global Store
+        window.db = []; // Almacén de datos global
 
-        // --- UTILS ---
+        // --- UTILIDADES ---
         const fmtMoney = (v) => v ? new Intl.NumberFormat('es-CL', {style:'currency', currency:'CLP'}).format(v) : "$0";
         
-        function renderBallHtml(nums, type='loto', small=false) {
+        // --- RENDER ---
+        function renderBallHtml(nums, type='loto') {
             let html = '';
-            const cls = small ? 'ball sub' : (type === 'comodin' ? 'ball comodin' : 'ball');
             nums.forEach(n => {
-                if(n && n != '0') html += `<div class="${cls}">${n}</div>`;
+                if(n) {
+                    let cls = 'm-ball';
+                    let style = '';
+                    
+                    if (type === 'loto') {
+                        cls = 'ball loto';
+                    } else if (type === 'comodin') {
+                        cls = 'ball comodin';
+                    } else {
+                        // Sub juegos son m-balls (mini)
+                        if (type === 'rec') style = 'color:var(--recargado-color)';
+                        if (type === 'rev') style = 'color:var(--revancha-color)';
+                        if (type === 'des') style = 'color:var(--desquite-color)';
+                    }
+                    
+                    // Si es mini ball, agregar clase active para que se vea el numero
+                    if (cls === 'm-ball') cls += ' active';
+
+                    html += `<div class="${cls}" style="${style}">${n}</div>`;
+                }
             });
             return html;
         }
 
-        // --- CORE ---
-        function initDashboard(data) {
-            // Sort Descending
-            data.sort((a,b) => parseInt(b.sorteo) - parseInt(a.sorteo));
-            window.lotoDB = data;
+        function loadDashboard(row) {
+            // 1. DATOS BÁSICOS
+            document.getElementById('hero-id').innerText = `SORTEO #${row.sorteo}`;
+            document.getElementById('hero-date').innerText = `${row.dia} de ${getMes(row.mes)} del ${row.anio}`;
 
-            const latest = data[0];
-            const oldest = data[data.length-1];
+            // 2. BOLAS
+            const loto = [row.LOTO_n1, row.LOTO_n2, row.LOTO_n3, row.LOTO_n4, row.LOTO_n5, row.LOTO_n6];
+            document.getElementById('hero-balls').innerHTML = renderBallHtml(loto) + (row.LOTO_comodin ? renderBallHtml([row.LOTO_comodin], 'comodin') : '');
 
-            // HERO
-            document.getElementById('hero-date').innerText = `DATE: ${latest.dia}/${latest.mes}/${latest.anio}`;
-            document.getElementById('hero-sorteo').innerText = `#${latest.sorteo}`;
+            const rec = [row.RECARGADO_n1, row.RECARGADO_n2, row.RECARGADO_n3, row.RECARGADO_n4, row.RECARGADO_n5, row.RECARGADO_n6];
+            document.getElementById('rec-balls').innerHTML = renderBallHtml(rec, 'rec');
             
-            // Balls
-            const lotoNums = [latest.LOTO_n1, latest.LOTO_n2, latest.LOTO_n3, latest.LOTO_n4, latest.LOTO_n5, latest.LOTO_n6];
-            let ballsHtml = renderBallHtml(lotoNums);
-            if(latest.LOTO_comodin) ballsHtml += renderBallHtml([latest.LOTO_comodin], 'comodin');
-            document.getElementById('hero-balls').innerHTML = ballsHtml;
+            const rev = [row.REVANCHA_n1, row.REVANCHA_n2, row.REVANCHA_n3, row.REVANCHA_n4, row.REVANCHA_n5, row.REVANCHA_n6];
+            document.getElementById('rev-balls').innerHTML = renderBallHtml(rev, 'rev');
 
-            // Money
-            const g = parseInt(latest.LOTO_GANADORES||0);
-            const m = parseInt(latest.LOTO_MONTO||0);
-            const mBadge = document.getElementById('hero-money');
-            if(g > 0) {
-                mBadge.className = "money-display";
-                mBadge.innerHTML = `TARGET HIT: ${g} WINNER(S) // <span style="color:#fff">${fmtMoney(m)}</span>`;
+            const des = [row.DESQUITE_n1, row.DESQUITE_n2, row.DESQUITE_n3, row.DESQUITE_n4, row.DESQUITE_n5, row.DESQUITE_n6];
+            document.getElementById('des-balls').innerHTML = renderBallHtml(des, 'des');
+
+            // 3. INTELIGENCIA FINANCIERA
+            const jackpot = parseInt(row.LOTO_MONTO || 0);
+            const winners = parseInt(row.LOTO_GANADORES || 0);
+            
+            // Mostrar Monto Loto
+            const jackpotEl = document.getElementById('stat-jackpot');
+            if (winners > 0) {
+                jackpotEl.innerHTML = fmtMoney(jackpot);
+                jackpotEl.className = "metric-val money";
+                
+                // Cálculos de Poder Adquisitivo
+                // Depto ~4000 UF (150.000.000 CLP aprox)
+                // Auto Lujo ~60.000.000 CLP
+                const deptos = (jackpot / 150000000).toFixed(1);
+                const autos = (jackpot / 60000000).toFixed(1);
+                const mensualidad = fmtMoney(Math.round(jackpot * 0.004)); // 0.4%
+
+                document.getElementById('purchasing-power').innerHTML = `
+                    Este premio equivale aproximadamente a:<br>
+                    🏢 <strong>${deptos} Departamentos</strong> (4.000 UF)<br>
+                    🏎️ <strong>${autos} Autos de Lujo</strong> (60M CLP)
+                `;
+                
+                document.getElementById('investment-return').innerHTML = `
+                    Ganancia mensual: <span style="color:var(--accent-green); font-weight:bold;">${mensualidad}</span>
+                `;
+
+                document.getElementById('winner-insight').style.display = 'block';
+                document.getElementById('vacante-msg').style.display = 'none';
             } else {
-                mBadge.className = "money-display money-vacante";
-                mBadge.innerHTML = "STATUS: ROLLOVER (NO WINNERS)";
+                jackpotEl.innerHTML = "VACANTE";
+                jackpotEl.className = "metric-val vacante";
+                document.getElementById('winner-insight').style.display = 'none';
+                document.getElementById('vacante-msg').style.display = 'block';
             }
 
-            // Subs
-            const getSub = (p) => [latest[`${p}_n1`], latest[`${p}_n2`], latest[`${p}_n3`], latest[`${p}_n4`], latest[`${p}_n5`], latest[`${p}_n6`]];
-            document.getElementById('rec-balls').innerHTML = renderBallHtml(getSub('RECARGADO'), '', true);
-            document.getElementById('rev-balls').innerHTML = renderBallHtml(getSub('REVANCHA'), '', true);
-            document.getElementById('des-balls').innerHTML = renderBallHtml(getSub('DESQUITE'), '', true);
+            // 4. TOTAL DINERO REPARTIDO (SUMA DE CATEGORÍAS)
+            let totalMoney = 0;
+            // Lista de columnas que terminan en _MONTO y sus multiplicadores (ganadores)
+            // Asumimos que MONTO en CSV es el total del pozo de esa categoría o el individual?
+            // Generalmente en estos CSV es monto individual * ganadores. Vamos a sumar:
+            // (Ganadores * Monto) para cada categoría.
+            
+            const categories = [
+                'LOTO', 'SUPER_QUINA_5_ACIERTOS_COMODIN', 'QUINA_5_ACIERTOS', 'SUPER_CUATERNA_4_ACIERTOS_COMODIN',
+                'CUATERNA_4_ACIERTOS', 'SUPER_TERNA_3_ACIERTOS_COMODIN', 'TERNA_3_ACIERTOS', 'SUPER_DUPLA_2_ACIERTOS_COMODIN',
+                'RECARGADO_6_ACIERTOS', 'REVANCHA', 'DESQUITE'
+            ];
 
-            // Stats
-            document.getElementById('stat-total').innerText = data.length;
-            document.getElementById('stat-year').innerText = oldest.anio;
-            document.getElementById('stat-last').innerText = `${latest.dia}/${latest.mes}`;
+            categories.forEach(cat => {
+                const g = parseInt(row[`${cat}_GANADORES`] || 0);
+                const m = parseInt(row[`${cat}_MONTO`] || 0);
+                // Si el monto es 0 pero hubo ganadores, puede ser error de dato, pero asumimos lo que hay.
+                // En Loto, si hay 1 ganador de 800M, el monto es 800M. Total = 800M.
+                // Si hay 10 ganadores de 100k, el monto listado suele ser el individual (100k). Total = 1M.
+                if(g > 0 && m > 0) {
+                    // OJO: En Loto (Jackpot), Revancha, Desquite, Recargado (pozos), el monto suele ser el TOTAL a repartir si hay 1 ganador.
+                    // Si hay múltiples ganadores, el monto listado suele ser lo que se lleva CADA UNO.
+                    // Multiplicamos siempre para estar seguros del "repartido".
+                    totalMoney += (g * m);
+                }
+            });
+            
+            // Si LOTO estaba vacante (g=0), sumamos 0.
+            document.getElementById('stat-total-dist').innerText = fmtMoney(totalMoney);
 
-            // Table
-            const tbody = document.getElementById('history-body');
-            data.slice(1, 100).forEach(r => {
-                const tr = document.createElement('tr');
-                
-                // Mini balls
-                let minis = '<div class="mini-grid">';
-                [r.LOTO_n1, r.LOTO_n2, r.LOTO_n3, r.LOTO_n4, r.LOTO_n5, r.LOTO_n6].forEach(n => {
-                    if(n) minis += `<div class="mini-b active">${n}</div>`;
-                });
-                if(r.LOTO_comodin) minis += `<div class="mini-b" style="background:#fff; color:#000; font-weight:900;">${r.LOTO_comodin}</div>`;
-                minis += '</div>';
 
-                const wg = parseInt(r.LOTO_GANADORES||0);
-                const wm = parseInt(r.LOTO_MONTO||0);
-                let pay = '<span style="color:#444">/// NO DATA</span>';
-                if(wg > 0) pay = `<span style="color:var(--system-green)">DETECTED: ${fmtMoney(wm)}</span>`;
-                else if(wm === 0) pay = `<span style="color:var(--alert-amber)">ROLLOVER</span>`;
-
-                tr.innerHTML = `
-                    <td style="color:white; font-weight:bold;">#${r.sorteo}</td>
-                    <td>${r.dia}/${r.mes}/${r.anio}</td>
-                    <td>${minis}</td>
-                    <td>${pay}</td>
-                `;
-                tbody.appendChild(tr);
+            // 5. ANÁLISIS DE PATRONES (Repetición)
+            // Crear firma de este sorteo
+            const currentSig = loto.slice().sort((a,b)=>a-b).join('-');
+            let sum = 0; let odds = 0;
+            loto.forEach(n => {
+                const num = parseInt(n);
+                sum += num;
+                if(num % 2 !== 0) odds++;
             });
 
-            // Audit
-            runAudit(data);
+            document.getElementById('pat-sum').innerText = sum;
+            document.getElementById('pat-parity').innerText = `${6-odds} Pares / ${odds} Impares`;
 
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('main-dashboard').style.display = 'block';
+            // Buscar duplicados en la historia
+            const duplicates = window.db.filter(r => {
+                // No compararse con uno mismo
+                if (r.sorteo == row.sorteo) return false;
+                
+                const rLoto = [r.LOTO_n1, r.LOTO_n2, r.LOTO_n3, r.LOTO_n4, r.LOTO_n5, r.LOTO_n6];
+                const rSig = rLoto.sort((a,b)=>a-b).join('-');
+                return rSig === currentSig;
+            });
+
+            if (duplicates.length > 0) {
+                document.getElementById('repetition-box').style.display = 'block';
+                document.getElementById('unique-msg').style.display = 'none';
+                const ul = document.getElementById('rep-list');
+                ul.innerHTML = '';
+                duplicates.forEach(d => {
+                    ul.innerHTML += `<li>Sorteo #${d.sorteo} (${d.dia}/${d.mes}/${d.anio})</li>`;
+                });
+            } else {
+                document.getElementById('repetition-box').style.display = 'none';
+                document.getElementById('unique-msg').style.display = 'flex';
+            }
         }
 
-        // --- SEARCH ---
-        document.getElementById('cmd-input').addEventListener('keypress', (e) => {
-            if(e.key === 'Enter') {
-                const q = e.target.value;
-                const res = window.lotoDB.find(x => x.sorteo == q);
-                const panel = document.getElementById('search-result');
-                const content = document.getElementById('search-content');
-                
-                if(res) {
-                    // Found
-                    const lotoN = [res.LOTO_n1, res.LOTO_n2, res.LOTO_n3, res.LOTO_n4, res.LOTO_n5, res.LOTO_n6];
-                    let bh = renderBallHtml(lotoN);
-                    if(res.LOTO_comodin) bh += renderBallHtml([res.LOTO_comodin], 'comodin');
-                    
-                    const gw = parseInt(res.LOTO_GANADORES||0);
-                    const gm = parseInt(res.LOTO_MONTO||0);
-                    const mtxt = gw > 0 ? `<span style="color:var(--system-green)">WINNER: ${fmtMoney(gm)}</span>` : `<span style="color:var(--danger-red)">NO WINNER</span>`;
-
-                    content.innerHTML = `
-                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; align-items:center;">
-                            <div style="text-align:center;">
-                                <h2 style="font-family:var(--font-head); color:white;">DRAW #${res.sorteo}</h2>
-                                <div style="color:var(--hud-cyan); margin-bottom:10px;">${res.dia}/${res.mes}/${res.anio}</div>
-                                <div style="display:flex; justify-content:center; gap:5px; margin-bottom:10px;">${bh}</div>
-                                <div style="font-family:var(--font-data); font-size:1.2rem;">${mtxt}</div>
-                            </div>
-                            <div style="border-left:1px solid #333; padding-left:20px;">
-                                <div style="font-size:0.7rem; color:#666; margin-bottom:5px;">RAW DATA LOG</div>
-                                <pre style="font-size:0.7rem; color:var(--system-green); overflow:hidden;">
-RECARGADO: ${res.RECARGADO_n1} ${res.RECARGADO_n2} ${res.RECARGADO_n3} ${res.RECARGADO_n4} ${res.RECARGADO_n5} ${res.RECARGADO_n6}
-REVANCHA : ${res.REVANCHA_n1} ${res.REVANCHA_n2} ${res.REVANCHA_n3} ${res.REVANCHA_n4} ${res.REVANCHA_n5} ${res.REVANCHA_n6}
-DESQUITE : ${res.DESQUITE_n1} ${res.DESQUITE_n2} ${res.DESQUITE_n3} ${res.DESQUITE_n4} ${res.DESQUITE_n5} ${res.DESQUITE_n6}
-                                </pre>
-                            </div>
-                        </div>
-                    `;
-                    panel.style.display = 'block';
-                } else {
-                    // Not found animation
-                    e.target.style.borderColor = 'var(--danger-red)';
-                    setTimeout(() => e.target.style.borderColor = 'var(--hud-dim)', 500);
-                    panel.style.display = 'none';
-                }
-            }
+        // --- BUSQUEDA ---
+        function performSearch() {
+            const val = document.getElementById('search-input').value;
+            if(!val) return;
+            const found = window.db.find(r => r.sorteo == val);
+            if(found) loadDashboard(found);
+            else alert("Sorteo no encontrado en la base de datos.");
+        }
+        
+        document.getElementById('search-btn').addEventListener('click', performSearch);
+        document.getElementById('search-input').addEventListener('keypress', e => {
+            if(e.key === 'Enter') performSearch();
         });
 
-        // --- AUDIT LOGIC ---
-        function runAudit(data) {
-            const start = new Date(2016, 0, 3);
-            const now = new Date();
-            let expected = 0;
-            for (let d = new Date(start); d <= now; d.setDate(d.getDate() + 1)) {
-                if([0,2,4].includes(d.getDay())) expected++;
-            }
-            const pct = Math.min(100, Math.round((data.length / expected) * 100));
-            
-            document.getElementById('diag-pct').innerText = pct + "%";
-            document.getElementById('diag-bar').style.width = pct + "%";
-            
-            if(pct < 100) {
-                document.getElementById('diag-msg').innerHTML = `WARNING: DATABASE FRAGMENTATION DETECTED.<br>MISSING ${expected - data.length} ENTRIES.`;
-                document.getElementById('diag-bar').style.background = "var(--alert-amber)";
-                document.getElementById('diag-bar').style.boxShadow = "0 0 10px var(--alert-amber)";
-            } else {
-                document.getElementById('diag-msg').innerText = "SYSTEM INTEGRITY: OPTIMAL";
-            }
+        // --- CARGA INICIAL ---
+        function getMes(m) {
+            const meses = ["", "Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+            return meses[parseInt(m)];
         }
 
-        // --- TIMER ---
-        function tick() {
-            const now = new Date(new Date().toLocaleString("en-US", {timeZone: "America/Santiago"}));
-            let next = new Date(now);
-            for(let i=0; i<7; i++) {
-                next.setDate(now.getDate() + i);
-                next.setHours(21, 0, 0, 0);
-                if([0,2,4].includes(next.getDay()) && next > now) break;
-            }
-            const diff = next - now;
-            const d = Math.floor(diff / (1000 * 60 * 60 * 24));
-            const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-            
-            document.getElementById('d-d').innerText = d.toString().padStart(2,'0');
-            document.getElementById('d-h').innerText = h.toString().padStart(2,'0');
-            document.getElementById('d-m').innerText = m.toString().padStart(2,'0');
-        }
-        setInterval(tick, 1000); tick();
-
-        // --- LOAD ---
         Papa.parse(CSV_URL + '?t=' + Date.now(), {
             download: true, header: true, delimiter: ";", skipEmptyLines: true,
-            complete: (r) => initDashboard(r.data),
-            error: (e) => alert("CRITICAL FAILURE: DATABASE OFFLINE")
+            complete: function(results) {
+                let data = results.data;
+                
+                // Ordenar Descendente (Más nuevo primero)
+                data.sort((a, b) => parseInt(b.sorteo) - parseInt(a.sorteo));
+                window.db = data; // Guardar en global
+
+                document.getElementById('total-rows').innerText = `${data.length} Registros`;
+
+                // Cargar último sorteo por defecto
+                if(data.length > 0) {
+                    loadDashboard(data[0]);
+                    
+                    // Llenar tabla histórica
+                    const tbody = document.getElementById('history-body');
+                    // Mostrar solo los primeros 50 para no saturar el DOM
+                    data.slice(0, 50).forEach(r => {
+                        const tr = document.createElement('tr');
+                        
+                        // Mini balls HTML
+                        let minis = '<div class="mini-balls">';
+                        [r.LOTO_n1, r.LOTO_n2, r.LOTO_n3, r.LOTO_n4, r.LOTO_n5, r.LOTO_n6].forEach(n => {
+                            minis += `<div class="m-ball active">${n}</div>`;
+                        });
+                        if(r.LOTO_comodin) minis += `<div class="m-ball" style="border:1px solid #fbbf24; color:#fbbf24; background:transparent;">${r.LOTO_comodin}</div>`;
+                        minis += '</div>';
+
+                        const g = parseInt(r.LOTO_GANADORES || 0);
+                        const m = parseInt(r.LOTO_MONTO || 0);
+                        let res = '<span style="color:#8b949e">Vacante</span>';
+                        if(g > 0) res = `<span class="winner-hl" title="${fmtMoney(m)}">${g} Ganador(es)</span>`;
+
+                        tr.innerHTML = `
+                            <td style="color:white; font-weight:600;">#${r.sorteo}</td>
+                            <td>${r.dia}/${r.mes}/${r.anio}</td>
+                            <td>${minis}</td>
+                            <td>${res}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
+
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('main-ui').style.display = 'block';
+            }
         });
     </script>
 </body>
