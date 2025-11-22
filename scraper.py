@@ -13,8 +13,8 @@ CSV_FILE = 'LOTO_HISTORIAL_MAESTRO.csv'
 STATUS_FILE = 'system_status.json'
 
 # SEMILLA 2024 (29 Dic - Sorteo 5210)
-HISTORY_START_DATE = datetime.datetime(2025, 1, 9)
-HISTORY_START_SORTEO = 5215
+HISTORY_START_DATE = datetime.datetime(2025, 1, 12)
+HISTORY_START_SORTEO = 5216
 
 def log(msg, status="INFO"):
     ts = datetime.datetime.now().strftime("%H:%M:%S")
