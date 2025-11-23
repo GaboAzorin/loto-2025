@@ -58,7 +58,7 @@
         .ai-badge { font-size: 0.7rem; background: var(--text-accent); color: black; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-bottom: 10px; display: inline-block; }
         .blur-text { filter: blur(4px); user-select: none; opacity: 0.5; margin: 10px 0; }
 
-        /* TABLA PRINCIPAL */
+        /* TABLA PRINCIPAL (HISTORIAL) */
         .table-responsive { width: 100%; overflow-x: auto; max-height: 400px; }
         table { width: 100%; border-collapse: collapse; min-width: 600px; }
         th { text-align: left; padding: 8px 12px; font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; background: #21262d; position: sticky; top: 0; z-index: 10; border-bottom: 1px solid var(--border-color); }
@@ -98,18 +98,62 @@
         .fin-sub { font-size: 0.8rem; margin-top: 5px; color: var(--text-secondary); }
         .money-positive { color: var(--success); }
         
-        /* TABLA DESGLOSE FINANCIERO */
-        .breakdown-table { width: 100%; font-size: 0.8rem; margin-top: 10px; }
-        .breakdown-table th { background: rgba(255,255,255,0.05); padding: 5px; }
-        .breakdown-table td { padding: 5px; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: right; }
-        .breakdown-table td:first-child { text-align: left; }
+        /* --- FIX TABLA DESGLOSE FINANCIERO --- */
+        /* Contenedor con scroll horizontal forzado */
+        .breakdown-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: rgba(0,0,0,0.2);
+        }
+        
+        .breakdown-table {
+            width: 100%;
+            /* Forzamos un ancho mínimo para que no se aplaste en móvil */
+            min-width: 500px; 
+            font-size: 0.8rem;
+            border-collapse: collapse;
+        }
+        
+        .breakdown-table th {
+            background: rgba(255,255,255,0.05);
+            padding: 8px;
+            text-align: right;
+            color: var(--text-secondary);
+            white-space: nowrap;
+        }
+        /* La primera columna (Categoría) alineada a la izquierda */
+        .breakdown-table th:first-child { text-align: left; }
+        
+        .breakdown-table td {
+            padding: 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            text-align: right;
+            font-family: 'JetBrains Mono';
+            white-space: nowrap; /* Evita que los números se partan */
+        }
+        
+        /* Permitimos que el nombre de la categoría haga salto de línea si es necesario */
+        .breakdown-table td:first-child {
+            text-align: left;
+            white-space: normal;
+            min-width: 120px;
+            color: var(--text-primary);
+        }
+        
         .bd-row:hover { background: rgba(255,255,255,0.02); }
 
         @media (max-width: 768px) {
             .draw-grid { grid-template-columns: 1fr; }
             .search-area { flex-direction: column; }
             .search-btn { width: 100%; }
+            
+            /* Ajustes tipográficos para móvil */
+            .fin-value { font-size: 1.1rem; }
+            .time-val { font-size: 1.5rem; }
         }
+        
         .hidden { display: none; }
         #loading { padding: 3rem; text-align: center; color: var(--text-secondary); }
     </style>
@@ -117,7 +161,7 @@
 <body>
 
     <div class="container">
-        <h1>Loto Intelligence <span class="badge">V.14</span></h1>
+        <h1>Loto Intelligence <span class="badge">V.15</span></h1>
 
         <div class="panel">
             <div class="panel-head">Próximo Sorteo (Estimado)</div>
@@ -228,12 +272,14 @@
 
                         <div class="fin-card">
                             <div class="fin-label">Desglose de Reparto</div>
-                            <div class="table-responsive" style="max-height:200px;">
+                            
+                            <div class="breakdown-wrapper">
                                 <table class="breakdown-table">
                                     <thead><tr><th>Categoría</th><th>Ganadores</th><th>Monto c/u</th><th>Subtotal</th></tr></thead>
                                     <tbody id="breakdown-body"></tbody>
                                 </table>
                             </div>
+                            
                             <div style="margin-top:10px; padding-top:10px; border-top:1px solid var(--border-color); text-align:right;">
                                 <div class="fin-label">Total Repartido (Todas las categorías)</div>
                                 <div class="fin-value money-positive" id="detail-total-dist">$0</div>
@@ -286,7 +332,6 @@
             document.getElementById('audit-pct').innerText = pct + "%";
             document.getElementById('audit-bar').style.width = pct + "%";
             
-            // Gaps
             const nums = data.map(r => parseInt(r.sorteo)).sort((a,b)=>a-b);
             let missing = [];
             for(let i=0; i<nums.length-1; i++) {
@@ -301,7 +346,6 @@
                 box.innerText = "Faltantes detectados: " + (missing.length > 20 ? missing.slice(0,20).join(', ')+'...' : missing.join(', '));
             }
 
-            // Integridad
             let corrupt = 0;
             data.forEach(r => { if(!r.LOTO_n1 || r.LOTO_n1==0) corrupt++; });
             const intEl = document.getElementById('audit-integrity');
@@ -317,7 +361,6 @@
             document.getElementById('detail-title').innerText = `Sorteo #${row.sorteo}`;
             document.getElementById('detail-date').innerText = `${row.dia}/${row.mes}/${row.anio}`;
 
-            // Bolas
             let html = '';
             [row.LOTO_n1, row.LOTO_n2, row.LOTO_n3, row.LOTO_n4, row.LOTO_n5, row.LOTO_n6].forEach(n => html += `<div class="bb loto">${n}</div>`);
             if(row.LOTO_comodin) html += `<div class="bb comodin">${row.LOTO_comodin}</div>`;
@@ -328,7 +371,6 @@
             document.getElementById('detail-rev').innerHTML = renderMini('REVANCHA');
             document.getElementById('detail-des').innerHTML = renderMini('DESQUITE');
 
-            // Finanzas
             const jackpot = parseInt(row.LOTO_MONTO||0);
             const winners = parseInt(row.LOTO_GANADORES||0);
             
@@ -345,12 +387,8 @@
                 document.getElementById('power-card').style.display = 'none';
             }
 
-            // DESGLOSE FINANCIERO COMPLETO
             let totalDist = 0;
             let breakdownHtml = '';
-            
-            // Recorremos todas las claves del objeto row
-            // Ordenamos las claves para que salgan bonitas (primero Loto, luego Quina, etc)
             const keys = Object.keys(row).sort();
             
             keys.forEach(key => {
@@ -362,9 +400,7 @@
                         const subtotal = count * amount;
                         totalDist += subtotal;
                         
-                        // Formatear nombre categoria
                         let catName = key.replace('_GANADORES', '').replace(/_/g, ' ');
-                        
                         breakdownHtml += `
                             <tr class="bd-row">
                                 <td>${catName}</td>
