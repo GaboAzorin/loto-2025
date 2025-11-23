@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Loto Analytics | Treasury</title>
+    <title>Loto Intelligence | Commander</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     
     <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
     
@@ -15,16 +15,18 @@
             --bg-app: #0d1117;
             --bg-panel: #161b22;
             --border-color: #30363d;
-            --text-primary: #c9d1d9;
+            --text-primary: #e6edf3;
             --text-secondary: #8b949e;
-            --text-accent: #58a6ff;
+            --accent-blue: #2f81f7;
+            --accent-gold: #d29922;
             --success: #238636;
-            --warning: #d29922;
             --danger: #da3633;
-            --loto-yellow: #e3b341;
-            --recargado-cyan: #38bdf8;
-            --revancha-pink: #f472b6;
-            --desquite-green: #4ade80;
+            
+            /* Identidad Juegos */
+            --loto: #fbbf24;
+            --rec: #38bdf8;
+            --rev: #f472b6;
+            --des: #4ade80;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -36,268 +38,318 @@
             padding: 1rem;
             min-height: 100vh;
             font-size: 14px;
+            overflow-x: hidden;
         }
 
-        .container { max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem; }
+        .container { max-width: 1100px; margin: 0 auto; display: flex; flex-direction: column; gap: 2rem; }
 
-        /* COMPONENTES */
-        .panel { background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 6px; overflow: hidden; margin-bottom: 1.5rem; }
-        .panel-head { background: #21262d; padding: 10px 15px; border-bottom: 1px solid var(--border-color); font-weight: 600; font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center; }
-        .panel-body { padding: 15px; }
+        /* --- ANIMACIONES (MICROINTERACCIONES) --- */
+        @keyframes bounceIn { 
+            0% { opacity: 0; transform: scale(0.3); } 
+            50% { opacity: 1; transform: scale(1.05); } 
+            70% { transform: scale(0.9); } 
+            100% { transform: scale(1); } 
+        }
+        @keyframes floatUp {
+            0% { opacity: 0; transform: translateY(20px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(47, 129, 247, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(47, 129, 247, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(47, 129, 247, 0); }
+        }
 
-        h1 { font-size: 1.2rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 10px; }
-        .badge { background: #1f6feb; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; }
-
-        /* COUNTDOWN */
-        .timer-display { display: flex; justify-content: center; gap: 20px; font-family: 'JetBrains Mono'; padding: 1rem; }
-        .time-val { font-size: 2rem; font-weight: 700; color: var(--text-accent); line-height: 1; }
-        .time-lbl { font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; margin-top: 5px; text-align: center; }
-
-        /* PREDICTION */
-        .prediction-box { background: rgba(56, 139, 253, 0.05); border: 1px dashed var(--border-color); border-radius: 6px; padding: 1.5rem; text-align: center; }
-        .ai-badge { font-size: 0.7rem; background: var(--text-accent); color: black; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-bottom: 10px; display: inline-block; }
-        .blur-text { filter: blur(4px); user-select: none; opacity: 0.5; margin: 10px 0; }
-
-        /* TABLA PRINCIPAL (HISTORIAL) */
-        .table-responsive { width: 100%; overflow-x: auto; max-height: 400px; }
-        table { width: 100%; border-collapse: collapse; min-width: 600px; }
-        th { text-align: left; padding: 8px 12px; font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; background: #21262d; position: sticky; top: 0; z-index: 10; border-bottom: 1px solid var(--border-color); }
-        td { padding: 8px 12px; border-bottom: 1px solid var(--border-color); font-family: 'JetBrains Mono'; font-size: 0.85rem; }
-        tr.data-row { cursor: pointer; transition: background 0.2s; }
-        tr.data-row:hover { background: rgba(88, 166, 255, 0.1); }
-        tr.active-row { background: rgba(88, 166, 255, 0.2) !important; border-left: 3px solid var(--text-accent); }
-
-        .mini-balls { display: flex; gap: 4px; }
-        .mb { width: 20px; height: 20px; background: #30363d; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; color: #e6edf3; }
-        .mb.hl { color: var(--loto-yellow); font-weight: bold; }
-
-        /* AUDITORIA */
-        .audit-wrapper { padding: 15px; background: rgba(22, 27, 34, 0.5); border-top: 1px solid var(--border-color); }
-        .audit-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; font-size: 0.8rem; }
-        .audit-label { color: var(--text-secondary); margin-bottom: 4px; }
-        .audit-val { font-weight: 700; font-family: 'JetBrains Mono'; }
-        .progress-track { width: 100%; height: 6px; background: #30363d; border-radius: 3px; margin-top: 5px; overflow: hidden; }
-        .progress-fill { height: 100%; background: var(--success); width: 0%; }
-        .missing-box { margin-top: 10px; padding: 10px; background: rgba(218, 54, 51, 0.1); border: 1px solid rgba(218, 54, 51, 0.3); border-radius: 4px; color: #f85149; font-family: 'JetBrains Mono'; font-size: 0.75rem; display: none; }
-
-        /* INSPECTOR */
-        .search-area { display: flex; gap: 10px; margin-bottom: 1.5rem; }
-        .search-input { background: #0d1117; border: 1px solid var(--border-color); color: white; padding: 8px 12px; border-radius: 6px; flex-grow: 1; font-family: 'JetBrains Mono'; }
-        .search-btn { background: #238636; color: white; border: none; padding: 0 20px; border-radius: 6px; font-weight: 600; cursor: pointer; }
-
-        .draw-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+        /* --- HEADER & TIMER --- */
+        header {
+            display: flex; flex-direction: column; align-items: center; gap: 1rem;
+            padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);
+            animation: floatUp 0.8s ease-out;
+        }
         
-        .big-balls { display: flex; gap: 8px; flex-wrap: wrap; margin: 1rem 0; justify-content: center; }
-        .bb { width: 40px; height: 40px; border-radius: 50%; background: #161b22; border: 2px solid var(--border-color); display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono'; font-size: 1.1rem; font-weight: 700; }
-        .bb.loto { border-color: var(--loto-yellow); color: var(--loto-yellow); }
-        .bb.comodin { background: var(--text-primary); color: #0d1117; border-color: white; }
+        .brand { font-size: 1.5rem; font-weight: 800; letter-spacing: -1px; display: flex; align-items: center; gap: 10px; }
+        .status-dot { width: 8px; height: 8px; background: var(--success); border-radius: 50%; animation: pulse 2s infinite; }
 
-        .fin-card { background: rgba(255,255,255,0.03); padding: 1rem; border-radius: 6px; margin-bottom: 10px; }
-        .fin-label { font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 5px; }
-        .fin-value { font-family: 'JetBrains Mono'; font-size: 1.2rem; font-weight: 600; color: var(--text-primary); }
-        .fin-sub { font-size: 0.8rem; margin-top: 5px; color: var(--text-secondary); }
-        .money-positive { color: var(--success); }
-        
-        /* --- FIX TABLA DESGLOSE FINANCIERO --- */
-        /* Contenedor con scroll horizontal forzado */
-        .breakdown-wrapper {
-            width: 100%;
-            overflow-x: auto;
+        .timer-box {
+            background: rgba(22, 27, 34, 0.8);
             border: 1px solid var(--border-color);
-            border-radius: 6px;
-            background: rgba(0,0,0,0.2);
+            border-radius: 12px;
+            padding: 1rem 2rem;
+            display: flex; gap: 1.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5);
         }
-        
-        .breakdown-table {
-            width: 100%;
-            /* Forzamos un ancho mínimo para que no se aplaste en móvil */
-            min-width: 500px; 
-            font-size: 0.8rem;
-            border-collapse: collapse;
-        }
-        
-        .breakdown-table th {
-            background: rgba(255,255,255,0.05);
-            padding: 8px;
-            text-align: right;
-            color: var(--text-secondary);
-            white-space: nowrap;
-        }
-        /* La primera columna (Categoría) alineada a la izquierda */
-        .breakdown-table th:first-child { text-align: left; }
-        
-        .breakdown-table td {
-            padding: 8px;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-            text-align: right;
-            font-family: 'JetBrains Mono';
-            white-space: nowrap; /* Evita que los números se partan */
-        }
-        
-        /* Permitimos que el nombre de la categoría haga salto de línea si es necesario */
-        .breakdown-table td:first-child {
-            text-align: left;
-            white-space: normal;
-            min-width: 120px;
-            color: var(--text-primary);
-        }
-        
-        .bd-row:hover { background: rgba(255,255,255,0.02); }
+        .t-unit { text-align: center; }
+        .t-val { font-size: 1.8rem; font-weight: 700; color: var(--accent-blue); line-height: 1; }
+        .t-lbl { font-size: 0.65rem; color: var(--text-secondary); margin-top: 5px; }
+        .t-sep { font-size: 1.5rem; color: var(--text-secondary); opacity: 0.5; }
 
-        @media (max-width: 768px) {
-            .draw-grid { grid-template-columns: 1fr; }
-            .search-area { flex-direction: column; }
-            .search-btn { width: 100%; }
-            
-            /* Ajustes tipográficos para móvil */
-            .fin-value { font-size: 1.1rem; }
-            .time-val { font-size: 1.5rem; }
+        /* --- LATEST DRAW HERO (EL NUEVO REY) --- */
+        .hero-section {
+            background: linear-gradient(145deg, #161b22, #0d1117);
+            border: 1px solid var(--accent-gold);
+            border-radius: 16px;
+            padding: 2rem;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 20px 50px -20px rgba(210, 153, 34, 0.15);
+            animation: floatUp 1s ease-out 0.2s backwards;
+            transition: transform 0.3s ease;
+        }
+        .hero-section:hover { transform: translateY(-2px); }
+        
+        .hero-label { 
+            position: absolute; top: 0; left: 0; 
+            background: var(--accent-gold); color: #0d1117; 
+            font-weight: 800; font-size: 0.7rem; padding: 4px 12px; 
+            border-bottom-right-radius: 10px; text-transform: uppercase;
+        }
+
+        .hero-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items: center;
+        }
+
+        .hero-info h2 { font-size: 2.5rem; font-weight: 800; margin: 0; line-height: 1.1; color: white; }
+        .hero-date { color: var(--text-secondary); font-size: 1rem; margin-bottom: 1.5rem; font-family: 'JetBrains Mono'; }
+        
+        .big-balls { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 1.5rem; }
+        .ball-lg {
+            width: 50px; height: 50px; border-radius: 50%;
+            background: #21262d; border: 2px solid var(--loto); color: var(--loto);
+            font-family: 'JetBrains Mono'; font-weight: 700; font-size: 1.2rem;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            animation: bounceIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) backwards;
+        }
+        .ball-lg.comodin { background: var(--text-primary); color: #0d1117; border-color: white; }
+
+        .finance-highlight {
+            background: rgba(255,255,255,0.03); border-radius: 8px; padding: 1rem;
+            display: flex; justify-content: space-between; align-items: center;
+            border-left: 3px solid var(--success);
+        }
+        .fin-big-val { font-family: 'JetBrains Mono'; font-size: 1.3rem; font-weight: 700; color: var(--success); }
+        .fin-label-sm { font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; }
+
+        /* --- PREDICTION & STATS --- */
+        .mid-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; }
+        
+        .card {
+            background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 8px;
+            padding: 1.5rem; animation: floatUp 1s ease-out 0.4s backwards;
+            transition: border-color 0.3s;
+        }
+        .card:hover { border-color: var(--text-secondary); }
+
+        /* --- DATABASE TABLE --- */
+        .table-container {
+            background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 8px;
+            overflow: hidden; animation: floatUp 1s ease-out 0.6s backwards;
+        }
+        .table-header {
+            padding: 1rem; background: #21262d; border-bottom: 1px solid var(--border-color);
+            font-weight: 600; color: var(--text-primary);
+            display: flex; justify-content: space-between; align-items: center;
         }
         
+        .scroll-wrap { max-height: 400px; overflow-y: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 600px; }
+        th { 
+            text-align: left; padding: 12px; font-size: 0.75rem; color: var(--text-secondary); 
+            text-transform: uppercase; position: sticky; top: 0; background: #161b22; z-index: 10;
+            border-bottom: 1px solid var(--border-color);
+        }
+        td { padding: 10px 12px; border-bottom: 1px solid var(--border-color); font-family: 'JetBrains Mono'; font-size: 0.85rem; }
+        tr { cursor: pointer; transition: background 0.2s; }
+        tr:hover { background: rgba(255,255,255,0.03); }
+        tr.active { background: rgba(47, 129, 247, 0.15); border-left: 3px solid var(--accent-blue); }
+
+        .mini-row { display: flex; gap: 4px; }
+        .mb { width: 22px; height: 22px; background: #30363d; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; }
+        .mb.hl { color: var(--loto); font-weight: bold; }
+
+        /* --- INSPECTOR (MODAL / BOTTOM) --- */
+        #inspector { scroll-margin-top: 20px; }
+        .inspector-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 1rem; }
+        
+        .breakdown-table { width: 100%; font-size: 0.8rem; border-collapse: collapse; }
+        .breakdown-table td { padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .breakdown-table td:last-child { text-align: right; font-family: 'JetBrains Mono'; color: var(--text-primary); }
+
+        /* RESPONSIVE */
+        @media (max-width: 768px) {
+            .hero-grid, .mid-grid, .inspector-grid { grid-template-columns: 1fr; }
+            .timer-box { gap: 0.8rem; padding: 1rem; }
+            .t-val { font-size: 1.4rem; }
+        }
+
+        #loading { text-align: center; padding: 3rem; color: var(--text-secondary); }
         .hidden { display: none; }
-        #loading { padding: 3rem; text-align: center; color: var(--text-secondary); }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <h1>Loto Intelligence <span class="badge">V.15</span></h1>
-
-        <div class="panel">
-            <div class="panel-head">Próximo Sorteo (Estimado)</div>
-            <div class="panel-body">
-                <div class="timer-display">
-                    <div class="time-unit"><div class="time-val" id="cd-d">00</div><div class="time-lbl">DÍAS</div></div>
-                    <div class="time-unit"><div class="time-val">:</div></div>
-                    <div class="time-unit"><div class="time-val" id="cd-h">00</div><div class="time-lbl">HRS</div></div>
-                    <div class="time-unit"><div class="time-val">:</div></div>
-                    <div class="time-unit"><div class="time-val" id="cd-m">00</div><div class="time-lbl">MIN</div></div>
-                </div>
+        <header>
+            <div class="brand">
+                <div class="status-dot"></div> LOTO INTELLIGENCE
             </div>
-        </div>
-
-        <div class="prediction-box">
-            <div class="ai-badge">IA PREDICTOR (BETA)</div>
-            <h3>Próxima Combinación Probable</h3>
-            <div class="blur-text">04 12 19 22 35 41</div>
-            <div class="lock-msg">🔒 Módulo en entrenamiento.</div>
-        </div>
-
-        <div id="loading">Sincronizando...</div>
-
-        <div class="panel hidden" id="db-panel">
-            <div class="panel-head">
-                <span>Base de Datos (Últimos 99)</span>
+            <div class="timer-box">
+                <div class="t-unit"><div class="t-val" id="cd-d">00</div><div class="t-lbl">DÍAS</div></div>
+                <div class="t-sep">:</div>
+                <div class="t-unit"><div class="t-val" id="cd-h">00</div><div class="t-lbl">HRS</div></div>
+                <div class="t-sep">:</div>
+                <div class="t-unit"><div class="t-val" id="cd-m">00</div><div class="t-lbl">MIN</div></div>
+                <div class="t-sep">:</div>
+                <div class="t-unit"><div class="t-val" id="cd-s">00</div><div class="t-lbl">SEG</div></div>
             </div>
-            <div class="table-responsive">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Sorteo</th>
-                            <th>Fecha</th>
-                            <th>Números</th>
-                            <th>Estado</th>
-                        </tr>
-                    </thead>
-                    <tbody id="table-body"></tbody>
-                </table>
-            </div>
+        </header>
+
+        <div id="loading">Inicializando Sistema...</div>
+
+        <div id="main-ui" class="hidden">
             
-            <div class="audit-wrapper">
-                <div style="margin-bottom:10px; font-weight:600; color:var(--text-primary);">Estado de la Base de Datos</div>
-                <div class="audit-grid">
-                    <div>
-                        <div class="audit-label">COBERTURA (2016-HOY)</div>
-                        <div class="audit-val" id="audit-pct">0%</div>
-                        <div class="progress-track"><div class="progress-fill" id="audit-bar"></div></div>
-                    </div>
-                    <div>
-                        <div class="audit-label">TOTAL REGISTROS</div>
-                        <div class="audit-val" id="audit-total">0</div>
-                    </div>
-                    <div>
-                        <div class="audit-label">SORT. ESPERADOS</div>
-                        <div class="audit-val" id="audit-expected">0</div>
-                    </div>
-                    <div>
-                        <div class="audit-label">INTEGRIDAD</div>
-                        <div class="audit-val" id="audit-integrity">--</div>
-                    </div>
-                </div>
-                <div id="missing-list" class="missing-box"></div>
-            </div>
-        </div>
-
-        <div class="panel hidden" id="inspector-panel">
-            <div class="panel-head">Inspector de Sorteo</div>
-            <div class="panel-body">
-                <div class="search-area">
-                    <input type="number" id="search-input" class="search-input" placeholder="N° Sorteo">
-                    <button class="search-btn" onclick="manualSearch()">BUSCAR</button>
-                </div>
-
-                <div class="draw-grid">
-                    <div style="text-align: center;">
-                        <h2 id="detail-title">Sorteo #----</h2>
-                        <div style="color:var(--text-secondary); margin-bottom:1rem;" id="detail-date">--/--/----</div>
+            <div class="hero-section">
+                <div class="hero-label">Último Resultado</div>
+                <div class="hero-grid">
+                    <div class="hero-info">
+                        <h2 id="hero-sorteo">Sorteo #----</h2>
+                        <div class="hero-date" id="hero-date">--/--/----</div>
                         
-                        <div style="font-size:0.8rem; color:var(--loto-yellow); font-weight:bold; margin-bottom:5px;">LOTO</div>
-                        <div class="big-balls" id="detail-balls"></div>
-
-                        <div style="margin-top:2rem; display:grid; grid-template-columns: 1fr 1fr 1fr; gap:5px;">
-                            <div><div style="font-size:0.7rem; color:var(--recargado-cyan)">RECARGADO</div><div class="mini-balls" id="detail-rec" style="justify-content:center;"></div></div>
-                            <div><div style="font-size:0.7rem; color:var(--revancha-pink)">REVANCHA</div><div class="mini-balls" id="detail-rev" style="justify-content:center;"></div></div>
-                            <div><div style="font-size:0.7rem; color:var(--desquite-green)">DESQUITE</div><div class="mini-balls" id="detail-des" style="justify-content:center;"></div></div>
+                        <div style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:10px;">COMBINACIÓN GANADORA</div>
+                        <div class="big-balls" id="hero-balls"></div>
+                        
+                        <div style="display:flex; gap:15px; margin-top:1rem;">
+                            <div class="badge" style="background:var(--rec); color:black">RECARGADO</div>
+                            <div class="badge" style="background:var(--rev); color:black">REVANCHA</div>
+                            <div class="badge" style="background:var(--des); color:black">DESQUITE</div>
                         </div>
                     </div>
-
+                    
                     <div>
-                        <div class="fin-card" style="border-left: 3px solid var(--loto-yellow);">
-                            <div class="fin-label">Premio Loto (6 Aciertos)</div>
-                            <div class="fin-value" id="detail-jackpot">$0</div>
-                            <div class="fin-sub" id="detail-winners">Vacante</div>
+                        <div class="finance-highlight">
+                            <div>
+                                <div class="fin-label-sm">Dinero Total Repartido</div>
+                                <div style="font-size:0.7rem; opacity:0.7;">(Todas las categorías)</div>
+                            </div>
+                            <div class="fin-big-val" id="hero-total-money">$0</div>
                         </div>
-
-                        <div class="fin-card" id="power-card" style="display:none;">
-                            <div class="fin-label">Poder Adquisitivo</div>
-                            <div style="font-size:0.9rem; color:var(--text-primary);">
-                                🏢 <span id="calc-deptos">0</span> Deptos (4.000 UF)<br>
-                                🏎️ <span id="calc-autos">0</span> Autos Lujo (60M)
-                            </div>
-                            <div style="margin-top:10px; padding-top:10px; border-top:1px solid var(--border-color);">
-                                <div class="fin-label">Rentabilidad Mensual (0.4%)</div>
-                                <div style="color:var(--success); font-weight:bold;" id="calc-dap">$0</div>
-                            </div>
-                        </div>
-
-                        <div class="fin-card">
-                            <div class="fin-label">Desglose de Reparto</div>
-                            
-                            <div class="breakdown-wrapper">
-                                <table class="breakdown-table">
-                                    <thead><tr><th>Categoría</th><th>Ganadores</th><th>Monto c/u</th><th>Subtotal</th></tr></thead>
-                                    <tbody id="breakdown-body"></tbody>
-                                </table>
-                            </div>
-                            
-                            <div style="margin-top:10px; padding-top:10px; border-top:1px solid var(--border-color); text-align:right;">
-                                <div class="fin-label">Total Repartido (Todas las categorías)</div>
-                                <div class="fin-value money-positive" id="detail-total-dist">$0</div>
-                            </div>
+                        <div style="margin-top:1rem; padding:1rem; background:rgba(0,0,0,0.2); border-radius:8px;">
+                            <div class="fin-label-sm">Estado Loto 6 Aciertos</div>
+                            <div id="hero-jackpot-status" style="font-size:1.1rem; font-weight:600; margin-top:5px;">---</div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
 
+            <div class="mid-grid">
+                <div class="card" style="border-style: dashed; background: rgba(47, 129, 247, 0.05);">
+                    <div style="display:flex; justify-content:space-between;">
+                        <span style="font-weight:700; color:var(--accent-blue);">IA PREDICTOR</span>
+                        <span class="badge">BETA</span>
+                    </div>
+                    <div style="margin-top:1rem; text-align:center; filter:blur(4px); opacity:0.6; font-family:'JetBrains Mono'">
+                        04 - 12 - 19 - 22 - 35 - 41
+                    </div>
+                    <div style="text-align:center; font-size:0.75rem; color:var(--text-secondary); margin-top:5px;">
+                        Módulo en entrenamiento neuronal.
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div style="font-size:0.8rem; font-weight:700; margin-bottom:10px;">SALUD DE DATOS</div>
+                    <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                        <span style="font-size:0.8rem; color:var(--text-secondary);">Cobertura</span>
+                        <span style="font-family:'JetBrains Mono'; color:var(--success);" id="audit-pct">100%</span>
+                    </div>
+                    <div style="width:100%; height:4px; background:#30363d; border-radius:2px;">
+                        <div id="audit-bar" style="width:0%; height:100%; background:var(--success);"></div>
+                    </div>
+                    <div id="audit-msg" style="font-size:0.7rem; margin-top:10px; color:var(--text-secondary);">Sistema nominal.</div>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <div class="table-header">
+                    <span>Historial (Anteriores)</span>
+                    <span style="font-size:0.75rem; opacity:0.7; font-weight:400;">Clic para detalles</span>
+                </div>
+                <div class="scroll-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Sorteo</th>
+                                <th>Fecha</th>
+                                <th>Números</th>
+                                <th>Estado Mayor</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card hidden" id="inspector">
+                <div style="border-bottom:1px solid var(--border-color); padding-bottom:10px; margin-bottom:1rem; display:flex; justify-content:space-between; align-items:center;">
+                    <h3 style="margin:0">Inspector de Sorteo <span id="insp-id" style="color:var(--text-secondary)">#---</span></h3>
+                    <button onclick="document.getElementById('inspector').classList.add('hidden')" style="background:none; border:none; color:var(--text-secondary); cursor:pointer;">✕</button>
+                </div>
+                
+                <div class="inspector-grid">
+                    <div>
+                        <div style="margin-bottom:1rem;">
+                            <div style="font-size:0.7rem; color:var(--loto); font-weight:bold;">LOTO</div>
+                            <div class="mini-balls" id="insp-loto" style="margin-top:5px;"></div>
+                        </div>
+                        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
+                            <div><div style="font-size:0.7rem; color:var(--rec)">RECARGADO</div><div class="mini-balls" id="insp-rec"></div></div>
+                            <div><div style="font-size:0.7rem; color:var(--rev)">REVANCHA</div><div class="mini-balls" id="insp-rev"></div></div>
+                            <div><div style="font-size:0.7rem; color:var(--des)">DESQUITE</div><div class="mini-balls" id="insp-des"></div></div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="fin-label-sm">Desglose Financiero Real</div>
+                        <div style="max-height:150px; overflow-y:auto; margin-bottom:1rem; border:1px solid var(--border-color); border-radius:6px; padding:10px;">
+                            <table class="breakdown-table">
+                                <tbody id="insp-breakdown"></tbody>
+                            </table>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--border-color); padding-top:10px;">
+                            <span style="font-size:0.8rem;">TOTAL REPARTIDO</span>
+                            <span class="fin-big-val" style="font-size:1.1rem;" id="insp-total">$0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
     </div>
 
     <script>
         const CSV_URL = 'LOTO_HISTORIAL_MAESTRO.csv';
-        window.globalData = [];
-
+        
+        // --- UTILS ---
         const fmtMoney = (v) => new Intl.NumberFormat('es-CL', {style:'currency', currency:'CLP'}).format(v);
         
+        function calculateTotalDistributed(row) {
+            let total = 0;
+            // Recorremos todas las columnas
+            Object.keys(row).forEach(key => {
+                if (key.endsWith('_GANADORES')) {
+                    const count = parseInt(row[key] || 0);
+                    if (count > 0) {
+                        // Buscar monto asociado
+                        const mKey = key.replace('_GANADORES', '_MONTO');
+                        const amount = parseInt(row[mKey] || 0);
+                        total += (count * amount);
+                    }
+                }
+            });
+            return total;
+        }
+
+        // --- RELOJ ---
         function updateTimer() {
             const now = new Date(new Date().toLocaleString("en-US", {timeZone: "America/Santiago"}));
             let target = new Date(now);
@@ -309,119 +361,78 @@
             const d = Math.floor(diff / (1000*60*60*24));
             const h = Math.floor((diff % (1000*60*60*24)) / (1000*60*60));
             const m = Math.floor((diff % (1000*60*60)) / (1000*60));
+            const s = Math.floor((diff % (1000*60)) / 1000); // SEGUNDOS AÑADIDOS
+            
             document.getElementById('cd-d').innerText = d.toString().padStart(2,'0');
             document.getElementById('cd-h').innerText = h.toString().padStart(2,'0');
             document.getElementById('cd-m').innerText = m.toString().padStart(2,'0');
+            document.getElementById('cd-s').innerText = s.toString().padStart(2,'0');
         }
         setInterval(updateTimer, 1000); updateTimer();
 
-        // --- AUDITORIA ---
-        function runAudit(data) {
-            const start = new Date(2016, 0, 3);
-            const now = new Date();
-            let expected = 0;
-            for (let d = new Date(start); d <= now; d.setDate(d.getDate() + 1)) {
-                if([0,2,4].includes(d.getDay())) expected++;
-            }
+        // --- RENDERIZADO ---
+        function renderHero(row) {
+            document.getElementById('hero-sorteo').innerText = `Sorteo #${row.sorteo}`;
+            document.getElementById('hero-date').innerText = `${row.dia}/${row.mes}/${row.anio}`;
             
-            const actual = data.length;
-            const pct = Math.round((actual/expected)*100);
-            
-            document.getElementById('audit-total').innerText = actual.toLocaleString();
-            document.getElementById('audit-expected').innerText = expected.toLocaleString();
-            document.getElementById('audit-pct').innerText = pct + "%";
-            document.getElementById('audit-bar').style.width = pct + "%";
-            
-            const nums = data.map(r => parseInt(r.sorteo)).sort((a,b)=>a-b);
-            let missing = [];
-            for(let i=0; i<nums.length-1; i++) {
-                if(nums[i+1]-nums[i] > 1) {
-                    for(let j=nums[i]+1; j<nums[i+1]; j++) missing.push(j);
-                }
-            }
-            
-            if(missing.length > 0) {
-                const box = document.getElementById('missing-list');
-                box.style.display = 'block';
-                box.innerText = "Faltantes detectados: " + (missing.length > 20 ? missing.slice(0,20).join(', ')+'...' : missing.join(', '));
-            }
+            // Bolas
+            let html = '';
+            [row.LOTO_n1, row.LOTO_n2, row.LOTO_n3, row.LOTO_n4, row.LOTO_n5, row.LOTO_n6].forEach((n, i) => {
+                // Animación escalonada
+                html += `<div class="ball-lg" style="animation-delay:${i*0.1}s">${n}</div>`;
+            });
+            if(row.LOTO_comodin) html += `<div class="ball-lg comodin" style="animation-delay:0.7s">${row.LOTO_comodin}</div>`;
+            document.getElementById('hero-balls').innerHTML = html;
 
-            let corrupt = 0;
-            data.forEach(r => { if(!r.LOTO_n1 || r.LOTO_n1==0) corrupt++; });
-            const intEl = document.getElementById('audit-integrity');
-            if(corrupt==0) { intEl.innerText = "OK"; intEl.style.color = "var(--success)"; }
-            else { intEl.innerText = `${corrupt} Vacíos`; intEl.style.color = "var(--danger)"; }
+            // Dinero
+            const total = calculateTotalDistributed(row);
+            document.getElementById('hero-total-money').innerText = fmtMoney(total);
+
+            const jackG = parseInt(row.LOTO_GANADORES||0);
+            const jackM = parseInt(row.LOTO_MONTO||0);
+            const jStat = document.getElementById('hero-jackpot-status');
+            if(jackG > 0) {
+                jStat.innerHTML = `<span style="color:var(--success)">¡${jackG} GANADOR(ES)! (${fmtMoney(jackM)})</span>`;
+            } else {
+                jStat.innerHTML = `<span style="color:var(--text-secondary)">Pozo Acumulado (Vacante)</span>`;
+            }
         }
 
-        // --- CARGA DETALLES ---
-        function loadDrawDetails(row) {
-            document.getElementById('inspector-panel').classList.remove('hidden');
-            document.getElementById('inspector-panel').scrollIntoView({behavior: 'smooth'});
+        function loadInspector(row) {
+            document.getElementById('inspector').classList.remove('hidden');
+            document.getElementById('inspector').scrollIntoView({behavior:'smooth'});
+            document.getElementById('insp-id').innerText = `#${row.sorteo}`;
 
-            document.getElementById('detail-title').innerText = `Sorteo #${row.sorteo}`;
-            document.getElementById('detail-date').innerText = `${row.dia}/${row.mes}/${row.anio}`;
-
-            let html = '';
-            [row.LOTO_n1, row.LOTO_n2, row.LOTO_n3, row.LOTO_n4, row.LOTO_n5, row.LOTO_n6].forEach(n => html += `<div class="bb loto">${n}</div>`);
-            if(row.LOTO_comodin) html += `<div class="bb comodin">${row.LOTO_comodin}</div>`;
-            document.getElementById('detail-balls').innerHTML = html;
-
-            const renderMini = (p) => { let h=''; for(let i=1;i<=6;i++) h+=`<div class="mb">${row[p+'_n'+i]||'-'}</div>`; return h; };
-            document.getElementById('detail-rec').innerHTML = renderMini('RECARGADO');
-            document.getElementById('detail-rev').innerHTML = renderMini('REVANCHA');
-            document.getElementById('detail-des').innerHTML = renderMini('DESQUITE');
-
-            const jackpot = parseInt(row.LOTO_MONTO||0);
-            const winners = parseInt(row.LOTO_GANADORES||0);
+            // Minibolas Helper
+            const renderM = (p) => { let h=''; for(let i=1;i<=6;i++) h+=`<div class="mb">${row[p+'_n'+i]||'-'}</div>`; return h; };
             
-            if(winners>0) {
-                document.getElementById('detail-jackpot').innerText = fmtMoney(jackpot);
-                document.getElementById('detail-winners').innerText = `${winners} Ganador(es)`;
-                document.getElementById('power-card').style.display = 'block';
-                document.getElementById('calc-deptos').innerText = (jackpot/150000000).toFixed(1);
-                document.getElementById('calc-autos').innerText = (jackpot/60000000).toFixed(1);
-                document.getElementById('calc-dap').innerText = fmtMoney(Math.round(jackpot*0.004));
-            } else {
-                document.getElementById('detail-jackpot').innerText = "SIN GANADORES";
-                document.getElementById('detail-winners').innerText = "Pozo acumulado";
-                document.getElementById('power-card').style.display = 'none';
-            }
-
-            let totalDist = 0;
-            let breakdownHtml = '';
-            const keys = Object.keys(row).sort();
+            // Loto principal
+            let hl = ''; [row.LOTO_n1, row.LOTO_n2, row.LOTO_n3, row.LOTO_n4, row.LOTO_n5, row.LOTO_n6].forEach(n=>hl+=`<div class="mb hl">${n}</div>`);
+            if(row.LOTO_comodin) hl+=`<div class="mb" style="color:var(--loto); border:1px solid var(--loto)">${row.LOTO_comodin}</div>`;
             
-            keys.forEach(key => {
+            document.getElementById('insp-loto').innerHTML = hl;
+            document.getElementById('insp-rec').innerHTML = renderM('RECARGADO');
+            document.getElementById('insp-rev').innerHTML = renderM('REVANCHA');
+            document.getElementById('insp-des').innerHTML = renderM('DESQUITE');
+
+            // Tabla Financiera
+            let tblHtml = '';
+            let total = 0;
+            Object.keys(row).sort().forEach(key => {
                 if (key.endsWith('_GANADORES')) {
                     const count = parseInt(row[key] || 0);
                     if (count > 0) {
                         const mKey = key.replace('_GANADORES', '_MONTO');
                         const amount = parseInt(row[mKey] || 0);
-                        const subtotal = count * amount;
-                        totalDist += subtotal;
-                        
-                        let catName = key.replace('_GANADORES', '').replace(/_/g, ' ');
-                        breakdownHtml += `
-                            <tr class="bd-row">
-                                <td>${catName}</td>
-                                <td>${count.toLocaleString()}</td>
-                                <td>${fmtMoney(amount)}</td>
-                                <td style="color:var(--text-primary)">${fmtMoney(subtotal)}</td>
-                            </tr>
-                        `;
+                        const sub = count * amount;
+                        total += sub;
+                        let name = key.replace('_GANADORES','').replace(/_/g,' ');
+                        tblHtml += `<tr><td>${name}</td><td>${count} x ${fmtMoney(amount)}</td><td>${fmtMoney(sub)}</td></tr>`;
                     }
                 }
             });
-            
-            document.getElementById('breakdown-body').innerHTML = breakdownHtml || '<tr><td colspan="4" style="text-align:center; color:gray;">Sin datos de premios</td></tr>';
-            document.getElementById('detail-total-dist').innerText = fmtMoney(totalDist);
-        }
-
-        function manualSearch() {
-            const val = document.getElementById('search-input').value;
-            const found = window.globalData.find(r => r.sorteo == val);
-            if(found) loadDrawDetails(found);
-            else alert("Sorteo no encontrado.");
+            document.getElementById('insp-breakdown').innerHTML = tblHtml || '<tr><td colspan="3">Sin datos financieros</td></tr>';
+            document.getElementById('insp-total').innerText = fmtMoney(total);
         }
 
         Papa.parse(CSV_URL + '?v=' + Date.now(), {
@@ -429,40 +440,45 @@
             complete: function(res) {
                 let data = res.data;
                 data.sort((a,b) => parseInt(b.sorteo) - parseInt(a.sorteo));
-                window.globalData = data;
 
-                const tbody = document.getElementById('table-body');
-                data.slice(0, 99).forEach(row => {
-                    const tr = document.createElement('tr');
-                    tr.className = 'data-row';
-                    tr.onclick = () => {
-                        document.querySelectorAll('.active-row').forEach(el => el.classList.remove('active-row'));
-                        tr.classList.add('active-row');
-                        loadDrawDetails(row);
-                    };
+                if(data.length > 0) {
+                    // 1. Render Hero con el ÚLTIMO (index 0)
+                    renderHero(data[0]);
 
-                    let balls = '<div class="mini-balls">';
-                    [row.LOTO_n1, row.LOTO_n2, row.LOTO_n3, row.LOTO_n4, row.LOTO_n5, row.LOTO_n6].forEach(n => {
-                        balls += `<div class="mb hl">${n}</div>`;
+                    // 2. Render Tabla con el RESTO (index 1 en adelante)
+                    const tbody = document.getElementById('history-body');
+                    data.slice(1, 100).forEach(row => {
+                        const tr = document.createElement('tr');
+                        tr.onclick = () => {
+                            document.querySelectorAll('tr.active').forEach(e=>e.classList.remove('active'));
+                            tr.classList.add('active');
+                            loadInspector(row);
+                        };
+
+                        let balls = '<div class="mini-row">';
+                        [row.LOTO_n1, row.LOTO_n2, row.LOTO_n3, row.LOTO_n4, row.LOTO_n5, row.LOTO_n6].forEach(n => balls+=`<div class="mb hl">${n}</div>`);
+                        balls += '</div>';
+
+                        const g = parseInt(row.LOTO_GANADORES||0);
+                        const st = g>0 ? `<span style="color:var(--success)">${g} Gana</span>` : `<span style="color:var(--text-secondary)">Vacante</span>`;
+
+                        tr.innerHTML = `
+                            <td style="color:white">#${row.sorteo}</td>
+                            <td>${row.dia}/${row.mes}</td>
+                            <td>${balls}</td>
+                            <td>${st}</td>
+                        `;
+                        tbody.appendChild(tr);
                     });
-                    if(row.LOTO_comodin) balls += `<div class="mb" style="color:#e3b341; border:1px solid #e3b341">${row.LOTO_comodin}</div>`;
-                    balls += '</div>';
+                }
 
-                    const g = parseInt(row.LOTO_GANADORES || 0);
-                    const status = g > 0 ? `<span style="color:var(--success)">${g} Gana</span>` : '<span style="color:var(--text-secondary)">Sin Ganadores</span>';
+                // Auditoría simple
+                const auditPct = Math.min(100, Math.round((data.length / 1400) * 100)); // 1400 aprox desde 2016
+                document.getElementById('audit-pct').innerText = auditPct + "%";
+                document.getElementById('audit-bar').style.width = auditPct + "%";
 
-                    tr.innerHTML = `
-                        <td style="color:white;">#${row.sorteo}</td>
-                        <td>${row.dia}/${row.mes}</td>
-                        <td>${balls}</td>
-                        <td>${status}</td>
-                    `;
-                    tbody.appendChild(tr);
-                });
-
-                runAudit(data);
                 document.getElementById('loading').classList.add('hidden');
-                document.getElementById('db-panel').classList.remove('hidden');
+                document.getElementById('main-ui').classList.remove('hidden');
             }
         });
     </script>
