@@ -12,19 +12,22 @@ from bs4 import BeautifulSoup
 CSV_FILE = 'LOTO_HISTORIAL_MAESTRO.csv'
 STATUS_FILE = 'system_status.json'
 
+# Configuración para modo Histórico (Solo si se pide manualmente)
+HISTORY_START_DATE = datetime.datetime(2024, 12, 29)
+HISTORY_START_SORTEO = 5210
+
 def log(msg, status="INFO"):
     ts = datetime.datetime.now().strftime("%H:%M:%S")
     print(f"[{ts}] [{status}] {msg}")
 
-def git_push_live(sorteo_num):
-    """Sube cambios a GitHub inmediatamente"""
+def git_push_live(sorteo_num, mode="Auto"):
     try:
         subprocess.run(["git", "add", CSV_FILE], check=True)
-        subprocess.run(["git", "commit", "-m", f"Auto: Sorteo {sorteo_num} capturado"], check=True, stdout=subprocess.DEVNULL)
+        subprocess.run(["git", "commit", "-m", f"{mode}: Sorteo {sorteo_num} agregado"], check=True, stdout=subprocess.DEVNULL)
         subprocess.run(["git", "push"], check=True)
-        log(f"--> Sorteo {sorteo_num} subido a la nube.", "GIT")
+        log(f"--> Sorteo {sorteo_num} subido a GitHub.", "GIT")
     except Exception as e:
-        log(f"Git push omitido (Local o Error): {e}", "WARN")
+        log(f"Git push omitido: {e}", "WARN")
 
 def get_html(url):
     try:
@@ -32,7 +35,7 @@ def get_html(url):
         return response.text if response.status_code == 200 else None
     except: return None
 
-# --- ESTRATEGIA 1: FRANCOTIRADOR (URL POR FECHA) ---
+# --- ESTRATEGIA 1: URL DIRECTA (FRANCOTIRADOR) ---
 def generate_url(sorteo_num, date_obj):
     yyyy = date_obj.strftime("%Y")
     mm = date_obj.strftime("%m")
@@ -40,10 +43,11 @@ def generate_url(sorteo_num, date_obj):
     slug_date = f"{dd}-{mm}-{yyyy}"
     return f"https://resultadoslotochile.com/{yyyy}/{mm}/{dd}/resultados-loto-sorteo-{sorteo_num}-fecha-{slug_date}/"
 
-# --- ESTRATEGIA 2: SABUESO (BUSCADOR INTERNO) ---
+# --- ESTRATEGIA 2: BÚSQUEDA (SABUESO) ---
+# Vital para el domingo si la URL viene con errores de tipeo
 def find_link_by_search(sorteo_num):
     search_url = f"https://resultadoslotochile.com/?s={sorteo_num}"
-    log(f"Activando búsqueda de emergencia para {sorteo_num}...", "SEARCH")
+    log(f"Plan A falló. Buscando en el sitio: {search_url}", "SEARCH")
     
     html = get_html(search_url)
     if not html: return None
@@ -61,27 +65,25 @@ def find_link_by_search(sorteo_num):
     for a in links:
         if not a: continue
         text = a.get_text(" ", strip=True).lower()
-        # Validación laxa para encontrar URLs mal escritas
         if str(sorteo_num) in text and "resultados" in text:
+            log(f"¡Enlace encontrado!: {a['href']}", "FOUND")
             return a['href']
     return None
 
 def parse_html(html, expected_sorteo):
     soup = BeautifulSoup(html, 'lxml')
     
-    # Validación: El HTML debe mencionar el sorteo en algún lado
-    if str(expected_sorteo) not in soup.text: return None
-
+    # Validación suave: confiamos en la búsqueda, pero chequeamos si el texto está
     data = {'sorteo': expected_sorteo}
     
-    # Intentar rescatar la fecha real del artículo
+    # Intentar sacar fecha real del meta
     meta_date = soup.find('meta', property='article:published_time')
     if meta_date:
         try:
             dt = datetime.datetime.fromisoformat(meta_date['content'])
-            data['anio'] = dt.year; data['mes'] = dt.month; data['dia'] = dt.day; data['dia_semana'] = dt.strftime('%A')
-        except: pass # Si falla, se usarán los datos de la llamada
-        
+            data.update({'anio': dt.year, 'mes': dt.month, 'dia': dt.day, 'dia_semana': dt.strftime('%A')})
+        except: pass
+
     def get_nums(header):
         h = soup.find('h3', string=re.compile(header, re.IGNORECASE))
         div = h.find_next('div', class_='bolitas') if h else None
@@ -101,7 +103,6 @@ def parse_html(html, expected_sorteo):
     data['REVANCHA'] = get_nums('Revancha')
     data['DESQUITE'] = get_nums('Desquite')
     
-    # Premios
     data['LOTO_GANADORES'] = 0; data['LOTO_MONTO'] = 0
     table = soup.find('table', class_='table-prizes')
     if table:
@@ -119,11 +120,9 @@ def save_to_csv(data_dict):
         try: df = pd.read_csv(CSV_FILE, sep=';')
         except: df = pd.DataFrame()
         
-        # Limpieza anti-duplicados
         if 'sorteo' in df.columns:
             df = df[df['sorteo'] != data_dict['sorteo']]
 
-        # Si no capturamos fecha del HTML, usamos hoy (fallback)
         if 'anio' not in data_dict:
             now = datetime.datetime.now()
             data_dict.update({'anio': now.year, 'mes': now.month, 'dia': now.day, 'dia_semana': now.strftime('%A')})
@@ -149,9 +148,6 @@ def save_to_csv(data_dict):
 
         new_df = pd.DataFrame([row])
         df_final = pd.concat([df, new_df], ignore_index=True)
-        
-        # Ordenar Descendente (Lo más nuevo arriba) para la vista, o Ascendente si prefieres
-        # Usaré Ascendente para mantener consistencia con tu petición anterior
         df_final['sorteo'] = df_final['sorteo'].astype(int)
         df_final.sort_values(by='sorteo', ascending=True, inplace=True)
         
@@ -161,56 +157,93 @@ def save_to_csv(data_dict):
         log(f"Error CSV: {e}", "ERROR")
         return False
 
+# --- MODOS DE EJECUCIÓN ---
+
 def run_daily_check():
-    log("--- INICIANDO CHEQUEO DIARIO ---")
+    log("--- INICIANDO CHEQUEO DIARIO (V18) ---")
     
-    # 1. Identificar cuál es el próximo sorteo necesario
+    # 1. Leer último sorteo
     try:
         df = pd.read_csv(CSV_FILE, sep=';')
         last_sorteo = int(df['sorteo'].max())
         target_sorteo = last_sorteo + 1
     except:
-        log("No hay BD. Por favor corre el modo histórico primero.")
+        log("No hay base de datos. Ejecuta modo histórico primero.", "ERROR")
         return
 
-    log(f"El último sorteo fue {last_sorteo}. Buscando el {target_sorteo}...")
+    log(f"Último registrado: {last_sorteo}. Buscando objetivo: {target_sorteo}")
 
-    # 2. Intentar Estrategia A: URL de Hoy
+    # 2. Intentar URL Directa (Para hoy)
+    # Asumimos que si el cron corre hoy, la fecha es hoy
     today = datetime.datetime.now()
-    url = generate_url(target_sorteo, today)
+    direct_url = generate_url(target_sorteo, today)
     
-    log(f"Probando URL directa: {url}")
-    html = get_html(url)
+    html = get_html(direct_url)
     
-    success = False
+    # 3. Si falla, usar Búsqueda (Plan B)
+    if not html:
+        search_link = find_link_by_search(target_sorteo)
+        if search_link:
+            html = get_html(search_link)
     
+    # 4. Procesar
     if html:
         data = parse_html(html, target_sorteo)
         if data and data['LOTO']:
             if save_to_csv(data):
-                log(f"¡EXITO! Sorteo {target_sorteo} capturado vía Directa.", "SUCCESS")
-                success = True
-    
-    # 3. Si falla A, intentar Estrategia B: Buscar en todo el sitio
-    if not success:
-        log("Fallo directo. Activando Sabueso...", "WARN")
-        search_url = find_link_by_search(target_sorteo)
-        
-        if search_url:
-            log(f"Link encontrado por búsqueda: {search_url}")
-            html = get_html(search_url)
-            if html:
-                data = parse_html(html, target_sorteo)
-                if data and data['LOTO']:
-                    if save_to_csv(data):
-                        log(f"¡EXITO! Sorteo {target_sorteo} capturado vía Búsqueda.", "SUCCESS")
-                        success = True
-    
-    if success:
-        git_push_live(target_sorteo)
+                log(f"*** ¡EXITO! Sorteo {target_sorteo} capturado ***", "SUCCESS")
+                git_push_live(target_sorteo, "Daily")
+            else:
+                log("Error al guardar datos.")
+        else:
+            log("HTML descargado pero sin datos legibles (¿Estructura cambió?)")
     else:
-        log(f"El sorteo {target_sorteo} aún no está disponible o falló la búsqueda.", "INFO")
+        log(f"El sorteo {target_sorteo} aún no está disponible o falló la conexión.")
+
+def run_historical_mode():
+    log("--- MODO HISTÓRICO / REPARACIÓN ---")
+    
+    existing = set()
+    try:
+        df = pd.read_csv(CSV_FILE, sep=';')
+        existing = set(df['sorteo'].unique())
+    except: pass
+
+    current_date = HISTORY_START_DATE
+    current_sorteo = HISTORY_START_SORTEO
+    end_date = datetime.datetime.now()
+
+    while current_date <= end_date:
+        if current_date.weekday() in [1, 3, 6]: 
+            if current_sorteo in existing:
+                log(f"[SALTAR] {current_sorteo}")
+                current_sorteo += 1
+            else:
+                # Intento Híbrido
+                url = generate_url(current_sorteo, current_date)
+                html = get_html(url)
+                
+                if not html:
+                    s_link = find_link_by_search(current_sorteo)
+                    if s_link: html = get_html(s_link)
+                
+                if html:
+                    data = parse_html(html, current_sorteo)
+                    if data and data['LOTO']:
+                        save_to_csv(data)
+                        log(f"[RECUPERADO] Sorteo {current_sorteo}", "SUCCESS")
+                        git_push_live(current_sorteo, "Repair")
+                        current_sorteo += 1
+                
+                time.sleep(1)
+        
+        current_date += datetime.timedelta(days=1)
 
 if __name__ == "__main__":
-    # Por defecto (cron job) corre el chequeo diario
-    run_daily_check()
+    # LÓGICA DEL CEREBRO
+    # Si le pasas "history", hace el barrido.
+    # Si NO le pasas nada (lo que hace GitHub automáticamente), hace el "Daily Check".
+    if len(sys.argv) > 1 and sys.argv[1] == 'history':
+        run_historical_mode()
+    else:
+        run_daily_check()
