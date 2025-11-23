@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Loto Analytics | Intelligence</title>
+    <title>Loto Analytics | Treasury</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -15,15 +15,12 @@
             --bg-app: #0d1117;
             --bg-panel: #161b22;
             --border-color: #30363d;
-            
             --text-primary: #c9d1d9;
             --text-secondary: #8b949e;
             --text-accent: #58a6ff;
-            
             --success: #238636;
             --warning: #d29922;
             --danger: #da3633;
-            
             --loto-yellow: #e3b341;
             --recargado-cyan: #38bdf8;
             --revancha-pink: #f472b6;
@@ -43,143 +40,84 @@
 
         .container { max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem; }
 
-        /* --- COMPONENTES GENERALES --- */
-        .panel {
-            background: var(--bg-panel);
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            overflow: hidden;
-        }
-        
-        .panel-head {
-            background: #21262d;
-            padding: 10px 15px;
-            border-bottom: 1px solid var(--border-color);
-            font-weight: 600;
-            font-size: 0.85rem;
-            color: var(--text-primary);
-            display: flex; justify-content: space-between; align-items: center;
-        }
-
+        /* COMPONENTES */
+        .panel { background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 6px; overflow: hidden; margin-bottom: 1.5rem; }
+        .panel-head { background: #21262d; padding: 10px 15px; border-bottom: 1px solid var(--border-color); font-weight: 600; font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center; }
         .panel-body { padding: 15px; }
 
-        h1 { font-size: 1.2rem; margin-bottom: 1rem; color: var(--text-primary); display: flex; align-items: center; gap: 10px; }
+        h1 { font-size: 1.2rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 10px; }
         .badge { background: #1f6feb; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; }
 
-        /* --- BLOQUE 1: COUNTDOWN --- */
-        .timer-display {
-            display: flex; justify-content: center; gap: 20px;
-            font-family: 'JetBrains Mono', monospace;
-            padding: 1rem;
-        }
-        .time-unit { text-align: center; }
+        /* COUNTDOWN */
+        .timer-display { display: flex; justify-content: center; gap: 20px; font-family: 'JetBrains Mono'; padding: 1rem; }
         .time-val { font-size: 2rem; font-weight: 700; color: var(--text-accent); line-height: 1; }
-        .time-lbl { font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; margin-top: 5px; }
+        .time-lbl { font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; margin-top: 5px; text-align: center; }
 
-        /* --- BLOQUE 2: PREDICCIÓN (LOCKED) --- */
-        .prediction-box {
-            background: rgba(56, 139, 253, 0.05);
-            border: 1px dashed var(--border-color);
-            border-radius: 6px;
-            padding: 1.5rem;
-            text-align: center;
-            position: relative;
-        }
+        /* PREDICTION */
+        .prediction-box { background: rgba(56, 139, 253, 0.05); border: 1px dashed var(--border-color); border-radius: 6px; padding: 1.5rem; text-align: center; }
         .ai-badge { font-size: 0.7rem; background: var(--text-accent); color: black; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-bottom: 10px; display: inline-block; }
         .blur-text { filter: blur(4px); user-select: none; opacity: 0.5; margin: 10px 0; }
-        .lock-msg { color: var(--text-secondary); font-size: 0.8rem; }
 
-        /* --- BLOQUE 3: BASE DE DATOS (TABLA) --- */
-        .table-responsive {
-            width: 100%;
-            overflow-x: auto; /* Scroll horizontal en móvil */
-            max-height: 400px; /* Scroll vertical fijo */
-        }
-        
+        /* TABLA PRINCIPAL */
+        .table-responsive { width: 100%; overflow-x: auto; max-height: 400px; }
         table { width: 100%; border-collapse: collapse; min-width: 600px; }
-        th { 
-            text-align: left; padding: 8px 12px; 
-            font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; 
-            background: #21262d; position: sticky; top: 0; z-index: 10;
-            border-bottom: 1px solid var(--border-color);
-        }
-        td { 
-            padding: 8px 12px; border-bottom: 1px solid var(--border-color); 
-            font-family: 'JetBrains Mono', monospace; font-size: 0.85rem;
-        }
-        
-        /* Fila interactiva */
+        th { text-align: left; padding: 8px 12px; font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; background: #21262d; position: sticky; top: 0; z-index: 10; border-bottom: 1px solid var(--border-color); }
+        td { padding: 8px 12px; border-bottom: 1px solid var(--border-color); font-family: 'JetBrains Mono'; font-size: 0.85rem; }
         tr.data-row { cursor: pointer; transition: background 0.2s; }
         tr.data-row:hover { background: rgba(88, 166, 255, 0.1); }
         tr.active-row { background: rgba(88, 166, 255, 0.2) !important; border-left: 3px solid var(--text-accent); }
 
         .mini-balls { display: flex; gap: 4px; }
-        .mb { 
-            width: 20px; height: 20px; background: #30363d; border-radius: 50%; 
-            display: flex; align-items: center; justify-content: center; font-size: 0.7rem; color: #e6edf3; 
-        }
+        .mb { width: 20px; height: 20px; background: #30363d; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; color: #e6edf3; }
         .mb.hl { color: var(--loto-yellow); font-weight: bold; }
 
-        /* --- BLOQUE 4: INSPECTOR (DETALLE) --- */
-        .inspector-container { scroll-margin-top: 20px; }
-        
+        /* AUDITORIA */
+        .audit-wrapper { padding: 15px; background: rgba(22, 27, 34, 0.5); border-top: 1px solid var(--border-color); }
+        .audit-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; font-size: 0.8rem; }
+        .audit-label { color: var(--text-secondary); margin-bottom: 4px; }
+        .audit-val { font-weight: 700; font-family: 'JetBrains Mono'; }
+        .progress-track { width: 100%; height: 6px; background: #30363d; border-radius: 3px; margin-top: 5px; overflow: hidden; }
+        .progress-fill { height: 100%; background: var(--success); width: 0%; }
+        .missing-box { margin-top: 10px; padding: 10px; background: rgba(218, 54, 51, 0.1); border: 1px solid rgba(218, 54, 51, 0.3); border-radius: 4px; color: #f85149; font-family: 'JetBrains Mono'; font-size: 0.75rem; display: none; }
+
+        /* INSPECTOR */
         .search-area { display: flex; gap: 10px; margin-bottom: 1.5rem; }
-        .search-input { 
-            background: #0d1117; border: 1px solid var(--border-color); color: white; 
-            padding: 8px 12px; border-radius: 6px; flex-grow: 1; font-family: 'JetBrains Mono';
-        }
-        .search-btn {
-            background: #238636; color: white; border: none; padding: 0 20px; 
-            border-radius: 6px; font-weight: 600; cursor: pointer;
-        }
+        .search-input { background: #0d1117; border: 1px solid var(--border-color); color: white; padding: 8px 12px; border-radius: 6px; flex-grow: 1; font-family: 'JetBrains Mono'; }
+        .search-btn { background: #238636; color: white; border: none; padding: 0 20px; border-radius: 6px; font-weight: 600; cursor: pointer; }
 
-        /* DASHBOARD GRID */
-        .draw-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr; /* 2 columnas en escritorio */
-            gap: 1.5rem;
-        }
-
-        /* Balls Big */
+        .draw-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+        
         .big-balls { display: flex; gap: 8px; flex-wrap: wrap; margin: 1rem 0; justify-content: center; }
-        .bb {
-            width: 40px; height: 40px; border-radius: 50%; 
-            background: #161b22; border: 2px solid var(--border-color);
-            display: flex; align-items: center; justify-content: center;
-            font-family: 'JetBrains Mono'; font-size: 1.1rem; font-weight: 700;
-        }
+        .bb { width: 40px; height: 40px; border-radius: 50%; background: #161b22; border: 2px solid var(--border-color); display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono'; font-size: 1.1rem; font-weight: 700; }
         .bb.loto { border-color: var(--loto-yellow); color: var(--loto-yellow); }
         .bb.comodin { background: var(--text-primary); color: #0d1117; border-color: white; }
 
-        /* Financial Cards */
-        .fin-card {
-            background: rgba(255,255,255,0.03);
-            padding: 1rem; border-radius: 6px; margin-bottom: 10px;
-        }
+        .fin-card { background: rgba(255,255,255,0.03); padding: 1rem; border-radius: 6px; margin-bottom: 10px; }
         .fin-label { font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 5px; }
         .fin-value { font-family: 'JetBrains Mono'; font-size: 1.2rem; font-weight: 600; color: var(--text-primary); }
         .fin-sub { font-size: 0.8rem; margin-top: 5px; color: var(--text-secondary); }
-        
         .money-positive { color: var(--success); }
-        .money-vacante { color: var(--text-secondary); font-style: italic; font-size: 1rem; }
-
-        /* RESPONSIVE MEDIA QUERIES */
-        @media (max-width: 768px) {
-            .draw-grid { grid-template-columns: 1fr; } /* 1 columna en móvil */
-            .time-val { font-size: 1.5rem; }
-            .search-area { flex-direction: column; }
-            .search-btn { width: 100%; padding: 10px; }
-        }
         
-        #loading { padding: 2rem; text-align: center; color: var(--text-secondary); }
+        /* TABLA DESGLOSE FINANCIERO */
+        .breakdown-table { width: 100%; font-size: 0.8rem; margin-top: 10px; }
+        .breakdown-table th { background: rgba(255,255,255,0.05); padding: 5px; }
+        .breakdown-table td { padding: 5px; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: right; }
+        .breakdown-table td:first-child { text-align: left; }
+        .bd-row:hover { background: rgba(255,255,255,0.02); }
+
+        @media (max-width: 768px) {
+            .draw-grid { grid-template-columns: 1fr; }
+            .search-area { flex-direction: column; }
+            .search-btn { width: 100%; }
+        }
         .hidden { display: none; }
+        #loading { padding: 3rem; text-align: center; color: var(--text-secondary); }
     </style>
 </head>
 <body>
 
     <div class="container">
-        
-        <h1>Loto Intelligence <span class="badge">V.13</span></h1>
+        <h1>Loto Intelligence <span class="badge">V.14</span></h1>
 
         <div class="panel">
             <div class="panel-head">Próximo Sorteo (Estimado)</div>
@@ -198,15 +136,14 @@
             <div class="ai-badge">IA PREDICTOR (BETA)</div>
             <h3>Próxima Combinación Probable</h3>
             <div class="blur-text">04 12 19 22 35 41</div>
-            <div class="lock-msg">🔒 Módulo en entrenamiento. Disponible próximamente.</div>
+            <div class="lock-msg">🔒 Módulo en entrenamiento.</div>
         </div>
 
-        <div id="loading">Cargando Base de Datos...</div>
+        <div id="loading">Sincronizando...</div>
 
         <div class="panel hidden" id="db-panel">
             <div class="panel-head">
-                <span>Base de Datos (Últimos 99 Sorteos)</span>
-                <span style="font-weight:400; opacity:0.7;">Selecciona un sorteo para ver detalles</span>
+                <span>Base de Datos (Últimos 99)</span>
             </div>
             <div class="table-responsive">
                 <table>
@@ -221,19 +158,41 @@
                     <tbody id="table-body"></tbody>
                 </table>
             </div>
+            
+            <div class="audit-wrapper">
+                <div style="margin-bottom:10px; font-weight:600; color:var(--text-primary);">Estado de la Base de Datos</div>
+                <div class="audit-grid">
+                    <div>
+                        <div class="audit-label">COBERTURA (2016-HOY)</div>
+                        <div class="audit-val" id="audit-pct">0%</div>
+                        <div class="progress-track"><div class="progress-fill" id="audit-bar"></div></div>
+                    </div>
+                    <div>
+                        <div class="audit-label">TOTAL REGISTROS</div>
+                        <div class="audit-val" id="audit-total">0</div>
+                    </div>
+                    <div>
+                        <div class="audit-label">SORT. ESPERADOS</div>
+                        <div class="audit-val" id="audit-expected">0</div>
+                    </div>
+                    <div>
+                        <div class="audit-label">INTEGRIDAD</div>
+                        <div class="audit-val" id="audit-integrity">--</div>
+                    </div>
+                </div>
+                <div id="missing-list" class="missing-box"></div>
+            </div>
         </div>
 
-        <div class="panel hidden inspector-container" id="inspector-panel">
+        <div class="panel hidden" id="inspector-panel">
             <div class="panel-head">Inspector de Sorteo</div>
             <div class="panel-body">
-                
                 <div class="search-area">
-                    <input type="number" id="search-input" class="search-input" placeholder="Escribe N° de Sorteo (ej: 5350)">
+                    <input type="number" id="search-input" class="search-input" placeholder="N° Sorteo">
                     <button class="search-btn" onclick="manualSearch()">BUSCAR</button>
                 </div>
 
                 <div class="draw-grid">
-                    
                     <div style="text-align: center;">
                         <h2 id="detail-title">Sorteo #----</h2>
                         <div style="color:var(--text-secondary); margin-bottom:1rem;" id="detail-date">--/--/----</div>
@@ -242,18 +201,9 @@
                         <div class="big-balls" id="detail-balls"></div>
 
                         <div style="margin-top:2rem; display:grid; grid-template-columns: 1fr 1fr 1fr; gap:5px;">
-                            <div>
-                                <div style="font-size:0.7rem; color:var(--recargado-cyan)">RECARGADO</div>
-                                <div class="mini-balls" id="detail-rec" style="justify-content:center;"></div>
-                            </div>
-                            <div>
-                                <div style="font-size:0.7rem; color:var(--revancha-pink)">REVANCHA</div>
-                                <div class="mini-balls" id="detail-rev" style="justify-content:center;"></div>
-                            </div>
-                            <div>
-                                <div style="font-size:0.7rem; color:var(--desquite-green)">DESQUITE</div>
-                                <div class="mini-balls" id="detail-des" style="justify-content:center;"></div>
-                            </div>
+                            <div><div style="font-size:0.7rem; color:var(--recargado-cyan)">RECARGADO</div><div class="mini-balls" id="detail-rec" style="justify-content:center;"></div></div>
+                            <div><div style="font-size:0.7rem; color:var(--revancha-pink)">REVANCHA</div><div class="mini-balls" id="detail-rev" style="justify-content:center;"></div></div>
+                            <div><div style="font-size:0.7rem; color:var(--desquite-green)">DESQUITE</div><div class="mini-balls" id="detail-des" style="justify-content:center;"></div></div>
                         </div>
                     </div>
 
@@ -266,23 +216,30 @@
 
                         <div class="fin-card" id="power-card" style="display:none;">
                             <div class="fin-label">Poder Adquisitivo</div>
-                            <div style="font-size:0.9rem; line-height:1.5; color:var(--text-primary);">
-                                🏢 <span id="calc-deptos">0</span> Departamentos (4.000 UF)<br>
-                                🏎️ <span id="calc-autos">0</span> Autos de Lujo (60M)
+                            <div style="font-size:0.9rem; color:var(--text-primary);">
+                                🏢 <span id="calc-deptos">0</span> Deptos (4.000 UF)<br>
+                                🏎️ <span id="calc-autos">0</span> Autos Lujo (60M)
                             </div>
                             <div style="margin-top:10px; padding-top:10px; border-top:1px solid var(--border-color);">
-                                <div class="fin-label">Rentabilidad Mensual (DAP 0.4%)</div>
+                                <div class="fin-label">Rentabilidad Mensual (0.4%)</div>
                                 <div style="color:var(--success); font-weight:bold;" id="calc-dap">$0</div>
                             </div>
                         </div>
 
-                        <div class="fin-card" style="background: rgba(35, 134, 54, 0.1); border: 1px solid rgba(35, 134, 54, 0.3);">
-                            <div class="fin-label">Dinero Total Repartido (Todas las categorías)</div>
-                            <div class="fin-value money-positive" id="detail-total-dist">$0</div>
-                            <div class="fin-sub">Suma de premios Loto, Recargado, Revancha, Desquite y categorías menores.</div>
+                        <div class="fin-card">
+                            <div class="fin-label">Desglose de Reparto</div>
+                            <div class="table-responsive" style="max-height:200px;">
+                                <table class="breakdown-table">
+                                    <thead><tr><th>Categoría</th><th>Ganadores</th><th>Monto c/u</th><th>Subtotal</th></tr></thead>
+                                    <tbody id="breakdown-body"></tbody>
+                                </table>
+                            </div>
+                            <div style="margin-top:10px; padding-top:10px; border-top:1px solid var(--border-color); text-align:right;">
+                                <div class="fin-label">Total Repartido (Todas las categorías)</div>
+                                <div class="fin-value money-positive" id="detail-total-dist">$0</div>
+                            </div>
                         </div>
                     </div>
-
                 </div>
             </div>
         </div>
@@ -293,129 +250,156 @@
         const CSV_URL = 'LOTO_HISTORIAL_MAESTRO.csv';
         window.globalData = [];
 
-        // UTILIDADES
         const fmtMoney = (v) => new Intl.NumberFormat('es-CL', {style:'currency', currency:'CLP'}).format(v);
         
-        // --- LOGICA CUENTA ATRAS ---
         function updateTimer() {
             const now = new Date(new Date().toLocaleString("en-US", {timeZone: "America/Santiago"}));
             let target = new Date(now);
-            // Buscar siguiente Martes(2), Jueves(4), Domingo(0) a las 21:00
             for(let i=0; i<7; i++) {
-                target.setDate(now.getDate() + i);
-                target.setHours(21, 0, 0, 0);
+                target.setDate(now.getDate() + i); target.setHours(21, 0, 0, 0);
                 if([0,2,4].includes(target.getDay()) && target > now) break;
             }
             const diff = target - now;
             const d = Math.floor(diff / (1000*60*60*24));
             const h = Math.floor((diff % (1000*60*60*24)) / (1000*60*60));
             const m = Math.floor((diff % (1000*60*60)) / (1000*60));
-            
             document.getElementById('cd-d').innerText = d.toString().padStart(2,'0');
             document.getElementById('cd-h').innerText = h.toString().padStart(2,'0');
             document.getElementById('cd-m').innerText = m.toString().padStart(2,'0');
         }
         setInterval(updateTimer, 1000); updateTimer();
 
-        // --- CARGA DETALLES (INSPECTOR) ---
+        // --- AUDITORIA ---
+        function runAudit(data) {
+            const start = new Date(2016, 0, 3);
+            const now = new Date();
+            let expected = 0;
+            for (let d = new Date(start); d <= now; d.setDate(d.getDate() + 1)) {
+                if([0,2,4].includes(d.getDay())) expected++;
+            }
+            
+            const actual = data.length;
+            const pct = Math.round((actual/expected)*100);
+            
+            document.getElementById('audit-total').innerText = actual.toLocaleString();
+            document.getElementById('audit-expected').innerText = expected.toLocaleString();
+            document.getElementById('audit-pct').innerText = pct + "%";
+            document.getElementById('audit-bar').style.width = pct + "%";
+            
+            // Gaps
+            const nums = data.map(r => parseInt(r.sorteo)).sort((a,b)=>a-b);
+            let missing = [];
+            for(let i=0; i<nums.length-1; i++) {
+                if(nums[i+1]-nums[i] > 1) {
+                    for(let j=nums[i]+1; j<nums[i+1]; j++) missing.push(j);
+                }
+            }
+            
+            if(missing.length > 0) {
+                const box = document.getElementById('missing-list');
+                box.style.display = 'block';
+                box.innerText = "Faltantes detectados: " + (missing.length > 20 ? missing.slice(0,20).join(', ')+'...' : missing.join(', '));
+            }
+
+            // Integridad
+            let corrupt = 0;
+            data.forEach(r => { if(!r.LOTO_n1 || r.LOTO_n1==0) corrupt++; });
+            const intEl = document.getElementById('audit-integrity');
+            if(corrupt==0) { intEl.innerText = "OK"; intEl.style.color = "var(--success)"; }
+            else { intEl.innerText = `${corrupt} Vacíos`; intEl.style.color = "var(--danger)"; }
+        }
+
+        // --- CARGA DETALLES ---
         function loadDrawDetails(row) {
-            // 1. Scroll hacia abajo suave
             document.getElementById('inspector-panel').classList.remove('hidden');
             document.getElementById('inspector-panel').scrollIntoView({behavior: 'smooth'});
 
-            // 2. Info Básica
             document.getElementById('detail-title').innerText = `Sorteo #${row.sorteo}`;
             document.getElementById('detail-date').innerText = `${row.dia}/${row.mes}/${row.anio}`;
 
-            // 3. Bolas Grandes
+            // Bolas
             let html = '';
-            [row.LOTO_n1, row.LOTO_n2, row.LOTO_n3, row.LOTO_n4, row.LOTO_n5, row.LOTO_n6].forEach(n => {
-                html += `<div class="bb loto">${n}</div>`;
-            });
+            [row.LOTO_n1, row.LOTO_n2, row.LOTO_n3, row.LOTO_n4, row.LOTO_n5, row.LOTO_n6].forEach(n => html += `<div class="bb loto">${n}</div>`);
             if(row.LOTO_comodin) html += `<div class="bb comodin">${row.LOTO_comodin}</div>`;
             document.getElementById('detail-balls').innerHTML = html;
 
-            // 4. Mini Bolas Sub Juegos
-            const renderMini = (prefix) => {
-                let h = '';
-                for(let i=1; i<=6; i++) h += `<div class="mb">${row[prefix+'_n'+i]||'-'}</div>`;
-                return h;
-            };
+            const renderMini = (p) => { let h=''; for(let i=1;i<=6;i++) h+=`<div class="mb">${row[p+'_n'+i]||'-'}</div>`; return h; };
             document.getElementById('detail-rec').innerHTML = renderMini('RECARGADO');
             document.getElementById('detail-rev').innerHTML = renderMini('REVANCHA');
             document.getElementById('detail-des').innerHTML = renderMini('DESQUITE');
 
-            // 5. FINANZAS - PREMIO MAYOR
-            const jackpot = parseInt(row.LOTO_MONTO || 0);
-            const winners = parseInt(row.LOTO_GANADORES || 0);
-            const jEl = document.getElementById('detail-jackpot');
-            const wEl = document.getElementById('detail-winners');
-            const pCard = document.getElementById('power-card');
-
-            if(winners > 0) {
-                jEl.innerText = fmtMoney(jackpot);
-                jEl.classList.add('money-positive');
-                jEl.classList.remove('money-vacante');
-                wEl.innerText = `Ganado por ${winners} persona(s)`;
-                
-                // Calculadora
-                pCard.style.display = 'block';
-                document.getElementById('calc-deptos').innerText = (jackpot / 150000000).toFixed(1);
-                document.getElementById('calc-autos').innerText = (jackpot / 60000000).toFixed(1);
-                document.getElementById('calc-dap').innerText = fmtMoney(Math.round(jackpot * 0.004));
+            // Finanzas
+            const jackpot = parseInt(row.LOTO_MONTO||0);
+            const winners = parseInt(row.LOTO_GANADORES||0);
+            
+            if(winners>0) {
+                document.getElementById('detail-jackpot').innerText = fmtMoney(jackpot);
+                document.getElementById('detail-winners').innerText = `${winners} Ganador(es)`;
+                document.getElementById('power-card').style.display = 'block';
+                document.getElementById('calc-deptos').innerText = (jackpot/150000000).toFixed(1);
+                document.getElementById('calc-autos').innerText = (jackpot/60000000).toFixed(1);
+                document.getElementById('calc-dap').innerText = fmtMoney(Math.round(jackpot*0.004));
             } else {
-                jEl.innerText = "VACANTE";
-                jEl.classList.add('money-vacante');
-                jEl.classList.remove('money-positive');
-                wEl.innerText = "Pozo acumulado para el siguiente sorteo";
-                pCard.style.display = 'none';
+                document.getElementById('detail-jackpot').innerText = "SIN GANADORES";
+                document.getElementById('detail-winners').innerText = "Pozo acumulado";
+                document.getElementById('power-card').style.display = 'none';
             }
 
-            // 6. FINANZAS - TOTAL REPARTIDO (LA SUMA MAESTRA)
+            // DESGLOSE FINANCIERO COMPLETO
             let totalDist = 0;
+            let breakdownHtml = '';
+            
             // Recorremos todas las claves del objeto row
-            for (const key in row) {
-                // Buscamos columnas que terminen en _GANADORES (ej: QUINA_5_ACIERTOS_GANADORES)
+            // Ordenamos las claves para que salgan bonitas (primero Loto, luego Quina, etc)
+            const keys = Object.keys(row).sort();
+            
+            keys.forEach(key => {
                 if (key.endsWith('_GANADORES')) {
-                    const winnersCount = parseInt(row[key] || 0);
-                    if (winnersCount > 0) {
-                        // Buscamos su par _MONTO
-                        const montoKey = key.replace('_GANADORES', '_MONTO');
-                        const montoValue = parseInt(row[montoKey] || 0);
+                    const count = parseInt(row[key] || 0);
+                    if (count > 0) {
+                        const mKey = key.replace('_GANADORES', '_MONTO');
+                        const amount = parseInt(row[mKey] || 0);
+                        const subtotal = count * amount;
+                        totalDist += subtotal;
                         
-                        // Sumamos al total: Ganadores * Monto Individual
-                        totalDist += (winnersCount * montoValue);
+                        // Formatear nombre categoria
+                        let catName = key.replace('_GANADORES', '').replace(/_/g, ' ');
+                        
+                        breakdownHtml += `
+                            <tr class="bd-row">
+                                <td>${catName}</td>
+                                <td>${count.toLocaleString()}</td>
+                                <td>${fmtMoney(amount)}</td>
+                                <td style="color:var(--text-primary)">${fmtMoney(subtotal)}</td>
+                            </tr>
+                        `;
                     }
                 }
-            }
+            });
+            
+            document.getElementById('breakdown-body').innerHTML = breakdownHtml || '<tr><td colspan="4" style="text-align:center; color:gray;">Sin datos de premios</td></tr>';
             document.getElementById('detail-total-dist').innerText = fmtMoney(totalDist);
         }
 
-        // --- BÚSQUEDA MANUAL ---
         function manualSearch() {
             const val = document.getElementById('search-input').value;
             const found = window.globalData.find(r => r.sorteo == val);
             if(found) loadDrawDetails(found);
-            else alert("Sorteo no encontrado en la base de datos.");
+            else alert("Sorteo no encontrado.");
         }
 
-        // --- CARGA INICIAL ---
         Papa.parse(CSV_URL + '?v=' + Date.now(), {
             download: true, header: true, delimiter: ";", skipEmptyLines: true,
             complete: function(res) {
                 let data = res.data;
-                // Ordenar Descendente (5350 primero)
                 data.sort((a,b) => parseInt(b.sorteo) - parseInt(a.sorteo));
                 window.globalData = data;
 
                 const tbody = document.getElementById('table-body');
-                
-                // Renderizar tabla (99 rows)
                 data.slice(0, 99).forEach(row => {
                     const tr = document.createElement('tr');
                     tr.className = 'data-row';
                     tr.onclick = () => {
-                        // Remover clase active de otros
                         document.querySelectorAll('.active-row').forEach(el => el.classList.remove('active-row'));
                         tr.classList.add('active-row');
                         loadDrawDetails(row);
@@ -425,14 +409,14 @@
                     [row.LOTO_n1, row.LOTO_n2, row.LOTO_n3, row.LOTO_n4, row.LOTO_n5, row.LOTO_n6].forEach(n => {
                         balls += `<div class="mb hl">${n}</div>`;
                     });
-                    if(row.LOTO_comodin) balls += `<div class="mb" style="border:1px solid #e3b341; background:transparent; color:#e3b341">${row.LOTO_comodin}</div>`;
+                    if(row.LOTO_comodin) balls += `<div class="mb" style="color:#e3b341; border:1px solid #e3b341">${row.LOTO_comodin}</div>`;
                     balls += '</div>';
 
                     const g = parseInt(row.LOTO_GANADORES || 0);
-                    const status = g > 0 ? `<span style="color:var(--success)">${g} Gana</span>` : '<span style="color:var(--text-secondary)">Vacante</span>';
+                    const status = g > 0 ? `<span style="color:var(--success)">${g} Gana</span>` : '<span style="color:var(--text-secondary)">Sin Ganadores</span>';
 
                     tr.innerHTML = `
-                        <td style="font-weight:bold; color:white;">#${row.sorteo}</td>
+                        <td style="color:white;">#${row.sorteo}</td>
                         <td>${row.dia}/${row.mes}</td>
                         <td>${balls}</td>
                         <td>${status}</td>
@@ -440,6 +424,7 @@
                     tbody.appendChild(tr);
                 });
 
+                runAudit(data);
                 document.getElementById('loading').classList.add('hidden');
                 document.getElementById('db-panel').classList.remove('hidden');
             }
