@@ -3,484 +3,497 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Loto Intelligence | Commander</title>
+    <title>Loto Intelligence | Pro Terminal</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     
     <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
-    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <style>
         :root {
-            --bg-app: #0d1117;
-            --bg-panel: #161b22;
-            --border-color: #30363d;
-            --text-primary: #e6edf3;
-            --text-secondary: #8b949e;
-            --accent-blue: #2f81f7;
-            --accent-gold: #d29922;
+            --bg-body: #090c10;
+            --bg-card: #161b22;
+            --bg-card-hover: #1f242c;
+            --border: #30363d;
+            --text-main: #c9d1d9;
+            --text-muted: #8b949e;
+            --accent: #58a6ff;
+            --gold: #d29922;
+            --fire: #f85149;
+            --ice: #388bfd;
             --success: #238636;
-            --danger: #da3633;
-            
-            /* Identidad Juegos */
-            --loto: #fbbf24;
-            --rec: #38bdf8;
-            --rev: #f472b6;
-            --des: #4ade80;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        * { box-sizing: border-box; }
 
         body {
+            background-color: var(--bg-body);
+            color: var(--text-main);
             font-family: 'Inter', sans-serif;
-            background-color: var(--bg-app);
-            color: var(--text-primary);
-            padding: 1rem;
-            min-height: 100vh;
-            font-size: 14px;
-            overflow-x: hidden;
+            margin: 0;
+            padding: 20px;
         }
 
-        .container { max-width: 1100px; margin: 0 auto; display: flex; flex-direction: column; gap: 2rem; }
-
-        /* --- ANIMACIONES (MICROINTERACCIONES) --- */
-        @keyframes bounceIn { 
-            0% { opacity: 0; transform: scale(0.3); } 
-            50% { opacity: 1; transform: scale(1.05); } 
-            70% { transform: scale(0.9); } 
-            100% { transform: scale(1); } 
-        }
-        @keyframes floatUp {
-            0% { opacity: 0; transform: translateY(20px); }
-            100% { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(47, 129, 247, 0.4); }
-            70% { box-shadow: 0 0 0 10px rgba(47, 129, 247, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(47, 129, 247, 0); }
+        /* GRID LAYOUT (BENTO STYLE) */
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: auto auto auto;
+            gap: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
         }
 
-        /* --- HEADER & TIMER --- */
-        header {
-            display: flex; flex-direction: column; align-items: center; gap: 1rem;
-            padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);
-            animation: floatUp 0.8s ease-out;
-        }
-        
-        .brand { font-size: 1.5rem; font-weight: 800; letter-spacing: -1px; display: flex; align-items: center; gap: 10px; }
-        .status-dot { width: 8px; height: 8px; background: var(--success); border-radius: 50%; animation: pulse 2s infinite; }
-
-        .timer-box {
-            background: rgba(22, 27, 34, 0.8);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 1rem 2rem;
-            display: flex; gap: 1.5rem;
-            font-family: 'JetBrains Mono', monospace;
-            box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5);
-        }
-        .t-unit { text-align: center; }
-        .t-val { font-size: 1.8rem; font-weight: 700; color: var(--accent-blue); line-height: 1; }
-        .t-lbl { font-size: 0.65rem; color: var(--text-secondary); margin-top: 5px; }
-        .t-sep { font-size: 1.5rem; color: var(--text-secondary); opacity: 0.5; }
-
-        /* --- LATEST DRAW HERO (EL NUEVO REY) --- */
-        .hero-section {
-            background: linear-gradient(145deg, #161b22, #0d1117);
-            border: 1px solid var(--accent-gold);
-            border-radius: 16px;
-            padding: 2rem;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 20px 50px -20px rgba(210, 153, 34, 0.15);
-            animation: floatUp 1s ease-out 0.2s backwards;
-            transition: transform 0.3s ease;
-        }
-        .hero-section:hover { transform: translateY(-2px); }
-        
-        .hero-label { 
-            position: absolute; top: 0; left: 0; 
-            background: var(--accent-gold); color: #0d1117; 
-            font-weight: 800; font-size: 0.7rem; padding: 4px 12px; 
-            border-bottom-right-radius: 10px; text-transform: uppercase;
-        }
-
-        .hero-grid {
-            display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items: center;
-        }
-
-        .hero-info h2 { font-size: 2.5rem; font-weight: 800; margin: 0; line-height: 1.1; color: white; }
-        .hero-date { color: var(--text-secondary); font-size: 1rem; margin-bottom: 1.5rem; font-family: 'JetBrains Mono'; }
-        
-        .big-balls { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 1.5rem; }
-        .ball-lg {
-            width: 50px; height: 50px; border-radius: 50%;
-            background: #21262d; border: 2px solid var(--loto); color: var(--loto);
-            font-family: 'JetBrains Mono'; font-weight: 700; font-size: 1.2rem;
-            display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            animation: bounceIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) backwards;
-        }
-        .ball-lg.comodin { background: var(--text-primary); color: #0d1117; border-color: white; }
-
-        .finance-highlight {
-            background: rgba(255,255,255,0.03); border-radius: 8px; padding: 1rem;
-            display: flex; justify-content: space-between; align-items: center;
-            border-left: 3px solid var(--success);
-        }
-        .fin-big-val { font-family: 'JetBrains Mono'; font-size: 1.3rem; font-weight: 700; color: var(--success); }
-        .fin-label-sm { font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; }
-
-        /* --- PREDICTION & STATS --- */
-        .mid-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; }
-        
+        /* TARJETAS */
         .card {
-            background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 8px;
-            padding: 1.5rem; animation: floatUp 1s ease-out 0.4s backwards;
-            transition: border-color 0.3s;
-        }
-        .card:hover { border-color: var(--text-secondary); }
-
-        /* --- DATABASE TABLE --- */
-        .table-container {
-            background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 8px;
-            overflow: hidden; animation: floatUp 1s ease-out 0.6s backwards;
-        }
-        .table-header {
-            padding: 1rem; background: #21262d; border-bottom: 1px solid var(--border-color);
-            font-weight: 600; color: var(--text-primary);
-            display: flex; justify-content: space-between; align-items: center;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            transition: transform 0.2s, border-color 0.2s;
+            display: flex;
+            flex-direction: column;
         }
         
-        .scroll-wrap { max-height: 400px; overflow-y: auto; }
-        table { width: 100%; border-collapse: collapse; min-width: 600px; }
-        th { 
-            text-align: left; padding: 12px; font-size: 0.75rem; color: var(--text-secondary); 
-            text-transform: uppercase; position: sticky; top: 0; background: #161b22; z-index: 10;
-            border-bottom: 1px solid var(--border-color);
+        .card:hover {
+            border-color: var(--text-muted);
+            transform: translateY(-2px);
         }
-        td { padding: 10px 12px; border-bottom: 1px solid var(--border-color); font-family: 'JetBrains Mono'; font-size: 0.85rem; }
-        tr { cursor: pointer; transition: background 0.2s; }
-        tr:hover { background: rgba(255,255,255,0.03); }
-        tr.active { background: rgba(47, 129, 247, 0.15); border-left: 3px solid var(--accent-blue); }
 
-        .mini-row { display: flex; gap: 4px; }
-        .mb { width: 22px; height: 22px; background: #30363d; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; }
-        .mb.hl { color: var(--loto); font-weight: bold; }
+        .card-header {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
 
-        /* --- INSPECTOR (MODAL / BOTTOM) --- */
-        #inspector { scroll-margin-top: 20px; }
-        .inspector-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 1rem; }
+        .big-stat {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .sub-stat {
+            font-size: 0.9rem;
+            color: var(--success);
+            margin-top: 5px;
+        }
+
+        /* POSICIONAMIENTO DE LAS TARJETAS EN EL GRID */
+        .span-1 { grid-column: span 1; }
+        .span-2 { grid-column: span 2; }
+        .span-4 { grid-column: span 4; } /* Full width */
         
-        .breakdown-table { width: 100%; font-size: 0.8rem; border-collapse: collapse; }
-        .breakdown-table td { padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .breakdown-table td:last-child { text-align: right; font-family: 'JetBrains Mono'; color: var(--text-primary); }
-
-        /* RESPONSIVE */
-        @media (max-width: 768px) {
-            .hero-grid, .mid-grid, .inspector-grid { grid-template-columns: 1fr; }
-            .timer-box { gap: 0.8rem; padding: 1rem; }
-            .t-val { font-size: 1.4rem; }
+        @media (max-width: 1000px) {
+            .dashboard { grid-template-columns: 1fr 1fr; }
+            .span-4 { grid-column: span 2; }
+        }
+        @media (max-width: 600px) {
+            .dashboard { grid-template-columns: 1fr; }
+            .span-1, .span-2, .span-4 { grid-column: span 1; }
         }
 
-        #loading { text-align: center; padding: 3rem; color: var(--text-secondary); }
-        .hidden { display: none; }
+        /* ESTILOS ESPECÍFICOS */
+        
+        /* Heatmap de números */
+        .number-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+        }
+        .num-cell {
+            aspect-ratio: 1;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: bold;
+            font-size: 0.9rem;
+            background: #21262d;
+            color: var(--text-muted);
+            position: relative;
+            cursor: pointer;
+        }
+        .num-cell:hover .tooltip { display: block; }
+        
+        /* Colores del Heatmap se asignan via JS */
+
+        /* Lista de Últimos Sorteos (Estilo Terminal) */
+        .history-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            overflow-y: auto;
+            max-height: 300px;
+        }
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+        }
+        .balls-mini {
+            display: flex;
+            gap: 5px;
+        }
+        .b-mini {
+            width: 24px;
+            height: 24px;
+            background: var(--bg-body);
+            border: 1px solid var(--border);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            color: var(--gold);
+        }
+
+        /* Tooltip simple */
+        .tooltip {
+            display: none;
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: black;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            white-space: nowrap;
+            z-index: 10;
+        }
+
+        /* Loading Overlay */
+        #loading {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg-body);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 999;
+            transition: opacity 0.5s;
+        }
+        .loader {
+            border: 3px solid var(--border);
+            border-top: 3px solid var(--accent);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <header>
-            <div class="brand">
-                <div class="status-dot"></div> LOTO INTELLIGENCE
-            </div>
-            <div class="timer-box">
-                <div class="t-unit"><div class="t-val" id="cd-d">00</div><div class="t-lbl">DÍAS</div></div>
-                <div class="t-sep">:</div>
-                <div class="t-unit"><div class="t-val" id="cd-h">00</div><div class="t-lbl">HRS</div></div>
-                <div class="t-sep">:</div>
-                <div class="t-unit"><div class="t-val" id="cd-m">00</div><div class="t-lbl">MIN</div></div>
-                <div class="t-sep">:</div>
-                <div class="t-unit"><div class="t-val" id="cd-s">00</div><div class="t-lbl">SEG</div></div>
-            </div>
-        </header>
+    <div id="loading">
+        <div class="loader"></div>
+        <p style="margin-top: 15px; font-family:'JetBrains Mono'">CARGANDO LOTO INTELLIGENCE...</p>
+    </div>
 
-        <div id="loading">Inicializando Sistema...</div>
-
-        <div id="main-ui" class="hidden">
-            
-            <div class="hero-section">
-                <div class="hero-label">Último Resultado</div>
-                <div class="hero-grid">
-                    <div class="hero-info">
-                        <h2 id="hero-sorteo">Sorteo #----</h2>
-                        <div class="hero-date" id="hero-date">--/--/----</div>
-                        
-                        <div style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:10px;">COMBINACIÓN GANADORA</div>
-                        <div class="big-balls" id="hero-balls"></div>
-                        
-                        <div style="display:flex; gap:15px; margin-top:1rem;">
-                            <div class="badge" style="background:var(--rec); color:black">RECARGADO</div>
-                            <div class="badge" style="background:var(--rev); color:black">REVANCHA</div>
-                            <div class="badge" style="background:var(--des); color:black">DESQUITE</div>
-                        </div>
-                    </div>
-                    
-                    <div>
-                        <div class="finance-highlight">
-                            <div>
-                                <div class="fin-label-sm">Dinero Total Repartido</div>
-                                <div style="font-size:0.7rem; opacity:0.7;">(Todas las categorías)</div>
-                            </div>
-                            <div class="fin-big-val" id="hero-total-money">$0</div>
-                        </div>
-                        <div style="margin-top:1rem; padding:1rem; background:rgba(0,0,0,0.2); border-radius:8px;">
-                            <div class="fin-label-sm">Estado Loto 6 Aciertos</div>
-                            <div id="hero-jackpot-status" style="font-size:1.1rem; font-weight:600; margin-top:5px;">---</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="mid-grid">
-                <div class="card" style="border-style: dashed; background: rgba(47, 129, 247, 0.05);">
-                    <div style="display:flex; justify-content:space-between;">
-                        <span style="font-weight:700; color:var(--accent-blue);">IA PREDICTOR</span>
-                        <span class="badge">BETA</span>
-                    </div>
-                    <div style="margin-top:1rem; text-align:center; filter:blur(4px); opacity:0.6; font-family:'JetBrains Mono'">
-                        04 - 12 - 19 - 22 - 35 - 41
-                    </div>
-                    <div style="text-align:center; font-size:0.75rem; color:var(--text-secondary); margin-top:5px;">
-                        Módulo en entrenamiento neuronal.
-                    </div>
-                </div>
-                
-                <div class="card">
-                    <div style="font-size:0.8rem; font-weight:700; margin-bottom:10px;">SALUD DE DATOS</div>
-                    <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-                        <span style="font-size:0.8rem; color:var(--text-secondary);">Cobertura</span>
-                        <span style="font-family:'JetBrains Mono'; color:var(--success);" id="audit-pct">100%</span>
-                    </div>
-                    <div style="width:100%; height:4px; background:#30363d; border-radius:2px;">
-                        <div id="audit-bar" style="width:0%; height:100%; background:var(--success);"></div>
-                    </div>
-                    <div id="audit-msg" style="font-size:0.7rem; margin-top:10px; color:var(--text-secondary);">Sistema nominal.</div>
-                </div>
-            </div>
-
-            <div class="table-container">
-                <div class="table-header">
-                    <span>Historial (Anteriores)</span>
-                    <span style="font-size:0.75rem; opacity:0.7; font-weight:400;">Clic para detalles</span>
-                </div>
-                <div class="scroll-wrap">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Sorteo</th>
-                                <th>Fecha</th>
-                                <th>Números</th>
-                                <th>Estado Mayor</th>
-                            </tr>
-                        </thead>
-                        <tbody id="history-body"></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div class="card hidden" id="inspector">
-                <div style="border-bottom:1px solid var(--border-color); padding-bottom:10px; margin-bottom:1rem; display:flex; justify-content:space-between; align-items:center;">
-                    <h3 style="margin:0">Inspector de Sorteo <span id="insp-id" style="color:var(--text-secondary)">#---</span></h3>
-                    <button onclick="document.getElementById('inspector').classList.add('hidden')" style="background:none; border:none; color:var(--text-secondary); cursor:pointer;">✕</button>
-                </div>
-                
-                <div class="inspector-grid">
-                    <div>
-                        <div style="margin-bottom:1rem;">
-                            <div style="font-size:0.7rem; color:var(--loto); font-weight:bold;">LOTO</div>
-                            <div class="mini-balls" id="insp-loto" style="margin-top:5px;"></div>
-                        </div>
-                        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
-                            <div><div style="font-size:0.7rem; color:var(--rec)">RECARGADO</div><div class="mini-balls" id="insp-rec"></div></div>
-                            <div><div style="font-size:0.7rem; color:var(--rev)">REVANCHA</div><div class="mini-balls" id="insp-rev"></div></div>
-                            <div><div style="font-size:0.7rem; color:var(--des)">DESQUITE</div><div class="mini-balls" id="insp-des"></div></div>
-                        </div>
-                    </div>
-
-                    <div>
-                        <div class="fin-label-sm">Desglose Financiero Real</div>
-                        <div style="max-height:150px; overflow-y:auto; margin-bottom:1rem; border:1px solid var(--border-color); border-radius:6px; padding:10px;">
-                            <table class="breakdown-table">
-                                <tbody id="insp-breakdown"></tbody>
-                            </table>
-                        </div>
-                        <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--border-color); padding-top:10px;">
-                            <span style="font-size:0.8rem;">TOTAL REPARTIDO</span>
-                            <span class="fin-big-val" style="font-size:1.1rem;" id="insp-total">$0</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
+    <div class="dashboard" id="main-ui" style="display:none;">
+        
+        <div class="card span-1">
+            <div class="card-header">Último Sorteo</div>
+            <div class="big-stat" id="last-draw-id">#0000</div>
+            <div class="sub-stat" id="last-draw-date">--/--/----</div>
         </div>
+
+        <div class="card span-1">
+            <div class="card-header">Pozo Repartido</div>
+            <div class="big-stat" style="color: var(--gold);" id="last-money">---</div>
+            <div class="sub-stat">Millones CLP</div>
+        </div>
+
+        <div class="card span-1">
+            <div class="card-header">Número "Hype" (Más Frecuente)</div>
+            <div class="big-stat" style="color: var(--fire);" id="hot-num">--</div>
+            <div class="sub-stat" id="hot-freq">-- apariciones</div>
+        </div>
+
+        <div class="card span-1">
+            <div class="card-header">Número "Ghost" (Menos Frecuente)</div>
+            <div class="big-stat" style="color: var(--ice);" id="cold-num">--</div>
+            <div class="sub-stat" id="cold-freq">-- apariciones</div>
+        </div>
+
+        <div class="card span-4" style="height: 400px;">
+            <div class="card-header">
+                <span>Análisis de Frecuencia (Total Histórico)</span>
+                <span style="font-size: 0.7rem; opacity: 0.5;">Basado en todo el dataset</span>
+            </div>
+            <canvas id="frequencyChart"></canvas>
+        </div>
+
+        <div class="card span-2">
+            <div class="card-header">
+                Mapa de Calor Numérico
+                <span style="font-size:0.7rem">Rojo = Frecuente | Azul = Raro</span>
+            </div>
+            <div class="number-grid" id="heatmap-grid">
+                </div>
+            <div style="margin-top: 15px; font-size: 0.8rem; color: var(--text-muted); text-align: center;">
+                Intensidad basada en % de aparición histórica.
+            </div>
+        </div>
+
+        <div class="card span-2">
+            <div class="card-header">Log de Actividad Reciente</div>
+            <ul class="history-list" id="history-list">
+                </ul>
+        </div>
+
+        <div class="card span-1">
+            <div class="card-header">Balance Par/Impar</div>
+            <div style="position: relative; height: 200px;">
+                <canvas id="parityChart"></canvas>
+            </div>
+        </div>
+
+        <div class="card span-3">
+            <div class="card-header">Estado del Sistema</div>
+            <div style="display: flex; gap: 20px; align-items: center; height: 100%;">
+                <div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted)">Registros Analizados</div>
+                    <div class="big-stat" style="font-size: 1.8rem" id="total-records">0</div>
+                </div>
+                <div style="height: 50px; width: 1px; background: var(--border);"></div>
+                <div style="flex-grow: 1;">
+                     <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 5px;">Integridad de Datos</div>
+                     <div style="background: #21262d; height: 10px; border-radius: 5px; overflow: hidden;">
+                         <div id="audit-bar" style="background: var(--success); width: 0%; height: 100%;"></div>
+                     </div>
+                     <div style="text-align: right; font-size: 0.7rem; margin-top: 3px;" id="audit-text">0%</div>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <script>
         const CSV_URL = 'LOTO_HISTORIAL_MAESTRO.csv';
-        
-        // --- UTILS ---
-        const fmtMoney = (v) => new Intl.NumberFormat('es-CL', {style:'currency', currency:'CLP'}).format(v);
-        
-        function calculateTotalDistributed(row) {
-            let total = 0;
-            // Recorremos todas las columnas
-            Object.keys(row).forEach(key => {
-                if (key.endsWith('_GANADORES')) {
-                    const count = parseInt(row[key] || 0);
-                    if (count > 0) {
-                        // Buscar monto asociado
-                        const mKey = key.replace('_GANADORES', '_MONTO');
-                        const amount = parseInt(row[mKey] || 0);
-                        total += (count * amount);
+
+        // Función principal de carga
+        async function initDashboard() {
+            Papa.parse(CSV_URL, {
+                download: true,
+                header: true,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    processData(results.data);
+                },
+                error: function(err) {
+                    console.error("Error CSV:", err);
+                    alert("Error cargando datos.");
+                }
+            });
+        }
+
+        function processData(data) {
+            // Filtrar filas vacías o inválidas
+            const cleanData = data.filter(row => row.LOTO_n1 && row.sorteo);
+            
+            // 1. Estadísticas Básicas
+            const lastRow = cleanData[cleanData.length - 1];
+            document.getElementById('last-draw-id').innerText = `#${lastRow.sorteo}`;
+            document.getElementById('last-draw-date').innerText = `${lastRow.dia}/${lastRow.mes}/${lastRow.anio}`;
+            
+            // Formato moneda (Si existe monto, sino 0)
+            const money = parseInt(lastRow.LOTO_MONTO || 0);
+            document.getElementById('last-money').innerText = new Intl.NumberFormat('es-CL').format(money);
+
+            document.getElementById('total-records').innerText = cleanData.length;
+            document.getElementById('audit-bar').style.width = "100%";
+            document.getElementById('audit-text').innerText = "Dataset Cargado 100%";
+
+            // 2. Análisis de Frecuencia (Números 1-41)
+            const frequency = new Array(42).fill(0); // Indices 1-41
+            let oddCount = 0;
+            let evenCount = 0;
+
+            cleanData.forEach(row => {
+                const balls = [
+                    parseInt(row.LOTO_n1), parseInt(row.LOTO_n2), parseInt(row.LOTO_n3),
+                    parseInt(row.LOTO_n4), parseInt(row.LOTO_n5), parseInt(row.LOTO_n6)
+                ];
+                
+                balls.forEach(n => {
+                    if (!isNaN(n) && n > 0 && n <= 41) {
+                        frequency[n]++;
+                        if (n % 2 === 0) evenCount++; else oddCount++;
+                    }
+                });
+            });
+
+            // Encontrar Hot/Cold
+            let maxFreq = 0;
+            let minFreq = Infinity;
+            let hotNum = -1;
+            let coldNum = -1;
+
+            // Empezamos de 1 a 41
+            for (let i = 1; i <= 41; i++) {
+                if (frequency[i] > maxFreq) { maxFreq = frequency[i]; hotNum = i; }
+                if (frequency[i] < minFreq && frequency[i] > 0) { minFreq = frequency[i]; coldNum = i; }
+            }
+
+            document.getElementById('hot-num').innerText = hotNum;
+            document.getElementById('hot-freq').innerText = `${maxFreq} veces`;
+            document.getElementById('cold-num').innerText = coldNum;
+            document.getElementById('cold-freq').innerText = `${minFreq} veces`;
+
+            // 3. Renderizar Gráfico de Barras (Chart.js)
+            renderMainChart(frequency);
+
+            // 4. Renderizar Heatmap
+            renderHeatmap(frequency, maxFreq);
+
+            // 5. Renderizar Lista Histórica (Últimos 10)
+            renderHistory(cleanData.slice(-10).reverse());
+
+            // 6. Renderizar Paridad
+            renderParityChart(oddCount, evenCount);
+
+            // Mostrar UI
+            document.getElementById('loading').style.opacity = 0;
+            setTimeout(() => {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('main-ui').style.display = 'grid';
+            }, 500);
+        }
+
+        function renderMainChart(freqArray) {
+            const ctx = document.getElementById('frequencyChart').getContext('2d');
+            // Cortamos el array para quitar el indice 0
+            const dataValues = freqArray.slice(1);
+            const labels = Array.from({length: 41}, (_, i) => i + 1);
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Apariciones',
+                        data: dataValues,
+                        backgroundColor: (ctx) => {
+                            const val = ctx.raw;
+                            // Gradiente dinámico basado en valor
+                            const alpha = (val / Math.max(...dataValues)) * 0.8 + 0.2;
+                            return `rgba(88, 166, 255, ${alpha})`;
+                        },
+                        borderColor: '#58a6ff',
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            grid: { color: '#30363d' },
+                            ticks: { color: '#8b949e' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#8b949e', maxRotation: 0, autoSkip: true, maxTicksLimit: 20 }
+                        }
                     }
                 }
             });
-            return total;
         }
 
-        // --- RELOJ ---
-        function updateTimer() {
-            const now = new Date(new Date().toLocaleString("en-US", {timeZone: "America/Santiago"}));
-            let target = new Date(now);
-            for(let i=0; i<7; i++) {
-                target.setDate(now.getDate() + i); target.setHours(21, 0, 0, 0);
-                if([0,2,4].includes(target.getDay()) && target > now) break;
+        function renderHeatmap(freqArray, maxVal) {
+            const container = document.getElementById('heatmap-grid');
+            container.innerHTML = '';
+            
+            for (let i = 1; i <= 41; i++) {
+                const val = freqArray[i];
+                const div = document.createElement('div');
+                div.className = 'num-cell';
+                div.innerText = i;
+                
+                // Calcular color: De azul (frio) a rojo (caliente)
+                // Normalizar valor 0 a 1
+                const percent = val / maxVal;
+                
+                // Lógica de color simple
+                let color = '';
+                if (percent > 0.8) color = `rgba(248, 81, 73, ${percent})`; // Rojo intenso
+                else if (percent > 0.5) color = `rgba(210, 153, 34, ${percent})`; // Oro
+                else color = `rgba(56, 139, 253, ${percent * 0.8})`; // Azul
+                
+                div.style.backgroundColor = color;
+                div.style.color = percent > 0.6 ? '#0d1117' : '#e6edf3'; // Contraste texto
+
+                div.innerHTML += `<div class="tooltip">Frecuencia: ${val}</div>`;
+                container.appendChild(div);
             }
-            const diff = target - now;
-            const d = Math.floor(diff / (1000*60*60*24));
-            const h = Math.floor((diff % (1000*60*60*24)) / (1000*60*60));
-            const m = Math.floor((diff % (1000*60*60)) / (1000*60));
-            const s = Math.floor((diff % (1000*60)) / 1000); // SEGUNDOS AÑADIDOS
-            
-            document.getElementById('cd-d').innerText = d.toString().padStart(2,'0');
-            document.getElementById('cd-h').innerText = h.toString().padStart(2,'0');
-            document.getElementById('cd-m').innerText = m.toString().padStart(2,'0');
-            document.getElementById('cd-s').innerText = s.toString().padStart(2,'0');
         }
-        setInterval(updateTimer, 1000); updateTimer();
 
-        // --- RENDERIZADO ---
-        function renderHero(row) {
-            document.getElementById('hero-sorteo').innerText = `Sorteo #${row.sorteo}`;
-            document.getElementById('hero-date').innerText = `${row.dia}/${row.mes}/${row.anio}`;
-            
-            // Bolas
-            let html = '';
-            [row.LOTO_n1, row.LOTO_n2, row.LOTO_n3, row.LOTO_n4, row.LOTO_n5, row.LOTO_n6].forEach((n, i) => {
-                // Animación escalonada
-                html += `<div class="ball-lg" style="animation-delay:${i*0.1}s">${n}</div>`;
+        function renderHistory(rows) {
+            const list = document.getElementById('history-list');
+            list.innerHTML = '';
+            rows.forEach(row => {
+                const li = document.createElement('li');
+                li.className = 'history-item';
+                
+                const balls = [row.LOTO_n1, row.LOTO_n2, row.LOTO_n3, row.LOTO_n4, row.LOTO_n5, row.LOTO_n6];
+                let ballsHtml = '';
+                balls.forEach(b => ballsHtml += `<div class="b-mini">${b}</div>`);
+
+                li.innerHTML = `
+                    <span style="color:var(--text-muted)">#${row.sorteo}</span>
+                    <div class="balls-mini">${ballsHtml}</div>
+                `;
+                list.appendChild(li);
             });
-            if(row.LOTO_comodin) html += `<div class="ball-lg comodin" style="animation-delay:0.7s">${row.LOTO_comodin}</div>`;
-            document.getElementById('hero-balls').innerHTML = html;
-
-            // Dinero
-            const total = calculateTotalDistributed(row);
-            document.getElementById('hero-total-money').innerText = fmtMoney(total);
-
-            const jackG = parseInt(row.LOTO_GANADORES||0);
-            const jackM = parseInt(row.LOTO_MONTO||0);
-            const jStat = document.getElementById('hero-jackpot-status');
-            if(jackG > 0) {
-                jStat.innerHTML = `<span style="color:var(--success)">¡${jackG} GANADOR(ES)! (${fmtMoney(jackM)})</span>`;
-            } else {
-                jStat.innerHTML = `<span style="color:var(--text-secondary)">Pozo Acumulado (Vacante)</span>`;
-            }
         }
 
-        function loadInspector(row) {
-            document.getElementById('inspector').classList.remove('hidden');
-            document.getElementById('inspector').scrollIntoView({behavior:'smooth'});
-            document.getElementById('insp-id').innerText = `#${row.sorteo}`;
-
-            // Minibolas Helper
-            const renderM = (p) => { let h=''; for(let i=1;i<=6;i++) h+=`<div class="mb">${row[p+'_n'+i]||'-'}</div>`; return h; };
-            
-            // Loto principal
-            let hl = ''; [row.LOTO_n1, row.LOTO_n2, row.LOTO_n3, row.LOTO_n4, row.LOTO_n5, row.LOTO_n6].forEach(n=>hl+=`<div class="mb hl">${n}</div>`);
-            if(row.LOTO_comodin) hl+=`<div class="mb" style="color:var(--loto); border:1px solid var(--loto)">${row.LOTO_comodin}</div>`;
-            
-            document.getElementById('insp-loto').innerHTML = hl;
-            document.getElementById('insp-rec').innerHTML = renderM('RECARGADO');
-            document.getElementById('insp-rev').innerHTML = renderM('REVANCHA');
-            document.getElementById('insp-des').innerHTML = renderM('DESQUITE');
-
-            // Tabla Financiera
-            let tblHtml = '';
-            let total = 0;
-            Object.keys(row).sort().forEach(key => {
-                if (key.endsWith('_GANADORES')) {
-                    const count = parseInt(row[key] || 0);
-                    if (count > 0) {
-                        const mKey = key.replace('_GANADORES', '_MONTO');
-                        const amount = parseInt(row[mKey] || 0);
-                        const sub = count * amount;
-                        total += sub;
-                        let name = key.replace('_GANADORES','').replace(/_/g,' ');
-                        tblHtml += `<tr><td>${name}</td><td>${count} x ${fmtMoney(amount)}</td><td>${fmtMoney(sub)}</td></tr>`;
+        function renderParityChart(odd, even) {
+            const ctx = document.getElementById('parityChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Impares', 'Pares'],
+                    datasets: [{
+                        data: [odd, even],
+                        backgroundColor: ['#388bfd', '#238636'],
+                        borderColor: '#0d1117',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { color: '#8b949e', usePointStyle: true } }
                     }
                 }
             });
-            document.getElementById('insp-breakdown').innerHTML = tblHtml || '<tr><td colspan="3">Sin datos financieros</td></tr>';
-            document.getElementById('insp-total').innerText = fmtMoney(total);
         }
 
-        Papa.parse(CSV_URL + '?v=' + Date.now(), {
-            download: true, header: true, delimiter: ";", skipEmptyLines: true,
-            complete: function(res) {
-                let data = res.data;
-                data.sort((a,b) => parseInt(b.sorteo) - parseInt(a.sorteo));
-
-                if(data.length > 0) {
-                    // 1. Render Hero con el ÚLTIMO (index 0)
-                    renderHero(data[0]);
-
-                    // 2. Render Tabla con el RESTO (index 1 en adelante)
-                    const tbody = document.getElementById('history-body');
-                    data.slice(1, 100).forEach(row => {
-                        const tr = document.createElement('tr');
-                        tr.onclick = () => {
-                            document.querySelectorAll('tr.active').forEach(e=>e.classList.remove('active'));
-                            tr.classList.add('active');
-                            loadInspector(row);
-                        };
-
-                        let balls = '<div class="mini-row">';
-                        [row.LOTO_n1, row.LOTO_n2, row.LOTO_n3, row.LOTO_n4, row.LOTO_n5, row.LOTO_n6].forEach(n => balls+=`<div class="mb hl">${n}</div>`);
-                        balls += '</div>';
-
-                        const g = parseInt(row.LOTO_GANADORES||0);
-                        const st = g>0 ? `<span style="color:var(--success)">${g} Gana</span>` : `<span style="color:var(--text-secondary)">Vacante</span>`;
-
-                        tr.innerHTML = `
-                            <td style="color:white">#${row.sorteo}</td>
-                            <td>${row.dia}/${row.mes}</td>
-                            <td>${balls}</td>
-                            <td>${st}</td>
-                        `;
-                        tbody.appendChild(tr);
-                    });
-                }
-
-                // Auditoría simple
-                const auditPct = Math.min(100, Math.round((data.length / 1400) * 100)); // 1400 aprox desde 2016
-                document.getElementById('audit-pct').innerText = auditPct + "%";
-                document.getElementById('audit-bar').style.width = auditPct + "%";
-
-                document.getElementById('loading').classList.add('hidden');
-                document.getElementById('main-ui').classList.remove('hidden');
-            }
-        });
+        // Iniciar
+        initDashboard();
     </script>
 </body>
 </html>
