@@ -2,31 +2,33 @@ name: Loto Sniper Live
 
 on:
   schedule:
-    # --- CONFIGURACIÓN DE HORARIOS (UTC-3 Chile Verano) ---
-    # Días Chile: Domingo (0), Martes (2), Jueves (4)
-    # Al pasar a UTC (+3h), caen en: Lunes (1), Miércoles (3), Viernes (5)
+    # --- ESTRATEGIA UNIFICADA INVIERNO/VERANO ---
+    # Chile varía entre UTC-3 y UTC-4.
+    # Configuramos para cubrir desde las 01:30 UTC hasta las 10:00 UTC.
+    # Días Chile: Dom(0), Mar(2), Jue(4) -> UTC siempre cae Lun(1), Mie(3), Vie(5)
 
-    # 1. FASE INTENSIVA: 22:30 a 22:55 CL (Cada 5 min)
-    # Hora CL: 22:30, 22:35... -> Hora UTC: 01:30, 01:35...
-    - cron: '30,35,40,45,50,55 1 * * 1,3,5'
+    # 1. FASE DE ATAQUE (La hora crítica del sorteo)
+    # Cubre de 22:30 a 23:55 (CL Verano) Y TAMBIÉN cubre 21:30 a 22:55 (CL Invierno)
+    # Al ampliar el rango UTC de 01 a 02, aseguramos cobertura rápida siempre.
+    - cron: '30,35,40,45,50,55 1 * * 1,3,5'   # 01:30 - 01:55 UTC
+    - cron: '*/5 2 * * 1,3,5'                 # 02:00 - 02:55 UTC
 
-    # 2. FASE MEDIA: 23:00 a 23:50 CL (Cada 10 min)
-    # Hora CL: 23:00... -> Hora UTC: 02:00...
-    - cron: '*/10 2 * * 1,3,5'
+    # 2. FASE DE MANTENIMIENTO (Post-Sorteo inmediato)
+    # Cubre la madrugada temprana
+    - cron: '*/10 3 * * 1,3,5'                # 03:00 - 03:50 UTC
 
-    # 3. FASE LENTA: 00:00 a 00:40 CL (Cada 20 min)
-    # Hora CL: 00:00... -> Hora UTC: 03:00...
-    - cron: '*/20 3 * * 1,3,5'
+    # 3. FASE DE GUARDIA (Madrugada profunda)
+    - cron: '*/20 4 * * 1,3,5'                # 04:00 - 04:40 UTC
 
-    # 4. FASE FINAL: 01:00 a 06:00 CL (Cada 1 hora)
-    # Hora CL: 01:00... -> Hora UTC: 04:00 hasta 09:00
-    - cron: '0 4-9 * * 1,3,5'
+    # 4. FASE FINAL (Hasta la mañana siguiente)
+    # Extendemos hasta las 10 UTC para cubrir hasta las 06:00 AM en Invierno
+    - cron: '0 5-10 * * 1,3,5'
 
   workflow_dispatch:
     inputs:
       mode:
         description: 'Modo'
-        default: 'daily'
+        default: 'daily' # Por defecto ejecuta la lógica diaria
         type: choice
         options:
         - history
@@ -47,13 +49,13 @@ jobs:
           python-version: '3.9'
           
       - name: Instalar deps
-        run: pip install pandas beautifulsoup4 lxml curl_cffi
+        run: pip install pandas beautifulsoup4 lxml curl_cffi pytz
 
       - name: Configurar Git Global
         run: |
           git config --global user.name 'LotoBot'
           git config --global user.email 'bot@noreply.github.com'
 
-      # Pasamos el argumento 'daily' explícitamente
       - name: Ejecutar Sniper
+        # Pasamos 'daily' como argumento para que Python sepa qué hacer
         run: python scraper.py daily
