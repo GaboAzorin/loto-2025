@@ -44,38 +44,49 @@
             gap: 20px;
         }
 
-        /* HEADER RELOJ */
+        /* HEADER COUNTDOWN */
         .clock-header {
             display: flex;
             justify-content: space-between;
-            align-items: flex-end;
-            padding: 10px 5px;
+            align-items: center;
+            padding: 15px 5px;
             border-bottom: 1px solid var(--border);
             margin-bottom: 10px;
+            background: radial-gradient(circle at right, #1a202c 0%, transparent 70%);
         }
         .brand {
             font-weight: 800;
-            font-size: 1.2rem;
-            letter-spacing: -0.5px;
+            font-size: 1.5rem;
+            letter-spacing: -1px;
             color: var(--text-muted);
         }
         .brand span { color: var(--text-main); }
         
-        .digital-clock {
+        .timer-container {
+            text-align: right;
+        }
+        .timer-label {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.75rem;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 2px;
+            font-weight: 700;
+        }
+        .digital-countdown {
             font-family: 'Orbitron', monospace;
-            font-size: 2.5rem;
+            font-size: 2.2rem;
             font-weight: 700;
             color: white;
             line-height: 1;
-            text-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
+            text-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
         }
-        .date-display {
+        .next-date-display {
             font-family: 'JetBrains Mono', monospace;
             color: var(--text-muted);
             font-size: 0.8rem;
-            text-align: right;
             margin-top: 5px;
-            text-transform: uppercase;
         }
 
         /* GRID SYSTEM */
@@ -121,7 +132,7 @@
             margin-top: 5px;
         }
 
-        /* UTILS */
+        /* UTILS & RESPONSIVE */
         .text-fire { color: var(--fire); }
         .text-ice { color: var(--ice); }
         .text-gold { color: var(--gold); }
@@ -136,9 +147,11 @@
             .span-1, .span-2, .span-4 { grid-column: span 2; }
         }
         @media (max-width: 600px) {
+            .clock-header { flex-direction: column; align-items: flex-start; gap: 15px; }
+            .timer-container { text-align: left; }
             .dashboard { grid-template-columns: 1fr; }
             .span-1, .span-2, .span-4 { grid-column: span 1; }
-            .digital-clock { font-size: 1.5rem; }
+            .digital-countdown { font-size: 1.8rem; }
         }
 
         /* STATUS BAR COMPLEX */
@@ -246,9 +259,10 @@
         
         <div class="clock-header">
             <div class="brand">LOTO <span>INTELLIGENCE</span></div>
-            <div style="text-align: right;">
-                <div class="digital-clock" id="clock">00:00:00</div>
-                <div class="date-display" id="date-str">--</div>
+            <div class="timer-container">
+                <div class="timer-label">Próximo Sorteo En:</div>
+                <div class="digital-countdown" id="countdown">--:--:--</div>
+                <div class="next-date-display" id="next-draw-date">Calculando fecha...</div>
             </div>
         </div>
 
@@ -337,17 +351,66 @@
     </div>
 
     <script>
-        // --- RELOJ ---
-        function updateClock() {
+        // --- COUNTDOWN ENGINE ---
+        // Sorteos LOTO Chile: Domingo (0), Martes (2), Jueves (4) a las 21:00 hrs.
+        function getNextDrawDate() {
             const now = new Date();
-            document.getElementById('clock').innerText = now.toLocaleTimeString('es-CL', { hour12: false });
-            const opt = { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' };
-            document.getElementById('date-str').innerText = now.toLocaleDateString('es-CL', opt);
-        }
-        setInterval(updateClock, 1000);
-        updateClock();
+            const drawDays = [0, 2, 4]; // Dom, Mar, Jue
+            const drawHour = 21; 
+            
+            let candidate = new Date(now);
+            candidate.setHours(drawHour, 0, 0, 0);
 
-        // --- DATA ENGINE ---
+            // Bucle simple para encontrar el siguiente slot futuro
+            for(let i = 0; i < 7; i++) { // Max 1 semana búsqueda
+                if (drawDays.includes(candidate.getDay())) {
+                    if (candidate > now) {
+                        return candidate;
+                    }
+                }
+                candidate.setDate(candidate.getDate() + 1);
+                candidate.setHours(drawHour, 0, 0, 0); // Reset hora
+            }
+            return candidate; // Fallback
+        }
+
+        let nextDraw = getNextDrawDate();
+        
+        // Formatear fecha bonita para subtítulo
+        const dateOpts = { weekday: 'long', day: 'numeric', hour: '2-digit', minute:'2-digit' };
+        document.getElementById('next-draw-date').innerText = 
+            nextDraw.toLocaleDateString('es-CL', dateOpts).toUpperCase() + " HRS";
+
+        function updateCountdown() {
+            const now = new Date();
+            const diff = nextDraw - now;
+
+            if (diff <= 0) {
+                // Si llegó la hora, recalculamos el siguiente inmediatamente
+                nextDraw = getNextDrawDate();
+                document.getElementById('next-draw-date').innerText = 
+                    nextDraw.toLocaleDateString('es-CL', dateOpts).toUpperCase() + " HRS";
+                return;
+            }
+
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+            // Formato "00d 00h 00m 00s" o solo "00:00:00" si es hoy
+            let str = "";
+            if (days > 0) str += `${days}d `;
+            str += `${String(hours).padStart(2,'0')}:${String(minutes).padStart(2,'0')}:${String(seconds).padStart(2,'0')}`;
+
+            document.getElementById('countdown').innerText = str;
+        }
+
+        setInterval(updateCountdown, 1000);
+        updateCountdown();
+
+
+        // --- DATA ENGINE (Idéntico a V3) ---
         const CSV_URL = 'LOTO_HISTORIAL_MAESTRO.csv';
 
         async function initDashboard() {
@@ -388,7 +451,7 @@
             
             // ¿Cuántos deberíamos tener si fuera perfecto?
             const expectedCount = maxID - minID + 1;
-            // ¿Cuántos tenemos realmente? (Usamos Set para evitar duplicados si los hubiera)
+            // ¿Cuántos tenemos realmente? (Usamos Set para evitar duplicados)
             const uniqueIDs = new Set(validData.map(d => d._id));
             const actualCount = uniqueIDs.size;
             const missingCount = expectedCount - actualCount;
