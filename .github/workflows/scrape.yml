@@ -7,7 +7,7 @@ on:
     inputs:
       mode:
         description: 'Modo'
-        default: 'history'
+        default: 'daily'
         type: choice
         options:
         - history
