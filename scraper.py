@@ -1,88 +1,60 @@
 import sys
 import datetime
 import re
-import time
 import subprocess
 import pandas as pd
 from curl_cffi import requests as cureq
 from bs4 import BeautifulSoup
-import pytz 
+import pytz
 
 # --- CONFIGURACIÓN ---
 CSV_FILE = 'LOTO_HISTORIAL_MAESTRO.csv'
-LOG_FILE = 'ejecucion.log'  # Nuevo archivo de registro
 TZ_CHILE = pytz.timezone('America/Santiago')
 
 def log(msg, status="INFO"):
-    """Imprime en consola y guarda en archivo al mismo tiempo"""
     now_chile = datetime.datetime.now(TZ_CHILE)
     ts = now_chile.strftime("%H:%M:%S")
-    formatted_msg = f"[{ts}] [{status}] {msg}"
-    
-    # 1. Imprimir en consola (GitHub Actions Logs)
-    print(formatted_msg, flush=True)
-    
-    # 2. Guardar en archivo local (Para descargar después)
-    try:
-        with open(LOG_FILE, "a", encoding="utf-8") as f:
-            f.write(formatted_msg + "\n")
-    except:
-        pass
+    print(f"[{ts}] [{status}] {msg}", flush=True)
 
-def git_push_bulk(msg_commit):
-    """Función específica para subir cambios masivos o logs"""
+def git_push_live(sorteo_num):
     try:
         subprocess.run(["git", "config", "--global", "user.name", "LotoBot"], check=False)
         subprocess.run(["git", "config", "--global", "user.email", "bot@noreply.github.com"], check=False)
         
-        # Agregamos CSV y el LOG
-        subprocess.run(["git", "add", CSV_FILE], check=False)
-        subprocess.run(["git", "add", LOG_FILE], check=False)
-        
-        # Commit y Push
-        subprocess.run(["git", "commit", "-m", msg_commit], check=True, stdout=subprocess.DEVNULL)
+        subprocess.run(["git", "add", CSV_FILE], check=True)
+        msg = f"DATA: Sorteo {sorteo_num} capturado"
+        subprocess.run(["git", "commit", "-m", msg], check=True, stdout=subprocess.DEVNULL)
         subprocess.run(["git", "push"], check=True)
-        log(f"--> PUSH EXITOSO: {msg_commit}", "GIT")
-    except subprocess.CalledProcessError:
-        log("Nada que subir (sin cambios en CSV o Log).", "GIT")
+        log(f"--> Sorteo {sorteo_num} subido a GitHub.", "GIT")
     except Exception as e:
-        log(f"Error fatal en Git Push: {e}", "CRITICAL")
+        log(f"Git push omitido (¿Sin cambios?): {e}", "WARN")
 
 def get_html(url):
     try:
-        # CAMBIO 1: Usamos 'safari15_5' en lugar de 'chrome110'. 
-        # Safari suele pasar mejor los filtros de TLS (Handshakes).
-        # Agregamos headers básicos para parecer más humano.
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.5 Safari/605.1.15',
-            'Accept-Language': 'es-419,es;q=0.9',
-            'Referer': 'https://google.com'
-        }
-        
-        response = cureq.get(
-            url, 
-            impersonate="safari15_5", 
-            headers=headers, 
-            timeout=30
-        )
+        # Usamos chrome110 simple, sin headers manuales para evitar huellas rotas
+        response = cureq.get(url, impersonate="chrome110", timeout=30)
         return response.text if response.status_code == 200 else None
     except Exception as e: 
-        log(f"Error HTTP {url}: {e}", "ERR")
+        log(f"Error HTTP: {e}", "ERR")
         return None
 
 def get_target_url_via_search(sorteo_num):
+    """Busca ?s=[NUM] y extrae el link real."""
     search_url = f"https://resultadoslotochile.com/?s={sorteo_num}"
-    log(f"Buscando URL para sorteo {sorteo_num}...", "SEARCH")
+    log(f"Buscando enlace para sorteo {sorteo_num}...", "SEARCH")
     
     html = get_html(search_url)
     if not html: return None
 
     soup = BeautifulSoup(html, 'lxml')
     candidates = []
+    
+    # Prioridad: Artículos
     for art in soup.find_all('article'):
         link = art.find('a', href=True)
         if link: candidates.append(link)
     
+    # Fallback: Todos los links
     if not candidates:
         candidates = soup.find_all('a', href=True)
 
@@ -91,11 +63,12 @@ def get_target_url_via_search(sorteo_num):
         href = a['href']
         if str(sorteo_num) in text and ("sorteo" in text or "resultados" in text):
             if "facebook" in href or "twitter" in href: continue
-            log(f"Enlace detectado: {href}", "FOUND")
+            log(f"Enlace encontrado: {href}", "SUCCESS")
             return href
     return None
 
 def parse_financial_data(soup, data_dict):
+    """Extrae montos y ganadores (Logica mejorada)"""
     financial_targets = {
         'LOTO': ['loto 6 aciertos'],
         'SUPER_QUINA_5_ACIERTOS_COMODIN': ['súper quina', 'super quina'],
@@ -109,6 +82,8 @@ def parse_financial_data(soup, data_dict):
         'REVANCHA': ['revancha'],
         'DESQUITE': ['desquite']
     }
+
+    # Inicializar en 0
     for key in financial_targets:
         data_dict[f'{key}_GANADORES'] = 0
         data_dict[f'{key}_MONTO'] = 0
@@ -125,7 +100,7 @@ def parse_financial_data(soup, data_dict):
 
             for db_key, search_terms in financial_targets.items():
                 if any(term in cat_text for term in search_terms):
-                    # Filtros anti-colisión
+                    # Evitar colisiones (Ej: Súper Quina vs Quina)
                     if db_key == 'QUINA_5_ACIERTOS' and 'súper' in cat_text: continue
                     if db_key == 'CUATERNA_4_ACIERTOS' and 'súper' in cat_text: continue
                     if db_key == 'TERNA_3_ACIERTOS' and 'súper' in cat_text: continue
@@ -139,8 +114,10 @@ def extract_sorteo_data(url, expected_sorteo):
     html = get_html(url)
     if not html: return None
     soup = BeautifulSoup(html, 'lxml')
+
     data = {'sorteo': expected_sorteo}
     
+    # Fecha
     meta_date = soup.find('meta', property='article:published_time')
     if meta_date:
         try:
@@ -152,6 +129,7 @@ def extract_sorteo_data(url, expected_sorteo):
         now = datetime.datetime.now(TZ_CHILE)
         data.update({'anio': now.year, 'mes': now.month, 'dia': now.day, 'dia_semana': now.strftime('%A')})
 
+    # Bolitas
     def get_nums(header_regex):
         h = soup.find(['h3', 'h2'], string=re.compile(header_regex, re.IGNORECASE))
         if not h: return []
@@ -163,14 +141,18 @@ def extract_sorteo_data(url, expected_sorteo):
         div = soup.find('div', class_='bolitas')
         if div: data['LOTO'] = [int(p.text) for p in div.find_all('p')]
 
-    if not data['LOTO']: return None
+    if not data['LOTO']: return None # Si no hay Loto, abortamos
 
     c_div = soup.find('div', class_='comodin')
     data['COMODIN'] = int(c_div.find('p').text) if c_div and c_div.find('p') else 0
+
     data['RECARGADO'] = get_nums('Recargado')
     data['REVANCHA'] = get_nums('Revancha')
     data['DESQUITE'] = get_nums('Desquite')
+    
+    # Financiero
     data = parse_financial_data(soup, data)
+    
     return data
 
 def save_to_csv(data_dict):
@@ -178,21 +160,27 @@ def save_to_csv(data_dict):
         try: df = pd.read_csv(CSV_FILE, sep=';')
         except: df = pd.DataFrame()
         
-        if 'sorteo' in df.columns: df = df[df['sorteo'] != data_dict['sorteo']]
-        
+        # Si ya existe, lo reemplazamos
+        if 'sorteo' in df.columns:
+            df = df[df['sorteo'] != data_dict['sorteo']]
+
         row = {
             'sorteo': data_dict['sorteo'],
             'anio': data_dict['anio'], 'mes': data_dict['mes'], 'dia': data_dict['dia'],
             'dia_semana': data_dict['dia_semana'],
             'LOTO_comodin': data_dict['COMODIN'],
         }
+        
         nums = data_dict.get('LOTO', [])
         for i in range(6): row[f'LOTO_n{i+1}'] = nums[i] if i<len(nums) else 0
+
         for g in ['RECARGADO','REVANCHA','DESQUITE']:
             nums = data_dict.get(g, [])
             for i in range(6): row[f'{g}_n{i+1}'] = nums[i] if i<len(nums) else 0
+
         for k, v in data_dict.items():
-            if 'GANADORES' in k or 'MONTO' in k: row[k] = v
+            if 'GANADORES' in k or 'MONTO' in k:
+                row[k] = v
 
         df_final = pd.concat([df, pd.DataFrame([row])], ignore_index=True)
         df_final['sorteo'] = df_final['sorteo'].astype(int)
@@ -204,55 +192,42 @@ def save_to_csv(data_dict):
         return False
 
 def run_daily_check():
-    log("=== MODO DIARIO ===")
+    log("--- INICIANDO MODO DIARIO ---")
+    
+    # Verificación horaria simple (evitar runs muertos en la mañana)
     now = datetime.datetime.now(TZ_CHILE)
-    # Lógica de horario (Opcional, la puedes comentar si quieres testear forzado)
-    if now.hour < 21 and now.hour > 6:
+    if now.hour < 21 and now.hour > 9:
         log("Fuera de horario de sorteo. Terminando.")
         return
 
+    # 1. ¿Qué sorteo toca?
     try:
         df = pd.read_csv(CSV_FILE, sep=';')
-        target = int(df['sorteo'].max()) + 1
-    except: target = 5210
-    
-    url = get_target_url_via_search(target)
-    if url:
-        data = extract_sorteo_data(url, target)
-        if data and save_to_csv(data):
-            git_push_bulk(f"DIARIO: Sorteo {target} agregado")
-        else: log("Fallo en extracción/guardado")
-    else: log("No encontrado")
+        last_sorteo = int(df['sorteo'].max())
+        target_sorteo = last_sorteo + 1
+    except:
+        target_sorteo = 5210
 
-def run_history_mode(start=5210, end=5360):
-    log(f"=== MODO HISTÓRICO ({start}-{end}) ===")
-    count = 0
-    for s in range(start, end + 1):
-        url = get_target_url_via_search(s)
-        if url:
-            data = extract_sorteo_data(url, s)
-            if data and save_to_csv(data):
-                log(f"Sorteo {s} recuperado.", "OK")
-                count += 1
-            else: log(f"Sorteo {s} error data.", "ERR")
-        else: log(f"Sorteo {s} sin URL.", "404")
-        time.sleep(1.5)
+    log(f"Objetivo: Sorteo {target_sorteo}")
+
+    # 2. Buscar
+    target_url = get_target_url_via_search(target_sorteo)
     
-    # AL FINALIZAR EL BUCLE, SUBIMOS TODO DE UNA VEZ
-    if count > 0:
-        git_push_bulk(f"HISTORIAL: {count} sorteos actualizados")
+    if target_url:
+        # 3. Extraer
+        data = extract_sorteo_data(target_url, target_sorteo)
+        if data:
+            # 4. Guardar y Push
+            if save_to_csv(data):
+                log(f"¡ÉXITO! Sorteo {target_sorteo} guardado.", "SUCCESS")
+                git_push_live(target_sorteo)
+            else:
+                log("Falló el guardado en CSV.", "ERR")
+        else:
+            log("Enlace encontrado pero sin datos válidos.", "WARN")
     else:
-        log("Fin del proceso histórico sin nuevos datos.")
+        log(f"Sorteo {target_sorteo} aún no disponible.", "WAITING")
 
 if __name__ == "__main__":
-    # Limpiamos el log anterior al iniciar una nueva ejecución
-    with open(LOG_FILE, "w") as f: f.write(f"Inicio ejecución: {datetime.datetime.now()}\n")
-
-    if len(sys.argv) > 1:
-        mode = sys.argv[1]
-        if mode == 'history':
-            run_history_mode(5210, 5230) # <--- OJO: Ajusta este rango según necesites
-        else:
-            run_daily_check()
-    else:
-        run_daily_check()
+    # Sin argumentos, sin historial, solo daily.
+    run_daily_check()
