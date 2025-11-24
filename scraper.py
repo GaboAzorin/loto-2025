@@ -6,14 +6,13 @@ import subprocess
 import pandas as pd
 from curl_cffi import requests as cureq
 from bs4 import BeautifulSoup
-import pytz # Necesario para la hora de Chile
+import pytz 
 
 # --- CONFIGURACIÓN ---
 CSV_FILE = 'LOTO_HISTORIAL_MAESTRO.csv'
 TZ_CHILE = pytz.timezone('America/Santiago')
 
 def log(msg, status="INFO"):
-    # Timestamp en hora Chile
     now_chile = datetime.datetime.now(TZ_CHILE)
     ts = now_chile.strftime("%H:%M:%S")
     print(f"[{ts}] [{status}] {msg}")
@@ -29,11 +28,10 @@ def git_push_live(sorteo_num):
         subprocess.run(["git", "push"], check=True)
         log(f"--> Sorteo {sorteo_num} subido a GitHub.", "GIT")
     except Exception as e:
-        log(f"Git push omitido (probablemente sin cambios): {e}", "WARN")
+        log(f"Git push omitido: {e}", "WARN")
 
 def get_html(url):
     try:
-        # Usamos chrome110 para pasar desapercibidos
         response = cureq.get(url, impersonate="chrome110", timeout=30)
         return response.text if response.status_code == 200 else None
     except Exception as e: 
@@ -42,95 +40,96 @@ def get_html(url):
 
 def get_target_url_via_search(sorteo_num):
     """
-    Estrategia: Busca en ?s=[NUM] y extrae el link del artículo.
-    Basado en la estructura de resultadoslotochile.com
+    Busca en ?s=[NUM] para encontrar la URL canónica del sorteo.
     """
     search_url = f"https://resultadoslotochile.com/?s={sorteo_num}"
-    log(f"Buscando enlace para sorteo {sorteo_num} en: {search_url}...", "SEARCH")
+    log(f"Buscando enlace para sorteo {sorteo_num}...", "SEARCH")
     
     html = get_html(search_url)
     if not html: return None
 
     soup = BeautifulSoup(html, 'lxml')
-    
-    # Buscamos artículos. Según tu estructura, suelen ser <article> -> <h2> -> <a>
-    articles = soup.find_all('article')
-    
     candidates = []
     
-    # Estrategia 1: Buscar dentro de articles (Más preciso)
-    for art in articles:
+    # Busca dentro de articles (estructura típica de WordPress en el sitio)
+    for art in soup.find_all('article'):
         link = art.find('a', href=True)
-        if link:
-            candidates.append(link)
+        if link: candidates.append(link)
             
-    # Estrategia 2: Si falla, buscar todos los links en el main (Fallback)
+    # Fallback general
     if not candidates:
-        main_content = soup.find('main') or soup.body
-        if main_content:
-            candidates = main_content.find_all('a', href=True)
+        candidates = soup.find_all('a', href=True)
 
-    # Filtrado final por texto
     for a in candidates:
         text = a.get_text(" ", strip=True).lower()
         href = a['href']
-        
-        # Debe contener el número del sorteo Y la palabra sorteo o resultados
-        # Y NO debe ser un link a "paginas" (page/2) o comentarios
+        # Validación estricta del texto del enlace
         if str(sorteo_num) in text and ("sorteo" in text or "resultados" in text):
-            # Excluir enlaces basura si los hubiera
             if "facebook" in href or "twitter" in href: continue
-            
             log(f"Enlace encontrado: {href}", "SUCCESS")
             return href
 
-    log("No se encontró enlace en los resultados de búsqueda.", "404")
     return None
 
 def parse_financial_data(soup, data_dict):
-    """Extrae la tabla de premios si existe"""
-    # Inicializar en 0
-    financial_cols = [
-        'LOTO', 'SUPER_QUINA_5_ACIERTOS_COMODIN', 'QUINA_5_ACIERTOS', 
-        'SUPER_CUATERNA_4_ACIERTOS_COMODIN', 'CUATERNA_4_ACIERTOS', 
-        'SUPER_TERNA_3_ACIERTOS_COMODIN', 'TERNA_3_ACIERTOS', 
-        'SUPER_DUPLA_2_ACIERTOS_COMODIN', 'RECARGADO_6_ACIERTOS', 
-        'REVANCHA', 'DESQUITE', 'JUBILAZO', 'JUBILAZO_50'
-    ]
-    for col in financial_cols:
-        data_dict[f'{col}_GANADORES'] = 0
-        data_dict[f'{col}_MONTO'] = 0
+    """
+    Extrae premios basándose en el código fuente del sorteo 5351.
+    """
+    # 1. Definir columnas base en 0
+    financial_targets = {
+        'LOTO': ['loto 6 aciertos'],
+        'SUPER_QUINA_5_ACIERTOS_COMODIN': ['súper quina', 'super quina'],
+        'QUINA_5_ACIERTOS': ['quina 5 aciertos'],
+        'SUPER_CUATERNA_4_ACIERTOS_COMODIN': ['súper cuaterna', 'super cuaterna'],
+        'CUATERNA_4_ACIERTOS': ['cuaterna 4 aciertos'],
+        'SUPER_TERNA_3_ACIERTOS_COMODIN': ['súper terna', 'super terna'],
+        'TERNA_3_ACIERTOS': ['terna 3 aciertos'],
+        'SUPER_DUPLA_2_ACIERTOS_COMODIN': ['súper dupla', 'super dupla'],
+        'RECARGADO_6_ACIERTOS': ['recargado 6 aciertos'],
+        'REVANCHA': ['revancha'],
+        'DESQUITE': ['desquite']
+    }
+
+    # Inicializar
+    for key in financial_targets:
+        data_dict[f'{key}_GANADORES'] = 0
+        data_dict[f'{key}_MONTO'] = 0
 
     table = soup.find('table', class_='table-prizes')
     if not table: return data_dict
 
+    # 2. Iterar filas de la tabla
     for row in table.find_all('tr'):
         cols = row.find_all('td')
         if len(cols) >= 3:
-            cat = cols[0].get_text(" ", strip=True).lower()
+            # Según tu JSON: td[0]=Categoría, td[1]=Monto, td[2]=Ganadores
+            cat_text = cols[0].get_text(" ", strip=True).lower()
             monto_raw = cols[1].get_text(strip=True)
             gan_raw = cols[2].get_text(strip=True)
             
+            # Limpieza de números (eliminar puntos y signo $)
             monto = int(re.sub(r'\D', '', monto_raw) or 0)
             ganadores = int(re.sub(r'\D', '', gan_raw) or 0)
 
-            target = None
-            if 'loto' in cat and '6 aciertos' in cat: target = 'LOTO'
-            elif 'súper quina' in cat: target = 'SUPER_QUINA_5_ACIERTOS_COMODIN'
-            elif 'quina' in cat: target = 'QUINA_5_ACIERTOS'
-            elif 'súper cuaterna' in cat: target = 'SUPER_CUATERNA_4_ACIERTOS_COMODIN'
-            elif 'cuaterna' in cat: target = 'CUATERNA_4_ACIERTOS'
-            elif 'súper terna' in cat: target = 'SUPER_TERNA_3_ACIERTOS_COMODIN'
-            elif 'terna' in cat: target = 'TERNA_3_ACIERTOS'
-            elif 'súper dupla' in cat: target = 'SUPER_DUPLA_2_ACIERTOS_COMODIN'
-            elif 'recargado' in cat: target = 'RECARGADO_6_ACIERTOS'
-            elif 'revancha' in cat: target = 'REVANCHA'
-            elif 'desquite' in cat: target = 'DESQUITE'
-            
-            if target:
-                data_dict[f'{target}_GANADORES'] = ganadores
-                data_dict[f'{target}_MONTO'] = monto
-                
+            # 3. Matching exacto
+            for db_key, search_terms in financial_targets.items():
+                # Si alguno de los términos de búsqueda está en la categoría...
+                if any(term in cat_text for term in search_terms):
+                    # Evitar conflictos (ej: "Súper Quina" contiene "Quina")
+                    # La lógica aquí es: Si ya encontré "Súper Quina", no busco "Quina" para esta fila.
+                    
+                    # Refinamiento para 'Quina' vs 'Súper Quina':
+                    if db_key == 'QUINA_5_ACIERTOS' and 'súper' in cat_text:
+                        continue # Es super quina, no quina normal
+                    if db_key == 'CUATERNA_4_ACIERTOS' and 'súper' in cat_text:
+                        continue
+                    if db_key == 'TERNA_3_ACIERTOS' and 'súper' in cat_text:
+                        continue
+
+                    data_dict[f'{db_key}_GANADORES'] = ganadores
+                    data_dict[f'{db_key}_MONTO'] = monto
+                    break # Pasamos a la siguiente fila de la tabla
+
     return data_dict
 
 def extract_sorteo_data(url, expected_sorteo):
@@ -138,15 +137,9 @@ def extract_sorteo_data(url, expected_sorteo):
     if not html: return None
     soup = BeautifulSoup(html, 'lxml')
 
-    # Validación básica de seguridad
-    if str(expected_sorteo) not in soup.text:
-        log("El HTML destino no parece contener el número de sorteo esperado.", "WARN")
-        # Continuamos igual por si acaso está en una imagen o estructura rara, 
-        # pero es una advertencia.
-
     data = {'sorteo': expected_sorteo}
     
-    # 1. Fecha
+    # 1. Fecha (Meta Tag)
     meta_date = soup.find('meta', property='article:published_time')
     if meta_date:
         try:
@@ -154,41 +147,42 @@ def extract_sorteo_data(url, expected_sorteo):
             data.update({'anio': dt.year, 'mes': dt.month, 'dia': dt.day, 'dia_semana': dt.strftime('%A')})
         except: pass
     
-    # Si falla la fecha meta, usar fallback de hoy (se corregirá en historial si es necesario)
     if 'anio' not in data:
         now = datetime.datetime.now(TZ_CHILE)
         data.update({'anio': now.year, 'mes': now.month, 'dia': now.day, 'dia_semana': now.strftime('%A')})
 
-    # 2. Números (Función auxiliar)
+    # 2. Extracción de Bolitas
     def get_nums(header_regex):
-        # Busca h3 o h2 que contenga el texto
+        # Busca h3 (o h2) que contenga el texto (ej: "Loto", "Revancha")
+        # En tu JSON son <h3>Loto</h3>
         h = soup.find(['h3', 'h2'], string=re.compile(header_regex, re.IGNORECASE))
         if not h: return []
+        
+        # El div con las bolitas es el hermano siguiente
         div = h.find_next('div', class_='bolitas')
         if not div: return []
+        
         return [int(p.text) for p in div.find_all('p') if p.text.strip().isdigit()]
 
     data['LOTO'] = get_nums('Loto')
-    # Fallback si Loto es el primer bloque sin header claro
+    # Fallback por si el header es imagen o distinto
     if not data['LOTO']:
-        first_bolitas = soup.find('div', class_='bolitas')
-        if first_bolitas: 
-            data['LOTO'] = [int(p.text) for p in first_bolitas.find_all('p') if p.text.strip().isdigit()]
+        first_div = soup.find('div', class_='bolitas')
+        if first_div: data['LOTO'] = [int(p.text) for p in first_div.find_all('p')]
 
     if not data['LOTO']:
-        log("No se pudieron extraer los números del Loto.", "ERR")
+        log("ERROR CRÍTICO: No se encontraron bolitas Loto.", "ERR")
         return None
 
-    # Comodín
+    # Comodín (Clase específica 'comodin')
     c_div = soup.find('div', class_='comodin')
     data['COMODIN'] = int(c_div.find('p').text) if c_div and c_div.find('p') else 0
 
     data['RECARGADO'] = get_nums('Recargado')
     data['REVANCHA'] = get_nums('Revancha')
     data['DESQUITE'] = get_nums('Desquite')
-    data['JUBILAZO'] = get_nums('Jubilazo') # A veces hay
-
-    # 3. Datos Financieros
+    
+    # 3. Extracción Financiera
     data = parse_financial_data(soup, data)
     
     return data
@@ -198,11 +192,9 @@ def save_to_csv(data_dict):
         try: df = pd.read_csv(CSV_FILE, sep=';')
         except: df = pd.DataFrame()
 
-        # Evitar duplicados: Si ya existe, lo borramos para actualizarlo
         if 'sorteo' in df.columns:
             df = df[df['sorteo'] != data_dict['sorteo']]
 
-        # Aplanar fila
         row = {
             'sorteo': data_dict['sorteo'],
             'anio': data_dict['anio'], 'mes': data_dict['mes'], 'dia': data_dict['dia'],
@@ -227,69 +219,63 @@ def save_to_csv(data_dict):
         new_df = pd.DataFrame([row])
         df_final = pd.concat([df, new_df], ignore_index=True)
         
-        # Ordenar y guardar
         df_final['sorteo'] = df_final['sorteo'].astype(int)
         df_final.sort_values(by='sorteo', ascending=True, inplace=True)
         df_final.to_csv(CSV_FILE, sep=';', index=False)
         return True
     except Exception as e:
-        log(f"Error escribiendo CSV: {e}", "CRITICAL")
+        log(f"Error CSV: {e}", "CRITICAL")
         return False
 
 def run_daily_check():
-    log("--- INICIANDO MODO DIARIO (SNIPER) ---")
+    log("--- INICIANDO MODO DIARIO ---")
     
-    # 1. Obtener último sorteo del CSV
+    # Verificación de horario (Evitar ejecuciones fantasma en invierno)
+    # Si son antes de las 21:00 CL, probablemente es un run programado de "madrugada" UTC que cayó muy temprano local
+    now = datetime.datetime.now(TZ_CHILE)
+    if now.hour < 21 and now.hour > 6:
+        log("Hora local fuera de rango de sorteo. Esperando...", "SLEEP")
+        # Opcional: return, pero como tu cron es nocturno, está bien.
+    
     try:
         df = pd.read_csv(CSV_FILE, sep=';')
         last_sorteo = int(df['sorteo'].max())
         target_sorteo = last_sorteo + 1
     except:
-        log("No se pudo leer el último sorteo. Por defecto buscando 5210.", "WARN")
         target_sorteo = 5210
 
-    log(f"Buscando Sorteo Objetivo: {target_sorteo}")
+    log(f"Objetivo: Sorteo {target_sorteo}")
 
-    # 2. Buscar URL
     target_url = get_target_url_via_search(target_sorteo)
     
     if target_url:
-        # 3. Extraer
         data = extract_sorteo_data(target_url, target_sorteo)
         if data:
-            # 4. Guardar
             if save_to_csv(data):
-                log(f"¡ÉXITO! Sorteo {target_sorteo} guardado.", "SUCCESS")
+                log(f"Sorteo {target_sorteo} capturado.", "SUCCESS")
                 git_push_live(target_sorteo)
             else:
-                log("Falló el guardado en CSV.", "ERR")
+                log("Error guardando CSV.", "ERR")
         else:
-            log("Enlace encontrado pero falló la extracción de datos (¿Estructura incompleta?)", "ERR")
+            log("Datos incompletos en la web.", "WARN")
     else:
-        log(f"Sorteo {target_sorteo} aún no disponible en el buscador.", "WAITING")
+        log("Sorteo no disponible aún.", "WAITING")
 
 def run_history_mode(start=5210, end=5360):
-    log(f"--- MODO HISTÓRICO ({start} - {end}) ---")
+    log(f"--- MODO HISTÓRICO ({start}-{end}) ---")
     for s in range(start, end + 1):
         target_url = get_target_url_via_search(s)
         if target_url:
             data = extract_sorteo_data(target_url, s)
             if data and save_to_csv(data):
-                log(f"Sorteo {s} recuperado.", "SUCCESS")
-            else:
-                log(f"Sorteo {s} falló en extracción.", "ERR")
-        else:
-            log(f"Sorteo {s} no encontrado.", "MISSING")
-        time.sleep(2) # Respeto al servidor
+                log(f"Sorteo {s} OK.", "SUCCESS")
+        time.sleep(1.5)
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
-        mode = sys.argv[1]
-        if mode == 'history':
-            # Puedes ajustar estos números manualmente si necesitas reparar un rango
-            run_history_mode(5210, 5360)
+        if sys.argv[1] == 'history':
+            run_history_mode(5210, 5360) # Ajusta este rango si necesitas
         else:
             run_daily_check()
     else:
-        # Por defecto
         run_daily_check()
