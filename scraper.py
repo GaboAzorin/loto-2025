@@ -50,7 +50,21 @@ def git_push_bulk(msg_commit):
 
 def get_html(url):
     try:
-        response = cureq.get(url, impersonate="chrome110", timeout=30)
+        # CAMBIO 1: Usamos 'safari15_5' en lugar de 'chrome110'. 
+        # Safari suele pasar mejor los filtros de TLS (Handshakes).
+        # Agregamos headers básicos para parecer más humano.
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.5 Safari/605.1.15',
+            'Accept-Language': 'es-419,es;q=0.9',
+            'Referer': 'https://google.com'
+        }
+        
+        response = cureq.get(
+            url, 
+            impersonate="safari15_5", 
+            headers=headers, 
+            timeout=30
+        )
         return response.text if response.status_code == 200 else None
     except Exception as e: 
         log(f"Error HTTP {url}: {e}", "ERR")
@@ -237,7 +251,7 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         mode = sys.argv[1]
         if mode == 'history':
-            run_history_mode(5210, 5360) # <--- OJO: Ajusta este rango según necesites
+            run_history_mode(5210, 5230) # <--- OJO: Ajusta este rango según necesites
         else:
             run_daily_check()
     else:
