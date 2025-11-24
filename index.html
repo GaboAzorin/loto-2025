@@ -3,27 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Loto Intelligence | Pro Terminal</title>
+    <title>Loto Intelligence | Command Center</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
     
     <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
         :root {
-            --bg-body: #090c10;
-            --bg-card: #161b22;
-            --bg-card-hover: #1f242c;
-            --border: #30363d;
-            --text-main: #c9d1d9;
-            --text-muted: #8b949e;
-            --accent: #58a6ff;
-            --gold: #d29922;
-            --fire: #f85149;
-            --ice: #388bfd;
-            --success: #238636;
+            --bg-body: #050505;
+            --bg-card: #0f1115;
+            --border: #25282e;
+            --text-main: #e0e6ed;
+            --text-muted: #6b7280;
+            --accent: #3b82f6;
+            --gold: #eab308;
+            --fire: #ef4444;
+            --ice: #06b6d4;
+            --success: #22c55e;
+            --warning: #f59e0b;
         }
 
         * { box-sizing: border-box; }
@@ -36,260 +36,320 @@
             padding: 20px;
         }
 
-        /* GRID LAYOUT (BENTO STYLE) */
+        .layout-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* HEADER RELOJ */
+        .clock-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            padding: 10px 5px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 10px;
+        }
+        .brand {
+            font-weight: 800;
+            font-size: 1.2rem;
+            letter-spacing: -0.5px;
+            color: var(--text-muted);
+        }
+        .brand span { color: var(--text-main); }
+        
+        .digital-clock {
+            font-family: 'Orbitron', monospace;
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: white;
+            line-height: 1;
+            text-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
+        }
+        .date-display {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            text-align: right;
+            margin-top: 5px;
+            text-transform: uppercase;
+        }
+
+        /* GRID SYSTEM */
         .dashboard {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            grid-template-rows: auto auto auto;
             gap: 20px;
-            max-width: 1400px;
-            margin: 0 auto;
         }
 
-        /* TARJETAS */
         .card {
             background: var(--bg-card);
             border: 1px solid var(--border);
             border-radius: 12px;
             padding: 20px;
-            transition: transform 0.2s, border-color 0.2s;
             display: flex;
             flex-direction: column;
-        }
-        
-        .card:hover {
-            border-color: var(--text-muted);
-            transform: translateY(-2px);
+            position: relative;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
         }
 
         .card-header {
-            font-size: 0.85rem;
+            font-size: 0.7rem;
             text-transform: uppercase;
             letter-spacing: 1px;
             color: var(--text-muted);
             margin-bottom: 10px;
-            font-weight: 600;
+            font-weight: 700;
             display: flex;
             justify-content: space-between;
-            align-items: center;
         }
 
         .big-stat {
             font-family: 'JetBrains Mono', monospace;
-            font-size: 2.5rem;
+            font-size: 2rem;
             font-weight: 700;
             color: var(--text-main);
+            margin: auto 0;
         }
 
         .sub-stat {
-            font-size: 0.9rem;
-            color: var(--success);
+            font-size: 0.8rem;
+            color: var(--text-muted);
             margin-top: 5px;
         }
 
-        /* POSICIONAMIENTO DE LAS TARJETAS EN EL GRID */
+        /* UTILS */
+        .text-fire { color: var(--fire); }
+        .text-ice { color: var(--ice); }
+        .text-gold { color: var(--gold); }
+        .text-success { color: var(--success); }
+
         .span-1 { grid-column: span 1; }
         .span-2 { grid-column: span 2; }
-        .span-4 { grid-column: span 4; } /* Full width */
+        .span-4 { grid-column: span 4; }
         
         @media (max-width: 1000px) {
             .dashboard { grid-template-columns: 1fr 1fr; }
-            .span-4 { grid-column: span 2; }
+            .span-1, .span-2, .span-4 { grid-column: span 2; }
         }
         @media (max-width: 600px) {
             .dashboard { grid-template-columns: 1fr; }
             .span-1, .span-2, .span-4 { grid-column: span 1; }
+            .digital-clock { font-size: 1.5rem; }
         }
 
-        /* ESTILOS ESPECÍFICOS */
-        
-        /* Heatmap de números */
+        /* STATUS BAR COMPLEX */
+        .status-complex {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            justify-content: center;
+            height: 100%;
+        }
+        .bar-bg {
+            background: #1a1d24;
+            height: 6px;
+            width: 100%;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .bar-fill {
+            height: 100%;
+            width: 0%;
+            background: var(--success);
+            transition: width 1s ease;
+        }
+        .status-row {
+            display: flex;
+            justify-content: space-between;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        /* HEATMAP */
         .number-grid {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
-            gap: 8px;
+            gap: 5px;
         }
         .num-cell {
             aspect-ratio: 1;
-            border-radius: 6px;
+            border-radius: 4px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-family: 'JetBrains Mono', monospace;
-            font-weight: bold;
-            font-size: 0.9rem;
-            background: #21262d;
-            color: var(--text-muted);
-            position: relative;
-            cursor: pointer;
+            font-size: 0.8rem;
+            background: #1a1d24;
+            color: #4b5563;
+            cursor: default;
+            transition: all 0.2s;
         }
-        .num-cell:hover .tooltip { display: block; }
-        
-        /* Colores del Heatmap se asignan via JS */
+        .num-cell:hover {
+            transform: scale(1.15);
+            z-index: 10;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            border: 1px solid var(--text-main);
+        }
 
-        /* Lista de Últimos Sorteos (Estilo Terminal) */
+        /* HISTORY */
         .history-list {
             list-style: none;
             padding: 0;
             margin: 0;
             overflow-y: auto;
-            max-height: 300px;
+            max-height: 200px;
         }
         .history-item {
             display: flex;
             justify-content: space-between;
-            padding: 10px 0;
-            border-bottom: 1px solid var(--border);
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #1a1d24;
             font-family: 'JetBrains Mono', monospace;
-            font-size: 0.9rem;
+            font-size: 0.8rem;
         }
-        .balls-mini {
-            display: flex;
-            gap: 5px;
-        }
-        .b-mini {
-            width: 24px;
-            height: 24px;
-            background: var(--bg-body);
-            border: 1px solid var(--border);
+        .balls-row { display: flex; gap: 3px; }
+        .ball-tiny {
+            width: 18px; height: 18px;
             border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.75rem;
+            background: #25282e;
             color: var(--gold);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.65rem;
         }
 
-        /* Tooltip simple */
-        .tooltip {
-            display: none;
-            position: absolute;
-            bottom: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-            background: black;
-            color: white;
-            padding: 5px 10px;
-            border-radius: 4px;
-            font-size: 0.7rem;
-            white-space: nowrap;
-            z-index: 10;
-        }
-
-        /* Loading Overlay */
+        /* LOADING */
         #loading {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--bg-body);
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg-body); z-index: 999;
+            display: flex; justify-content: center; align-items: center;
             flex-direction: column;
-            z-index: 999;
-            transition: opacity 0.5s;
         }
-        .loader {
-            border: 3px solid var(--border);
-            border-top: 3px solid var(--accent);
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .blink { animation: blinker 1.5s linear infinite; }
+        @keyframes blinker { 50% { opacity: 0; } }
 
     </style>
 </head>
 <body>
 
     <div id="loading">
-        <div class="loader"></div>
-        <p style="margin-top: 15px; font-family:'JetBrains Mono'">CARGANDO LOTO INTELLIGENCE...</p>
+        <div style="font-family:'Orbitron'; color: var(--accent); font-size: 1.2rem;" class="blink">INICIANDO SISTEMA...</div>
+        <div style="font-family:'JetBrains Mono'; color: var(--text-muted); font-size: 0.8rem; margin-top:10px;">Analizando dataset CSV</div>
     </div>
 
-    <div class="dashboard" id="main-ui" style="display:none;">
+    <div class="layout-container" id="main-ui" style="display:none;">
         
-        <div class="card span-1">
-            <div class="card-header">Último Sorteo</div>
-            <div class="big-stat" id="last-draw-id">#0000</div>
-            <div class="sub-stat" id="last-draw-date">--/--/----</div>
-        </div>
-
-        <div class="card span-1">
-            <div class="card-header">Pozo Repartido</div>
-            <div class="big-stat" style="color: var(--gold);" id="last-money">---</div>
-            <div class="sub-stat">Millones CLP</div>
-        </div>
-
-        <div class="card span-1">
-            <div class="card-header">Número "Hype" (Más Frecuente)</div>
-            <div class="big-stat" style="color: var(--fire);" id="hot-num">--</div>
-            <div class="sub-stat" id="hot-freq">-- apariciones</div>
-        </div>
-
-        <div class="card span-1">
-            <div class="card-header">Número "Ghost" (Menos Frecuente)</div>
-            <div class="big-stat" style="color: var(--ice);" id="cold-num">--</div>
-            <div class="sub-stat" id="cold-freq">-- apariciones</div>
-        </div>
-
-        <div class="card span-4" style="height: 400px;">
-            <div class="card-header">
-                <span>Análisis de Frecuencia (Total Histórico)</span>
-                <span style="font-size: 0.7rem; opacity: 0.5;">Basado en todo el dataset</span>
+        <div class="clock-header">
+            <div class="brand">LOTO <span>INTELLIGENCE</span></div>
+            <div style="text-align: right;">
+                <div class="digital-clock" id="clock">00:00:00</div>
+                <div class="date-display" id="date-str">--</div>
             </div>
-            <canvas id="frequencyChart"></canvas>
         </div>
 
-        <div class="card span-2">
-            <div class="card-header">
-                Mapa de Calor Numérico
-                <span style="font-size:0.7rem">Rojo = Frecuente | Azul = Raro</span>
-            </div>
-            <div class="number-grid" id="heatmap-grid">
+        <div class="dashboard">
+
+            <div class="card span-2">
+                <div class="card-header">
+                    <span>Integridad de Base de Datos</span>
+                    <span id="integrity-badge" style="color:var(--text-muted)">ANALIZANDO</span>
                 </div>
-            <div style="margin-top: 15px; font-size: 0.8rem; color: var(--text-muted); text-align: center;">
-                Intensidad basada en % de aparición histórica.
-            </div>
-        </div>
+                <div class="status-complex">
+                    <div>
+                        <div class="status-row" style="margin-bottom:4px;">
+                            <span>Continuidad Secuencial</span>
+                            <span id="seq-pct" class="text-main">0%</span>
+                        </div>
+                        <div class="bar-bg">
+                            <div class="bar-fill" id="seq-bar"></div>
+                        </div>
+                        <div class="status-row" style="margin-top:4px;">
+                            <span style="font-size:0.7rem; color:var(--text-muted)">Rango: #<span id="min-id">0</span> - #<span id="max-id">0</span></span>
+                            <span id="gaps-count" style="color:var(--fire)">-- Huecos</span>
+                        </div>
+                    </div>
 
-        <div class="card span-2">
-            <div class="card-header">Log de Actividad Reciente</div>
-            <ul class="history-list" id="history-list">
-                </ul>
-        </div>
-
-        <div class="card span-1">
-            <div class="card-header">Balance Par/Impar</div>
-            <div style="position: relative; height: 200px;">
-                <canvas id="parityChart"></canvas>
-            </div>
-        </div>
-
-        <div class="card span-3">
-            <div class="card-header">Estado del Sistema</div>
-            <div style="display: flex; gap: 20px; align-items: center; height: 100%;">
-                <div>
-                    <div style="font-size: 0.8rem; color: var(--text-muted)">Registros Analizados</div>
-                    <div class="big-stat" style="font-size: 1.8rem" id="total-records">0</div>
-                </div>
-                <div style="height: 50px; width: 1px; background: var(--border);"></div>
-                <div style="flex-grow: 1;">
-                     <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 5px;">Integridad de Datos</div>
-                     <div style="background: #21262d; height: 10px; border-radius: 5px; overflow: hidden;">
-                         <div id="audit-bar" style="background: var(--success); width: 0%; height: 100%;"></div>
-                     </div>
-                     <div style="text-align: right; font-size: 0.7rem; margin-top: 3px;" id="audit-text">0%</div>
+                    <div style="border-top: 1px solid #1a1d24; padding-top: 10px; margin-top: 5px;">
+                        <div class="status-row">
+                            <span>Sincronización (Fecha)</span>
+                            <span id="sync-status" class="text-success">Al día</span>
+                        </div>
+                        <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">
+                            Última actualización: <span id="last-date" style="color:var(--text-main)">--/--/----</span>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
 
+            <div class="card span-1">
+                <div class="card-header">Último Sorteo Detectado</div>
+                <div class="big-stat" id="last-id">#----</div>
+                <div class="sub-stat" id="last-money" style="color:var(--gold)">$---</div>
+            </div>
+
+            <div class="card span-1">
+                <div class="card-header">Pares vs Impares</div>
+                <div style="height: 100px; position: relative;">
+                    <canvas id="parityChart"></canvas>
+                </div>
+            </div>
+
+            <div class="card span-4" style="height: 350px;">
+                <div class="card-header">
+                    <span>Distribución de Frecuencia (Todos los Tiempos)</span>
+                </div>
+                <canvas id="frequencyChart"></canvas>
+            </div>
+
+            <div class="card span-2">
+                <div class="card-header">Mapa de Calor Numérico</div>
+                <div class="number-grid" id="heatmap-grid"></div>
+                <div style="margin-top:10px; display:flex; justify-content:space-between; font-size:0.7rem; color:var(--text-muted);">
+                    <span>Azul = Frío</span>
+                    <span>Rojo = Caliente</span>
+                </div>
+            </div>
+
+            <div class="card span-2">
+                <div class="card-header">Análisis Rápido</div>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:15px;">
+                    <div>
+                        <div class="sub-stat">Número Hot</div>
+                        <div class="big-stat text-fire" id="hot-num">--</div>
+                    </div>
+                    <div>
+                        <div class="sub-stat">Número Cold</div>
+                        <div class="big-stat text-ice" id="cold-num">--</div>
+                    </div>
+                </div>
+                <div style="border-top: 1px solid var(--border); padding-top:10px; flex-grow:1; display:flex; flex-direction:column;">
+                    <div class="card-header" style="margin-bottom:5px;">Últimos Registros (Base Local)</div>
+                    <ul class="history-list" id="history-list"></ul>
+                </div>
+            </div>
+
+        </div>
     </div>
 
     <script>
+        // --- RELOJ ---
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('clock').innerText = now.toLocaleTimeString('es-CL', { hour12: false });
+            const opt = { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' };
+            document.getElementById('date-str').innerText = now.toLocaleDateString('es-CL', opt);
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // --- DATA ENGINE ---
         const CSV_URL = 'LOTO_HISTORIAL_MAESTRO.csv';
 
-        // Función principal de carga
         async function initDashboard() {
             Papa.parse(CSV_URL, {
                 download: true,
@@ -300,199 +360,211 @@
                 },
                 error: function(err) {
                     console.error("Error CSV:", err);
-                    alert("Error cargando datos.");
+                    alert("Error cargando base de datos.");
                 }
             });
         }
 
         function processData(data) {
-            // Filtrar filas vacías o inválidas
-            const cleanData = data.filter(row => row.LOTO_n1 && row.sorteo);
+            // 1. Filtrar basura y convertir tipos
+            const validData = [];
+            data.forEach(row => {
+                const id = parseInt(row.sorteo);
+                if (!isNaN(id)) {
+                    // Copiar fila y agregar ID numérico real
+                    row._id = id; 
+                    validData.push(row);
+                }
+            });
+
+            // 2. Ordenar ESTRICTAMENTE por número de sorteo
+            validData.sort((a, b) => a._id - b._id);
+
+            if (validData.length === 0) return;
+
+            // --- ANÁLISIS DE INTEGRIDAD (GAPS) ---
+            const minID = validData[0]._id;
+            const maxID = validData[validData.length - 1]._id;
             
-            // 1. Estadísticas Básicas
-            const lastRow = cleanData[cleanData.length - 1];
-            document.getElementById('last-draw-id').innerText = `#${lastRow.sorteo}`;
-            document.getElementById('last-draw-date').innerText = `${lastRow.dia}/${lastRow.mes}/${lastRow.anio}`;
+            // ¿Cuántos deberíamos tener si fuera perfecto?
+            const expectedCount = maxID - minID + 1;
+            // ¿Cuántos tenemos realmente? (Usamos Set para evitar duplicados si los hubiera)
+            const uniqueIDs = new Set(validData.map(d => d._id));
+            const actualCount = uniqueIDs.size;
+            const missingCount = expectedCount - actualCount;
+            const integrityPct = (actualCount / expectedCount) * 100;
+
+            // Renderizado de Estado
+            document.getElementById('min-id').innerText = minID;
+            document.getElementById('max-id').innerText = maxID;
+            document.getElementById('seq-pct').innerText = integrityPct.toFixed(1) + "%";
+            document.getElementById('seq-bar').style.width = integrityPct + "%";
             
-            // Formato moneda (Si existe monto, sino 0)
+            const gapEl = document.getElementById('gaps-count');
+            const badgeEl = document.getElementById('integrity-badge');
+            
+            if (missingCount === 0) {
+                gapEl.innerText = "0 Huecos (Perfecto)";
+                gapEl.style.color = "var(--success)";
+                badgeEl.innerText = "OPTIMAL";
+                badgeEl.style.color = "var(--success)";
+                document.getElementById('seq-bar').style.backgroundColor = "var(--success)";
+            } else {
+                gapEl.innerText = `${missingCount} Faltantes`;
+                gapEl.style.color = "var(--fire)";
+                badgeEl.innerText = "FRAGMENTADO";
+                badgeEl.style.color = "var(--warning)";
+                document.getElementById('seq-bar').style.backgroundColor = "var(--warning)";
+            }
+
+            // --- ANÁLISIS DE FRESCURA (FECHA) ---
+            const lastRow = validData[validData.length - 1];
+            // Intentar parsear fecha manual (asumiendo anio, mes, dia columnas)
+            const lastDate = new Date(lastRow.anio, parseInt(lastRow.mes)-1, lastRow.dia);
+            const now = new Date();
+            const diffDays = Math.ceil(Math.abs(now - lastDate) / (1000 * 60 * 60 * 24));
+            
+            document.getElementById('last-date').innerText = lastDate.toLocaleDateString('es-CL');
+            const syncEl = document.getElementById('sync-status');
+            
+            if (diffDays <= 3) {
+                syncEl.innerText = "Base Actualizada";
+                syncEl.className = "text-success";
+            } else {
+                syncEl.innerText = `Desfasado (${diffDays} días)`;
+                syncEl.className = "text-fire";
+            }
+
+            // --- UI DATOS ---
+            document.getElementById('last-id').innerText = `#${lastRow.sorteo}`;
             const money = parseInt(lastRow.LOTO_MONTO || 0);
-            document.getElementById('last-money').innerText = new Intl.NumberFormat('es-CL').format(money);
+            document.getElementById('last-money').innerText = money > 0 ? `$${new Intl.NumberFormat('es-CL').format(money)}` : "Vacante/Desc.";
 
-            document.getElementById('total-records').innerText = cleanData.length;
-            document.getElementById('audit-bar').style.width = "100%";
-            document.getElementById('audit-text').innerText = "Dataset Cargado 100%";
+            // --- ESTADÍSTICAS ---
+            const freqs = new Array(42).fill(0);
+            let odd = 0, even = 0;
 
-            // 2. Análisis de Frecuencia (Números 1-41)
-            const frequency = new Array(42).fill(0); // Indices 1-41
-            let oddCount = 0;
-            let evenCount = 0;
-
-            cleanData.forEach(row => {
-                const balls = [
-                    parseInt(row.LOTO_n1), parseInt(row.LOTO_n2), parseInt(row.LOTO_n3),
-                    parseInt(row.LOTO_n4), parseInt(row.LOTO_n5), parseInt(row.LOTO_n6)
-                ];
-                
-                balls.forEach(n => {
-                    if (!isNaN(n) && n > 0 && n <= 41) {
-                        frequency[n]++;
-                        if (n % 2 === 0) evenCount++; else oddCount++;
+            validData.forEach(row => {
+                const nums = [row.LOTO_n1, row.LOTO_n2, row.LOTO_n3, row.LOTO_n4, row.LOTO_n5, row.LOTO_n6].map(n => parseInt(n));
+                nums.forEach(n => {
+                    if (n > 0 && n <= 41) {
+                        freqs[n]++;
+                        if(n%2===0) even++; else odd++;
                     }
                 });
             });
 
-            // Encontrar Hot/Cold
-            let maxFreq = 0;
-            let minFreq = Infinity;
-            let hotNum = -1;
-            let coldNum = -1;
-
-            // Empezamos de 1 a 41
-            for (let i = 1; i <= 41; i++) {
-                if (frequency[i] > maxFreq) { maxFreq = frequency[i]; hotNum = i; }
-                if (frequency[i] < minFreq && frequency[i] > 0) { minFreq = frequency[i]; coldNum = i; }
+            let maxF = 0, minF = Infinity, hot = 0, cold = 0;
+            for(let i=1; i<=41; i++){
+                if(freqs[i] > maxF) { maxF = freqs[i]; hot = i; }
+                if(freqs[i] < minF && freqs[i] > 0) { minF = freqs[i]; cold = i; }
             }
+            if(minF === Infinity) minF = 0;
 
-            document.getElementById('hot-num').innerText = hotNum;
-            document.getElementById('hot-freq').innerText = `${maxFreq} veces`;
-            document.getElementById('cold-num').innerText = coldNum;
-            document.getElementById('cold-freq').innerText = `${minFreq} veces`;
+            document.getElementById('hot-num').innerText = hot;
+            document.getElementById('cold-num').innerText = cold || "-";
 
-            // 3. Renderizar Gráfico de Barras (Chart.js)
-            renderMainChart(frequency);
+            renderCharts(freqs, odd, even, maxF);
+            renderHeatmap(freqs, maxF);
+            renderHistory(validData.slice(-10).reverse());
 
-            // 4. Renderizar Heatmap
-            renderHeatmap(frequency, maxFreq);
-
-            // 5. Renderizar Lista Histórica (Últimos 10)
-            renderHistory(cleanData.slice(-10).reverse());
-
-            // 6. Renderizar Paridad
-            renderParityChart(oddCount, evenCount);
-
-            // Mostrar UI
-            document.getElementById('loading').style.opacity = 0;
-            setTimeout(() => {
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('main-ui').style.display = 'grid';
-            }, 500);
+            // Show
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('main-ui').style.display = 'flex';
         }
 
-        function renderMainChart(freqArray) {
+        function renderCharts(freqs, odd, even, maxVal) {
+            // Bar Chart
             const ctx = document.getElementById('frequencyChart').getContext('2d');
-            // Cortamos el array para quitar el indice 0
-            const dataValues = freqArray.slice(1);
-            const labels = Array.from({length: 41}, (_, i) => i + 1);
-
+            const dataVals = freqs.slice(1);
+            
             new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: labels,
+                    labels: Array.from({length:41}, (_,i)=>i+1),
                     datasets: [{
-                        label: 'Apariciones',
-                        data: dataValues,
-                        backgroundColor: (ctx) => {
-                            const val = ctx.raw;
-                            // Gradiente dinámico basado en valor
-                            const alpha = (val / Math.max(...dataValues)) * 0.8 + 0.2;
-                            return `rgba(88, 166, 255, ${alpha})`;
+                        data: dataVals,
+                        backgroundColor: (c) => {
+                            const val = c.raw;
+                            const alpha = (val / maxVal) * 0.8 + 0.2;
+                            return `rgba(59, 130, 246, ${alpha})`; // Azul variable
                         },
-                        borderColor: '#58a6ff',
-                        borderWidth: 1,
-                        borderRadius: 4
+                        borderRadius: 2
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false }
-                    },
+                    plugins: { legend: { display: false } },
                     scales: {
-                        y: {
-                            grid: { color: '#30363d' },
-                            ticks: { color: '#8b949e' }
-                        },
-                        x: {
-                            grid: { display: false },
-                            ticks: { color: '#8b949e', maxRotation: 0, autoSkip: true, maxTicksLimit: 20 }
-                        }
+                        y: { grid: { color: '#25282e' }, ticks: { color: '#6b7280' } },
+                        x: { grid: { display: false }, ticks: { color: '#6b7280', maxTicksLimit: 20 } }
                     }
+                }
+            });
+
+            // Pie Chart
+            new Chart(document.getElementById('parityChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Impar', 'Par'],
+                    datasets: [{
+                        data: [odd, even],
+                        backgroundColor: ['#06b6d4', '#22c55e'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } }
                 }
             });
         }
 
-        function renderHeatmap(freqArray, maxVal) {
-            const container = document.getElementById('heatmap-grid');
-            container.innerHTML = '';
-            
-            for (let i = 1; i <= 41; i++) {
-                const val = freqArray[i];
-                const div = document.createElement('div');
-                div.className = 'num-cell';
-                div.innerText = i;
+        function renderHeatmap(freqs, maxVal) {
+            const el = document.getElementById('heatmap-grid');
+            el.innerHTML = '';
+            for(let i=1; i<=41; i++){
+                const val = freqs[i];
+                const d = document.createElement('div');
+                d.className = 'num-cell';
+                d.innerText = i;
                 
-                // Calcular color: De azul (frio) a rojo (caliente)
-                // Normalizar valor 0 a 1
-                const percent = val / maxVal;
-                
-                // Lógica de color simple
-                let color = '';
-                if (percent > 0.8) color = `rgba(248, 81, 73, ${percent})`; // Rojo intenso
-                else if (percent > 0.5) color = `rgba(210, 153, 34, ${percent})`; // Oro
-                else color = `rgba(56, 139, 253, ${percent * 0.8})`; // Azul
-                
-                div.style.backgroundColor = color;
-                div.style.color = percent > 0.6 ? '#0d1117' : '#e6edf3'; // Contraste texto
+                // Heatmap Color Logic
+                const p = val / maxVal;
+                let bg = '#1f2937';
+                let color = '#9ca3af';
 
-                div.innerHTML += `<div class="tooltip">Frecuencia: ${val}</div>`;
-                container.appendChild(div);
+                if(p > 0.85) { bg = '#ef4444'; color = 'white'; } // Hot (Red)
+                else if(p > 0.65) { bg = '#f59e0b'; color = 'black'; } // Warn (Gold)
+                else if(p > 0.40) { bg = '#3b82f6'; color = 'white'; } // Mid (Blue)
+                
+                d.style.backgroundColor = bg;
+                d.style.color = color;
+                d.title = `N° ${i}: ${val} apariciones`;
+                el.appendChild(d);
             }
         }
 
         function renderHistory(rows) {
-            const list = document.getElementById('history-list');
-            list.innerHTML = '';
-            rows.forEach(row => {
+            const el = document.getElementById('history-list');
+            el.innerHTML = '';
+            rows.forEach(r => {
                 const li = document.createElement('li');
                 li.className = 'history-item';
+                const nums = [r.LOTO_n1,r.LOTO_n2,r.LOTO_n3,r.LOTO_n4,r.LOTO_n5,r.LOTO_n6];
+                let bHtml = '';
+                nums.forEach(n => bHtml += `<div class="ball-tiny">${n}</div>`);
                 
-                const balls = [row.LOTO_n1, row.LOTO_n2, row.LOTO_n3, row.LOTO_n4, row.LOTO_n5, row.LOTO_n6];
-                let ballsHtml = '';
-                balls.forEach(b => ballsHtml += `<div class="b-mini">${b}</div>`);
-
                 li.innerHTML = `
-                    <span style="color:var(--text-muted)">#${row.sorteo}</span>
-                    <div class="balls-mini">${ballsHtml}</div>
+                    <div style="color:var(--text-muted)">#${r.sorteo}</div>
+                    <div class="balls-row">${bHtml}</div>
                 `;
-                list.appendChild(li);
+                el.appendChild(li);
             });
         }
 
-        function renderParityChart(odd, even) {
-            const ctx = document.getElementById('parityChart').getContext('2d');
-            new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Impares', 'Pares'],
-                    datasets: [{
-                        data: [odd, even],
-                        backgroundColor: ['#388bfd', '#238636'],
-                        borderColor: '#0d1117',
-                        borderWidth: 2
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'bottom', labels: { color: '#8b949e', usePointStyle: true } }
-                    }
-                }
-            });
-        }
-
-        // Iniciar
         initDashboard();
     </script>
 </body>
