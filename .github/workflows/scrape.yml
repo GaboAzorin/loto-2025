@@ -37,4 +37,4 @@ jobs:
           git config --global user.email 'bot@noreply.github.com'
 
       - name: Ejecutar Sniper (Con Live Push)
-        run: python scraper.py history
+        run: python scraper.py daily
