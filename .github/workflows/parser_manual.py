@@ -6,17 +6,20 @@ from bs4 import BeautifulSoup
 INPUT_FILE = "pegue_html_aqui.txt"
 
 def parse_financial_data(soup, data_dict):
-    """Lógica de extracción financiera idéntica al scraper principal"""
+    """
+    Lógica de extracción financiera MEJORADA.
+    Usa palabras clave cortas para asegurar el match y filtros negativos para precisión.
+    """
     financial_targets = {
-        'LOTO': ['loto 6 aciertos'],
+        'LOTO': ['loto'], 
         'SUPER_QUINA_5_ACIERTOS_COMODIN': ['súper quina', 'super quina'],
-        'QUINA_5_ACIERTOS': ['quina 5 aciertos'],
+        'QUINA_5_ACIERTOS': ['quina'], # MATCH CORTO: Captura "Quina" aunque el resto del texto varíe
         'SUPER_CUATERNA_4_ACIERTOS_COMODIN': ['súper cuaterna', 'super cuaterna'],
-        'CUATERNA_4_ACIERTOS': ['cuaterna 4 aciertos'],
+        'CUATERNA_4_ACIERTOS': ['cuaterna'], # MATCH CORTO
         'SUPER_TERNA_3_ACIERTOS_COMODIN': ['súper terna', 'super terna'],
-        'TERNA_3_ACIERTOS': ['terna 3 aciertos'],
-        'SUPER_DUPLA_2_ACIERTOS_COMODIN': ['súper dupla', 'super dupla'],
-        'RECARGADO_6_ACIERTOS': ['recargado 6 aciertos'],
+        'TERNA_3_ACIERTOS': ['terna'], # MATCH CORTO
+        'SUPER_DUPLA_2_ACIERTOS_COMODIN': ['súper dupla', 'super dupla', 'dupla'],
+        'RECARGADO_6_ACIERTOS': ['recargado'],
         'REVANCHA': ['revancha'],
         'DESQUITE': ['desquite']
     }
@@ -41,18 +44,25 @@ def parse_financial_data(soup, data_dict):
 
             for db_key, search_terms in financial_targets.items():
                 if any(term in cat_text for term in search_terms):
-                    # Filtros anti-colisión (Crucial)
+                    # --- FILTROS DE EXCLUSIÓN CRÍTICOS ---
+                    
+                    # 1. Si es LOTO, asegurarnos que NO sea Recargado/Revancha/Desquite
+                    if db_key == 'LOTO':
+                        if 'recargado' in cat_text or 'revancha' in cat_text or 'desquite' in cat_text:
+                            continue
+
+                    # 2. Si buscamos QUINA/CUATERNA/TERNA "simples", ignorar las "SÚPER"
                     if db_key == 'QUINA_5_ACIERTOS' and 'súper' in cat_text: continue
                     if db_key == 'CUATERNA_4_ACIERTOS' and 'súper' in cat_text: continue
                     if db_key == 'TERNA_3_ACIERTOS' and 'súper' in cat_text: continue
                     
                     data_dict[f'{db_key}_GANADORES'] = ganadores
                     data_dict[f'{db_key}_MONTO'] = monto
-                    break
+                    break # Encontramos la categoría de esta fila, pasamos a la siguiente
     return data_dict
 
 def generate_line():
-    print(f"--- LECTOR MANUAL DE HTML ---")
+    print(f"--- LECTOR MANUAL DE HTML (V2 MEJORADO) ---")
     print(f"Leyendo archivo: {INPUT_FILE}...")
     
     try:
