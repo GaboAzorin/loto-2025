@@ -6,13 +6,10 @@
   <title>LOTO AI • Dashboard Premium</title>
   <meta name="description" content="Análisis en tiempo real del Loto chileno con detección de colisiones históricas y estimación DAP."/>
 
-  <!-- Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet"/>
   
-  <!-- Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
   
-  <!-- Libraries -->
   <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
@@ -112,7 +109,16 @@
     .dap { color: var(--emerald); font-weight: 700; font-size: 0.9rem; margin-top: 0.5rem; }
 
     /* Table */
-    .table-container { background: var(--card); border: 1px solid var(--border); border-radius: 1.5rem; overflow: hidden; margin: 3rem 0; }
+    /* MODIFICADO AQUÍ PARA AÑADIR SCROLL Y ALTURA LIMITADA */
+    .table-container { 
+      background: var(--card); 
+      border: 1px solid var(--border); 
+      border-radius: 1.5rem; 
+      overflow-y: auto; 
+      max-height: 500px; 
+      margin: 3rem 0; 
+    }
+    
     table { width: 100%; border-collapse: collapse; }
     th { background: rgba(139,92,246,0.15); padding: 1.4rem; text-align: left; font-weight: 600; color: var(--accent); }
     td { padding: 1.2rem 1.4rem; border-top: 1px solid var(--border); }
@@ -159,7 +165,6 @@
 
   <div class="container">
 
-    <!-- Timer -->
     <div class="timer" id="timer">
       <div class="time-box"><div class="time-num" id="days">00</div><div class="time-label">DÍAS</div></div>
       <div class="time-box"><div class="time-num" id="hours">00</div><div class="time-label">HORAS</div></div>
@@ -167,7 +172,6 @@
       <div class="time-box"><div class="time-num" id="secs">00</div><div class="time-label">SEGUNDOS</div></div>
     </div>
 
-    <!-- Último Sorteo -->
     <div class="hero">
       <h1 class="hero-title">Último Sorteo: <span id="last-draw-num">#0000</span></h1>
       <div class="hero-stats">
@@ -187,7 +191,6 @@
       </div>
     </div>
 
-    <!-- Tabla Histórica -->
     <div class="table-container">
       <table>
         <thead>
@@ -202,19 +205,16 @@
       </table>
     </div>
 
-    <!-- Buscador -->
     <div class="search-box">
       <i data-lucide="search" class="search-icon"></i>
       <input type="number" id="search-input" placeholder="Ingresa número de sorteo y presiona Enter..." />
     </div>
 
-    <!-- Dashboard de Resultado -->
     <div id="result-dashboard" class="hero">
       <h2 style="font-size:2.5rem; margin-bottom:1.5rem;">Sorteo #<span id="result-id">0000</span> • <span id="result-date">00/00/0000</span></h2>
       <div id="result-content"></div>
     </div>
 
-    <!-- Status BD -->
     <div class="status-bar">
       <div id="db-status">Cargando base de datos...</div>
       <div id="missing-status"></div>
