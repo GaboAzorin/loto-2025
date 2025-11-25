@@ -176,7 +176,7 @@ def generate_line():
         data['DESQUITE_GANADORES'], data['DESQUITE_MONTO']
     ]
 
-    csv_line = ";".join(str(x) for x in csv_order)
+    csv_line = ",".join(str(x) for x in csv_order)
     
     # --- COPIA AL PORTAPAPELES ---
     copy_to_clipboard(csv_line)
