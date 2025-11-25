@@ -157,7 +157,7 @@ def extract_sorteo_data(url, expected_sorteo):
 
 def save_to_csv(data_dict):
     try:
-        try: df = pd.read_csv(CSV_FILE, sep=';')
+        try: df = pd.read_csv(CSV_FILE, sep=',')
         except: df = pd.DataFrame()
         
         # Si ya existe, lo reemplazamos
@@ -185,7 +185,7 @@ def save_to_csv(data_dict):
         df_final = pd.concat([df, pd.DataFrame([row])], ignore_index=True)
         df_final['sorteo'] = df_final['sorteo'].astype(int)
         df_final.sort_values(by='sorteo', ascending=True, inplace=True)
-        df_final.to_csv(CSV_FILE, sep=';', index=False)
+        df_final.to_csv(CSV_FILE, sep=',', index=False)
         return True
     except Exception as e:
         log(f"Error CSV: {e}", "CRITICAL")
@@ -202,7 +202,7 @@ def run_daily_check():
 
     # 1. ¿Qué sorteo toca?
     try:
-        df = pd.read_csv(CSV_FILE, sep=';')
+        df = pd.read_csv(CSV_FILE, sep=',')
         last_sorteo = int(df['sorteo'].max())
         target_sorteo = last_sorteo + 1
     except:
