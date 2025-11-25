@@ -15,21 +15,19 @@
     <style>
         :root {
             --bg: #09090b;
-            --bg-card: #18181b;
-            --bg-card-hover: #27272a;
-            --border: #27272a;
-            --primary: #6366f1; /* Indigo */
+            --bg-card: rgba(24, 24, 27, 0.65); 
+            --border: rgba(255, 255, 255, 0.1);
+            --primary: #6366f1;
             --primary-glow: rgba(99, 102, 241, 0.4);
             --success: #10b981;
             --text: #f4f4f5;
             --text-muted: #a1a1aa;
-            --glass: rgba(255, 255, 255, 0.05);
             
             /* Ball Colors */
-            --ball-loto: #eab308; /* Yellow/Gold */
-            --ball-rec: #ec4899; /* Pink */
-            --ball-rev: #8b5cf6; /* Purple */
-            --ball-des: #3b82f6; /* Blue */
+            --ball-loto: #eab308;
+            --ball-rec: #ec4899;
+            --ball-rev: #8b5cf6;
+            --ball-des: #3b82f6;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -40,261 +38,230 @@
             font-family: 'Inter', sans-serif;
             line-height: 1.5;
             overflow-x: hidden;
+            position: relative;
+            min-height: 100vh;
+        }
+
+        /* --- BACKGROUND GLOW --- */
+        .ambient-light {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: -1; overflow: hidden;
+        }
+        .ambient-light::before {
+            content: ''; position: absolute; top: -10%; left: -10%;
+            width: 50vw; height: 50vw;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.15), transparent 70%);
+            filter: blur(80px); border-radius: 50%;
+        }
+        .ambient-light::after {
+            content: ''; position: absolute; bottom: -10%; right: -10%;
+            width: 60vw; height: 60vw;
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.1), transparent 70%);
+            filter: blur(100px); border-radius: 50%;
         }
 
         /* --- UTILITIES --- */
         .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
         .grid { display: grid; gap: 20px; }
+        
         .card {
             background: var(--bg-card);
             border: 1px solid var(--border);
             border-radius: 16px;
             padding: 24px;
+            backdrop-filter: blur(12px); 
+            -webkit-backdrop-filter: blur(12px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
             transition: transform 0.2s, border-color 0.2s;
         }
-        .card:hover { border-color: #3f3f46; }
+        .card:hover { border-color: rgba(255,255,255,0.2); }
+
         .text-gradient {
             background: linear-gradient(to right, #fff, #a1a1aa);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
         }
         .mono { font-family: 'JetBrains Mono', monospace; }
         .badge {
-            font-size: 0.7rem;
-            padding: 4px 8px;
-            border-radius: 20px;
-            font-weight: 700;
-            text-transform: uppercase;
+            font-size: 0.7rem; padding: 4px 8px; border-radius: 20px;
+            font-weight: 700; text-transform: uppercase;
         }
         .badge-success { background: rgba(16, 185, 129, 0.2); color: var(--success); }
         .badge-danger { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
 
         /* --- HEADER & TIMER --- */
         header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 40px;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 20px;
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 40px; border-bottom: 1px solid var(--border); padding-bottom: 20px;
         }
         .logo { font-weight: 900; font-size: 1.5rem; letter-spacing: -1px; }
         .logo span { color: var(--primary); }
         
-        .timer-wrapper {
-            display: flex;
-            gap: 15px;
-            text-align: center;
-        }
+        .timer-wrapper { display: flex; gap: 15px; text-align: center; }
         .time-unit {
-            background: var(--glass);
-            padding: 10px 15px;
-            border-radius: 8px;
-            border: 1px solid var(--border);
-            min-width: 70px;
+            background: rgba(255,255,255,0.05); padding: 10px 15px;
+            border-radius: 8px; border: 1px solid var(--border);
+            min-width: 70px; backdrop-filter: blur(5px);
         }
         .time-val { font-size: 1.5rem; font-weight: 700; font-family: 'JetBrains Mono'; color: var(--primary); }
         .time-label { font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted); }
 
-        /* --- LATEST DRAW HERO --- */
+        /* --- HERO GRID --- */
         .hero-grid {
-            display: grid;
-            grid-template-columns: 1fr 350px;
-            gap: 20px;
-            margin-bottom: 30px;
+            display: grid; grid-template-columns: 1fr 400px; gap: 20px;
+            margin-bottom: 30px; align-items: start;
         }
         @media (max-width: 1000px) { .hero-grid { grid-template-columns: 1fr; } }
 
-        .draw-summary {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 20px;
-        }
+        .draw-summary { display: flex; justify-content: space-between; margin-bottom: 20px; }
         .stat-box h3 { font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; }
         .stat-box p { font-size: 1.8rem; font-weight: 800; }
 
-        /* --- GLASS BALLS --- */
+        /* --- INTERACTIVE GLASS BALLS --- */
         .games-carousel {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 15px;
-            margin-top: 20px;
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px; margin-top: 20px;
         }
         .game-card {
-            background: rgba(255,255,255,0.03);
-            border-radius: 12px;
-            padding: 15px;
-            text-align: center;
+            background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 12px; padding: 15px; text-align: center;
         }
         .balls-container {
-            display: flex;
-            justify-content: center;
-            gap: 8px;
-            margin: 15px 0;
-            flex-wrap: wrap;
+            display: flex; justify-content: center; gap: 6px; margin: 15px 0; flex-wrap: wrap;
         }
+        
         .ball {
-            width: 36px;
-            height: 36px;
+            width: 34px; height: 34px;
             border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: 0.9rem;
-            color: white;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 800; font-size: 0.85rem; color: white;
             position: relative;
-            /* Glass Effect */
-            background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.4), var(--ball-color) 60%, rgba(0,0,0,0.8));
-            box-shadow: 
-                inset -2px -2px 6px rgba(0,0,0,0.3),
-                2px 2px 5px rgba(0,0,0,0.3);
+            /* Glass Core */
+            background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.4), var(--ball-color) 60%, rgba(0,0,0,0.9));
+            box-shadow: inset -2px -2px 6px rgba(0,0,0,0.3), 2px 2px 8px rgba(0,0,0,0.4);
             text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+            cursor: pointer; /* Indicative */
             overflow: hidden;
+            z-index: 1;
         }
-        /* Shine Animation */
-        .ball::after {
+
+        /* Mouse Reflection Effect */
+        .ball::before {
             content: '';
             position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: linear-gradient(to bottom right, rgba(255,255,255,0) 40%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0) 60%);
+            left: 0; top: 0; width: 100%; height: 100%;
+            border-radius: 50%;
+            /* Light source follows mouse vars --rx, --ry */
+            background: radial-gradient(
+                circle 18px at var(--rx, 50%) var(--ry, 50%), 
+                rgba(255, 255, 255, 0.9) 0%, 
+                transparent 60%
+            );
+            opacity: 0; /* Hidden by default */
+            transition: opacity 0.1s;
+            z-index: 2;
+            pointer-events: none;
+            mix-blend-mode: overlay; /* Blends nicely with color */
+        }
+        .ball:hover::before { opacity: 1; }
+
+        /* Idle Shimmer Animation */
+        .ball::after {
+            content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+            background: linear-gradient(to bottom right, rgba(255,255,255,0) 40%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0) 60%);
             transform: rotate(45deg) translateY(-100%);
             animation: shine 6s infinite;
+            pointer-events: none;
+            z-index: 3;
         }
         .ball.wildcard { border: 2px solid white; }
-
+        
         @keyframes shine {
             0% { transform: rotate(45deg) translateY(-100%); }
             20% { transform: rotate(45deg) translateY(100%); }
             100% { transform: rotate(45deg) translateY(100%); }
         }
 
-        /* --- INVEST TOOLTIP --- */
         .invest-pill {
-            background: #1e1b4b;
-            color: #818cf8;
-            font-size: 0.75rem;
-            padding: 4px 8px;
-            border-radius: 4px;
-            margin-top: 5px;
-            display: inline-block;
-            font-family: 'JetBrains Mono';
+            background: #1e1b4b; color: #818cf8; font-size: 0.75rem;
+            padding: 4px 8px; border-radius: 4px; margin-top: 5px;
+            display: inline-block; font-family: 'JetBrains Mono';
         }
 
         /* --- SEARCH --- */
-        .search-container {
-            position: relative;
-            margin-bottom: 30px;
-        }
+        .search-container { position: relative; margin-bottom: 30px; }
         .search-input {
-            width: 100%;
-            padding: 16px 20px;
-            padding-left: 50px;
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            color: var(--text);
-            font-size: 1.1rem;
-            transition: 0.3s;
+            width: 100%; padding: 16px 20px; padding-left: 50px;
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 12px; color: var(--text); font-size: 1.1rem;
+            transition: 0.3s; backdrop-filter: blur(10px);
         }
         .search-input:focus {
-            outline: none;
-            border-color: var(--primary);
+            outline: none; border-color: var(--primary);
             box-shadow: 0 0 0 4px var(--primary-glow);
         }
         .search-icon {
-            position: absolute;
-            left: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-muted);
+            position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--text-muted);
         }
 
         /* --- TABLE --- */
         .table-wrapper {
-            overflow-x: auto;
-            border-radius: 12px;
-            border: 1px solid var(--border);
+            max-height: 450px; overflow-y: auto;
+            border-radius: 12px; border: 1px solid var(--border);
+            background: rgba(0,0,0,0.2);
         }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.9rem;
+        .table-wrapper::-webkit-scrollbar { width: 8px; }
+        .table-wrapper::-webkit-scrollbar-track { background: #18181b; }
+        .table-wrapper::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 4px; }
+        
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        thead th {
+            background: #27272a; position: sticky; top: 0; z-index: 10;
+            padding: 12px 15px; text-align: left; font-weight: 600;
+            color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
-        th {
-            background: #27272a;
-            padding: 12px 15px;
-            text-align: left;
-            font-weight: 600;
-            color: var(--text-muted);
-            font-size: 0.75rem;
-            text-transform: uppercase;
-        }
-        td {
-            padding: 12px 15px;
-            border-bottom: 1px solid var(--border);
-            color: var(--text);
-        }
+        td { padding: 12px 15px; border-bottom: 1px solid var(--border); color: var(--text); }
         tr:last-child td { border-bottom: none; }
-        tr:hover { background: rgba(255,255,255,0.02); }
+        tr:hover { background: rgba(255,255,255,0.05); }
         
         .tooltip-cell { position: relative; cursor: help; }
         .tooltip-cell:hover::after {
-            content: attr(data-prize);
-            position: absolute;
-            bottom: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--primary);
-            color: white;
-            padding: 5px 10px;
-            border-radius: 6px;
-            font-size: 0.75rem;
-            white-space: nowrap;
-            z-index: 10;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            content: attr(data-prize); position: absolute; bottom: 100%; left: 50%;
+            transform: translateX(-50%); background: var(--primary); color: white;
+            padding: 5px 10px; border-radius: 6px; font-size: 0.75rem; white-space: nowrap;
+            z-index: 100; box-shadow: 0 4px 6px rgba(0,0,0,0.3);
         }
 
-        /* --- DASHBOARD SEARCH RESULT --- */
+        /* --- DASHBOARD --- */
         #dashboard-result {
-            display: none;
-            background: #1e1b4b;
-            border: 1px solid #4338ca;
-            border-radius: 16px;
-            padding: 30px;
-            margin-bottom: 30px;
+            display: none; background: rgba(30, 27, 75, 0.7);
+            border: 1px solid #4338ca; border-radius: 16px; padding: 30px;
+            margin-bottom: 30px; backdrop-filter: blur(10px);
             animation: slideDown 0.4s ease-out;
         }
         @keyframes slideDown { from { opacity:0; transform:translateY(-10px);} to { opacity:1; transform:translateY(0);} }
 
-        /* --- STATUS FOOTER --- */
         .status-bar {
-            margin-top: 40px;
-            padding: 20px;
-            border-top: 1px solid var(--border);
-            font-size: 0.85rem;
-            color: var(--text-muted);
-            display: flex;
-            justify-content: space-between;
+            margin-top: 40px; padding: 20px; border-top: 1px solid var(--border);
+            font-size: 0.85rem; color: var(--text-muted); display: flex; justify-content: space-between;
         }
         .missing-list { font-family: 'JetBrains Mono'; color: #ef4444; }
 
-        /* Loading Overlay */
         #loader {
-            position: fixed; inset:0; background: var(--bg);
+            position: fixed; inset:0; background: #09090b;
             display: flex; justify-content: center; align-items: center; flex-direction: column;
             z-index: 9999;
         }
+        .chart-container { position: relative; height: 300px; width: 100%; }
     </style>
 </head>
 <body>
 
+    <div class="ambient-light"></div>
+
     <div id="loader">
         <div style="font-weight:900; font-size:2rem; margin-bottom:10px;">LOTO<span style="color:var(--primary)">AI</span></div>
-        <div class="mono" style="color:var(--text-muted)">Procesando Dataset...</div>
+        <div class="mono" style="color:var(--text-muted)">Cargando Datos & Generando Reflejos...</div>
     </div>
 
     <div class="container" id="app" style="display:none;">
@@ -302,22 +269,10 @@
         <header>
             <div class="logo">LOTO<span class="text-gradient">ANALYTICS</span></div>
             <div class="timer-wrapper">
-                <div class="time-unit">
-                    <div class="time-val" id="d">00</div>
-                    <div class="time-label">Días</div>
-                </div>
-                <div class="time-unit">
-                    <div class="time-val" id="h">00</div>
-                    <div class="time-label">Hrs</div>
-                </div>
-                <div class="time-unit">
-                    <div class="time-val" id="m">00</div>
-                    <div class="time-label">Min</div>
-                </div>
-                <div class="time-unit">
-                    <div class="time-val" id="s">00</div>
-                    <div class="time-label">Seg</div>
-                </div>
+                <div class="time-unit"><div class="time-val" id="d">00</div><div class="time-label">Días</div></div>
+                <div class="time-unit"><div class="time-val" id="h">00</div><div class="time-label">Hrs</div></div>
+                <div class="time-unit"><div class="time-val" id="m">00</div><div class="time-label">Min</div></div>
+                <div class="time-unit"><div class="time-val" id="s">00</div><div class="time-label">Seg</div></div>
             </div>
         </header>
 
@@ -343,31 +298,31 @@
 
                 <div class="games-carousel">
                     <div class="game-card">
-                        <div style="font-weight:700; color:var(--ball-loto);">LOTO</div>
+                        <div style="font-weight:700; color:var(--ball-loto); margin-bottom:5px;">LOTO</div>
                         <div class="balls-container" id="balls-loto"></div>
                         <div id="info-loto" style="font-size:0.8rem;"></div>
                     </div>
                     <div class="game-card">
-                        <div style="font-weight:700; color:var(--ball-rec);">RECARGADO</div>
+                        <div style="font-weight:700; color:var(--ball-rec); margin-bottom:5px;">RECARGADO</div>
                         <div class="balls-container" id="balls-rec"></div>
                         <div id="info-rec" style="font-size:0.8rem;"></div>
                     </div>
                     <div class="game-card">
-                        <div style="font-weight:700; color:var(--ball-rev);">REVANCHA</div>
+                        <div style="font-weight:700; color:var(--ball-rev); margin-bottom:5px;">REVANCHA</div>
                         <div class="balls-container" id="balls-rev"></div>
                         <div id="info-rev" style="font-size:0.8rem;"></div>
                     </div>
                     <div class="game-card">
-                        <div style="font-weight:700; color:var(--ball-des);">DESQUITE</div>
+                        <div style="font-weight:700; color:var(--ball-des); margin-bottom:5px;">DESQUITE</div>
                         <div class="balls-container" id="balls-des"></div>
                         <div id="info-des" style="font-size:0.8rem;"></div>
                     </div>
                 </div>
             </div>
 
-            <div class="card">
+            <div class="card" style="display:flex; flex-direction:column; justify-content:center;">
                 <h3 style="font-size:0.9rem; margin-bottom:15px; color:var(--text-muted); text-transform:uppercase;">Distribución Monetaria</h3>
-                <div style="height: 100%; min-height: 250px;">
+                <div class="chart-container">
                     <canvas id="moneyChart"></canvas>
                 </div>
             </div>
@@ -386,7 +341,6 @@
                 </div>
                 <div class="badge badge-success" id="dash-badge">DATA ENCONTRADA</div>
             </div>
-            
             <div style="margin-top:20px; display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:20px;">
                 <div>
                     <span style="color:#a5b4fc; font-size:0.8rem;">COMBINACIÓN LOTO</span>
@@ -406,8 +360,6 @@
         <div class="card">
             <h3 style="margin-bottom:20px;">Historial Reciente (Últimos 100)</h3>
             <div class="table-wrapper">
-                <tbody id="history-body">
-                    </tbody>
                 <table id="history-table">
                     <thead>
                         <tr>
@@ -417,16 +369,13 @@
                             <th>Ganador (6A)</th>
                         </tr>
                     </thead>
-                    <tbody></tbody>
+                    <tbody id="history-body"></tbody>
                 </table>
             </div>
         </div>
 
         <div class="status-bar">
-            <div id="db-stats">
-                Total Registros: <span class="mono" style="color:var(--text)">0</span> | 
-                Integridad: <span class="mono" style="color:var(--success)">OK</span>
-            </div>
+            <div id="db-stats">Total Registros: <span class="mono" style="color:var(--text)">0</span></div>
             <div id="missing-data" style="display:none;">
                 <span style="color:#ef4444; margin-right:10px;">⚠ FALTAN DATOS:</span>
                 <span class="missing-list"></span>
@@ -436,45 +385,53 @@
     </div>
 
     <script>
-        // --- CONFIG & UTILS ---
+        /* CONFIG */
         const CSV_URL = 'LOTO_HISTORIAL_MAESTRO.csv';
-        const DAP_RATE = 0.0042; // 0.42% monthly
+        const DAP_RATE = 0.0042; 
 
+        /* HELPERS */
         function formatMoney(amount) {
             if(!amount) return '$0';
             return '$' + parseInt(amount).toLocaleString('es-CL');
         }
-
         function calculateDAP(amount) {
             const val = parseInt(amount || 0);
-            if (val < 1000000) return ''; // Don't show for small amounts
+            if (val < 1000000) return ''; 
             const interest = Math.floor(val * DAP_RATE);
             return `<div class="invest-pill">📈 Gana ${formatMoney(interest)} / mes</div>`;
         }
 
-        // --- COUNTDOWN LOGIC ---
+        /* MOUSE TRACKING FOR REFLECTION */
+        // Esto es lo que hace que la luz siga al mouse
+        document.addEventListener('mousemove', (e) => {
+            // Usamos event delegation para rendimiento
+            if (e.target.classList.contains('ball')) {
+                const rect = e.target.getBoundingClientRect();
+                // Calculamos X e Y relativos al centro de la pelota
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                // Actualizamos variables CSS
+                e.target.style.setProperty('--rx', `${x}px`);
+                e.target.style.setProperty('--ry', `${y}px`);
+            }
+        });
+
+        /* TIMER */
         function updateTimer() {
             const now = new Date();
             let target = new Date(now);
             target.setHours(21, 0, 0, 0);
-
-            // 0=Sun, 2=Tue, 4=Thu
-            const drawDays = [0, 2, 4];
-            
-            // Find next slot
+            const drawDays = [0, 2, 4]; // Dom, Mar, Jue
             while (true) {
                 if (drawDays.includes(target.getDay()) && target > now) break;
                 target.setDate(target.getDate() + 1);
                 target.setHours(21, 0, 0, 0);
             }
-
             const diff = target - now;
-            
             const days = Math.floor(diff / (1000 * 60 * 60 * 24));
             const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
             const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
             const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
             document.getElementById('d').innerText = String(days).padStart(2,'0');
             document.getElementById('h').innerText = String(hours).padStart(2,'0');
             document.getElementById('m').innerText = String(minutes).padStart(2,'0');
@@ -483,7 +440,7 @@
         setInterval(updateTimer, 1000);
         updateTimer();
 
-        // --- MAIN LOGIC ---
+        /* DATA PROCESSING */
         let globalData = [];
 
         Papa.parse(CSV_URL, {
@@ -499,42 +456,31 @@
         });
 
         function processData(data) {
-            // Filter & Sort
             globalData = data
                 .filter(row => row.sorteo && !isNaN(parseInt(row.sorteo)))
                 .map(row => {
-                    // Parse useful numbers once
                     row.id = parseInt(row.sorteo);
                     row.totalMoney = Object.keys(row).filter(k => k.includes('MONTO')).reduce((acc, key) => acc + (parseInt(row[key]) || 0), 0);
                     row.totalWinners = Object.keys(row).filter(k => k.includes('GANADORES')).reduce((acc, key) => acc + (parseInt(row[key]) || 0), 0);
-                    
-                    // Parse main numbers for searching
                     row.lotoNums = [row.LOTO_n1, row.LOTO_n2, row.LOTO_n3, row.LOTO_n4, row.LOTO_n5, row.LOTO_n6].sort();
                     return row;
                 })
-                .sort((a, b) => b.id - a.id); // Newest first
+                .sort((a, b) => b.id - a.id);
 
             const latest = globalData[0];
 
-            // 1. HERO SECTION
             document.getElementById('last-draw-num').innerText = `#${latest.sorteo}`;
             document.getElementById('last-draw-date').innerText = `${latest.dia}/${latest.mes}/${latest.anio}`;
             document.getElementById('total-money').innerText = formatMoney(latest.totalMoney);
             document.getElementById('total-winners').innerText = new Intl.NumberFormat('es-CL').format(latest.totalWinners);
 
-            // 2. BALLS RENDERER
             renderGameSection(latest, 'LOTO', 'balls-loto', 'info-loto', 6, true);
             renderGameSection(latest, 'RECARGADO', 'balls-rec', 'info-rec', 6, false);
             renderGameSection(latest, 'REVANCHA', 'balls-rev', 'info-rev', 6, false);
             renderGameSection(latest, 'DESQUITE', 'balls-des', 'info-des', 6, false);
 
-            // 3. CHART
             renderChart(latest);
-
-            // 4. HISTORY TABLE (Top 100)
             renderTable(globalData.slice(0, 100));
-
-            // 5. DB STATUS
             checkIntegrity();
         }
 
@@ -547,24 +493,18 @@
             if(prefix === 'REVANCHA') cssVar = '--ball-rev';
             if(prefix === 'DESQUITE') cssVar = '--ball-des';
 
-            // Get numbers
             for(let i=1; i<=count; i++) {
                 const num = row[`${prefix}_n${i}`];
                 if(num) html += `<div class="ball" style="--ball-color: var(${cssVar})">${num}</div>`;
             }
-            // Wildcard for Loto
             if(hasWildcard) {
                 const wild = row[`${prefix}_comodin`];
                 if(wild) html += `<div class="ball wildcard" style="--ball-color: #ef4444" title="Comodín">${wild}</div>`;
             }
             container.innerHTML = html;
 
-            // Winner Info
-            // Keys vary slightly per game in CSV, mapping logic:
             let winCol = `${prefix}_GANADORES`; 
             let amtCol = `${prefix}_MONTO`;
-            
-            // Specific overrides based on CSV structure inspection
             if (prefix === 'LOTO') { winCol = 'LOTO_GANADORES'; amtCol = 'LOTO_MONTO'; }
             else if (prefix === 'RECARGADO') { winCol = 'RECARGADO_6_ACIERTOS_GANADORES'; amtCol = 'RECARGADO_6_ACIERTOS_MONTO'; }
             else if (prefix === 'REVANCHA') { winCol = 'REVANCHA_GANADORES'; amtCol = 'REVANCHA_MONTO'; }
@@ -582,10 +522,7 @@
 
         function renderChart(row) {
             const ctx = document.getElementById('moneyChart').getContext('2d');
-            
-            // Data extraction for chart
-            const categories = ['Loto 6A', 'S. Quina', 'Quina', 'S. Cuaterna', 'Cuaterna', 'S. Terna', 'Terna', 'Recargado', 'Revancha', 'Desquite'];
-            // Careful mapping needed here based on exact CSV headers
+            const categories = ['Loto 6A', 'S. Quina', 'Quina', 'S. Cuat', 'Cuat', 'S. Terna', 'Terna', 'Rec.', 'Rev.', 'Desq.'];
             const winnersData = [
                 row.LOTO_GANADORES,
                 row.SUPER_QUINA_5_ACIERTOS_COMODIN_GANADORES,
@@ -642,21 +579,11 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     interaction: { mode: 'index', intersect: false },
-                    plugins: {
-                        legend: { labels: { color: '#a1a1aa' } }
-                    },
+                    plugins: { legend: { labels: { color: '#a1a1aa' } } },
                     scales: {
-                        x: { grid: { color: '#27272a' }, ticks: { color: '#a1a1aa' } },
-                        y: { 
-                            type: 'linear', display: true, position: 'right', 
-                            grid: { drawOnChartArea: false }, 
-                            ticks: { color: '#6366f1', callback: (val) => '$'+val/1000000 + 'M' } 
-                        },
-                        y1: { 
-                            type: 'linear', display: true, position: 'left',
-                            grid: { color: '#27272a' },
-                            ticks: { color: '#10b981' }
-                        }
+                        x: { grid: { color: '#27272a' }, ticks: { color: '#a1a1aa', font: {size: 10} } },
+                        y: { type: 'linear', display: true, position: 'right', grid: { drawOnChartArea: false }, ticks: { color: '#6366f1', callback: (val) => '$'+val/1000000 + 'M' } },
+                        y1: { type: 'linear', display: true, position: 'left', grid: { color: '#27272a' }, ticks: { color: '#10b981' } }
                     }
                 }
             });
@@ -670,60 +597,35 @@
                 const winnerHtml = winners > 0 
                     ? `<span class="badge badge-success tooltip-cell" data-prize="${formatMoney(amount)}">SÍ (${winners})</span>`
                     : `<span class="badge badge-danger">NO</span>`;
-                
-                // Formatar numeros
                 const nums = [r.LOTO_n1, r.LOTO_n2, r.LOTO_n3, r.LOTO_n4, r.LOTO_n5, r.LOTO_n6].join(' - ');
                 const wild = r.LOTO_comodin ? ` <span style="color:#ef4444; font-weight:bold;">+ ${r.LOTO_comodin}</span>` : '';
-
-                return `
-                    <tr>
-                        <td class="mono">#${r.sorteo}</td>
-                        <td>${r.dia}/${r.mes}/${r.anio}</td>
-                        <td class="mono">${nums}${wild}</td>
-                        <td>${winnerHtml}</td>
-                    </tr>
-                `;
+                return `<tr><td class="mono">#${r.sorteo}</td><td>${r.dia}/${r.mes}/${r.anio}</td><td class="mono">${nums}${wild}</td><td>${winnerHtml}</td></tr>`;
             }).join('');
         }
 
-        // --- SEARCH LOGIC ---
         const searchInput = document.getElementById('search-input');
         searchInput.addEventListener('keypress', function (e) {
             if (e.key === 'Enter') {
                 const query = parseInt(this.value);
                 const result = globalData.find(r => r.id === query);
-                
                 const dash = document.getElementById('dashboard-result');
                 if (result) {
                     dash.style.display = 'block';
                     document.getElementById('dash-id').innerText = result.sorteo;
                     document.getElementById('dash-date').innerText = `${result.dia}/${result.mes}/${result.anio}`;
                     
-                    // Balls
-                    let ballsHtml = '';
-                    for(let i=1; i<=6; i++) ballsHtml += `<div class="ball" style="--ball-color:var(--ball-loto)">${result[`LOTO_n1`]}</div>`; // Simplificado, usar array real
-                    // Correction: use actual indexed access
                     const currentNums = [result.LOTO_n1, result.LOTO_n2, result.LOTO_n3, result.LOTO_n4, result.LOTO_n5, result.LOTO_n6];
                     document.getElementById('dash-balls').innerHTML = currentNums.map(n => `<div class="ball" style="--ball-color:var(--ball-loto)">${n}</div>`).join('');
 
-                    // Repeat Analysis
                     const currentStr = currentNums.sort().join('-');
-                    // Search in all OTHER draws
-                    const repeats = globalData.filter(r => r.id !== query && 
-                        [r.LOTO_n1, r.LOTO_n2, r.LOTO_n3, r.LOTO_n4, r.LOTO_n5, r.LOTO_n6].sort().join('-') === currentStr
-                    );
+                    const repeats = globalData.filter(r => r.id !== query && [r.LOTO_n1, r.LOTO_n2, r.LOTO_n3, r.LOTO_n4, r.LOTO_n5, r.LOTO_n6].sort().join('-') === currentStr);
                     
                     const repeatEl = document.getElementById('dash-repeat');
-                    if(repeats.length > 0) {
-                        repeatEl.innerHTML = `<span style="color:var(--primary)">¡Repetida!</span> en #${repeats[0].sorteo}`;
-                    } else {
-                        repeatEl.innerHTML = `<span style="color:var(--text-muted)">Única (en BD)</span>`;
-                    }
+                    if(repeats.length > 0) repeatEl.innerHTML = `<span style="color:var(--primary)">¡Repetida!</span> en #${repeats[0].sorteo}`;
+                    else repeatEl.innerHTML = `<span style="color:var(--text-muted)">Única (en BD)</span>`;
 
-                    // Winner
                     const w = parseInt(result.LOTO_GANADORES);
                     document.getElementById('dash-winner').innerHTML = w > 0 ? `<span class="text-success">SÍ (${formatMoney(result.LOTO_MONTO)})</span>` : "VACANTE";
-
                 } else {
                     alert("Sorteo no encontrado");
                     dash.style.display = 'none';
@@ -731,36 +633,23 @@
             }
         });
 
-        // --- INTEGRITY CHECK ---
         function checkIntegrity() {
-            // Assuming ascending order roughly from 3803 to Last
-            // Sort ascending for check
             const sorted = [...globalData].sort((a,b) => a.id - b.id);
             if(sorted.length === 0) return;
-
             const start = 3803;
             const end = sorted[sorted.length-1].id;
             const missing = [];
-            
-            // Map existing IDs
             const existing = new Set(sorted.map(x => x.id));
-
             for(let i = start; i <= end; i++) {
                 if(!existing.has(i)) missing.push(i);
             }
-
-            document.getElementById('db-stats').innerHTML = `
-                Total Sorteos: <span class="mono" style="color:white">${sorted.length}</span> | 
-                Rango: #${start} - #${end}
-            `;
-
+            document.getElementById('db-stats').innerHTML = `Total Registros: <span class="mono" style="color:white">${sorted.length}</span> | Rango: #${start} - #${end}`;
             if(missing.length > 0) {
                 const list = document.getElementById('missing-data');
                 list.style.display = 'block';
                 list.querySelector('.missing-list').innerText = missing.slice(0, 10).join(', ') + (missing.length > 10 ? '...' : '');
             }
         }
-
     </script>
 </body>
 </html>
