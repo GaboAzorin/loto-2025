@@ -14,7 +14,11 @@ TZ_CHILE = pytz.timezone('America/Santiago')
 def log(msg, status="INFO"):
     now_chile = datetime.datetime.now(TZ_CHILE)
     ts = now_chile.strftime("%H:%M:%S")
-    print(f"[{ts}] [{status}] {msg}", flush=True)
+    full_msg = f"[{ts}] [{status}] {msg}"
+    print(full_msg, flush=True)
+    # Opcional: Escribir a archivo si lo deseas para el artefacto
+    with open("ejecucion.log", "a") as f:
+        f.write(full_msg + "\n")
 
 def git_push_live(sorteo_num):
     try:
@@ -22,16 +26,21 @@ def git_push_live(sorteo_num):
         subprocess.run(["git", "config", "--global", "user.email", "bot@noreply.github.com"], check=False)
         
         subprocess.run(["git", "add", CSV_FILE], check=True)
+        # Verificamos si hay cambios antes de commitear para evitar errores
+        status = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True)
+        if not status.stdout.strip():
+            log("No hay cambios nuevos para subir.", "GIT")
+            return
+
         msg = f"DATA: Sorteo {sorteo_num} capturado"
         subprocess.run(["git", "commit", "-m", msg], check=True, stdout=subprocess.DEVNULL)
         subprocess.run(["git", "push"], check=True)
         log(f"--> Sorteo {sorteo_num} subido a GitHub.", "GIT")
     except Exception as e:
-        log(f"Git push omitido (¿Sin cambios?): {e}", "WARN")
+        log(f"Git push omitido o falló: {e}", "WARN")
 
 def get_html(url):
     try:
-        # Usamos chrome110 simple, sin headers manuales para evitar huellas rotas
         response = cureq.get(url, impersonate="chrome110", timeout=30)
         return response.text if response.status_code == 200 else None
     except Exception as e: 
@@ -39,7 +48,6 @@ def get_html(url):
         return None
 
 def get_target_url_via_search(sorteo_num):
-    """Busca ?s=[NUM] y extrae el link real."""
     search_url = f"https://resultadoslotochile.com/?s={sorteo_num}"
     log(f"Buscando enlace para sorteo {sorteo_num}...", "SEARCH")
     
@@ -49,26 +57,24 @@ def get_target_url_via_search(sorteo_num):
     soup = BeautifulSoup(html, 'lxml')
     candidates = []
     
-    # Prioridad: Artículos
     for art in soup.find_all('article'):
         link = art.find('a', href=True)
         if link: candidates.append(link)
     
-    # Fallback: Todos los links
     if not candidates:
         candidates = soup.find_all('a', href=True)
 
     for a in candidates:
         text = a.get_text(" ", strip=True).lower()
         href = a['href']
+        # Validamos que sea el sorteo correcto y no uno viejo o relacionado
         if str(sorteo_num) in text and ("sorteo" in text or "resultados" in text):
             if "facebook" in href or "twitter" in href: continue
-            log(f"Enlace encontrado: {href}", "SUCCESS")
+            log(f"Enlace potencial encontrado: {href}", "SUCCESS")
             return href
     return None
 
 def parse_financial_data(soup, data_dict):
-    """Extrae montos y ganadores (Logica mejorada)"""
     financial_targets = {
         'LOTO': ['loto 6 aciertos'],
         'SUPER_QUINA_5_ACIERTOS_COMODIN': ['súper quina', 'super quina'],
@@ -83,7 +89,6 @@ def parse_financial_data(soup, data_dict):
         'DESQUITE': ['desquite']
     }
 
-    # Inicializar en 0
     for key in financial_targets:
         data_dict[f'{key}_GANADORES'] = 0
         data_dict[f'{key}_MONTO'] = 0
@@ -100,7 +105,6 @@ def parse_financial_data(soup, data_dict):
 
             for db_key, search_terms in financial_targets.items():
                 if any(term in cat_text for term in search_terms):
-                    # Evitar colisiones (Ej: Súper Quina vs Quina)
                     if db_key == 'QUINA_5_ACIERTOS' and 'súper' in cat_text: continue
                     if db_key == 'CUATERNA_4_ACIERTOS' and 'súper' in cat_text: continue
                     if db_key == 'TERNA_3_ACIERTOS' and 'súper' in cat_text: continue
@@ -115,9 +119,15 @@ def extract_sorteo_data(url, expected_sorteo):
     if not html: return None
     soup = BeautifulSoup(html, 'lxml')
 
+    # --- NUEVA VALIDACIÓN: ¿ESTÁ EL RESULTADO PENDIENTE? ---
+    # Buscamos el texto exacto que aparece en tu archivo 'codigo_fuente_sin_resultado.txt'
+    pending_text = soup.find(string=re.compile("ESTAMOS ESPERANDO LOS RESULTADOS", re.IGNORECASE))
+    if pending_text:
+        log("La página existe, pero los resultados AÚN NO ESTÁN PUBLICADOS (Estado: Esperando).", "WAITING")
+        return None
+
     data = {'sorteo': expected_sorteo}
     
-    # Fecha
     meta_date = soup.find('meta', property='article:published_time')
     if meta_date:
         try:
@@ -129,7 +139,6 @@ def extract_sorteo_data(url, expected_sorteo):
         now = datetime.datetime.now(TZ_CHILE)
         data.update({'anio': now.year, 'mes': now.month, 'dia': now.day, 'dia_semana': now.strftime('%A')})
 
-    # Bolitas
     def get_nums(header_regex):
         h = soup.find(['h3', 'h2'], string=re.compile(header_regex, re.IGNORECASE))
         if not h: return []
@@ -137,11 +146,16 @@ def extract_sorteo_data(url, expected_sorteo):
         return [int(p.text) for p in div.find_all('p') if p.text.strip().isdigit()] if div else []
 
     data['LOTO'] = get_nums('Loto')
-    if not data['LOTO']:
+    
+    # Segunda validación: Si no hay números de Loto, asumimos que no es válido
+    if not data['LOTO']: 
+        # Intento de fallback generico
         div = soup.find('div', class_='bolitas')
-        if div: data['LOTO'] = [int(p.text) for p in div.find_all('p')]
-
-    if not data['LOTO']: return None # Si no hay Loto, abortamos
+        if div: data['LOTO'] = [int(p.text) for p in div.find_all('p') if p.text.strip().isdigit()]
+    
+    if not data['LOTO']:
+        log("Página accedida pero no se encontraron bolitas de Loto válidas.", "WARN")
+        return None
 
     c_div = soup.find('div', class_='comodin')
     data['COMODIN'] = int(c_div.find('p').text) if c_div and c_div.find('p') else 0
@@ -150,7 +164,6 @@ def extract_sorteo_data(url, expected_sorteo):
     data['REVANCHA'] = get_nums('Revancha')
     data['DESQUITE'] = get_nums('Desquite')
     
-    # Financiero
     data = parse_financial_data(soup, data)
     
     return data
@@ -160,8 +173,8 @@ def save_to_csv(data_dict):
         try: df = pd.read_csv(CSV_FILE, sep=',')
         except: df = pd.DataFrame()
         
-        # Si ya existe, lo reemplazamos
         if 'sorteo' in df.columns:
+            # Eliminamos si ya existe para sobrescribirlo con la data fresca
             df = df[df['sorteo'] != data_dict['sorteo']]
 
         row = {
@@ -194,40 +207,48 @@ def save_to_csv(data_dict):
 def run_daily_check():
     log("--- INICIANDO MODO DIARIO ---")
     
-    # Verificación horaria simple (evitar runs muertos en la mañana)
-    now = datetime.datetime.now(TZ_CHILE)
-    if now.hour < 21 and now.hour > 9:
-        log("Fuera de horario de sorteo. Terminando.")
-        return
-
-    # 1. ¿Qué sorteo toca?
+    # 1. Determinar el último sorteo registrado
     try:
         df = pd.read_csv(CSV_FILE, sep=',')
         last_sorteo = int(df['sorteo'].max())
         target_sorteo = last_sorteo + 1
     except:
-        target_sorteo = 5210
+        target_sorteo = 5352 # Fallback si no hay CSV
 
-    log(f"Objetivo: Sorteo {target_sorteo}")
+    # --- OPTIMIZACIÓN IMPORTANTE ---
+    # Si el script corre cada 30 min, debemos asegurarnos de no procesar lo que ya tenemos.
+    # Pero como target_sorteo es last + 1, si ya lo tenemos, el target será el siguiente.
+    # El problema es si corremos el script un Martes, encontramos el sorteo 5000.
+    # A la media hora corre de nuevo, target será 5001. Pero 5001 es JUEVES.
+    # No queremos buscar 5001 el martes a las 23:00.
+    
+    # Lógica simple: Intentamos buscar target_sorteo.
+    log(f"Objetivo actual según CSV: Sorteo {target_sorteo}")
 
-    # 2. Buscar
     target_url = get_target_url_via_search(target_sorteo)
     
     if target_url:
-        # 3. Extraer
         data = extract_sorteo_data(target_url, target_sorteo)
         if data:
-            # 4. Guardar y Push
             if save_to_csv(data):
                 log(f"¡ÉXITO! Sorteo {target_sorteo} guardado.", "SUCCESS")
                 git_push_live(target_sorteo)
             else:
                 log("Falló el guardado en CSV.", "ERR")
         else:
-            log("Enlace encontrado pero sin datos válidos.", "WARN")
+            # Aquí cae si devuelve None por "ESTAMOS ESPERANDO RESULTADOS" o falta de bolitas
+            log("Datos no extraídos (Página en espera o estructura inválida).", "SKIP")
     else:
-        log(f"Sorteo {target_sorteo} aún no disponible.", "WAITING")
+        log(f"Sorteo {target_sorteo} aún no indexado o no encontrado en búsqueda.", "WAITING")
 
 if __name__ == "__main__":
-    # Sin argumentos, sin historial, solo daily.
-    run_daily_check()
+    # Capturar argumentos del sistema (pasados por scrape.yml)
+    mode = sys.argv[1] if len(sys.argv) > 1 else 'daily'
+    
+    if mode == 'daily':
+        run_daily_check()
+    elif mode == 'history':
+        log("Modo histórico no implementado en este snippet, usa el loop antiguo si es necesario.", "INFO")
+    else:
+        # Por defecto daily si falla algo
+        run_daily_check()
