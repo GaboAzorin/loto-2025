@@ -1,0 +1,48 @@
+name: Actualizador Loto
+
+on:
+  workflow_dispatch: # Permite ejecutar manualmente desde la pestaña "Actions"
+  schedule:
+    # Ejecutar a las 13:00 UTC todos los días (aprox 10:00 AM Chile)
+    - cron: '0 13 * * *'
+
+permissions:
+  contents: write # CRUCIAL: Permite al bot hacer "git push" para guardar el CSV actualizado
+
+jobs:
+  scrape-and-update:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout del repositorio
+        uses: actions/checkout@v3
+
+      - name: 🐍 Configurar Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: 📦 Instalar dependencias
+        run: |
+          pip install -r requirements.txt
+          playwright install chromium
+          playwright install-deps
+
+      - name: 🚀 Ejecutar Scraper
+        run: python scraper_loto.py
+
+      - name: 💾 Guardar cambios (Commit & Push)
+        run: |
+          # Configurar identidad del bot de git
+          git config --global user.name "LotoBot Action"
+          git config --global user.email "action@github.com"
+          
+          # Verificar si el CSV cambió (git status -s devuelve texto si hay cambios)
+          if [[ -n $(git status -s LOTO_HISTORIAL_MAESTRO.csv) ]]; then
+            echo "Hay nuevos sorteos detectados. Guardando..."
+            git add LOTO_HISTORIAL_MAESTRO.csv
+            git commit -m "🤖 Auto-update: Nuevos sorteos agregados"
+            git push
+          else
+            echo "No hay cambios en el CSV. Nada que guardar."
+          fi

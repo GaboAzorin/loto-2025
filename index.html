@@ -3,13 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>LOTO AI • Dashboard Premium</title>
-  <meta name="description" content="Análisis en tiempo real del Loto chileno con detección de colisiones históricas y estimación DAP."/>
+  <title>LOTO AI • Dashboard Histórico</title>
+  <meta name="description" content="Visualizador histórico inteligente del Loto Chile"/>
 
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet"/>
   
   <script src="https://unpkg.com/lucide@latest"></script>
-  
   <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
@@ -17,28 +16,17 @@
 
   <style>
     :root {
-      /* Nueva Paleta de Colores Vibrante */
       --bg: #050a14;
-      /* Cristal más transparente y brillante */
-      --card: rgba(20, 30, 50, 0.35); 
-      --card-hover: rgba(30, 40, 70, 0.5);
-      --border: rgba(255, 255, 255, 0.15);
-      --border-light: rgba(255, 255, 255, 0.3);
-      
+      --card: rgba(20, 30, 50, 0.65); 
+      --card-hover: rgba(30, 40, 70, 0.8);
+      --border: rgba(255, 255, 255, 0.1);
       --text: #ffffff;
       --text-muted: #a0aec0;
       
-      /* Colores Neón */
       --neon-cyan: #00f2ff;
       --neon-pink: #ff00c8;
       --neon-purple: #bd00ff;
-      --neon-blue: #2d5aff;
-      
-      --accent: var(--neon-cyan);
-      --accent-glow: rgba(0, 242, 255, 0.5);
-      
       --gold: #ffd700;
-      --emerald: #00ff9d;
       --rose: #ff3864;
     }
 
@@ -48,523 +36,386 @@
       background: var(--bg);
       color: var(--text);
       min-height: 100vh;
-      /* Fondo con gradientes de luz más intensos */
-      background-image: 
-        radial-gradient(circle at 0% 0%, rgba(189, 0, 255, 0.3) 0%, transparent 50%),
-        radial-gradient(circle at 100% 0%, rgba(0, 242, 255, 0.3) 0%, transparent 50%),
-        radial-gradient(circle at 50% 100%, rgba(255, 0, 200, 0.2) 0%, transparent 60%);
-      background-attachment: fixed;
-      line-height: 1.6;
+      background-image: radial-gradient(circle at 50% 0%, rgba(0, 242, 255, 0.15) 0%, transparent 60%);
     }
 
     .container { max-width: 1400px; margin: 0 auto; padding: 2rem 1.5rem; }
 
-    /* --- Efecto Glassmorphism Base --- */
-    /* Aplicaremos esto a los contenedores principales */
-    .glass-base {
-      background: var(--card);
-      backdrop-filter: blur(24px) saturate(120%); /* Más desenfoque y saturación */
-      border: 1px solid var(--border);
-      /* Sutil borde de luz interior para efecto 3D */
-      box-shadow: 
-        inset 0 1px 1px rgba(255, 255, 255, 0.2), 
-        0 8px 32px rgba(0, 0, 0, 0.3);
-    }
-
     /* Timer */
-    .timer {
-      display: flex; justify-content: center; gap: 1.5rem; margin: 3rem 0; flex-wrap: wrap;
-    }
+    .timer { display: flex; justify-content: center; gap: 1rem; margin: 2rem 0; flex-wrap: wrap; }
     .time-box {
-      /* Aplicando el nuevo glass effect */
-      background: var(--card);
-      backdrop-filter: blur(20px) saturate(120%);
-      border: 1px solid var(--border);
-      box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.15), 0 12px 40px rgba(0,0,0,0.4);
-      
-      border-radius: 1.5rem;
-      padding: 1.5rem 2rem; min-width: 140px; text-align: center;
-      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 1rem; padding: 1rem 1.5rem; text-align: center; min-width: 100px;
     }
-    .time-box:hover { 
-      transform: translateY(-12px) scale(1.08); 
-      border-color: var(--accent-glow); 
-      background: var(--card-hover);
-      box-shadow: 0 20px 50px rgba(0, 242, 255, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.4); 
-    }
-    .time-num { 
-      font-size: 3.8rem; font-weight: 900; 
-      /* Gradiente de texto neón */
-      background: linear-gradient(135deg, #fff, var(--neon-cyan)); 
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent; 
-      filter: drop-shadow(0 0 10px var(--accent-glow));
-    }
-    .time-label { font-size: 0.9rem; color: var(--text-muted); letter-spacing: 2px; margin-top: 0.5rem; font-weight: 600; }
+    .time-num { font-size: 2.5rem; font-weight: 900; color: var(--neon-cyan); }
+    .time-label { font-size: 0.8rem; color: var(--text-muted); letter-spacing: 1px; }
 
     /* Hero */
     .hero {
-      /* Usando las propiedades base de glass */
-      background: var(--card);
-      backdrop-filter: blur(30px) saturate(120%);
-      border: 1px solid var(--border);
-      box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.2), 0 20px 40px rgba(0,0,0,0.4);
-      
-      border-radius: 2rem;
-      padding: 3rem;
-      margin: 3rem 0;
-      position: relative;
-      overflow: hidden;
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 2rem; padding: 2rem; margin: 2rem 0;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.3);
     }
-    /* Luz ambiental interna */
-    .hero::before {
-      content: ''; position: absolute; inset: 0;
-      background: radial-gradient(circle at 50% -20%, rgba(0, 242, 255, 0.2), transparent 60%),
-                  radial-gradient(circle at 80% 80%, rgba(189, 0, 255, 0.15), transparent 50%);
-      pointer-events: none;
-    }
-
-    .hero-title { 
-      font-size: 3rem; font-weight: 900; margin-bottom: 1rem; 
-      /* Título con gradiente neón multicolor */
-      background: linear-gradient(to right, #fff, var(--neon-cyan), var(--neon-pink)); 
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent; 
-    }
+    .hero-header { text-align: center; margin-bottom: 2rem; }
+    .hero-title { font-size: 3rem; font-weight: 900; background: linear-gradient(to right, #fff, var(--neon-cyan)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .hero-date { color: var(--text-muted); font-size: 1.2rem; }
 
     .hero-stats {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(280px,1fr)); gap: 2rem; margin: 2rem 0;
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap: 1.5rem; margin-bottom: 2rem;
+      text-align: center;
     }
-    .stat-num { 
-      font-size: 2.8rem; font-weight: 900; 
-      color: var(--neon-pink); /* Usando rosa neón para contraste */
-      text-shadow: 0 0 20px rgba(255, 0, 200, 0.5);
-    }
-    .stat-label { color: var(--text-muted); font-size: 1rem; font-weight: 500; }
+    .stat-val { font-size: 2rem; font-weight: 700; color: var(--neon-pink); }
+    .stat-lbl { color: var(--text-muted); font-size: 0.9rem; }
 
-    /* Swiper */
-    .swiper { border-radius: 1.5rem; overflow: hidden; margin: 3rem 0; }
-    /* Las slides ahora también son de cristal */
+    /* Swiper & Games */
+    .swiper { padding-bottom: 3rem !important; }
     .game-slide { 
-      background: rgba(15, 23, 42, 0.6); /* Un poco más oscuro para que resalten las bolas */
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(255,255,255,0.1);
-      padding: 2rem; border-radius: 1.5rem; 
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
+      background: rgba(10, 15, 30, 0.6); 
+      border: 1px solid var(--border);
+      padding: 1.5rem; border-radius: 1.5rem; height: 100%;
+      display: flex; flex-direction: column; justify-content: space-between;
     }
-    .game-title { font-size: 1.8rem; font-weight: 700; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; }
-    .balls { display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; margin: 1.5rem 0; }
-    
-    /* Bolas Mejoradas - Parecen esferas brillantes */
+    .game-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+    .game-name { font-size: 1.4rem; font-weight: 700; color: white; }
+    .game-pozo { font-size: 0.9rem; color: var(--gold); font-family: 'JetBrains Mono', monospace; }
+
+    .balls { display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: center; margin: 1rem 0; }
     .ball {
-      width: 60px; height: 60px; border-radius: 50%;
+      width: 45px; height: 45px; border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
-      font-weight: 900; font-size: 1.3rem; color: white;
-      /* Gradiente radial para dar volumen 3D */
-      background: radial-gradient(circle at 30% 30%, #fff, rgba(255,255,255,0.1) 60%);
-      border: 1px solid rgba(255,255,255,0.4);
-      box-shadow: 
-        inset 0 -5px 15px rgba(0,0,0,0.5), /* Sombra interna */
-        0 5px 15px rgba(0,0,0,0.3); /* Sombra externa */
-      position: relative;
-      overflow: hidden;
+      font-weight: 700; font-size: 1.1rem; color: white;
+      background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
     }
-    /* Capa de color sobre la base blanca para colores vibrantes */
-    .ball::after {
-      content:''; position:absolute; inset:0; z-index:-1;
-      background: inherit; mix-blend-mode: overlay;
-    }
-    .ball.loto { background: linear-gradient(135deg, #ffd700, #ff8c00); box-shadow: 0 0 20px rgba(255, 215, 0, 0.5); }
-    .ball.rec { background: linear-gradient(135deg, #ff00c8, #ff0055); box-shadow: 0 0 20px rgba(255, 0, 200, 0.5); }
-    .ball.rev { background: linear-gradient(135deg, #bd00ff, #5d00ff); box-shadow: 0 0 20px rgba(189, 0, 255, 0.5); }
-    .ball.des { background: linear-gradient(135deg, #00f2ff, #0066ff); box-shadow: 0 0 20px rgba(0, 242, 255, 0.5); }
-    
-    .ball.comodin { 
-      border: 3px solid #fff; 
-      background: linear-gradient(135deg, #ff3b5c, #ff0033);
-      animation: pulseBright 2s infinite; 
-    }
-    
-    @keyframes pulseBright { 
-      0%,100% { box-shadow: 0 0 20px var(--rose), inset 0 0 20px var(--rose); } 
-      50% { box-shadow: 0 0 50px var(--rose), inset 0 0 40px var(--rose), 0 0 100px var(--rose); border-color: #ffb3c1;} 
+    /* Colores dinámicos */
+    .ball.LOTO { background: linear-gradient(135deg, #ffd700, #ff8c00); text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
+    .ball.RECARGADO { background: linear-gradient(135deg, #ff00c8, #ff0055); }
+    .ball.REVANCHA { background: linear-gradient(135deg, #bd00ff, #5d00ff); }
+    .ball.DESQUITE { background: linear-gradient(135deg, #00f2ff, #0066ff); }
+    .ball.JUBILAZO { background: linear-gradient(135deg, #00ff9d, #00aa55); color: #003311; }
+    .ball.MULTIPLICAR { background: white; color: black; font-weight: 900; border-radius: 10px; }
+    .ball.COMODIN { border: 2px solid #ff3b5c; background: transparent; color: #ff3b5c; }
+
+    .winner-tag { 
+      background: rgba(0, 255, 157, 0.15); color: #00ff9d; 
+      padding: 0.2rem 0.6rem; border-radius: 99px; font-size: 0.8rem; font-weight: 700;
     }
 
-    .winner-info { text-align: center; margin-top: 1rem; font-weight: 500; }
-    .dap { color: var(--emerald); font-weight: 700; font-size: 0.9rem; margin-top: 0.5rem; text-shadow: 0 0 10px rgba(0, 255, 157, 0.4); }
-
-    /* Table */
-    .table-container { 
-      /* Aplicando estilo glass */
-      background: var(--card);
-      backdrop-filter: blur(24px) saturate(120%);
-      border: 1px solid var(--border);
-      box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.2), 0 10px 30px rgba(0, 0, 0, 0.3);
-      
-      border-radius: 1.5rem; 
-      overflow-y: auto; 
-      max-height: 500px; 
-      margin: 3rem 0; 
+    /* Tabla */
+    .table-wrapper { 
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 1.5rem; overflow: hidden; margin-top: 3rem;
     }
-    
+    .table-scroll { max-height: 600px; overflow-y: auto; }
     table { width: 100%; border-collapse: collapse; }
-    th { 
-      background: rgba(0, 242, 255, 0.1); /* Tinte cyan para el header */
-      padding: 1.4rem; text-align: left; font-weight: 700; 
-      color: var(--neon-cyan); 
-      border-bottom: 1px solid var(--border);
-      position: sticky; top: 0; backdrop-filter: blur(10px); z-index: 10;
-    }
-    td { padding: 1.2rem 1.4rem; border-top: 1px solid var(--border); font-weight: 500; }
-    /* Hover row con luz cyan */
-    tr:hover td { background: rgba(0, 242, 255, 0.08); }
-    
-    .tooltip { position: relative; cursor: help; }
-    .tooltip:hover::after {
-      content: attr(data-tip);
-      position: absolute; bottom: 120%; left: 50%; transform: translateX(-50%);
-      background: rgba(20, 25, 45, 0.95); 
-      backdrop-filter: blur(8px);
-      border: 1px solid var(--neon-cyan);
-      color: white; padding: 0.8rem 1.2rem; border-radius: 1rem;
-      font-size: 0.9rem; white-space: nowrap; z-index: 100; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-    }
+    th { position: sticky; top: 0; background: #0a1020; padding: 1rem; text-align: left; color: var(--neon-cyan); z-index: 10;}
+    td { padding: 1rem; border-bottom: 1px solid var(--border); }
+    tr:hover { background: rgba(255,255,255,0.03); }
 
-    /* Search */
-    .search-box {
-      position: relative; max-width: 600px; margin: 3rem auto;
+    /* Buscador */
+    .search-container { max-width: 500px; margin: 0 auto 2rem; position: relative; }
+    #search {
+      width: 100%; padding: 1rem 1.5rem; border-radius: 99px;
+      background: var(--card); border: 1px solid var(--border); color: white;
+      font-size: 1.1rem; text-align: center;
     }
-    .search-icon { position: absolute; left: 1.4rem; top: 50%; transform: translateY(-50%); color: var(--neon-cyan); }
-    #search-input {
-      width: 100%; padding: 1.4rem 1.8rem 1.4rem 4rem;
-      /* Input de cristal */
-      background: var(--card);
-      backdrop-filter: blur(16px);
-      border: 1px solid var(--border);
-      
-      border-radius: 999px; color: white; font-size: 1.2rem;
-      transition: all 0.4s;
-    }
-    #search-input::placeholder { color: var(--text-muted); }
-    #search-input:focus { 
-      outline: none; 
-      border-color: var(--neon-cyan); 
-      background: var(--card-hover);
-      box-shadow: 0 0 0 4px rgba(0, 242, 255, 0.2), 0 0 30px rgba(0, 242, 255, 0.3); 
-    }
+    #search:focus { outline: none; border-color: var(--neon-cyan); box-shadow: 0 0 20px rgba(0,242,255,0.2); }
 
-    /* Result Dashboard */
-    #result-dashboard {
-      display: none; margin: 3rem 0; animation: fadeIn 0.8s;
-    }
-    @keyframes fadeIn { from { opacity:0; transform: translateY(30px) scale(0.95); } to { opacity:1; transform:none scale(1); } }
-
-    .collision { 
-      background: rgba(255, 56, 100, 0.1); 
-      border: 1px solid var(--rose); 
-      padding: 1rem; border-radius: 1rem; margin-top: 1rem; 
-      box-shadow: 0 0 20px rgba(255, 56, 100, 0.1);
-    }
-    .collision-title { color: var(--rose); font-weight: 700; display: flex; align-items: center; gap: 0.5rem;}
-
-    /* Status */
-    .status-bar {
-      display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1rem;
-      padding: 1.5rem; 
-      background: var(--card); backdrop-filter: blur(16px);
-      border-radius: 1.5rem; font-size: 0.95rem;
-      margin-top: 4rem; border: 1px solid var(--border); color: var(--text-muted);
-    }
-    #db-status strong { color: var(--neon-cyan); }
-    .missing { color: var(--rose); font-weight: 700; text-shadow: 0 0 10px var(--rose); }
-    
-    /* Estilos para el contenido inyectado por JS en el resultado */
-    #result-content > div {
-        /* Convertir los bloques de resultados en tarjetas de cristal */
-        background: var(--card) !important;
-        backdrop-filter: blur(16px) saturate(120%);
-        border: 1px solid var(--border);
-        box-shadow: inset 0 1px 1px rgba(255,255,255,0.1) !important;
-    }
-    #result-content h3 { color: var(--neon-cyan); text-shadow: 0 0 10px rgba(0,242,255,0.4); }
+    .status-bar { text-align: center; margin-top: 3rem; color: var(--text-muted); font-size: 0.9rem; }
   </style>
 </head>
 <body>
 
   <div class="container">
-
-    <div class="timer" id="timer">
+    <!-- Timer -->
+    <div class="timer">
       <div class="time-box"><div class="time-num" id="days">00</div><div class="time-label">DÍAS</div></div>
-      <div class="time-box"><div class="time-num" id="hours">00</div><div class="time-label">HORAS</div></div>
-      <div class="time-box"><div class="time-num" id="mins">00</div><div class="time-label">MINUTOS</div></div>
-      <div class="time-box"><div class="time-num" id="secs">00</div><div class="time-label">SEGUNDOS</div></div>
+      <div class="time-box"><div class="time-num" id="hours">00</div><div class="time-label">HRS</div></div>
+      <div class="time-box"><div class="time-num" id="mins">00</div><div class="time-label">MIN</div></div>
     </div>
 
-    <div class="hero">
-      <h1 class="hero-title">Último Sorteo: <span id="last-draw-num">#0000</span></h1>
-      <div class="hero-stats">
-        <div class="stat">
-          <div class="stat-num" id="total-money">$0</div>
-          <div class="stat-label">Total Repartido</div>
-        </div>
-        <div class="stat">
-          <div class="stat-num" id="total-winners">0</div>
-          <div class="stat-label">Personas Ganadoras</div>
-        </div>
+    <!-- Buscador -->
+    <div class="search-container">
+      <input type="number" id="search" placeholder="🔍 Buscar sorteo (ej: 5352)..." />
+    </div>
+
+    <!-- Dashboard Principal -->
+    <div class="hero" id="dashboard">
+      <div class="hero-header">
+        <div class="hero-date" id="dash-date">Cargando...</div>
+        <h1 class="hero-title" id="dash-title">Sorteo #---</h1>
       </div>
 
+      <div class="hero-stats">
+        <div><div class="stat-val" id="dash-money">$0</div><div class="stat-lbl">Total Repartido Estimado</div></div>
+        <div><div class="stat-val" id="dash-winners">0</div><div class="stat-lbl">Ganadores Totales</div></div>
+      </div>
+
+      <!-- Carrusel de Juegos -->
       <div class="swiper">
-        <div class="swiper-wrapper" id="games-carousel"></div>
+        <div class="swiper-wrapper" id="games-container"></div>
         <div class="swiper-pagination"></div>
       </div>
     </div>
 
-    <div class="table-container">
-      <table>
-        <thead>
-          <tr>
-            <th># Sorteo</th>
-            <th>Fecha</th>
-            <th>Números Loto + Comodín</th>
-            <th>6 Aciertos</th>
-          </tr>
-        </thead>
-        <tbody id="history-table"></tbody>
-      </table>
+    <!-- Historial -->
+    <div class="table-wrapper">
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Sorteo</th>
+              <th>Fecha</th>
+              <th>Números Loto</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody id="history-body"></tbody>
+        </table>
+      </div>
     </div>
 
-    <div class="search-box">
-      <i data-lucide="search" class="search-icon"></i>
-      <input type="number" id="search-input" placeholder="Ingresa número de sorteo y presiona Enter..." />
-    </div>
-
-    <div id="result-dashboard" class="hero">
-      <h2 style="font-size:2.5rem; margin-bottom:1.5rem;">Sorteo #<span id="result-id">0000</span> • <span id="result-date">00/00/0000</span></h2>
-      <div id="result-content"></div>
-    </div>
-
-    <div class="status-bar">
-      <div id="db-status">Cargando base de datos...</div>
-      <div id="missing-status"></div>
-    </div>
+    <div class="status-bar" id="status-text">Conectando con base de datos...</div>
   </div>
 
   <script>
     lucide.createIcons();
-    const DAP_RATE = 0.0042;
-    let data = [];
-    const collisionIndex = new Map(); // "1-2-3-4-5-6" → [{id, type, date}]
+    let allData = [];
 
-    // Cargar CSV
-    Papa.parse("LOTO_HISTORIAL_MAESTRO.csv", {
-      download: true,
-      header: true,
-      complete: (res) => {
-        data = res.data
-          .filter(r => r.sorteo && !isNaN(+r.sorteo))
-          .map(r => ({ ...r, id: +r.sorteo }))
-          .sort((a,b) => b.id - a.id);
+    // --- LÓGICA DINÁMICA DE JUEGOS ---
+    function detectGamesInRow(row) {
+      const games = [];
+      const keys = Object.keys(row);
 
-        buildCollisionIndex();
-        renderLastDraw(data[0]);
-        renderHistory(data.slice(0,100));
-        checkDatabaseIntegrity();
-        setupTimer();
+      // 1. Siempre buscar LOTO
+      if (row.LOTO_n1) {
+        games.push({
+          id: 'LOTO', name: 'Loto Clásico', type: 'LOTO',
+          nums: getNums(row, 'LOTO'),
+          wild: row.LOTO_comodin,
+          winners: +row.LOTO_GANADORES || 0,
+          amount: +row.LOTO_MONTO || 0,
+          pozo: row.LOTO_POZO_ACUMULADO
+        });
       }
-    });
 
-    function buildCollisionIndex() {
-      const games = ["LOTO", "RECARGADO", "REVANCHA", "DESQUITE"];
-      data.forEach(row => {
-        games.forEach(game => {
-          const nums = [];
-          for(let i=1; i<=6; i++) {
-            const n = parseInt(row[`${game}_n${i}`]);
-            if(!isNaN(n)) nums.push(n);
-          }
-          if(nums.length === 6) {
-            const key = nums.sort((a,b)=>a-b).join("-");
-            if(!collisionIndex.has(key)) collisionIndex.set(key, []);
-            collisionIndex.get(key).push({
-              id: row.id,
-              type: game === "LOTO" ? "Loto" : game,
-              date: `${row.dia}/${row.mes}/${row.anio}`
-            });
-          }
+      // 2. Buscar Subjuegos estándar (Recargado, Revancha, Desquite, Ahora si que si)
+      // Buscamos cualquier columna que termine en _n1 y no sea LOTO ni JUBILAZO
+      keys.forEach(k => {
+        if (k.endsWith('_n1') && !k.startsWith('LOTO') && !k.includes('JUBILAZO')) {
+          const prefix = k.replace('_n1', '');
+          // Mapeo de nombres para mostrar bonito
+          let cleanName = prefix.replace(/_/g, ' '); 
+          if(prefix === 'RECARGADO') cleanName = 'Recargado';
+          if(prefix === 'REVANCHA') cleanName = 'Revancha';
+          if(prefix === 'DESQUITE') cleanName = 'Desquite';
+
+          // Buscar columnas de premios correspondientes
+          // Nota: Tu parser a veces usa nombres largos para los premios (ej: RECARGADO_6_ACIERTOS_GANADORES)
+          // Intentamos encontrar la columna de ganadores más parecida
+          let winnersCol = keys.find(wk => wk.startsWith(prefix) && wk.includes('GANADORES'));
+          let amountCol = keys.find(ak => ak.startsWith(prefix) && ak.includes('MONTO'));
+          let pozoCol = keys.find(pk => pk.startsWith(prefix) && pk.includes('POZO'));
+
+          games.push({
+            id: prefix, name: cleanName, type: prefix,
+            nums: getNums(row, prefix),
+            winners: +row[winnersCol] || 0,
+            amount: +row[amountCol] || 0,
+            pozo: row[pozoCol]
+          });
+        }
+      });
+
+      // 3. Buscar Jubilazos (JUBILAZO_1, JUBILAZO_2, JUBILAZO_50ANOS...)
+      keys.filter(k => k.includes('JUBILAZO') && k.endsWith('_n1')).forEach(k => {
+        const prefix = k.replace('_n1', '');
+        let name = "Jubilazo";
+        if (prefix.includes('50ANOS')) name = "Jubilazo 50 Años";
+        
+        // Numeración visual (Jubilazo #1, #2...)
+        const parts = prefix.split('_');
+        const num = parts[parts.length-1];
+        if(!isNaN(num)) name += ` #${num}`;
+
+        games.push({
+          id: prefix, name: name, type: 'JUBILAZO',
+          nums: getNums(row, prefix),
+          winners: 0, amount: 0 // Jubilazos suelen ser sueldos, difícil trackear monto total aquí
         });
       });
+
+      // 4. Buscar Multiplicar
+      if (row.MULTIPLICAR_FACTOR) {
+        games.push({
+          id: 'MULTI', name: 'Multiplicar', type: 'MULTIPLICAR',
+          nums: [row.MULTIPLICAR_FACTOR],
+          isSpecial: true
+        });
+      }
+
+      return games;
     }
 
-    function renderLastDraw(row) {
-      document.getElementById("last-draw-num").textContent = `#${row.sorteo}`;
+    function getNums(row, prefix) {
+      const nums = [];
+      for(let i=1; i<=6; i++) {
+        const val = row[`${prefix}_n${i}`];
+        if(val) nums.push(val);
+      }
+      return nums;
+    }
+
+    // --- CARGA DE DATOS ---
+    try {
+      Papa.parse("./LOTO_HISTORIAL_MAESTRO.csv", {
+        download: true,
+        header: true,
+        skipEmptyLines: true,
+        complete: (res) => {
+          allData = res.data.sort((a,b) => (+b.sorteo) - (+a.sorteo));
+          
+          if(allData.length > 0) {
+            renderDashboard(allData[0]);
+            renderHistory(allData.slice(0, 50));
+            document.getElementById('status-text').innerHTML = `Base de datos cargada: <strong>${allData.length}</strong> sorteos disponibles.`;
+          } else {
+            document.getElementById('status-text').textContent = "No hay datos en el CSV. Ejecuta el scraper.";
+          }
+          initTimer();
+        },
+        error: (err) => {
+          console.error("Error PapaParse:", err);
+          document.getElementById('status-text').innerHTML = `<span style="color:var(--rose)">Error: No se encontró la base de datos (CSV).</span>`;
+        }
+      });
+    } catch(e) {
+      console.error("Error inicial:", e);
+      document.getElementById('status-text').textContent = "Error al iniciar la carga de datos.";
+    }
+
+    // --- RENDERIZADO ---
+    function renderDashboard(row) {
+      document.getElementById('dash-title').textContent = `Sorteo #${row.sorteo}`;
+      document.getElementById('dash-date').textContent = row.fecha ? row.fecha.split(' ')[0] : `${row.dia}/${row.mes}/${row.anio}`;
+
+      // Calcular dinero total (Sumar MONTOS * GANADORES si existen, si no sumar Pozos)
+      // Ajuste para tu parser: Las columnas MONTO suelen ser premio por persona.
+      let totalMoney = 0;
+      let totalWinners = 0;
       
-      const totalMoney = Object.keys(row).filter(k => k.endsWith("_MONTO")).reduce((s,k) => s + (+row[k]||0), 0);
-      const totalWinners = Object.keys(row).filter(k => k.endsWith("_GANADORES")).reduce((s,k) => s + (+row[k]||0), 0);
+      Object.keys(row).forEach(k => {
+        if(k.endsWith('_GANADORES')) {
+            const winners = +row[k] || 0;
+            totalWinners += winners;
+            // Buscar monto asociado
+            const prefix = k.replace('_GANADORES', '');
+            const amount = +row[`${prefix}_MONTO`] || 0;
+            totalMoney += (winners * amount);
+        }
+      });
+      
+      document.getElementById('dash-money').textContent = formatMoney(totalMoney);
+      document.getElementById('dash-winners').textContent = totalWinners.toLocaleString('es-CL');
 
-      document.getElementById("total-money").textContent = formatCLP(totalMoney);
-      document.getElementById("total-winners").textContent = totalWinners.toLocaleString("es-CL");
-
-      const carousel = document.getElementById("games-carousel");
-      const games = [
-        { name: "Loto", prefix: "LOTO", color: "loto", hasWild: true, winners: +row.LOTO_GANADORES, amount: +row.LOTO_MONTO },
-        { name: "Recargado", prefix: "RECARGADO", color: "rec", winners: +row.RECARGADO_6_ACIERTOS_GANADORES, amount: +row.RECARGADO_6_ACIERTOS_MONTO },
-        { name: "Revancha", prefix: "REVANCHA", color: "rev", winners: +row.REVANCHA_GANADORES, amount: +row.REVANCHA_MONTO },
-        { name: "Desquite", prefix: "DESQUITE", color: "des", winners: +row.DESQUITE_GANADORES, amount: +row.DESQUITE_MONTO }
-      ];
-
-      carousel.innerHTML = games.map(g => {
-        const nums = Array.from({length:6},(_,i)=>row[`${g.prefix}_n${i+1}`]);
-        const key = nums.sort((a,b)=>a-b).join("-");
-        const collisions = (collisionIndex.get(key) || []).filter(c => c.id !== row.id);
-        const dap = g.amount > 5e8 ? `<div class="dap">+${formatCLP(Math.floor(g.amount * DAP_RATE))} /mes (DAP estimado)</div>` : "";
-
-        return `
-          <div class="swiper-slide">
-            <div class="game-slide">
-              <div class="game-title">
-                <span>${g.name}</span>
-                ${g.winners > 0 ? `<span style="color:var(--emerald)">GANÓ</span>` : ""}
+      // Generar Tarjetas
+      const games = detectGamesInRow(row);
+      const container = document.getElementById('games-container');
+      
+      container.innerHTML = games.map(g => `
+        <div class="swiper-slide">
+          <div class="game-slide">
+            <div>
+              <div class="game-header">
+                <span class="game-name">${g.name}</span>
+                ${g.winners > 0 ? `<span class="winner-tag">¡HUBO GANADOR!</span>` : ''}
               </div>
-              <div class="balls">
-                ${nums.map(n => `<div class="ball ${g.color}">${n}</div>`).join("")}
-                ${g.hasWild ? `<div class="ball comodin">${row.LOTO_comodin}</div>` : ""}
-              </div>
-              <div class="winner-info">
-                ${g.winners > 0 ? `${g.winners} ganador${g.winners>1?'es':''} • ${formatCLP(g.amount)}` : "Sin ganadores"}
-                ${dap}
-                ${collisions.length > 0 ? `
-                  <div class="collision">
-                    <div class="collision-title">¡Colisión Histórica Detectada!</div>
-                    ${collisions.map(c => `• #${c.id} (${c.type}) - ${c.date}`).join("<br>")}
-                  </div>
-                ` : ""}
-              </div>
+              ${g.pozo ? `<div class="game-pozo">Pozo: ${formatMoney(g.pozo)}</div>` : ''}
+            </div>
+            
+            <div class="balls">
+              ${g.nums.map(n => `<div class="ball ${g.type}">${n}</div>`).join('')}
+              ${g.wild ? `<div class="ball COMODIN" title="Comodín">${g.wild}</div>` : ''}
+            </div>
+
+            <div style="margin-top:1rem; font-size:0.9rem; color:var(--text-muted)">
+              ${g.isSpecial ? 'Factor Multiplicador' : 
+                (g.winners > 0 ? 
+                  `${g.winners} ganador(es) cobrando ${formatMoney(g.amount)} c/u` : 
+                  'Pozo Vacante')
+              }
             </div>
           </div>
-        `;
-      }).join("");
+        </div>
+      `).join('');
 
-      new Swiper(".swiper", {
-        loop: true,
-        autoplay: { delay: 5000 },
-        pagination: { el: ".swiper-pagination", clickable: true },
-        effect: "coverflow",
-        coverflowEffect: { rotate: 30, slideShadows: false }
+      // Reiniciar Swiper si existe
+      if(window.mySwiper) window.mySwiper.destroy();
+      window.mySwiper = new Swiper(".swiper", {
+        slidesPerView: 1,
+        spaceBetween: 20,
+        breakpoints: {
+          640: { slidesPerView: 2 },
+          1024: { slidesPerView: 3 }
+        },
+        pagination: { el: ".swiper-pagination", clickable: true }
       });
     }
 
     function renderHistory(rows) {
-      const tbody = document.getElementById("history-table");
+      const tbody = document.getElementById('history-body');
       tbody.innerHTML = rows.map(r => {
-        const hasWinner = +r.LOTO_GANADORES > 0;
-        const balls = Array.from({length:6},(_,i)=>r[`LOTO_n${i+1}`]).join(" • ");
-        const tip = hasWinner ? `¡Ganador! ${formatCLP(r.LOTO_MONTO)}` : "";
+        const nums = getNums(r, 'LOTO').join(' • ');
+        const winner = (+r.LOTO_GANADORES > 0);
         return `
-          <tr>
-            <td class="tooltip" data-tip="${tip}">#${r.id}</td>
-            <td>${r.dia}/${r.mes}/${r.anio}</td>
-            <td>${balls} <strong style="color:#ff3b5c">+${r.LOTO_comodin}</strong></td>
-            <td class="${hasWinner?'tooltip':''}" data-tip="${tip}">
-              ${hasWinner ? "GANADOR" : "Vacante"}
-            </td>
+          <tr style="cursor:pointer" onclick="loadDraw(${r.sorteo})">
+            <td style="color:var(--neon-cyan)">#${r.sorteo}</td>
+            <td>${r.fecha ? r.fecha.split(' ')[0] : '-'}</td>
+            <td>${nums} ${r.LOTO_comodin ? `<span style="color:#ff3b5c">+ ${r.LOTO_comodin}</span>` : ''}</td>
+            <td>${winner ? '🏆 GANADOR' : 'Vacante'}</td>
           </tr>
         `;
-      }).join("");
+      }).join('');
     }
 
-    function formatCLP(n) {
-      return "$" + Number(n||0).toLocaleString("es-CL");
-    }
-
-    // Buscador
-    document.getElementById("search-input").addEventListener("keypress", e => {
-      if(e.key === "Enter") {
-        const id = +e.target.value;
-        const draw = data.find(r => r.id === id);
-        if(draw) {
-          renderResultDashboard(draw);
-        } else {
-          alert("Sorteo no encontrado");
-        }
+    // --- UTILIDADES ---
+    window.loadDraw = (id) => {
+      const row = allData.find(r => r.sorteo == id);
+      if(row) {
+        renderDashboard(row);
+        document.getElementById('dashboard').scrollIntoView({behavior: 'smooth'});
       }
+    }
+
+    document.getElementById('search').addEventListener('change', (e) => {
+      loadDraw(e.target.value);
     });
 
-    function renderResultDashboard(row) {
-      document.getElementById("result-id").textContent = row.sorteo;
-      document.getElementById("result-date").textContent = `${row.dia}/${row.mes}/${row.anio}`;
-      
-      const content = document.getElementById("result-content");
-      const games = [
-        { name: "Loto", prefix: "LOTO", color: "loto", hasWild: true, winners: +row.LOTO_GANADORES, amount: +row.LOTO_MONTO },
-        { name: "Recargado", prefix: "RECARGADO", color: "rec", winners: +row.RECARGADO_6_ACIERTOS_GANADORES, amount: +row.RECARGADO_6_ACIERTOS_MONTO },
-        { name: "Revancha", prefix: "REVANCHA", color: "rev", winners: +row.REVANCHA_GANADORES, amount: +row.REVANCHA_MONTO },
-        { name: "Desquite", prefix: "DESQUITE", color: "des", winners: +row.DESQUITE_GANADORES, amount: +row.DESQUITE_MONTO }
-      ];
-
-      content.innerHTML = games.map(g => {
-        const nums = Array.from({length:6},(_,i)=>row[`${g.prefix}_n${i+1}`]);
-        const key = nums.sort((a,b)=>a-b).join("-");
-        const collisions = (collisionIndex.get(key) || []).filter(c => c.id !== row.id);
-        const dap = g.amount > 1e8 ? `<div class="dap">Estimado DAP: +${formatCLP(Math.floor(g.amount * DAP_RATE))} mensuales</div>` : "";
-
-        return `
-          <div style="margin:2rem 0; padding:2rem; background:rgba(30,35,60,0.6); border-radius:1.5rem;">
-            <h3 style="font-size:1.8rem; margin-bottom:1rem;">${g.name}</h3>
-            <div class="balls" style="margin:1.5rem 0;">
-              ${nums.map(n => `<div class="ball ${g.color}">${n}</div>`).join("")}
-              ${g.hasWild ? `<div class="ball comodin">${row.LOTO_comodin}</div>` : ""}
-            </div>
-            <div style="font-size:1.1rem;">
-              <strong>${g.winners} ganador${g.winners!==1?'es':''}</strong> • ${formatCLP(g.amount)}
-              ${dap}
-            </div>
-            ${collisions.length > 0 ? `
-              <div class="collision">
-                <div class="collision-title">¡Esta combinación ya salió antes!</div>
-                ${collisions.map(c => `• Sorteo #${c.id} (${c.type}) — ${c.date}`).join("<br>")}
-              </div>
-            ` : ""}
-          </div>
-        `;
-      }).join("");
-
-      document.getElementById("result-dashboard").style.display = "block";
-      document.getElementById("result-dashboard").scrollIntoView({ behavior: "smooth" });
+    function formatMoney(n) {
+      return '$' + Number(n).toLocaleString('es-CL');
     }
 
-    // Timer
-    function setupTimer() {
+    function initTimer() {
       const update = () => {
         const now = new Date();
-        let next = new Date(now);
-        next.setHours(21,0,0,0);
-        const days = [0,2,4]; // dom, mar, jue
-        while (!days.includes(next.getDay()) || next <= now) {
+        let next = new Date();
+        next.setHours(21, 0, 0, 0);
+        // Días de sorteo: Dom(0), Mar(2), Jue(4)
+        while(![0,2,4].includes(next.getDay()) || next < now) {
           next.setDate(next.getDate() + 1);
-          next.setHours(21,0,0,0);
+          next.setHours(21, 0, 0, 0);
         }
         const diff = next - now;
-        const d = Math.floor(diff / 86400000);
-        const h = Math.floor((diff % 86400000) / 3600000);
-        const m = Math.floor((diff % 3600000) / 60000);
-        const s = Math.floor((diff % 60000) / 1000);
-        document.getElementById("days").textContent = d.toString().padStart(2,"0");
-        document.getElementById("hours").textContent = h.toString().padStart(2,"0");
-        document.getElementById("mins").textContent = m.toString().padStart(2,"0");
-        document.getElementById("secs").textContent = s.toString().padStart(2,"0");
+        const d = Math.floor(diff / (1000*60*60*24));
+        const h = Math.floor((diff / (1000*60*60)) % 24);
+        const m = Math.floor((diff / 1000 / 60) % 60);
+        
+        document.getElementById('days').textContent = d.toString().padStart(2,'0');
+        document.getElementById('hours').textContent = h.toString().padStart(2,'0');
+        document.getElementById('mins').textContent = m.toString().padStart(2,'0');
       };
-      setInterval(update, 1000);
+      setInterval(update, 60000);
       update();
-    }
-
-    // Integridad BD
-    function checkDatabaseIntegrity() {
-      const ids = data.map(r => r.id).sort((a,b)=>a-b);
-      const min = 3803, max = ids[ids.length-1];
-      const missing = [];
-      for(let i=min; i<=max; i++) if(!ids.includes(i)) missing.push(i);
-      document.getElementById("db-status").innerHTML = `Base de datos completa: <strong>${data.length}</strong> sorteos (#${min} → #${max})`;
-      if(missing.length) {
-        document.getElementById("missing-status").innerHTML = `Faltan <span class="missing">${missing.length}</span> sorteos (ej: ${missing.slice(0,10).join(", ")}${missing.length>10?"...":""})`;
-      }
     }
   </script>
 </body>
