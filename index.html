@@ -302,14 +302,13 @@
 
     // --- RENDERIZADO ---
     function renderDashboard(row) {
-      // 1. Actualizar Textos (IDs CORREGIDOS)
-      document.getElementById('dash-date').innerText = row.fecha ? row.fecha.split(' ')[0] : '---';
-      document.getElementById('dash-title').innerText = `Sorteo #${row.sorteo}`;
+      // 1. Actualizar Textos
+      // Asegúrate que estos IDs existan en tu HTML actual
+      const elDate = document.getElementById('dash-date');
+      const elTitle = document.getElementById('dash-title');
       
-      // Actualizar montos (si existen en el CSV, sino poner 0)
-      // Nota: Ajusta 'REPARTO_TOTAL' al nombre real de tu columna en el CSV si es diferente
-      // document.getElementById('dash-money').innerText = formatMoney(row.REPARTO_TOTAL || 0); 
-      // document.getElementById('dash-winners').innerText = row.GANADORES_TOTALES || 0;
+      if(elDate) elDate.innerText = row.fecha ? row.fecha.split(' ')[0] : '---';
+      if(elTitle) elTitle.innerText = `Sorteo #${row.sorteo}`;
 
       // 2. Configuración de juegos
       const gamesConfig = [
@@ -320,16 +319,37 @@
         { key: 'AHORA_SI_QUE_SI', title: 'AHORA SÍ QUE SÍ', color: 'text-cyan-400' }
       ];
 
-      // 3. ID CORREGIDO AQUÍ (games-container)
       const swiperWrapper = document.getElementById('games-container');
       let slidesHtml = '';
 
       gamesConfig.forEach(game => {
+        // Validar si existe el juego
         const n1 = row[`${game.key}_n1`];
         if (!n1 || n1.toString().trim() === '') return;
 
+        // --- LÓGICA DE ORDENAMIENTO (MAYOR A MENOR) ---
+        let numbers = [];
+        for(let i=1; i<=6; i++) {
+           const val = row[`${game.key}_n${i}`];
+           if(val) numbers.push(parseInt(val));
+        }
+        // Ordenar descendente (b - a)
+        numbers.sort((a, b) => b - a);
+
+        // Generar HTML de las bolitas usando la clase CSS .ball y el tipo de juego
+        let ballsHtml = numbers.map(num => 
+            `<div class="ball ${game.key}">${num}</div>`
+        ).join('');
+
+        // --- LÓGICA COMODÍN ---
         const comodin = row[`${game.key}_comodin`];
         const hasComodin = (comodin && comodin.toString().trim() !== '' && comodin != '0');
+        // El comodín usa su propia clase .ball.COMODIN
+        const comodinHtml = hasComodin 
+            ? `<div class="ball COMODIN" title="Comodín">${comodin}</div>` 
+            : '';
+
+        // --- INFO PREMIO ---
         const ganadores = row[`${game.key}_GANADORES`];
         const monto = row[`${game.key}_MONTO`];
         
@@ -342,22 +362,22 @@
                          <div class="text-lg font-mono text-white">VACANTE</div>`;
         }
 
-        let ballsHtml = '';
-        for(let i=1; i<=6; i++) {
-           const val = row[`${game.key}_n${i}`];
-           ballsHtml += `<div class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center font-bold text-white shadow-inner border border-white/20">${val}</div>`;
-        }
-
+        // --- CONSTRUCCIÓN DEL SLIDE ---
         slidesHtml += `
           <div class="swiper-slide p-1">
             <div class="glass-panel rounded-2xl p-6 h-full flex flex-col justify-between relative overflow-hidden group" style="background: rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);">
+              
               <div class="relative z-10 mb-4 border-b border-white/10 pb-2">
-                <h3 class="text-xl font-black italic tracking-tighter ${game.color} drop-shadow-lg">${game.title}</h3>
+                <h3 class="text-xl font-black italic tracking-tighter ${game.color} drop-shadow-lg">
+                  ${game.title}
+                </h3>
               </div>
-              <div class="flex flex-wrap gap-2 justify-center mb-6 relative z-10">
+
+              <div class="balls relative z-10 justify-center mb-6">
                 ${ballsHtml}
-                ${hasComodin ? `<div class="w-10 h-10 rounded-full bg-yellow-500/20 text-yellow-300 flex items-center justify-center font-bold border border-yellow-500/50">${comodin}</div>` : ''}
+                ${comodinHtml}
               </div>
+
               <div class="bg-black/20 rounded-xl p-3 text-center relative z-10 backdrop-blur-sm border border-white/5">
                 ${infoPremio}
               </div>
@@ -368,12 +388,11 @@
 
       swiperWrapper.innerHTML = slidesHtml;
       
-      // Reinicializar Swiper si es necesario
+      // Reinicializar Swiper
       if(window.mySwiper) {
         window.mySwiper.update();
         window.mySwiper.slideTo(0);
       } else {
-        // Inicializar por primera vez si no existe
         window.mySwiper = new Swiper('.swiper', {
           slidesPerView: 1,
           spaceBetween: 20,
