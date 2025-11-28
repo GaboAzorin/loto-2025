@@ -395,26 +395,37 @@
       return '$' + Number(n).toLocaleString('es-CL');
     }
 
-    function initTimer() {
+function initTimer() {
       const update = () => {
         const now = new Date();
         let next = new Date();
         next.setHours(21, 0, 0, 0);
+        
         // Días de sorteo: Dom(0), Mar(2), Jue(4)
         while(![0,2,4].includes(next.getDay()) || next < now) {
           next.setDate(next.getDate() + 1);
           next.setHours(21, 0, 0, 0);
         }
+        
         const diff = next - now;
+        
         const d = Math.floor(diff / (1000*60*60*24));
         const h = Math.floor((diff / (1000*60*60)) % 24);
-        const m = Math.floor((diff / 1000 / 60) % 60);
-        
-        document.getElementById('days').textContent = d.toString().padStart(2,'0');
-        document.getElementById('hours').textContent = h.toString().padStart(2,'0');
-        document.getElementById('mins').textContent = m.toString().padStart(2,'0');
+        const m = Math.floor((diff / (1000*60)) % 60);
+        const s = Math.floor((diff / 1000) % 60); // <--- Nuevo cálculo de segundos
+
+        // Asumo que tienes un elemento con ID para mostrar esto. 
+        // Busca la línea donde inyectas el texto (innerText o innerHTML) y agrégale la s.
+        // Debería quedar similar a esto:
+        const timerElement = document.querySelector('.timer-display') || document.getElementById('timer'); 
+        if(timerElement) {
+            // Usamos .padStart(2, '0') para que se vea "05s" en lugar de "5s"
+            timerElement.innerText = `${d}d ${h}h ${m}m ${s.toString().padStart(2, '0')}s`;
+        }
       };
-      setInterval(update, 60000);
+
+      // Importante: Actualizar cada 1000ms (1 segundo)
+      setInterval(update, 1000);
       update();
     }
   </script>
