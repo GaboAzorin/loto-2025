@@ -296,72 +296,91 @@
 
     // --- RENDERIZADO ---
     function renderDashboard(row) {
-      document.getElementById('dash-title').textContent = `Sorteo #${row.sorteo}`;
-      document.getElementById('dash-date').textContent = row.fecha ? row.fecha.split(' ')[0] : `${row.dia}/${row.mes}/${row.anio}`;
+      // 1. Actualizar Textos de Cabecera (Fecha y Sorteo)
+      document.getElementById('drawDate').innerText = row.fecha ? row.fecha.split(' ')[0] : '---';
+      document.getElementById('drawNumber').innerText = `Sorteo #${row.sorteo}`;
 
-      // Calcular dinero total (Sumar MONTOS * GANADORES si existen, si no sumar Pozos)
-      // Ajuste para tu parser: Las columnas MONTO suelen ser premio por persona.
-      let totalMoney = 0;
-      let totalWinners = 0;
-      
-      Object.keys(row).forEach(k => {
-        if(k.endsWith('_GANADORES')) {
-            const winners = +row[k] || 0;
-            totalWinners += winners;
-            // Buscar monto asociado
-            const prefix = k.replace('_GANADORES', '');
-            const amount = +row[`${prefix}_MONTO`] || 0;
-            totalMoney += (winners * amount);
+      // 2. Configuración de juegos a mostrar (EXCLUYENDO Jubilazos)
+      const gamesConfig = [
+        { key: 'LOTO', title: 'LOTO CLÁSICO', color: 'text-yellow-400' },
+        { key: 'RECARGADO', title: 'RECARGADO', color: 'text-orange-400' },
+        { key: 'REVANCHA', title: 'REVANCHA', color: 'text-red-400' },
+        { key: 'DESQUITE', title: 'DESQUITE', color: 'text-emerald-400' },
+        { key: 'AHORA_SI_QUE_SI', title: 'AHORA SÍ QUE SÍ', color: 'text-cyan-400' }
+      ];
+
+      const swiperWrapper = document.getElementById('swiperWrapper');
+      let slidesHtml = '';
+
+      // 3. Iteramos sobre la configuración
+      gamesConfig.forEach(game => {
+        // VERIFICACIÓN CLAVE: ¿Existe el n1 para este juego en este sorteo?
+        // Si no hay dato en n1, asumimos que no se jugó y saltamos al siguiente ("return" en forEach actúa como continue)
+        const n1 = row[`${game.key}_n1`];
+        if (!n1 || n1.toString().trim() === '') return;
+
+        // Recuperar Comodín si existe
+        const comodin = row[`${game.key}_comodin`];
+        const hasComodin = (comodin && comodin.toString().trim() !== '' && comodin != '0');
+
+        // Lógica de Ganadores (asumiendo columnas estandar _GANADORES y _MONTO)
+        const ganadores = row[`${game.key}_GANADORES`];
+        const monto = row[`${game.key}_MONTO`]; // O _POZO según tu CSV, ajusta si es necesario
+        
+        let infoPremio = '';
+        if (ganadores && parseInt(ganadores) > 0) {
+           infoPremio = `<div class="text-xs text-green-400 font-bold">¡${ganadores} GANADOR(ES)!</div>
+                         <div class="text-lg font-mono text-white">${formatMoney(monto || 0)}</div>`;
+        } else {
+           infoPremio = `<div class="text-xs text-gray-400 uppercase tracking-widest">Pozo Estimado / Vacante</div>
+                         <div class="text-lg font-mono text-white">VACANTE</div>`;
         }
-      });
-      
-      document.getElementById('dash-money').textContent = formatMoney(totalMoney);
-      document.getElementById('dash-winners').textContent = totalWinners.toLocaleString('es-CL');
 
-      // Generar Tarjetas
-      const games = detectGamesInRow(row);
-      const container = document.getElementById('games-container');
-      
-      container.innerHTML = games.map(g => `
-        <div class="swiper-slide">
-          <div class="game-slide">
-            <div>
-              <div class="game-header">
-                <span class="game-name">${g.name}</span>
-                ${g.winners > 0 ? `<span class="winner-tag">¡HUBO GANADOR!</span>` : ''}
+        // Construir las esferas (n1 a n6)
+        let ballsHtml = '';
+        for(let i=1; i<=6; i++) {
+           const val = row[`${game.key}_n${i}`];
+           ballsHtml += `<div class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center font-bold text-white shadow-inner border border-white/20">${val}</div>`;
+        }
+
+        // HTML de la Slide
+        slidesHtml += `
+          <div class="swiper-slide p-1">
+            <div class="glass-panel rounded-2xl p-6 h-full flex flex-col justify-between relative overflow-hidden group">
+              
+              <div class="relative z-10 mb-4 border-b border-white/10 pb-2">
+                <h3 class="text-xl font-black italic tracking-tighter ${game.color} drop-shadow-lg">
+                  ${game.title}
+                </h3>
               </div>
-              ${g.pozo ? `<div class="game-pozo">Pozo: ${formatMoney(g.pozo)}</div>` : ''}
-            </div>
-            
-            <div class="balls">
-              ${g.nums.map(n => `<div class="ball ${g.type}">${n}</div>`).join('')}
-              ${g.wild ? `<div class="ball COMODIN" title="Comodín">${g.wild}</div>` : ''}
-            </div>
 
-            <div style="margin-top:1rem; font-size:0.9rem; color:var(--text-muted)">
-              ${g.isSpecial ? 'Factor Multiplicador' : 
-                (g.winners > 0 ? 
-                  `${g.winners} ganador(es) cobrando ${formatMoney(g.amount)} c/u` : 
-                  'Pozo Vacante')
-              }
+              <div class="flex flex-wrap gap-2 justify-center mb-6 relative z-10">
+                ${ballsHtml}
+                ${hasComodin ? `
+                  <div class="w-10 h-10 rounded-full bg-yellow-500/20 text-yellow-300 flex items-center justify-center font-bold shadow-[0_0_15px_rgba(234,179,8,0.4)] border border-yellow-500/50" title="Comodín">
+                    ${comodin}
+                  </div>` : ''}
+              </div>
+
+              <div class="bg-black/20 rounded-xl p-3 text-center relative z-10 backdrop-blur-sm border border-white/5">
+                ${infoPremio}
+              </div>
+
+              <div class="absolute -bottom-10 -right-10 w-32 h-32 bg-${game.color.replace('text-', '')}/10 rounded-full blur-3xl pointer-events-none"></div>
             </div>
           </div>
-        </div>
-      `).join('');
-
-      // Reiniciar Swiper si existe
-      if(window.mySwiper) window.mySwiper.destroy();
-      window.mySwiper = new Swiper(".swiper", {
-        slidesPerView: 1,
-        spaceBetween: 20,
-        breakpoints: {
-          640: { slidesPerView: 2 },
-          1024: { slidesPerView: 3 }
-        },
-        pagination: { el: ".swiper-pagination", clickable: true }
+        `;
       });
-    }
 
+      // 4. Inyectar HTML y actualizar Swiper
+      swiperWrapper.innerHTML = slidesHtml;
+      
+      if(window.mySwiper) {
+        window.mySwiper.update();
+        window.mySwiper.slideTo(0);
+      }
+    }
+    
     function renderHistory(rows) {
       const tbody = document.getElementById('history-body');
       tbody.innerHTML = rows.map(r => {
