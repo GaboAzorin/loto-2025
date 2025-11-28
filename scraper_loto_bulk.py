@@ -7,7 +7,6 @@ import time
 from datetime import datetime
 from playwright.async_api import async_playwright
 
-# Importamos tu parser (asegúrate de que loto_parser_v3.py esté en la misma carpeta)
 from loto_parser_v3 import parse_loto_flat
 
 # --- CONFIGURACIÓN ---
@@ -15,16 +14,46 @@ CSV_FILENAME = "LOTO_HISTORIAL_MAESTRO.csv"
 BASE_URL = "https://www.polla.cl/es/view/resultados"
 API_URL = "https://www.polla.cl/es/get/draw/results"
 GAME_ID_LOTO = "5271"
-
-# Sorteo inicial histórico (2016)
 SORTEO_INICIAL_DEFAULT = 3803 
 
+# 1. ORDEN FIJO (Metadata + Loto + Divisiones)
+FIXED_START_ORDER = [
+    "sorteo", "fecha", "dia", "mes", "anio", "dia_semana",
+    "LOTO_n1", "LOTO_n2", "LOTO_n3", "LOTO_n4", "LOTO_n5", "LOTO_n6", "LOTO_comodin",
+    "LOTO_GANADORES", "LOTO_MONTO", "LOTO_POZO_ACUMULADO",
+    "SUPER_QUINA_5_ACIERTOS_COMODIN_GANADORES", "SUPER_QUINA_5_ACIERTOS_COMODIN_MONTO",
+    "QUINA_5_ACIERTOS_GANADORES", "QUINA_5_ACIERTOS_MONTO",
+    "SUPER_CUATERNA_4_ACIERTOS_COMODIN_GANADORES", "SUPER_CUATERNA_4_ACIERTOS_COMODIN_MONTO",
+    "CUATERNA_4_ACIERTOS_GANADORES", "CUATERNA_4_ACIERTOS_MONTO",
+    "SUPER_TERNA_3_ACIERTOS_COMODIN_GANADORES", "SUPER_TERNA_3_ACIERTOS_COMODIN_MONTO",
+    "TERNA_3_ACIERTOS_GANADORES", "TERNA_3_ACIERTOS_MONTO",
+    "SUPER_DUPLA_2_ACIERTOS_COMODIN_GANADORES", "SUPER_DUPLA_2_ACIERTOS_COMODIN_MONTO"
+]
+
+# 2. ORDEN SEMIESTÁTICO (Juegos Principales Adicionales)
+# Aquí definimos el orden lógico de la tómbola:
+# Loto -> [Ahora Si Que Si / Recargado] -> Revancha -> Desquite
+PREFERRED_GAMES_ORDER = [
+    # AHORA SÍ QUE SÍ (Juego antiguo, prioridad alta antes de Revancha)
+    "AHORA_SI_QUE_SI_n1", "AHORA_SI_QUE_SI_n2", "AHORA_SI_QUE_SI_n3", "AHORA_SI_QUE_SI_n4", "AHORA_SI_QUE_SI_n5", "AHORA_SI_QUE_SI_n6",
+    "AHORA_SI_QUE_SI_GANADORES", "AHORA_SI_QUE_SI_MONTO", "AHORA_SI_QUE_SI_ACUMULADO",
+    
+    # RECARGADO (El sucesor moderno)
+    "RECARGADO_n1", "RECARGADO_n2", "RECARGADO_n3", "RECARGADO_n4", "RECARGADO_n5", "RECARGADO_n6",
+    "RECARGADO_6_ACIERTOS_GANADORES", "RECARGADO_6_ACIERTOS_MONTO", "RECARGADO_POZO_ACUMULADO",
+    
+    # REVANCHA
+    "REVANCHA_n1", "REVANCHA_n2", "REVANCHA_n3", "REVANCHA_n4", "REVANCHA_n5", "REVANCHA_n6",
+    "REVANCHA_GANADORES", "REVANCHA_MONTO", "REVANCHA_POZO_ACUMULADO",
+    
+    # DESQUITE
+    "DESQUITE_n1", "DESQUITE_n2", "DESQUITE_n3", "DESQUITE_n4", "DESQUITE_n5", "DESQUITE_n6",
+    "DESQUITE_GANADORES", "DESQUITE_MONTO", "DESQUITE_POZO_ACUMULADO"
+]
+
 def get_last_draw_id():
-    """
-    Determina desde qué número empezar.
-    """
     if not os.path.exists(CSV_FILENAME):
-        print("📂 No se encontró base de datos. Se creará una nueva desde cero.")
+        print("📂 Base de datos no encontrada. Creando nueva...")
         return SORTEO_INICIAL_DEFAULT - 1
     
     max_id = 0
@@ -34,115 +63,98 @@ def get_last_draw_id():
             for row in reader:
                 if row.get('sorteo') and row['sorteo'].isdigit():
                     draw_id = int(row['sorteo'])
-                    if draw_id > max_id:
-                        max_id = draw_id
-    except Exception as e:
-        print(f"⚠️ Error leyendo CSV: {e}")
-        return SORTEO_INICIAL_DEFAULT - 1
-        
+                    if draw_id > max_id: max_id = draw_id
+    except: pass
     return max_id
 
 def append_to_csv(new_rows):
-    """
-    Guarda los datos en el CSV, manejando la creación de columnas dinámicas.
-    """
-    if not new_rows:
-        return
+    if not new_rows: return
 
     existing_rows = []
-    existing_headers = []
-    
     if os.path.exists(CSV_FILENAME):
         with open(CSV_FILENAME, 'r', encoding='utf-8') as f:
             reader = csv.DictReader(f)
-            if reader.fieldnames:
-                existing_headers = reader.fieldnames
             existing_rows = list(reader)
 
-    # Detectar nuevas columnas
-    all_keys = set(existing_headers)
-    for row in new_rows:
-        all_keys.update(row.keys())
+    # Detectar claves totales
+    all_keys = set()
+    if existing_rows: all_keys.update(existing_rows[0].keys())
+    for row in new_rows: all_keys.update(row.keys())
+
+    # Eliminar precio_carton
+    if 'precio_carton' in all_keys: all_keys.remove('precio_carton')
+
+    # --- CONSTRUCCIÓN INTELIGENTE DEL HEADER ---
+    final_headers = []
     
-    final_headers = list(existing_headers)
-    for k in sorted(list(all_keys)):
-        if k not in final_headers:
-            final_headers.append(k)
-            
-    # Orden cosmético
-    priority_cols = ['sorteo', 'fecha', 'dia', 'mes', 'anio', 'dia_semana']
-    for p in reversed(priority_cols):
-        if p in final_headers:
-            final_headers.remove(p)
-            final_headers.insert(0, p)
+    # 1. Bloque Fijo (Loto)
+    for col in FIXED_START_ORDER:
+        final_headers.append(col)
+        if col in all_keys: all_keys.remove(col)
+        
+    # 2. Bloque Semiestático (Juegos conocidos en orden lógico)
+    for col in PREFERRED_GAMES_ORDER:
+        # Los agregamos SIEMPRE al header maestro para mantener la estructura visual ordenada,
+        # incluso si están vacíos en algunos sorteos.
+        final_headers.append(col)
+        if col in all_keys: all_keys.remove(col)
+
+    # 3. Bloque Dinámico (Jubilazos, Multiplicar y sorpresas)
+    # Ordenamos lo que sobra alfabéticamente (JUBILAZO_1, JUBILAZO_2...)
+    for col in sorted(list(all_keys)):
+        final_headers.append(col)
 
     all_rows = existing_rows + new_rows
-
-    print(f"💾 Guardando {len(new_rows)} registros nuevos (Total acumulado: {len(all_rows)})...")
+    print(f"💾 Guardando {len(new_rows)} nuevos (Total: {len(all_rows)})...")
+    
     with open(CSV_FILENAME, 'w', encoding='utf-8', newline='') as f:
         writer = csv.DictWriter(f, fieldnames=final_headers)
         writer.writeheader()
         writer.writerows(all_rows)
 
 async def run():
-    print("--- 🏗️ INICIANDO CARGA MASIVA DE DATOS (BULK LOAD V3) ---")
+    print("--- 🏗️ INICIANDO CARGA MASIVA (ORDEN LÓGICO) ---")
     
     last_id = get_last_draw_id()
     current_target = last_id + 1
     print(f"🚀 Objetivo inicial: Sorteo #{current_target}")
 
     async with async_playwright() as p:
-        print("Launching browser...")
+        print("Lanzando navegador...")
         browser = await p.chromium.launch(headless=False)
-        context = await browser.new_context(
-            viewport={'width': 1280, 'height': 800},
-            user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36'
-        )
+        context = await browser.new_context(viewport={'width': 1280, 'height': 800})
         page = await context.new_page()
 
-        print("🔑 Obteniendo credenciales en Polla.cl...")
+        print("🔑 Obteniendo credenciales...")
         try:
             await page.goto(BASE_URL, wait_until="domcontentloaded")
-            print("⏳ Esperando 5 segundos para carga inicial...")
             await asyncio.sleep(5)
             
-            token = await page.evaluate("""() => {
-                let input = document.querySelector('input[name="csrfToken"]');
-                return input ? input.value : null;
-            }""")
-            
+            token = await page.evaluate("document.querySelector('input[name=\"csrfToken\"]')?.value")
             if not token:
-                content = await page.content()
+                c = await page.content()
                 import re
-                match = re.search(r'csrfToken["\']\s*[:=]\s*["\']([a-zA-Z0-9]+)["\']', content)
-                token = match.group(1) if match else None
+                m = re.search(r'csrfToken["\']\s*[:=]\s*["\']([a-zA-Z0-9]+)["\']', c)
+                token = m.group(1) if m else None
 
-            if not token:
-                print("❌ No se encontró token. Revisa el navegador abierto por si hay Captcha.")
-                await asyncio.sleep(30)
-                raise Exception("No se pudo obtener el Token CSRF tras espera")
-                
+            if not token: raise Exception("Token no encontrado")
         except Exception as e:
-            print(f"❌ Error obteniendo token: {e}")
+            print(f"❌ Error Token: {e}")
             await browser.close()
             return
 
-        print(f"✅ Token capturado. Iniciando descarga masiva desde #{current_target}...")
+        print(f"✅ Token capturado. Iniciando descarga...")
 
         consecutive_errors = 0
         new_data_buffer = []
         
         while True:
-            print(f"   -> Descargando sorteo #{current_target}...", end=" ")
-            
+            print(f"   -> Sorteo #{current_target}...", end=" ")
             try:
-                # Retardo aleatorio
-                await asyncio.sleep(random.uniform(0.5, 1.5))
+                await asyncio.sleep(random.uniform(0.5, 1.5)) 
 
                 response = await page.request.post(API_URL, data={
-                    "gameId": GAME_ID_LOTO,
-                    "drawId": current_target,
-                    "csrfToken": token
+                    "gameId": GAME_ID_LOTO, "drawId": current_target, "csrfToken": token
                 }, headers={
                     "x-requested-with": "XMLHttpRequest",
                     "content-type": "application/json",
@@ -151,53 +163,43 @@ async def run():
                 })
 
                 if response.status == 200:
-                    response_text = await response.text()
-                    try:
-                        json_data = json.loads(response_text)
-                    except:
-                        json_data = {}
+                    txt = await response.text()
+                    try: json_data = json.loads(txt)
+                    except: json_data = {}
                     
-                    # CORRECCIÓN DE LA VALIDACIÓN
-                    # Ya no validamos json_data.get('id') porque suele ser null en sorteos viejos
-                    draw_num_res = json_data.get('drawNumber')
-                    
-                    if not json_data or draw_num_res != current_target:
-                         # Si el número devuelto no es el que pedimos, es un error real.
-                         preview = response_text[:100].replace('\n', ' ')
-                         print(f"⚠️ Mismatch. Pedido: {current_target}, Recibido: {draw_num_res}. Resp: {preview}...")
+                    draw_num = json_data.get('drawNumber')
+                    if not json_data or draw_num != current_target:
+                         # Solo imprimimos warning si hay mismatch
+                         # preview = txt[:50].replace('\n', ' ')
+                         print(f"⚠️ Mismatch ({draw_num}).")
                          consecutive_errors += 1
                     else:
                         print("✅ OK")
                         flat_row = parse_loto_flat(json_data)
+                        if 'precio_carton' in flat_row: del flat_row['precio_carton']
+                        
                         new_data_buffer.append(flat_row)
                         consecutive_errors = 0 
 
-                        # Guardamos cada 10 sorteos
                         if len(new_data_buffer) >= 10:
                             append_to_csv(new_data_buffer)
                             new_data_buffer = []
 
                         current_target += 1
-                        
                 else:
                     print(f"❌ HTTP {response.status}")
                     consecutive_errors += 1
-
             except Exception as e:
                 print(f"❌ Error: {e}")
                 consecutive_errors += 1
 
-            # Si fallamos 5 veces seguidas, paramos
             if consecutive_errors >= 5:
-                print("\n🛑 Fin del scraping (5 errores consecutivos o fin de historial).")
+                print("\n🛑 Fin del scraping.")
                 break
             
-        # Guardar lo último que quedó en memoria
-        if new_data_buffer:
-            append_to_csv(new_data_buffer)
-
+        if new_data_buffer: append_to_csv(new_data_buffer)
         await browser.close()
-        print("🏁 Base de datos actualizada con éxito.")
+        print("🏁 Proceso finalizado.")
 
 if __name__ == "__main__":
     asyncio.run(run())
