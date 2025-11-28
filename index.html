@@ -270,31 +270,36 @@
     // --- CARGA DE DATOS ---
     try {
   // 3. CARGAR DATOS (CSV)
-      Papa.parse('LOTO_HISTORIAL_MAESTRO.csv', {
-        download: true,
-        header: true,
-        skipEmptyLines: true, // <--- Agregamos esto para ignorar filas vacías
-        complete: function(results) {
-          allData = results.data;
-          
-          // Filtramos para asegurarnos de tomar solo filas que tengan número de sorteo
-          const validData = allData.filter(row => row.sorteo && row.sorteo.trim() !== '');
-          
-          // Tomamos el último de la lista válida
-          const lastDraw = validData[validData.length - 1];
-          
-          if(lastDraw) {
-            renderDashboard(lastDraw);
-            
-            // Actualizar el input del buscador con el número actual
-            const searchInput = document.getElementById('search');
-            if(searchInput) {
-              searchInput.value = lastDraw.sorteo;
-              searchInput.max = lastDraw.sorteo;
-            }
-          }
+    Papa.parse('LOTO_HISTORIAL_MAESTRO.csv', {
+      download: true,
+      header: true,
+      skipEmptyLines: true,
+      complete: function(results) {
+        allData = results.data;
+        
+        // 1. Filtrar filas válidas
+        const validData = allData.filter(row => row.sorteo && row.sorteo.trim() !== '');
+        
+        // 2. Cargar el último sorteo en el Dashboard principal
+        const lastDraw = validData[validData.length - 1];
+        if(lastDraw) {
+           renderDashboard(lastDraw);
+           
+           const searchInput = document.getElementById('search');
+           if(searchInput) {
+             searchInput.value = lastDraw.sorteo;
+             searchInput.max = lastDraw.sorteo;
+           }
         }
-      });
+
+        // 3. NUEVO: Cargar la tabla de historial (Invertimos para ver el más nuevo arriba)
+        renderHistory(validData.slice().reverse()); 
+        
+        // 4. Quitar mensaje de "Cargando..."
+        const statusText = document.getElementById('status-text');
+        if(statusText) statusText.style.display = 'none';
+      }
+    });
     } catch(e) {
       console.error("Error inicial:", e);
       document.getElementById('status-text').textContent = "Error al iniciar la carga de datos.";
@@ -407,15 +412,37 @@
 
     function renderHistory(rows) {
       const tbody = document.getElementById('history-body');
-      tbody.innerHTML = rows.map(r => {
-        const nums = getNums(r, 'LOTO').join(' • ');
-        const winner = (+r.LOTO_GANADORES > 0);
+      
+      // Limitamos a los últimos 100 sorteos para que la página no se ponga lenta
+      const rowsToShow = rows.slice(0, 100);
+
+      tbody.innerHTML = rowsToShow.map(r => {
+        // Extraer y ordenar números del LOTO para la lista (Menor a Mayor se lee mejor en listas)
+        let nums = [];
+        for(let i=1; i<=6; i++) {
+           if(r[`LOTO_n${i}`]) nums.push(parseInt(r[`LOTO_n${i}`]));
+        }
+        nums.sort((a, b) => a - b);
+        
+        // Formatear datos
+        const numsStr = nums.join(' - ');
+        const winner = (parseInt(r.LOTO_GANADORES) > 0);
+        const dateStr = r.fecha ? r.fecha.split(' ')[0] : '-';
+
+        // Generar HTML de la fila
         return `
-          <tr style="cursor:pointer" onclick="loadDraw(${r.sorteo})">
-            <td style="color:var(--neon-cyan)">#${r.sorteo}</td>
-            <td>${r.fecha ? r.fecha.split(' ')[0] : '-'}</td>
-            <td>${nums} ${r.LOTO_comodin ? `<span style="color:#ff3b5c">+ ${r.LOTO_comodin}</span>` : ''}</td>
-            <td>${winner ? '🏆 GANADOR' : 'Vacante'}</td>
+          <tr style="cursor:pointer; border-bottom: 1px solid rgba(255,255,255,0.1);" onclick="loadDraw('${r.sorteo}')" class="hover:bg-white/5 transition">
+            <td style="padding:1rem; color:#00f2ff; font-weight:bold;">#${r.sorteo}</td>
+            <td style="padding:1rem; color:#a0aec0;">${dateStr}</td>
+            <td style="padding:1rem; color:white; font-family:monospace; font-size:1.1rem;">
+                ${numsStr} 
+                ${r.LOTO_comodin ? `<span style="color:#ff3b5c; margin-left:8px; font-weight:bold;">+ ${r.LOTO_comodin}</span>` : ''}
+            </td>
+            <td style="padding:1rem;">
+                ${winner 
+                  ? '<span style="background:rgba(0,255,157,0.2); color:#00ff9d; padding:4px 8px; border-radius:99px; font-size:0.8rem; font-weight:bold;">🏆 GANADOR</span>' 
+                  : '<span style="color:#718096; font-size:0.9rem;">Vacante</span>'}
+            </td>
           </tr>
         `;
       }).join('');
