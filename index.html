@@ -148,8 +148,8 @@
       </div>
 
       <div class="hero-stats">
-        <div><div class="stat-val" id="dash-money">$0</div><div class="stat-lbl">Total Repartido Estimado</div></div>
-        <div><div class="stat-val" id="dash-winners">0</div><div class="stat-lbl">Ganadores Totales</div></div>
+        <div><div class="stat-val" id="dash-money">$0</div><div class="stat-lbl">Total repartido estimado</div></div>
+        <div><div class="stat-val" id="dash-winners">0</div><div class="stat-lbl">Ganadores totales</div></div>
       </div>
 
       <!-- Carrusel de Juegos -->
@@ -307,15 +307,48 @@
 
     // --- RENDERIZADO ---
     function renderDashboard(row) {
-      // 1. Actualizar Textos
-      // Asegúrate que estos IDs existan en tu HTML actual
+      // --- CÁLCULO DE TOTALES ---
+      let totalRepartido = 0;
+      let totalGanadores = 0;
+
+      // Recorremos todas las claves (columnas) de la fila actual
+      Object.keys(row).forEach(key => {
+        // Si la columna es de contadores de ganadores (ej: LOTO_GANADORES, RECARGADO_GANADORES)
+        if (key.endsWith('_GANADORES')) {
+          const winners = parseInt(row[key]) || 0;
+          
+          if (winners > 0) {
+            // 1. Sumar al total de ganadores
+            totalGanadores += winners;
+
+            // 2. Buscar el monto correspondiente para sumar al dinero repartido
+            // La lógica es: Si la llave es "X_GANADORES", buscamos "X_MONTO"
+            const prefix = key.replace('_GANADORES', '');
+            const amountKey = prefix + '_MONTO';
+            const amount = parseInt(row[amountKey]) || 0;
+
+            // Sumamos: Cantidad de ganadores * Monto del premio
+            totalRepartido += (winners * amount);
+          }
+        }
+      });
+
+      // --- ACTUALIZACIÓN DEL DOM ---
+      
+      // 1. Fecha y Número
       const elDate = document.getElementById('dash-date');
       const elTitle = document.getElementById('dash-title');
-      
       if(elDate) elDate.innerText = row.fecha ? row.fecha.split(' ')[0] : '---';
       if(elTitle) elTitle.innerText = `Sorteo #${row.sorteo}`;
 
-      // 2. Configuración de juegos
+      // 2. Totales calculados
+      const elMoney = document.getElementById('dash-money');
+      const elWinners = document.getElementById('dash-winners');
+      
+      if(elMoney) elMoney.innerText = formatMoney(totalRepartido);
+      if(elWinners) elWinners.innerText = totalGanadores.toLocaleString('es-CL');
+
+      // 3. Configuración de juegos (Swiper)
       const gamesConfig = [
         { key: 'LOTO', title: 'LOTO CLÁSICO', color: 'text-yellow-400' },
         { key: 'RECARGADO', title: 'RECARGADO', color: 'text-orange-400' },
@@ -328,33 +361,27 @@
       let slidesHtml = '';
 
       gamesConfig.forEach(game => {
-        // Validar si existe el juego
         const n1 = row[`${game.key}_n1`];
         if (!n1 || n1.toString().trim() === '') return;
 
-        // --- LÓGICA DE ORDENAMIENTO (MAYOR A MENOR) ---
+        // Ordenar números de mayor a menor
         let numbers = [];
         for(let i=1; i<=6; i++) {
            const val = row[`${game.key}_n${i}`];
            if(val) numbers.push(parseInt(val));
         }
-        // Ordenar descendente (b - a)
         numbers.sort((a, b) => b - a);
 
-        // Generar HTML de las bolitas usando la clase CSS .ball y el tipo de juego
         let ballsHtml = numbers.map(num => 
             `<div class="ball ${game.key}">${num}</div>`
         ).join('');
 
-        // --- LÓGICA COMODÍN ---
         const comodin = row[`${game.key}_comodin`];
         const hasComodin = (comodin && comodin.toString().trim() !== '' && comodin != '0');
-        // El comodín usa su propia clase .ball.COMODIN
         const comodinHtml = hasComodin 
             ? `<div class="ball COMODIN" title="Comodín">${comodin}</div>` 
             : '';
 
-        // --- INFO PREMIO ---
         const ganadores = row[`${game.key}_GANADORES`];
         const monto = row[`${game.key}_MONTO`];
         
@@ -367,22 +394,18 @@
                          <div class="text-lg font-mono text-white">VACANTE</div>`;
         }
 
-        // --- CONSTRUCCIÓN DEL SLIDE ---
         slidesHtml += `
           <div class="swiper-slide p-1">
             <div class="glass-panel rounded-2xl p-6 h-full flex flex-col justify-between relative overflow-hidden group" style="background: rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);">
-              
               <div class="relative z-10 mb-4 border-b border-white/10 pb-2">
                 <h3 class="text-xl font-black italic tracking-tighter ${game.color} drop-shadow-lg">
                   ${game.title}
                 </h3>
               </div>
-
               <div class="balls relative z-10 justify-center mb-6">
                 ${ballsHtml}
                 ${comodinHtml}
               </div>
-
               <div class="bg-black/20 rounded-xl p-3 text-center relative z-10 backdrop-blur-sm border border-white/5">
                 ${infoPremio}
               </div>
@@ -393,7 +416,6 @@
 
       swiperWrapper.innerHTML = slidesHtml;
       
-      // Reinicializar Swiper
       if(window.mySwiper) {
         window.mySwiper.update();
         window.mySwiper.slideTo(0);
