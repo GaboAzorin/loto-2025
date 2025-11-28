@@ -43,9 +43,9 @@
     .time-num { font-size: 2rem; font-weight: 900; color: var(--neon-cyan); }
     .time-label { font-size: 0.7rem; color: var(--text-muted); letter-spacing: 1px; margin-top: 5px; }
 
-    /* --- Buscador y Toggle --- */
+    /* --- Buscador (Arriba) --- */
     .search-wrapper {
-      max-width: 500px; margin: 0 auto 3rem; display: flex; flex-direction: column; align-items: center; gap: 1.5rem;
+      max-width: 500px; margin: 0 auto 3rem; text-align: center;
     }
     #search {
       width: 100%; padding: 1rem 1.5rem; border-radius: 99px;
@@ -53,6 +53,12 @@
       font-size: 1.1rem; text-align: center;
     }
     #search:focus { outline: none; border-color: var(--neon-cyan); box-shadow: 0 0 20px rgba(0,242,255,0.2); }
+
+    /* --- Controles de Tabla (Abajo) --- */
+    .table-controls {
+      display: flex; justify-content: flex-end; align-items: center; 
+      margin-bottom: 1rem; padding: 0 0.5rem;
+    }
 
     /* Toggle Switch Styles */
     .toggle-switch {
@@ -93,7 +99,6 @@
     /* --- Swiper --- */
     .swiper { padding: 10px; padding-bottom: 40px !important; }
     
-    /* Bolitas */
     .ball {
       width: 40px; height: 40px; border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
@@ -135,12 +140,6 @@
 
     <div class="search-wrapper">
       <input type="number" id="search" placeholder="🔍 Buscar sorteo (ej: 5352)..." />
-      
-      <label class="toggle-switch">
-        <input type="checkbox" id="filter-winners">
-        <span class="slider"></span>
-        <span class="label-text">Ver solo con Ganadores</span>
-      </label>
     </div>
 
     <div class="hero" id="dashboard">
@@ -166,6 +165,14 @@
       </div>
     </div>
 
+    <div class="table-controls">
+      <label class="toggle-switch">
+        <input type="checkbox" id="filter-winners">
+        <span class="slider"></span>
+        <span class="label-text">Ver solo con Ganadores</span>
+      </label>
+    </div>
+
     <div class="table-wrapper">
       <div class="table-scroll">
         <table>
@@ -188,16 +195,13 @@
   <script>
     lucide.createIcons();
     
-    // --- VARIABLES GLOBALES ---
     let allData = [];
-    let sortedData = []; // Guardaremos aquí los datos limpios y ordenados
+    let sortedData = [];
 
-    // --- FUNCIONES UTILS ---
     function formatMoney(n) {
       return '$' + Number(n).toLocaleString('es-CL');
     }
 
-    // --- 1. CARGA DE DATOS (PapaParse) ---
     try {
       Papa.parse('LOTO_HISTORIAL_MAESTRO.csv', {
         download: true,
@@ -206,27 +210,26 @@
         complete: function(results) {
           allData = results.data;
           
-          // Filtrar filas válidas (que tengan número de sorteo)
           const validData = allData.filter(row => row.sorteo && row.sorteo.trim() !== '');
-          
-          // Cargar el último sorteo en el Dashboard
           const lastDraw = validData[validData.length - 1];
+          
           if(lastDraw) {
              renderDashboard(lastDraw);
+             // CORRECCIÓN: Comentamos/Borramos la línea que autocompletubala el buscador
+             // const searchInput = document.getElementById('search');
+             // if(searchInput) {
+             //   searchInput.value = lastDraw.sorteo; // <-- ESTO ERA LO QUE TAPABA EL PLACEHOLDER
+             //   searchInput.max = lastDraw.sorteo;
+             // }
+             
+             // Solo establecemos el max para validación HTML, pero no el value visual
              const searchInput = document.getElementById('search');
-             if(searchInput) {
-               searchInput.value = lastDraw.sorteo;
-               searchInput.max = lastDraw.sorteo;
-             }
+             if(searchInput) searchInput.max = lastDraw.sorteo;
           }
 
-          // Preparar datos para historial (Invertir para ver el más nuevo arriba)
           sortedData = validData.slice().reverse();
-          
-          // Renderizar tabla inicial
           updateHistoryTable();
           
-          // Ocultar mensaje de carga
           const statusText = document.getElementById('status-text');
           if(statusText) statusText.style.display = 'none';
         }
@@ -236,9 +239,7 @@
       document.getElementById('status-text').textContent = "Error al iniciar la carga de datos.";
     }
 
-    // --- 2. RENDER DASHBOARD (Tarjetas) ---
     function renderDashboard(row) {
-      // A. CÁLCULOS DE TOTALES
       let totalRepartido = 0;
       let totalGanadores = 0;
 
@@ -255,7 +256,6 @@
         }
       });
 
-      // B. ACTUALIZAR TEXTOS
       const elDate = document.getElementById('dash-date');
       const elTitle = document.getElementById('dash-title');
       const elMoney = document.getElementById('dash-money');
@@ -266,7 +266,6 @@
       if(elMoney) elMoney.innerText = formatMoney(totalRepartido);
       if(elWinners) elWinners.innerText = totalGanadores.toLocaleString('es-CL');
 
-      // C. CONFIGURACIÓN TARJETAS
       const gamesConfig = [
         { key: 'LOTO', title: 'LOTO CLÁSICO', color: '#facc15' },
         { key: 'RECARGADO', title: 'RECARGADO', color: '#fbbf24' },
@@ -282,7 +281,6 @@
         const n1 = row[`${game.key}_n1`];
         if (!n1 || n1.toString().trim() === '') return;
 
-        // Ordenar números: Menor a Mayor
         let numbers = [];
         for(let i=1; i<=6; i++) {
            const val = row[`${game.key}_n${i}`];
@@ -290,19 +288,16 @@
         }
         numbers.sort((a, b) => a - b);
 
-        // Bolitas
         let ballsHtml = numbers.map(num => 
             `<div class="ball ${game.key}" style="transform: scale(1);">${num}</div>`
         ).join('');
 
-        // Comodín
         const comodin = row[`${game.key}_comodin`];
         const hasComodin = (comodin && comodin.toString().trim() !== '' && comodin != '0');
         const comodinHtml = hasComodin 
             ? `<div class="ball COMODIN" title="Comodín">${comodin}</div>` 
             : '';
 
-        // Footer (Ganador vs Vacante)
         const ganadores = parseInt(row[`${game.key}_GANADORES`]) || 0;
         const monto = parseInt(row[`${game.key}_MONTO`]) || 0;
         
@@ -331,32 +326,24 @@
            `;
         }
 
-        // Estructura Slide
         slidesHtml += `
           <div class="swiper-slide" style="height: auto; padding: 5px;">
             <div style="position: relative; display: flex; flex-direction: column; height: 100%; background: #0f1525; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 1.5rem; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);">
-              
               <div style="position: relative; z-index: 10; text-align: center; margin-bottom: 1.5rem;">
                 <h3 style="font-size: 1.5rem; font-weight: 900; font-style: italic; color: ${game.color}; text-shadow: 0 4px 6px rgba(0,0,0,0.3);">
                   ${game.title}
                 </h3>
               </div>
-
               <div style="position: relative; z-index: 10; display: flex; flex-direction: column; align-items: center; margin-bottom: 1.5rem;">
-                
                 <div style="display: grid; grid-template-columns: auto auto; gap: 12px; justify-content: center;">
                     ${ballsHtml}
                 </div>
-
                 ${hasComodin ? `
                   <div style="display: flex; justify-content: center; margin-top: 15px; padding-top: 15px; border-top: 1px dashed rgba(255,255,255,0.1); width: 60%;">
                     ${comodinHtml}
                   </div>` : ''}
-
               </div>
-
               ${footerHtml}
-
             </div>
           </div>
         `;
@@ -364,7 +351,6 @@
 
       swiperWrapper.innerHTML = slidesHtml;
       
-      // Init Swiper
       if(window.mySwiper) {
         window.mySwiper.update();
         window.mySwiper.slideTo(0);
@@ -383,27 +369,20 @@
       }
     }
 
-    // --- 3. LÓGICA FILTRO E HISTORIAL ---
     function updateHistoryTable() {
       const checkbox = document.getElementById('filter-winners');
       const showWinnersOnly = checkbox ? checkbox.checked : false;
-
       let dataToRender = sortedData;
 
       if (showWinnersOnly) {
-        // Filtrar donde LOTO_GANADORES > 0
         dataToRender = sortedData.filter(r => parseInt(r.LOTO_GANADORES) > 0);
       }
-
-      // Renderizar los primeros 100 del resultado filtrado
       renderHistory(dataToRender.slice(0, 100));
     }
 
     function renderHistory(rows) {
       const tbody = document.getElementById('history-body');
-      
       tbody.innerHTML = rows.map(r => {
-        // Ordenar números
         let nums = [];
         for(let i=1; i<=6; i++) {
            if(r[`LOTO_n${i}`]) nums.push(parseInt(r[`LOTO_n${i}`]));
@@ -432,11 +411,9 @@
       }).join('');
     }
 
-    // Eventos
     document.getElementById('search').addEventListener('change', (e) => {
       loadDraw(e.target.value);
     });
-
     document.getElementById('filter-winners').addEventListener('change', updateHistoryTable);
 
     window.loadDraw = (id) => {
@@ -447,25 +424,21 @@
       }
     }
 
-    // --- 4. TIMER ---
     function initTimer() {
       const update = () => {
         const now = new Date();
         let next = new Date();
         next.setHours(21, 0, 0, 0);
-        
         while(![0,2,4].includes(next.getDay()) || next < now) {
           next.setDate(next.getDate() + 1);
           next.setHours(21, 0, 0, 0);
         }
-        
         const diff = next - now;
-        
         const d = Math.floor(diff / (1000*60*60*24));
         const h = Math.floor((diff / (1000*60*60)) % 24);
         const m = Math.floor((diff / (1000*60)) % 60);
         const s = Math.floor((diff / 1000) % 60);
-
+        
         const elDays = document.getElementById('days');
         const elHours = document.getElementById('hours');
         const elMins = document.getElementById('mins');
@@ -476,7 +449,6 @@
         if(elMins) elMins.innerText = m.toString().padStart(2, '0');
         if(elSecs) elSecs.innerText = s.toString().padStart(2, '0');
       };
-
       setInterval(update, 1000);
       update();
     }
