@@ -268,25 +268,30 @@
 
     // --- CARGA DE DATOS ---
     try {
-      Papa.parse("./LOTO_HISTORIAL_MAESTRO.csv", {
+  // 3. CARGAR DATOS (CSV)
+      Papa.parse('LOTO_HISTORIAL_MAESTRO.csv', {
         download: true,
         header: true,
-        skipEmptyLines: true,
-        complete: (res) => {
-          allData = res.data.sort((a,b) => (+b.sorteo) - (+a.sorteo));
+        skipEmptyLines: true, // <--- Agregamos esto para ignorar filas vacías
+        complete: function(results) {
+          allData = results.data;
           
-          if(allData.length > 0) {
-            renderDashboard(allData[0]);
-            renderHistory(allData.slice(0, 50));
-            document.getElementById('status-text').innerHTML = `Base de datos cargada: <strong>${allData.length}</strong> sorteos disponibles.`;
-          } else {
-            document.getElementById('status-text').textContent = "No hay datos en el CSV. Ejecuta el scraper.";
+          // Filtramos para asegurarnos de tomar solo filas que tengan número de sorteo
+          const validData = allData.filter(row => row.sorteo && row.sorteo.trim() !== '');
+          
+          // Tomamos el último de la lista válida
+          const lastDraw = validData[validData.length - 1];
+          
+          if(lastDraw) {
+            renderDashboard(lastDraw);
+            
+            // Actualizar el input del buscador con el número actual
+            const searchInput = document.getElementById('search');
+            if(searchInput) {
+              searchInput.value = lastDraw.sorteo;
+              searchInput.max = lastDraw.sorteo;
+            }
           }
-          initTimer();
-        },
-        error: (err) => {
-          console.error("Error PapaParse:", err);
-          document.getElementById('status-text').innerHTML = `<span style="color:var(--rose)">Error: No se encontró la base de datos (CSV).</span>`;
         }
       });
     } catch(e) {
@@ -380,7 +385,7 @@
         window.mySwiper.slideTo(0);
       }
     }
-    
+
     function renderHistory(rows) {
       const tbody = document.getElementById('history-body');
       tbody.innerHTML = rows.map(r => {
