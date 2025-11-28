@@ -4,13 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>LOTO AI • Dashboard Histórico</title>
-  <meta name="description" content="Visualizador histórico inteligente del Loto Chile"/>
-
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet"/>
   
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet"/>
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"/>
 
@@ -18,16 +15,11 @@
     :root {
       --bg: #050a14;
       --card: rgba(20, 30, 50, 0.65); 
-      --card-hover: rgba(30, 40, 70, 0.8);
       --border: rgba(255, 255, 255, 0.1);
       --text: #ffffff;
       --text-muted: #a0aec0;
-      
       --neon-cyan: #00f2ff;
-      --neon-pink: #ff00c8;
-      --neon-purple: #bd00ff;
       --gold: #ffd700;
-      --rose: #ff3864;
     }
 
     * { margin:0; padding:0; box-sizing:border-box; }
@@ -36,84 +28,25 @@
       background: var(--bg);
       color: var(--text);
       min-height: 100vh;
-      background-image: radial-gradient(circle at 50% 0%, rgba(0, 242, 255, 0.15) 0%, transparent 60%);
+      background-image: radial-gradient(circle at 50% 0%, rgba(0, 242, 255, 0.1) 0%, transparent 60%);
+      padding-bottom: 50px;
     }
 
     .container { max-width: 1400px; margin: 0 auto; padding: 2rem 1.5rem; }
 
-    /* Timer */
+    /* --- Timer --- */
     .timer { display: flex; justify-content: center; gap: 1rem; margin: 2rem 0; flex-wrap: wrap; }
     .time-box {
       background: var(--card); border: 1px solid var(--border);
-      border-radius: 1rem; padding: 1rem 1.5rem; text-align: center; min-width: 100px;
+      border-radius: 1rem; padding: 1rem 1.5rem; text-align: center; min-width: 90px;
     }
-    .time-num { font-size: 2.5rem; font-weight: 900; color: var(--neon-cyan); }
-    .time-label { font-size: 0.8rem; color: var(--text-muted); letter-spacing: 1px; }
+    .time-num { font-size: 2rem; font-weight: 900; color: var(--neon-cyan); }
+    .time-label { font-size: 0.7rem; color: var(--text-muted); letter-spacing: 1px; margin-top: 5px; }
 
-    /* Hero */
-    .hero {
-      background: var(--card); border: 1px solid var(--border);
-      border-radius: 2rem; padding: 2rem; margin: 2rem 0;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    /* --- Buscador y Toggle --- */
+    .search-wrapper {
+      max-width: 500px; margin: 0 auto 3rem; display: flex; flex-direction: column; align-items: center; gap: 1.5rem;
     }
-    .hero-header { text-align: center; margin-bottom: 2rem; }
-    .hero-title { font-size: 3rem; font-weight: 900; background: linear-gradient(to right, #fff, var(--neon-cyan)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    .hero-date { color: var(--text-muted); font-size: 1.2rem; }
-
-    .hero-stats {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap: 1.5rem; margin-bottom: 2rem;
-      text-align: center;
-    }
-    .stat-val { font-size: 2rem; font-weight: 700; color: var(--neon-pink); }
-    .stat-lbl { color: var(--text-muted); font-size: 0.9rem; }
-
-    /* Swiper & Games */
-    .swiper { padding-bottom: 3rem !important; }
-    .game-slide { 
-      background: rgba(10, 15, 30, 0.6); 
-      border: 1px solid var(--border);
-      padding: 1.5rem; border-radius: 1.5rem; height: 100%;
-      display: flex; flex-direction: column; justify-content: space-between;
-    }
-    .game-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
-    .game-name { font-size: 1.4rem; font-weight: 700; color: white; }
-    .game-pozo { font-size: 0.9rem; color: var(--gold); font-family: 'JetBrains Mono', monospace; }
-
-    .balls { display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: center; margin: 1rem 0; }
-    .ball {
-      width: 45px; height: 45px; border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      font-weight: 700; font-size: 1.1rem; color: white;
-      background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
-      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-    }
-    /* Colores dinámicos */
-    .ball.LOTO { background: linear-gradient(135deg, #ffd700, #ff8c00); text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
-    .ball.RECARGADO { background: linear-gradient(135deg, #ff00c8, #ff0055); }
-    .ball.REVANCHA { background: linear-gradient(135deg, #bd00ff, #5d00ff); }
-    .ball.DESQUITE { background: linear-gradient(135deg, #00f2ff, #0066ff); }
-    .ball.JUBILAZO { background: linear-gradient(135deg, #00ff9d, #00aa55); color: #003311; }
-    .ball.MULTIPLICAR { background: white; color: black; font-weight: 900; border-radius: 10px; }
-    .ball.COMODIN { border: 2px solid #ff3b5c; background: transparent; color: #ff3b5c; }
-
-    .winner-tag { 
-      background: rgba(0, 255, 157, 0.15); color: #00ff9d; 
-      padding: 0.2rem 0.6rem; border-radius: 99px; font-size: 0.8rem; font-weight: 700;
-    }
-
-    /* Tabla */
-    .table-wrapper { 
-      background: var(--card); border: 1px solid var(--border);
-      border-radius: 1.5rem; overflow: hidden; margin-top: 3rem;
-    }
-    .table-scroll { max-height: 600px; overflow-y: auto; }
-    table { width: 100%; border-collapse: collapse; }
-    th { position: sticky; top: 0; background: #0a1020; padding: 1rem; text-align: left; color: var(--neon-cyan); z-index: 10;}
-    td { padding: 1rem; border-bottom: 1px solid var(--border); }
-    tr:hover { background: rgba(255,255,255,0.03); }
-
-    /* Buscador */
-    .search-container { max-width: 500px; margin: 0 auto 2rem; position: relative; }
     #search {
       width: 100%; padding: 1rem 1.5rem; border-radius: 99px;
       background: var(--card); border: 1px solid var(--border); color: white;
@@ -121,13 +54,78 @@
     }
     #search:focus { outline: none; border-color: var(--neon-cyan); box-shadow: 0 0 20px rgba(0,242,255,0.2); }
 
-    .status-bar { text-align: center; margin-top: 3rem; color: var(--text-muted); font-size: 0.9rem; }
+    /* Toggle Switch Styles */
+    .toggle-switch {
+      position: relative; display: flex; align-items: center; gap: 10px; cursor: pointer; user-select: none;
+    }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+    .slider {
+      position: relative; width: 44px; height: 24px;
+      background-color: rgba(255,255,255,0.1); border-radius: 34px;
+      transition: .4s; border: 1px solid rgba(255,255,255,0.2);
+    }
+    .slider:before {
+      position: absolute; content: ""; height: 18px; width: 18px;
+      left: 2px; bottom: 2px; background-color: white;
+      border-radius: 50%; transition: .4s;
+    }
+    input:checked + .slider { background-color: rgba(0, 255, 157, 0.4); border-color: #00ff9d; }
+    input:checked + .slider:before { transform: translateX(20px); background-color: #00ff9d; box-shadow: 0 0 10px #00ff9d; }
+    .label-text { font-size: 0.9rem; color: var(--text-muted); transition: color 0.3s; }
+    input:checked ~ .label-text { color: #00ff9d; font-weight: bold; }
+
+    /* --- Hero Dashboard --- */
+    .hero {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 2rem; padding: 2rem; margin-bottom: 3rem;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    }
+    .hero-header { text-align: center; margin-bottom: 2rem; }
+    .hero-title { font-size: 2.5rem; font-weight: 900; color: white; margin: 0.5rem 0; }
+    .hero-date { color: var(--text-muted); font-size: 1.1rem; }
+
+    .hero-stats {
+      display: flex; flex-wrap: wrap; justify-content: center; gap: 3rem; margin-bottom: 3rem; text-align: center;
+    }
+    .stat-val { font-size: 2rem; font-weight: 700; color: #ff00c8; }
+    .stat-lbl { color: var(--text-muted); font-size: 0.9rem; }
+
+    /* --- Swiper --- */
+    .swiper { padding: 10px; padding-bottom: 40px !important; }
+    
+    /* Bolitas */
+    .ball {
+      width: 40px; height: 40px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 1rem; color: white;
+      box-shadow: inset 0 -3px 8px rgba(0,0,0,0.4), 0 4px 8px rgba(0,0,0,0.3);
+      border: 1px solid rgba(255,255,255,0.3);
+    }
+    .ball.LOTO { background: radial-gradient(circle at 30% 30%, #ffd700, #bfa100); text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
+    .ball.RECARGADO { background: radial-gradient(circle at 30% 30%, #ff5cb4, #c90076); }
+    .ball.REVANCHA { background: radial-gradient(circle at 30% 30%, #d67aff, #8a00e0); }
+    .ball.DESQUITE { background: radial-gradient(circle at 30% 30%, #5ceaff, #0088cc); }
+    .ball.AHORA_SI_QUE_SI { background: radial-gradient(circle at 30% 30%, #22d3ee, #0891b2); }
+    .ball.COMODIN { background: transparent; border: 2px solid #ff3b5c; color: #ff3b5c; box-shadow: 0 0 10px rgba(255, 59, 92, 0.3); }
+
+    /* --- Tabla Historial --- */
+    .table-wrapper { 
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 1.5rem; overflow: hidden;
+    }
+    .table-scroll { max-height: 600px; overflow-y: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th { position: sticky; top: 0; background: #0a1020; padding: 1rem; text-align: left; color: var(--neon-cyan); z-index: 10; font-size: 0.9rem; text-transform: uppercase; }
+    td { padding: 1rem; border-bottom: 1px solid var(--border); font-size: 0.95rem; }
+    tr:hover { background: rgba(255,255,255,0.03); }
+    
+    .status-bar { text-align: center; margin-top: 2rem; color: var(--text-muted); font-size: 0.8rem; }
   </style>
 </head>
 <body>
 
   <div class="container">
-    <!-- Timer -->
+    
     <div class="timer">
       <div class="time-box"><div class="time-num" id="days">00</div><div class="time-label">DÍAS</div></div>
       <div class="time-box"><div class="time-num" id="hours">00</div><div class="time-label">HRS</div></div>
@@ -135,12 +133,16 @@
       <div class="time-box"><div class="time-num" id="secs">00</div><div class="time-label">SEG</div></div>
     </div>
 
-    <!-- Buscador -->
-    <div class="search-container">
+    <div class="search-wrapper">
       <input type="number" id="search" placeholder="🔍 Buscar sorteo (ej: 5352)..." />
+      
+      <label class="toggle-switch">
+        <input type="checkbox" id="filter-winners">
+        <span class="slider"></span>
+        <span class="label-text">Ver solo con Ganadores</span>
+      </label>
     </div>
 
-    <!-- Dashboard Principal -->
     <div class="hero" id="dashboard">
       <div class="hero-header">
         <div class="hero-date" id="dash-date">Cargando...</div>
@@ -148,18 +150,22 @@
       </div>
 
       <div class="hero-stats">
-        <div><div class="stat-val" id="dash-money">$0</div><div class="stat-lbl">Total repartido estimado</div></div>
-        <div><div class="stat-val" id="dash-winners">0</div><div class="stat-lbl">Ganadores totales</div></div>
+        <div>
+            <div class="stat-val" id="dash-money">$0</div>
+            <div class="stat-lbl">Total repartido estimado</div>
+        </div>
+        <div>
+            <div class="stat-val" id="dash-winners">0</div>
+            <div class="stat-lbl">Ganadores totales</div>
+        </div>
       </div>
 
-      <!-- Carrusel de Juegos -->
       <div class="swiper">
         <div class="swiper-wrapper" id="games-container"></div>
         <div class="swiper-pagination"></div>
       </div>
     </div>
 
-    <!-- Historial -->
     <div class="table-wrapper">
       <div class="table-scroll">
         <table>
@@ -181,133 +187,58 @@
 
   <script>
     lucide.createIcons();
+    
+    // --- VARIABLES GLOBALES ---
     let allData = [];
+    let sortedData = []; // Guardaremos aquí los datos limpios y ordenados
 
-    // --- LÓGICA DINÁMICA DE JUEGOS ---
-    function detectGamesInRow(row) {
-      const games = [];
-      const keys = Object.keys(row);
-
-      // 1. Siempre buscar LOTO
-      if (row.LOTO_n1) {
-        games.push({
-          id: 'LOTO', name: 'Loto Clásico', type: 'LOTO',
-          nums: getNums(row, 'LOTO'),
-          wild: row.LOTO_comodin,
-          winners: +row.LOTO_GANADORES || 0,
-          amount: +row.LOTO_MONTO || 0,
-          pozo: row.LOTO_POZO_ACUMULADO
-        });
-      }
-
-      // 2. Buscar Subjuegos estándar (Recargado, Revancha, Desquite, Ahora si que si)
-      // Buscamos cualquier columna que termine en _n1 y no sea LOTO ni JUBILAZO
-      keys.forEach(k => {
-        if (k.endsWith('_n1') && !k.startsWith('LOTO') && !k.includes('JUBILAZO')) {
-          const prefix = k.replace('_n1', '');
-          // Mapeo de nombres para mostrar bonito
-          let cleanName = prefix.replace(/_/g, ' '); 
-          if(prefix === 'RECARGADO') cleanName = 'Recargado';
-          if(prefix === 'REVANCHA') cleanName = 'Revancha';
-          if(prefix === 'DESQUITE') cleanName = 'Desquite';
-
-          // Buscar columnas de premios correspondientes
-          // Nota: Tu parser a veces usa nombres largos para los premios (ej: RECARGADO_6_ACIERTOS_GANADORES)
-          // Intentamos encontrar la columna de ganadores más parecida
-          let winnersCol = keys.find(wk => wk.startsWith(prefix) && wk.includes('GANADORES'));
-          let amountCol = keys.find(ak => ak.startsWith(prefix) && ak.includes('MONTO'));
-          let pozoCol = keys.find(pk => pk.startsWith(prefix) && pk.includes('POZO'));
-
-          games.push({
-            id: prefix, name: cleanName, type: prefix,
-            nums: getNums(row, prefix),
-            winners: +row[winnersCol] || 0,
-            amount: +row[amountCol] || 0,
-            pozo: row[pozoCol]
-          });
-        }
-      });
-
-      // 3. Buscar Jubilazos (JUBILAZO_1, JUBILAZO_2, JUBILAZO_50ANOS...)
-      keys.filter(k => k.includes('JUBILAZO') && k.endsWith('_n1')).forEach(k => {
-        const prefix = k.replace('_n1', '');
-        let name = "Jubilazo";
-        if (prefix.includes('50ANOS')) name = "Jubilazo 50 Años";
-        
-        // Numeración visual (Jubilazo #1, #2...)
-        const parts = prefix.split('_');
-        const num = parts[parts.length-1];
-        if(!isNaN(num)) name += ` #${num}`;
-
-        games.push({
-          id: prefix, name: name, type: 'JUBILAZO',
-          nums: getNums(row, prefix),
-          winners: 0, amount: 0 // Jubilazos suelen ser sueldos, difícil trackear monto total aquí
-        });
-      });
-
-      // 4. Buscar Multiplicar
-      if (row.MULTIPLICAR_FACTOR) {
-        games.push({
-          id: 'MULTI', name: 'Multiplicar', type: 'MULTIPLICAR',
-          nums: [row.MULTIPLICAR_FACTOR],
-          isSpecial: true
-        });
-      }
-
-      return games;
+    // --- FUNCIONES UTILS ---
+    function formatMoney(n) {
+      return '$' + Number(n).toLocaleString('es-CL');
     }
 
-    function getNums(row, prefix) {
-      const nums = [];
-      for(let i=1; i<=6; i++) {
-        const val = row[`${prefix}_n${i}`];
-        if(val) nums.push(val);
-      }
-      return nums;
-    }
-
-    // --- CARGA DE DATOS ---
+    // --- 1. CARGA DE DATOS (PapaParse) ---
     try {
-  // 3. CARGAR DATOS (CSV)
-    Papa.parse('LOTO_HISTORIAL_MAESTRO.csv', {
-      download: true,
-      header: true,
-      skipEmptyLines: true,
-      complete: function(results) {
-        allData = results.data;
-        
-        // 1. Filtrar filas válidas
-        const validData = allData.filter(row => row.sorteo && row.sorteo.trim() !== '');
-        
-        // 2. Cargar el último sorteo en el Dashboard principal
-        const lastDraw = validData[validData.length - 1];
-        if(lastDraw) {
-           renderDashboard(lastDraw);
-           
-           const searchInput = document.getElementById('search');
-           if(searchInput) {
-             searchInput.value = lastDraw.sorteo;
-             searchInput.max = lastDraw.sorteo;
-           }
-        }
+      Papa.parse('LOTO_HISTORIAL_MAESTRO.csv', {
+        download: true,
+        header: true,
+        skipEmptyLines: true,
+        complete: function(results) {
+          allData = results.data;
+          
+          // Filtrar filas válidas (que tengan número de sorteo)
+          const validData = allData.filter(row => row.sorteo && row.sorteo.trim() !== '');
+          
+          // Cargar el último sorteo en el Dashboard
+          const lastDraw = validData[validData.length - 1];
+          if(lastDraw) {
+             renderDashboard(lastDraw);
+             const searchInput = document.getElementById('search');
+             if(searchInput) {
+               searchInput.value = lastDraw.sorteo;
+               searchInput.max = lastDraw.sorteo;
+             }
+          }
 
-        // 3. NUEVO: Cargar la tabla de historial (Invertimos para ver el más nuevo arriba)
-        renderHistory(validData.slice().reverse()); 
-        
-        // 4. Quitar mensaje de "Cargando..."
-        const statusText = document.getElementById('status-text');
-        if(statusText) statusText.style.display = 'none';
-      }
-    });
+          // Preparar datos para historial (Invertir para ver el más nuevo arriba)
+          sortedData = validData.slice().reverse();
+          
+          // Renderizar tabla inicial
+          updateHistoryTable();
+          
+          // Ocultar mensaje de carga
+          const statusText = document.getElementById('status-text');
+          if(statusText) statusText.style.display = 'none';
+        }
+      });
     } catch(e) {
       console.error("Error inicial:", e);
       document.getElementById('status-text').textContent = "Error al iniciar la carga de datos.";
     }
 
-    // --- RENDERIZADO ---
+    // --- 2. RENDER DASHBOARD (Tarjetas) ---
     function renderDashboard(row) {
-      // --- CÁLCULO DE TOTALES ---
+      // A. CÁLCULOS DE TOTALES
       let totalRepartido = 0;
       let totalGanadores = 0;
 
@@ -324,7 +255,7 @@
         }
       });
 
-      // --- ACTUALIZAR TEXTOS DASHBOARD ---
+      // B. ACTUALIZAR TEXTOS
       const elDate = document.getElementById('dash-date');
       const elTitle = document.getElementById('dash-title');
       const elMoney = document.getElementById('dash-money');
@@ -335,14 +266,13 @@
       if(elMoney) elMoney.innerText = formatMoney(totalRepartido);
       if(elWinners) elWinners.innerText = totalGanadores.toLocaleString('es-CL');
 
-      // --- CONFIGURACIÓN CARDS ---
+      // C. CONFIGURACIÓN TARJETAS
       const gamesConfig = [
-        // Usamos colores hexadecimales directos porque las clases text-color-400 no existen sin Tailwind
-        { key: 'LOTO', title: 'LOTO CLÁSICO', color: '#facc15' }, // Amarillo
-        { key: 'RECARGADO', title: 'RECARGADO', color: '#fbbf24' }, // Naranja
-        { key: 'REVANCHA', title: 'REVANCHA', color: '#f87171' }, // Rojo
-        { key: 'DESQUITE', title: 'DESQUITE', color: '#34d399' }, // Esmeralda
-        { key: 'AHORA_SI_QUE_SI', title: 'AHORA SÍ QUE SÍ', color: '#22d3ee' } // Cyan
+        { key: 'LOTO', title: 'LOTO CLÁSICO', color: '#facc15' },
+        { key: 'RECARGADO', title: 'RECARGADO', color: '#fbbf24' },
+        { key: 'REVANCHA', title: 'REVANCHA', color: '#f87171' },
+        { key: 'DESQUITE', title: 'DESQUITE', color: '#34d399' },
+        { key: 'AHORA_SI_QUE_SI', title: 'AHORA SÍ QUE SÍ', color: '#22d3ee' }
       ];
 
       const swiperWrapper = document.getElementById('games-container');
@@ -352,7 +282,7 @@
         const n1 = row[`${game.key}_n1`];
         if (!n1 || n1.toString().trim() === '') return;
 
-        // 1. Números: Ordenar de MENOR a MAYOR
+        // Ordenar números: Menor a Mayor
         let numbers = [];
         for(let i=1; i<=6; i++) {
            const val = row[`${game.key}_n${i}`];
@@ -360,19 +290,19 @@
         }
         numbers.sort((a, b) => a - b);
 
-        // Bolitas principales
+        // Bolitas
         let ballsHtml = numbers.map(num => 
-            `<div class="ball ${game.key}" style="transform: scale(0.9); cursor: default;">${num}</div>`
+            `<div class="ball ${game.key}" style="transform: scale(1);">${num}</div>`
         ).join('');
 
-        // 2. Comodín
+        // Comodín
         const comodin = row[`${game.key}_comodin`];
         const hasComodin = (comodin && comodin.toString().trim() !== '' && comodin != '0');
         const comodinHtml = hasComodin 
-            ? `<div class="ball COMODIN" title="Comodín" style="margin-top: 10px;">${comodin}</div>` 
+            ? `<div class="ball COMODIN" title="Comodín">${comodin}</div>` 
             : '';
 
-        // 3. Info Premio
+        // Footer (Ganador vs Vacante)
         const ganadores = parseInt(row[`${game.key}_GANADORES`]) || 0;
         const monto = parseInt(row[`${game.key}_MONTO`]) || 0;
         
@@ -401,7 +331,7 @@
            `;
         }
 
-        // 4. Estructura FINAL con CSS INLINE para la Grilla
+        // Estructura Slide
         slidesHtml += `
           <div class="swiper-slide" style="height: auto; padding: 5px;">
             <div style="position: relative; display: flex; flex-direction: column; height: 100%; background: #0f1525; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 1.5rem; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);">
@@ -419,7 +349,7 @@
                 </div>
 
                 ${hasComodin ? `
-                  <div style="display: flex; justify-content: center; margin-top: 12px; padding-top: 12px; border-top: 1px dashed rgba(255,255,255,0.1); width: 50%;">
+                  <div style="display: flex; justify-content: center; margin-top: 15px; padding-top: 15px; border-top: 1px dashed rgba(255,255,255,0.1); width: 60%;">
                     ${comodinHtml}
                   </div>` : ''}
 
@@ -434,6 +364,7 @@
 
       swiperWrapper.innerHTML = slidesHtml;
       
+      // Init Swiper
       if(window.mySwiper) {
         window.mySwiper.update();
         window.mySwiper.slideTo(0);
@@ -452,26 +383,37 @@
       }
     }
 
+    // --- 3. LÓGICA FILTRO E HISTORIAL ---
+    function updateHistoryTable() {
+      const checkbox = document.getElementById('filter-winners');
+      const showWinnersOnly = checkbox ? checkbox.checked : false;
+
+      let dataToRender = sortedData;
+
+      if (showWinnersOnly) {
+        // Filtrar donde LOTO_GANADORES > 0
+        dataToRender = sortedData.filter(r => parseInt(r.LOTO_GANADORES) > 0);
+      }
+
+      // Renderizar los primeros 100 del resultado filtrado
+      renderHistory(dataToRender.slice(0, 100));
+    }
+
     function renderHistory(rows) {
       const tbody = document.getElementById('history-body');
       
-      // Limitamos a los últimos 100 sorteos para que la página no se ponga lenta
-      const rowsToShow = rows.slice(0, 100);
-
-      tbody.innerHTML = rowsToShow.map(r => {
-        // Extraer y ordenar números del LOTO para la lista (Menor a Mayor se lee mejor en listas)
+      tbody.innerHTML = rows.map(r => {
+        // Ordenar números
         let nums = [];
         for(let i=1; i<=6; i++) {
            if(r[`LOTO_n${i}`]) nums.push(parseInt(r[`LOTO_n${i}`]));
         }
         nums.sort((a, b) => a - b);
         
-        // Formatear datos
         const numsStr = nums.join(' - ');
         const winner = (parseInt(r.LOTO_GANADORES) > 0);
         const dateStr = r.fecha ? r.fecha.split(' ')[0] : '-';
 
-        // Generar HTML de la fila
         return `
           <tr style="cursor:pointer; border-bottom: 1px solid rgba(255,255,255,0.1);" onclick="loadDraw('${r.sorteo}')" class="hover:bg-white/5 transition">
             <td style="padding:1rem; color:#00f2ff; font-weight:bold;">#${r.sorteo}</td>
@@ -490,7 +432,13 @@
       }).join('');
     }
 
-    // --- UTILIDADES ---
+    // Eventos
+    document.getElementById('search').addEventListener('change', (e) => {
+      loadDraw(e.target.value);
+    });
+
+    document.getElementById('filter-winners').addEventListener('change', updateHistoryTable);
+
     window.loadDraw = (id) => {
       const row = allData.find(r => r.sorteo == id);
       if(row) {
@@ -499,14 +447,7 @@
       }
     }
 
-    document.getElementById('search').addEventListener('change', (e) => {
-      loadDraw(e.target.value);
-    });
-
-    function formatMoney(n) {
-      return '$' + Number(n).toLocaleString('es-CL');
-    }
-
+    // --- 4. TIMER ---
     function initTimer() {
       const update = () => {
         const now = new Date();
@@ -525,7 +466,6 @@
         const m = Math.floor((diff / (1000*60)) % 60);
         const s = Math.floor((diff / 1000) % 60);
 
-        // Actualizar las cajitas por separado
         const elDays = document.getElementById('days');
         const elHours = document.getElementById('hours');
         const elMins = document.getElementById('mins');
