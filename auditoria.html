@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LOTO :: SECURITY AUDIT v3.0</title>
+    <title>LOTO :: SECURITY AUDIT v3.1</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <script src="https://cdn.plot.ly/plotly-2.20.0.min.js"></script>
@@ -15,161 +15,152 @@
     <style>
         :root {
             --bg: #050a14;
-            --panel: rgba(20, 30, 50, 0.6);
-            --border: rgba(255, 255, 255, 0.1);
+            --panel: rgba(20, 30, 50, 0.85); /* Más opaco para mejor lectura */
+            --border: rgba(255, 255, 255, 0.15);
             --text: #e0e0e0;
             --accent: #00ff41; /* Matrix Green */
             --cyan: #00f2ff;
             --alert: #ff0055;
-            --warn: #ffcc00;
         }
         body {
             background-color: var(--bg);
             color: var(--text);
             font-family: 'Consolas', 'Monaco', monospace;
-            margin: 0; padding: 20px;
+            margin: 0; padding: 15px; /* Menos padding en móvil */
             background-image: radial-gradient(circle at 50% 0%, rgba(0, 255, 65, 0.05) 0%, transparent 60%);
             overflow-x: hidden;
         }
         .container { max-width: 1400px; margin: 0 auto; }
         
-        /* HEADER & NAV */
+        /* HEADER */
         header { margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 15px;}
-        h1 { color: var(--accent); margin: 0; text-transform: uppercase; font-size: 1.2rem; display: flex; align-items: center; gap: 10px; }
-        .back-link { color: var(--cyan); text-decoration: none; border: 1px solid var(--border); padding: 5px 15px; border-radius: 4px; transition: all 0.3s; font-size: 0.8rem; }
-        .back-link:hover { background: rgba(0, 242, 255, 0.1); border-color: var(--cyan); }
+        h1 { color: var(--accent); margin: 0; text-transform: uppercase; font-size: 1rem; display: flex; align-items: center; gap: 8px; }
+        .back-link { color: var(--cyan); text-decoration: none; border: 1px solid var(--border); padding: 5px 12px; border-radius: 4px; font-size: 0.75rem; }
 
         /* SWIPER (GAME SELECTOR) */
-        .game-selector-wrapper {
-            margin-bottom: 30px;
-            position: relative;
-            padding: 0 40px; /* Space for arrows */
-        }
-        .swiper {
-            width: 100%;
-            padding: 20px 0;
-            overflow: visible;
-        }
+        .game-selector-wrapper { margin-bottom: 25px; position: relative; }
+        .swiper { width: 100%; padding: 10px 0; overflow: visible; }
         .swiper-slide {
-            background: var(--panel);
+            background: rgba(30, 40, 60, 0.8); /* Fondo más visible */
             border: 1px solid var(--border);
             border-radius: 12px;
-            padding: 20px;
+            padding: 15px 10px;
             text-align: center;
-            opacity: 0.4;
-            transform: scale(0.9);
+            opacity: 0.5; /* Más visible inactivo */
+            transform: scale(0.92);
             transition: all 0.3s;
             cursor: pointer;
+            height: 90px;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            height: 100px;
         }
         .swiper-slide-active {
             opacity: 1;
             transform: scale(1.05);
             border-color: var(--accent);
-            box-shadow: 0 0 20px rgba(0, 255, 65, 0.2);
-            background: rgba(0, 255, 65, 0.05);
+            box-shadow: 0 0 15px rgba(0, 255, 65, 0.15);
+            background: rgba(0, 255, 65, 0.08);
         }
-        .game-title { font-size: 1.2rem; font-weight: bold; color: white; margin-bottom: 5px; }
-        .game-sub { font-size: 0.7rem; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+        .game-title { font-size: 1rem; font-weight: bold; color: white; margin-bottom: 4px; line-height: 1.2; }
+        .game-sub { font-size: 0.65rem; color: #aaa; text-transform: uppercase; letter-spacing: 0.5px; }
 
-        .swiper-button-prev, .swiper-button-next { color: var(--accent); }
-        .swiper-button-prev::after, .swiper-button-next::after { font-size: 1.5rem; font-weight: bold; }
+        /* KPIS */
+        .kpi-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .kpi-card { text-align: center; padding: 15px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px; }
+        .kpi-val { font-size: 1.5em; font-weight: bold; color: white; margin: 5px 0; }
+        .kpi-lbl { color: #888; font-size: 0.7em; text-transform: uppercase; }
+        .status-ok { color: var(--accent); }
+        .status-fail { color: var(--alert); }
 
-        /* GRID SYSTEM */
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 20px; }
-        .full-width { grid-column: 1 / -1; }
-        
+        /* GRID & CHARTS */
+        .grid { display: flex; flex-direction: column; gap: 20px; margin-bottom: 20px; }
         .card { 
             background: var(--panel); 
             border: 1px solid var(--border); 
             border-radius: 8px; 
-            padding: 15px; 
-            backdrop-filter: blur(10px);
-            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-            transition: transform 0.3s;
+            padding: 10px; /* Menos padding interno */
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        .section-title { 
+            color: var(--text); border-left: 3px solid var(--accent); padding-left: 10px; 
+            margin-bottom: 10px; font-weight: bold; text-transform: uppercase; font-size: 0.85rem; 
         }
         
-        /* KPIS */
-        .kpi-row { display: flex; justify-content: space-between; gap: 20px; margin-bottom: 30px; flex-wrap: wrap; }
-        .kpi-card { flex: 1; min-width: 200px; text-align: center; padding: 20px; background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 8px; }
-        .kpi-val { font-size: 2em; font-weight: bold; color: white; margin: 10px 0; }
-        .kpi-lbl { color: #888; font-size: 0.8em; text-transform: uppercase; letter-spacing: 1px; }
-        .status-ok { color: var(--accent); text-shadow: 0 0 10px rgba(0, 255, 65, 0.3); }
-        .status-fail { color: var(--alert); }
+        .chart-container { width: 100%; height: 300px; position: relative; } /* Altura fija para móvil */
 
-        /* TABLA & CHARTS */
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        td { padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.85em; }
-        td:nth-child(2) { text-align: right; color: var(--cyan); font-weight: bold; }
-        .chart-container { height: 350px; width: 100%; }
-        .section-title { color: var(--text); border-left: 3px solid var(--accent); padding-left: 10px; margin-bottom: 15px; font-weight: bold; text-transform: uppercase; font-size: 0.9rem; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        td { padding: 8px 4px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        td:nth-child(2) { text-align: right; color: var(--cyan); }
 
-        #loader { text-align: center; padding: 100px; color: var(--accent); font-size: 1.2em; animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
+        #loader { text-align: center; padding: 50px; color: var(--accent); font-size: 1rem; }
+        
+        /* Desktop override */
+        @media (min-width: 768px) {
+            .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+            .full-width { grid-column: 1 / -1; }
+            .kpi-row { display: flex; }
+            .card { padding: 15px; }
+            .chart-container { height: 350px; }
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
     <header>
-        <h1><i data-lucide="shield-alert"></i> Auditoría Forense</h1>
-        <a href="index.html" class="back-link"><i data-lucide="arrow-left" style="width:14px;"></i> Volver</a>
+        <h1><i data-lucide="shield-check" style="width:18px;"></i> Auditoría Forense</h1>
+        <a href="index.html" class="back-link"><i data-lucide="arrow-left" style="width:12px;"></i> Volver</a>
     </header>
 
-    <div id="loader">CARGANDO BASE DE DATOS MAESTRA...</div>
+    <div id="loader">CARGANDO SISTEMA...</div>
 
-    <div id="dashboard" style="display:none; opacity: 0; transition: opacity 1s;">
+    <div id="dashboard" style="display:none; opacity: 0; transition: opacity 0.5s;">
         
         <div class="game-selector-wrapper">
             <div class="swiper">
-                <div class="swiper-wrapper">
-                    </div>
+                <div class="swiper-wrapper"></div>
             </div>
-            <div class="swiper-button-prev"></div>
-            <div class="swiper-button-next"></div>
         </div>
         
         <div class="kpi-row">
             <div class="kpi-card">
-                <div class="kpi-lbl">Sorteos Analizados</div>
+                <div class="kpi-lbl">Sorteos</div>
                 <div class="kpi-val" id="kpi_total">0</div>
             </div>
             <div class="kpi-card">
-                <div class="kpi-lbl">Chi-Square (Azar)</div>
+                <div class="kpi-lbl">Chi-Square</div>
                 <div class="kpi-val" id="kpi_pvalue">0.00</div>
             </div>
             <div class="kpi-card">
-                <div class="kpi-lbl">Estado del Algoritmo</div>
+                <div class="kpi-lbl">Estado</div>
                 <div class="kpi-val" id="kpi_status">...</div>
             </div>
             <div class="kpi-card">
-                <div class="kpi-lbl">Memoria (Lag)</div>
+                <div class="kpi-lbl">Memoria</div>
                 <div class="kpi-val" id="kpi_lag">0.00</div>
             </div>
         </div>
 
         <div class="grid">
             <div class="card" style="flex: 2;">
-                <div class="section-title">1. Frecuencia de Números</div>
+                <div class="section-title">1. Frecuencia (1-41)</div>
                 <div id="chart_freq" class="chart-container"></div>
             </div>
             <div class="card" style="flex: 1;">
-                 <div class="section-title">Top 10 Parejas</div>
+                 <div class="section-title">Top Parejas</div>
                  <table id="pairs_table"></table>
             </div>
         </div>
 
         <div class="grid">
             <div class="card">
-                <div class="section-title">2. Distribución de Sumas (Gauss)</div>
+                <div class="section-title">2. Distribución de Sumas</div>
                 <div id="chart_sums" class="chart-container"></div>
             </div>
             <div class="card">
-                <div class="section-title">3. Balance Paridad</div>
+                <div class="section-title">3. Paridad</div>
                 <div id="chart_parity" class="chart-container"></div>
             </div>
         </div>
@@ -177,253 +168,187 @@
         <div class="grid">
             <div class="card">
                  <div class="section-title">4. Mapa de Calor</div>
-                 <div id="chart_heatmap" class="chart-container" style="height: 400px;"></div>
+                 <div id="chart_heatmap" class="chart-container"></div>
             </div>
             <div class="card">
-                 <div class="section-title">5. Lag Plot (T vs T+1)</div>
-                 <div id="chart_lag" class="chart-container" style="height: 400px;"></div>
+                 <div class="section-title">5. Lag Plot</div>
+                 <div id="chart_lag" class="chart-container"></div>
             </div>
         </div>
 
         <div class="grid">
             <div class="card full-width">
-                <div class="section-title">6. Monitor de Sequía (Números Fríos)</div>
-                <div id="chart_drought" class="chart-container" style="height: 300px;"></div>
+                <div class="section-title">6. Monitor de Sequía</div>
+                <div id="chart_drought" class="chart-container" style="height: 250px;"></div>
             </div>
         </div>
-
     </div>
 </div>
 
 <script>
     lucide.createIcons();
-    
     const CSV_URL = 'LOTO_HISTORIAL_MAESTRO.csv';
-    let RAW_DATA = []; // Almacena el CSV completo
+    let RAW_DATA = [];
 
-    // CONFIGURACIÓN DE LOS JUEGOS
     const GAMES_CONFIG = [
-        { key: 'LOTO', name: 'LOTO CLÁSICO', desc: 'Sorteo Principal' },
-        { key: 'RECARGADO', name: 'RECARGADO', desc: 'Segunda Oportunidad' },
-        { key: 'REVANCHA', name: 'REVANCHA', desc: 'Tercera Oportunidad' },
-        { key: 'DESQUITE', name: 'DESQUITE', desc: 'Cuarta Oportunidad' },
-        { key: 'AHORA_SI_QUE_SI', name: 'AHORA SÍ QUE SÍ', desc: 'Quinta Oportunidad' }
+        { key: 'LOTO', name: 'LOTO', desc: 'Clásico' },
+        { key: 'RECARGADO', name: 'RECARGADO', desc: 'Opción 2' },
+        { key: 'REVANCHA', name: 'REVANCHA', desc: 'Opción 3' },
+        { key: 'DESQUITE', name: 'DESQUITE', desc: 'Opción 4' },
+        { key: 'AHORA_SI_QUE_SI', name: 'AHORA SÍ', desc: 'Opción 5' }
     ];
 
-    // CONFIG PLOTLY
+    // Layout Base optimizado para móvil
     const layout_base = {
         paper_bgcolor: 'rgba(0,0,0,0)',
         plot_bgcolor: 'rgba(0,0,0,0)',
-        font: { color: '#e0e0e0', family: 'Consolas' },
-        xaxis: { gridcolor: '#333', zerolinecolor: '#444' },
-        yaxis: { gridcolor: '#333', zerolinecolor: '#444' },
-        margin: { t: 30, b: 40, l: 40, r: 20 },
-        showlegend: false
+        font: { color: '#e0e0e0', family: 'Consolas', size: 10 },
+        xaxis: { gridcolor: '#333', zerolinecolor: '#444', fixedrange: true }, // Evita zoom accidental
+        yaxis: { gridcolor: '#333', zerolinecolor: '#444', fixedrange: true },
+        margin: { t: 20, b: 30, l: 30, r: 10 }, // Márgenes más pequeños
+        showlegend: false,
+        autosize: true
     };
 
-    // 1. INICIALIZAR SWIPER
     function initCarousel() {
         const wrapper = document.querySelector('.swiper-wrapper');
         GAMES_CONFIG.forEach(game => {
             const slide = document.createElement('div');
             slide.className = 'swiper-slide';
-            slide.innerHTML = `
-                <div class="game-title">${game.name}</div>
-                <div class="game-sub">${game.desc}</div>
-            `;
+            slide.innerHTML = `<div class="game-title">${game.name}</div><div class="game-sub">${game.desc}</div>`;
             wrapper.appendChild(slide);
         });
 
-        const swiper = new Swiper('.swiper', {
-            slidesPerView: 1.5,
-            spaceBetween: 20,
+        new Swiper('.swiper', {
+            slidesPerView: 2.2, // Más visible en móvil
+            spaceBetween: 10,
             centeredSlides: true,
-            loop: false,
-            navigation: { nextEl: '.swiper-button-next', prevEl: '.swiper-button-prev' },
-            breakpoints: {
-                640: { slidesPerView: 2.5 },
-                1024: { slidesPerView: 3.5 }
-            },
+            breakpoints: { 640: { slidesPerView: 3.5, spaceBetween: 20 } },
             on: {
                 slideChange: function () {
-                    const activeIndex = this.activeIndex;
-                    const selectedGame = GAMES_CONFIG[activeIndex];
-                    updateDashboard(selectedGame.key);
+                    updateDashboard(GAMES_CONFIG[this.activeIndex].key);
                 }
             }
         });
     }
 
-    // 2. CARGAR DATOS
     Papa.parse(CSV_URL, {
         download: true, header: true,
         complete: function(results) {
             RAW_DATA = results.data;
             initCarousel();
-            // Cargar LOTO por defecto
-            updateDashboard('LOTO'); 
-            
+            updateDashboard('LOTO');
             document.getElementById('loader').style.display = 'none';
-            const dash = document.getElementById('dashboard');
-            dash.style.display = 'block';
-            setTimeout(() => dash.style.opacity = 1, 100);
-        },
-        error: function(err) { alert("Error CSV: " + err); }
+            const d = document.getElementById('dashboard');
+            d.style.display = 'block';
+            setTimeout(() => d.style.opacity = 1, 100);
+        }
     });
 
-    // 3. CEREBRO DE LA AUDITORÍA (DINÁMICO)
     function updateDashboard(gameKey) {
-        console.log(`[AUDIT] Analizando protocolo: ${gameKey}...`);
-        
-        // Filtrar datos válidos para ESTE juego específico
-        // (Porque el Desquite puede haber empezado años después que el Loto)
+        // Filtrar datos
         const cleanData = [];
-        RAW_DATA.forEach((row, idx) => {
-            // Verificar que existan las columnas del juego seleccionado (ej: RECARGADO_n1)
-            // y que no estén vacías
+        RAW_DATA.forEach(row => {
             if(row[`${gameKey}_n1`] && row[`${gameKey}_n6`] && row.sorteo) {
                 let nums = [
                     parseInt(row[`${gameKey}_n1`]), parseInt(row[`${gameKey}_n2`]), parseInt(row[`${gameKey}_n3`]),
                     parseInt(row[`${gameKey}_n4`]), parseInt(row[`${gameKey}_n5`]), parseInt(row[`${gameKey}_n6`])
                 ];
-                // Validación extra: todos deben ser números > 0
-                if(nums.every(n => !isNaN(n) && n > 0)) {
-                    cleanData.push({ nums: nums, sortIdx: parseInt(row.sorteo) });
-                }
+                if(nums.every(n => !isNaN(n) && n > 0)) cleanData.push({ nums, sortIdx: parseInt(row.sorteo) });
             }
         });
-
-        // Ordenar por sorteo
         cleanData.sort((a,b) => a.sortIdx - b.sortIdx);
         const totalDraws = cleanData.length;
 
-        // --- CÁLCULOS MATEMÁTICOS ---
-        let numbers = []; 
-        let sums = [];
-        let parities = { '0P-6I':0, '1P-5I':0, '2P-4I':0, '3P-3I':0, '4P-2I':0, '5P-1I':0, '6P-0I':0 };
-        let lastSeen = new Array(42).fill(-1);
-        let pairsObj = {};
-        let matrix = Array(42).fill().map(() => Array(42).fill(0));
+        // Cálculos
+        let numbers = [], sums = [], parities = {}, lastSeen = new Array(42).fill(-1), pairsObj = {}, matrix = Array(42).fill().map(()=>Array(42).fill(0));
+        ['0P-6I','1P-5I','2P-4I','3P-3I','4P-2I','5P-1I','6P-0I'].forEach(k => parities[k]=0);
 
         cleanData.forEach((item, idx) => {
             let sortNums = item.nums;
             numbers.push(...sortNums);
+            sums.push(sortNums.reduce((a,b)=>a+b,0));
             
-            // Suma
-            let s = sortNums.reduce((a, b) => a + b, 0);
-            sums.push(s);
+            let evens = sortNums.filter(n=>n%2===0).length;
+            parities[`${evens}P-${6-evens}I`]++;
 
-            // Paridad
-            let evens = sortNums.filter(n => n % 2 === 0).length;
-            let key = `${evens}P-${6-evens}I`;
-            if(parities[key] !== undefined) parities[key]++;
-
-            // Heatmap & Pares
-            for(let i=0; i<sortNums.length; i++) {
-                // Sequía (actualizar índice de última vez visto)
-                let n = sortNums[i];
-                if(n >= 1 && n <= 41) lastSeen[n] = idx;
-
-                for(let j=i+1; j<sortNums.length; j++) {
-                    let n1 = sortNums[i], n2 = sortNums[j];
-                    if(n1 > n2) [n1, n2] = [n2, n1];
-                    if(n1>0 && n2>0 && n2<=41) {
-                        matrix[n2][n1]++; matrix[n1][n2]++;
-                        let pk = n1 + "-" + n2;
-                        pairsObj[pk] = (pairsObj[pk] || 0) + 1;
-                    }
+            for(let i=0; i<6; i++) {
+                lastSeen[sortNums[i]] = idx;
+                for(let j=i+1; j<6; j++) {
+                    let n1=sortNums[i], n2=sortNums[j];
+                    if(n1>n2)[n1,n2]=[n2,n1];
+                    matrix[n2][n1]++; matrix[n1][n2]++;
+                    pairsObj[`${n1}-${n2}`] = (pairsObj[`${n1}-${n2}`]||0)+1;
                 }
             }
         });
 
-        // 1. Frecuencia & Chi-Cuadrado
+        // Stats
         let counts = new Array(42).fill(0);
-        numbers.forEach(n => { if(n >=1 && n<=41) counts[n]++; });
-        let expected = numbers.length / 41;
-        let chiSq = 0;
-        for(let i=1; i<=41; i++) { chiSq += Math.pow(counts[i] - expected, 2) / expected; }
+        numbers.forEach(n => { if(n>=1 && n<=41) counts[n]++; });
+        let expected = numbers.length/41;
+        let chiSq = numbers.length > 0 ? counts.slice(1).reduce((a,b) => a + Math.pow(b-expected,2)/expected, 0) : 0;
         let pValue = 1 - jStat.chisquare.cdf(chiSq, 40);
 
-        // 2. Autocorrelación (Lag)
-        let lagX = sums.slice(0, -1);
-        let lagY = sums.slice(1);
-        let meanX = jStat.mean(lagX);
-        let meanY = jStat.mean(lagY);
-        let num = 0, den1 = 0, den2 = 0;
-        for(let i=0; i<lagX.length; i++){
-            let dx = lagX[i] - meanX, dy = lagY[i] - meanY;
-            num += dx * dy; den1 += dx*dx; den2 += dy*dy;
-        }
-        let correlation = num / Math.sqrt(den1 * den2);
-        if(isNaN(correlation)) correlation = 0;
-
-        // 3. Sequía Final
-        let drought = new Array(42).fill(0);
-        for(let i=1; i<=41; i++) {
-            if(lastSeen[i] !== -1) drought[i] = (totalDraws - 1) - lastSeen[i];
-            else drought[i] = totalDraws;
-        }
-
-        // --- ACTUALIZAR DOM ---
+        // Renderizado
         document.getElementById('kpi_total').innerText = totalDraws;
         document.getElementById('kpi_pvalue').innerText = pValue.toFixed(4);
-        document.getElementById('kpi_lag').innerText = correlation.toFixed(4);
-        
         const st = document.getElementById('kpi_status');
-        if(pValue > 0.05) { st.innerText = "ROBUSTO"; st.className = "kpi-val status-ok"; }
-        else { st.innerText = "SESGO DETECTADO"; st.className = "kpi-val status-fail"; }
-
-        // PLOTLY UPDATES (React es más rápido que newPlot)
+        st.innerText = pValue > 0.05 ? "ROBUSTO" : "SESGO";
+        st.className = pValue > 0.05 ? "kpi-val status-ok" : "kpi-val status-fail";
         
-        // Frecuencia
+        // --- CHARTS (CON FIX VISUAL) ---
+        const config = { responsive: true, displayModeBar: false };
+
+        // 1. Frecuencia (FIX: Range manual 0-42)
         let xArr = Array.from({length: 41}, (_, i) => i + 1);
         let yArr = counts.slice(1);
-        let colFreq = yArr.map(y => (y > expected*1.15 || y < expected*0.85) ? '#ff0055' : '#00ff41');
         Plotly.react('chart_freq', [{
-            x: xArr, y: yArr, type: 'bar', marker: { color: colFreq }
-        }], { ...layout_base, margin: {t:10, b:30, l:30, r:10} });
+            x: xArr, y: yArr, type: 'bar', marker: { color: yArr.map(y=>(y>expected*1.15||y<expected*0.85)?'#ff0055':'#00ff41') }
+        }], { ...layout_base, xaxis: { ...layout_base.xaxis, range: [0, 42] } }, config);
 
-        // Gauss
+        // 2. Gauss
         Plotly.react('chart_sums', [{
-            x: sums, type: 'histogram', 
-            marker: { color: '#00f2ff', line: {color: '#000', width: 1} }, opacity: 0.7
-        }], { ...layout_base, bargap: 0.05, shapes: [{ type: 'line', x0: 126, x1: 126, y0: 0, y1: 1, xref: 'x', yref: 'paper', line: { color: 'white', width: 1, dash: 'dot'} }] });
+            x: sums, type: 'histogram', marker: { color: '#00f2ff' }, opacity: 0.7
+        }], { ...layout_base, bargap: 0.05, shapes: [{type:'line', x0:126, x1:126, y0:0, y1:1, xref:'x', yref:'paper', line:{color:'white', dash:'dot'}}] }, config);
 
-        // Paridad
+        // 3. Paridad
         Plotly.react('chart_parity', [{
             x: Object.keys(parities), y: Object.values(parities), type: 'bar',
-            marker: { color: ['#ff0055', '#ffcc00', '#00ff41', '#00f2ff', '#00ff41', '#ffcc00', '#ff0055'] }
-        }], { ...layout_base });
+            marker: { color: ['#ff0055','#ffcc00','#00ff41','#00f2ff','#00ff41','#ffcc00','#ff0055'] }
+        }], layout_base, config);
 
-        // Heatmap
+        // 4. Heatmap
         Plotly.react('chart_heatmap', [{
-            z: matrix.slice(1).map(r => r.slice(1)), 
-            type: 'heatmap', colorscale: 'Viridis'
-        }], { ...layout_base, margin: {t:0, b:30, l:30, r:30} });
+            z: matrix.slice(1).map(r=>r.slice(1)), type: 'heatmap', colorscale: 'Viridis', showscale: false
+        }], { ...layout_base, margin: {t:0,b:20,l:20,r:20} }, config);
 
-        // Lag
+        // 5. Lag
+        let lagX = sums.slice(0,-1), lagY = sums.slice(1);
         Plotly.react('chart_lag', [{
-            x: lagX, y: lagY, mode: 'markers',
-            marker: { color: '#00ff41', size: 4, opacity: 0.5 }
-        }], { ...layout_base, xaxis: { title: 'Suma T', ...layout_base.xaxis }, yaxis: { title: 'Suma T+1', ...layout_base.yaxis } });
+            x: lagX, y: lagY, mode: 'markers', marker: { color: '#00ff41', size: 3, opacity: 0.5 }
+        }], { ...layout_base, xaxis: {title:'T', ...layout_base.xaxis}, yaxis: {title:'T+1', ...layout_base.yaxis} }, config);
 
-        // Sequía
-        let dVal = drought.slice(1);
-        let dCol = dVal.map(d => d > 20 ? '#ff0055' : (d > 10 ? '#ffcc00' : '#222'));
+        // 6. Sequía
+        let dVal = new Array(41).fill(0).map((_,i) => lastSeen[i+1] === -1 ? totalDraws : (totalDraws-1)-lastSeen[i+1]);
         Plotly.react('chart_drought', [{
-            x: xArr, y: dVal, type: 'bar',
-            marker: { color: dCol }
-        }], { ...layout_base });
+            x: xArr, y: dVal, type: 'bar', marker: { color: dVal.map(d=>d>20?'#ff0055':d>10?'#ffcc00':'#222') }
+        }], { ...layout_base, xaxis: { ...layout_base.xaxis, range: [0, 42] } }, config);
 
-        // Tabla Top Pares
-        let sortedPairs = Object.entries(pairsObj).sort((a,b) => b[1] - a[1]).slice(0,10);
-        let tableHTML = "";
-        sortedPairs.forEach(([pair, count]) => {
-            tableHTML += `<tr><td>PAR [ ${pair} ]</td><td>${count}</td></tr>`;
-        });
-        document.getElementById('pairs_table').innerHTML = tableHTML;
+        // Tabla
+        let sortedPairs = Object.entries(pairsObj).sort((a,b)=>b[1]-a[1]).slice(0,10);
+        document.getElementById('pairs_table').innerHTML = sortedPairs.map(([p,c])=>`<tr><td>[${p}]</td><td>${c}</td></tr>`).join('');
     }
-</script>
 
+    // REDIMENSIONAR al cambiar tamaño ventana
+    window.onresize = function() {
+        Plotly.Plots.resize('chart_freq');
+        Plotly.Plots.resize('chart_sums');
+        Plotly.Plots.resize('chart_parity');
+        Plotly.Plots.resize('chart_heatmap');
+        Plotly.Plots.resize('chart_lag');
+        Plotly.Plots.resize('chart_drought');
+    };
+</script>
 </body>
 </html>
