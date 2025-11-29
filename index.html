@@ -189,6 +189,29 @@
       </div>
     </div>
 
+    <div style="text-align: center; margin-top: 2.5rem; margin-bottom: 1rem;">
+      <a href="auditoria.html" style="
+          display: inline-flex; align-items: center; gap: 10px;
+          background: rgba(0, 255, 65, 0.05); /* Matrix Green sutil */
+          border: 1px solid rgba(0, 255, 65, 0.3);
+          color: #00ff41;
+          padding: 0.8rem 1.5rem;
+          border-radius: 6px;
+          text-decoration: none;
+          font-family: 'JetBrains Mono', monospace;
+          font-weight: 700;
+          font-size: 0.85rem;
+          letter-spacing: 1px;
+          transition: all 0.3s ease;
+          text-transform: uppercase;
+      " 
+      onmouseover="this.style.background='rgba(0, 255, 65, 0.15)'; this.style.boxShadow='0 0 15px rgba(0, 255, 65, 0.2)'; this.style.borderColor='#00ff41'" 
+      onmouseout="this.style.background='rgba(0, 255, 65, 0.05)'; this.style.boxShadow='none'; this.style.borderColor='rgba(0, 255, 65, 0.3)'">
+        <i data-lucide="shield-check" style="width: 18px;"></i>
+        ACCEDER A AUDITORÍA DEL SISTEMA
+      </a>
+    </div>
+
     <div class="status-bar" id="status-text">Conectando con base de datos...</div>
   </div>
 
@@ -215,13 +238,6 @@
           
           if(lastDraw) {
              renderDashboard(lastDraw);
-             // CORRECCIÓN: Comentamos/Borramos la línea que autocompletubala el buscador
-             // const searchInput = document.getElementById('search');
-             // if(searchInput) {
-             //   searchInput.value = lastDraw.sorteo; // <-- ESTO ERA LO QUE TAPABA EL PLACEHOLDER
-             //   searchInput.max = lastDraw.sorteo;
-             // }
-             
              // Solo establecemos el max para validación HTML, pero no el value visual
              const searchInput = document.getElementById('search');
              if(searchInput) searchInput.max = lastDraw.sorteo;
