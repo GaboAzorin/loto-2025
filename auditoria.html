@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LOTO :: SECURITY AUDIT v3.1</title>
+    <title>LOTO :: SECURITY AUDIT v3.2</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <script src="https://cdn.plot.ly/plotly-2.20.0.min.js"></script>
@@ -15,10 +15,10 @@
     <style>
         :root {
             --bg: #050a14;
-            --panel: rgba(20, 30, 50, 0.85); /* Más opaco para mejor lectura */
+            --panel: rgba(20, 30, 50, 0.9);
             --border: rgba(255, 255, 255, 0.15);
             --text: #e0e0e0;
-            --accent: #00ff41; /* Matrix Green */
+            --accent: #00ff41;
             --cyan: #00f2ff;
             --alert: #ff0055;
         }
@@ -26,7 +26,7 @@
             background-color: var(--bg);
             color: var(--text);
             font-family: 'Consolas', 'Monaco', monospace;
-            margin: 0; padding: 15px; /* Menos padding en móvil */
+            margin: 0; padding: 15px;
             background-image: radial-gradient(circle at 50% 0%, rgba(0, 255, 65, 0.05) 0%, transparent 60%);
             overflow-x: hidden;
         }
@@ -37,16 +37,16 @@
         h1 { color: var(--accent); margin: 0; text-transform: uppercase; font-size: 1rem; display: flex; align-items: center; gap: 8px; }
         .back-link { color: var(--cyan); text-decoration: none; border: 1px solid var(--border); padding: 5px 12px; border-radius: 4px; font-size: 0.75rem; }
 
-        /* SWIPER (GAME SELECTOR) */
+        /* SWIPER */
         .game-selector-wrapper { margin-bottom: 25px; position: relative; }
         .swiper { width: 100%; padding: 10px 0; overflow: visible; }
         .swiper-slide {
-            background: rgba(30, 40, 60, 0.8); /* Fondo más visible */
+            background: rgba(30, 40, 60, 0.8);
             border: 1px solid var(--border);
             border-radius: 12px;
             padding: 15px 10px;
             text-align: center;
-            opacity: 0.5; /* Más visible inactivo */
+            opacity: 0.5;
             transform: scale(0.92);
             transition: all 0.3s;
             cursor: pointer;
@@ -80,15 +80,14 @@
             background: var(--panel); 
             border: 1px solid var(--border); 
             border-radius: 8px; 
-            padding: 10px; /* Menos padding interno */
+            padding: 10px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.3);
         }
         .section-title { 
             color: var(--text); border-left: 3px solid var(--accent); padding-left: 10px; 
             margin-bottom: 10px; font-weight: bold; text-transform: uppercase; font-size: 0.85rem; 
         }
-        
-        .chart-container { width: 100%; height: 300px; position: relative; } /* Altura fija para móvil */
+        .chart-container { width: 100%; height: 300px; position: relative; }
 
         table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
         td { padding: 8px 4px; border-bottom: 1px solid rgba(255,255,255,0.05); }
@@ -96,7 +95,6 @@
 
         #loader { text-align: center; padding: 50px; color: var(--accent); font-size: 1rem; }
         
-        /* Desktop override */
         @media (min-width: 768px) {
             .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
             .full-width { grid-column: 1 / -1; }
@@ -117,7 +115,6 @@
     <div id="loader">CARGANDO SISTEMA...</div>
 
     <div id="dashboard" style="display:none; opacity: 0; transition: opacity 0.5s;">
-        
         <div class="game-selector-wrapper">
             <div class="swiper">
                 <div class="swiper-wrapper"></div>
@@ -125,22 +122,10 @@
         </div>
         
         <div class="kpi-row">
-            <div class="kpi-card">
-                <div class="kpi-lbl">Sorteos</div>
-                <div class="kpi-val" id="kpi_total">0</div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-lbl">Chi-Square</div>
-                <div class="kpi-val" id="kpi_pvalue">0.00</div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-lbl">Estado</div>
-                <div class="kpi-val" id="kpi_status">...</div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-lbl">Memoria</div>
-                <div class="kpi-val" id="kpi_lag">0.00</div>
-            </div>
+            <div class="kpi-card"><div class="kpi-lbl">Sorteos</div><div class="kpi-val" id="kpi_total">0</div></div>
+            <div class="kpi-card"><div class="kpi-lbl">Chi-Square</div><div class="kpi-val" id="kpi_pvalue">0.00</div></div>
+            <div class="kpi-card"><div class="kpi-lbl">Estado</div><div class="kpi-val" id="kpi_status">...</div></div>
+            <div class="kpi-card"><div class="kpi-lbl">Memoria (Lag)</div><div class="kpi-val" id="kpi_lag">0.00</div></div>
         </div>
 
         <div class="grid">
@@ -198,14 +183,13 @@
         { key: 'AHORA_SI_QUE_SI', name: 'AHORA SÍ', desc: 'Opción 5' }
     ];
 
-    // Layout Base optimizado para móvil
     const layout_base = {
         paper_bgcolor: 'rgba(0,0,0,0)',
         plot_bgcolor: 'rgba(0,0,0,0)',
         font: { color: '#e0e0e0', family: 'Consolas', size: 10 },
-        xaxis: { gridcolor: '#333', zerolinecolor: '#444', fixedrange: true }, // Evita zoom accidental
+        xaxis: { gridcolor: '#333', zerolinecolor: '#444', fixedrange: true },
         yaxis: { gridcolor: '#333', zerolinecolor: '#444', fixedrange: true },
-        margin: { t: 20, b: 30, l: 30, r: 10 }, // Márgenes más pequeños
+        margin: { t: 20, b: 30, l: 30, r: 10 },
         showlegend: false,
         autosize: true
     };
@@ -220,15 +204,11 @@
         });
 
         new Swiper('.swiper', {
-            slidesPerView: 2.2, // Más visible en móvil
+            slidesPerView: 2.2,
             spaceBetween: 10,
             centeredSlides: true,
             breakpoints: { 640: { slidesPerView: 3.5, spaceBetween: 20 } },
-            on: {
-                slideChange: function () {
-                    updateDashboard(GAMES_CONFIG[this.activeIndex].key);
-                }
-            }
+            on: { slideChange: function () { updateDashboard(GAMES_CONFIG[this.activeIndex].key); } }
         });
     }
 
@@ -246,31 +226,46 @@
     });
 
     function updateDashboard(gameKey) {
-        // Filtrar datos
+        // 1. Filtrado de Datos
         const cleanData = [];
         RAW_DATA.forEach(row => {
-            if(row[`${gameKey}_n1`] && row[`${gameKey}_n6`] && row.sorteo) {
+            // Verificar claves dinámicas usando bracket notation
+            const n1 = row[`${gameKey}_n1`];
+            const n6 = row[`${gameKey}_n6`];
+            if(n1 && n6 && row.sorteo) {
                 let nums = [
                     parseInt(row[`${gameKey}_n1`]), parseInt(row[`${gameKey}_n2`]), parseInt(row[`${gameKey}_n3`]),
                     parseInt(row[`${gameKey}_n4`]), parseInt(row[`${gameKey}_n5`]), parseInt(row[`${gameKey}_n6`])
                 ];
-                if(nums.every(n => !isNaN(n) && n > 0)) cleanData.push({ nums, sortIdx: parseInt(row.sorteo) });
+                if(nums.every(n => !isNaN(n) && n > 0)) {
+                    cleanData.push({ nums: nums, sortIdx: parseInt(row.sorteo) });
+                }
             }
         });
         cleanData.sort((a,b) => a.sortIdx - b.sortIdx);
         const totalDraws = cleanData.length;
 
-        // Cálculos
-        let numbers = [], sums = [], parities = {}, lastSeen = new Array(42).fill(-1), pairsObj = {}, matrix = Array(42).fill().map(()=>Array(42).fill(0));
-        ['0P-6I','1P-5I','2P-4I','3P-3I','4P-2I','5P-1I','6P-0I'].forEach(k => parities[k]=0);
+        // 2. Variables de Cálculo (Reiniciar siempre)
+        let numbers = [];
+        let sums = [];
+        // Paridad: Orden explícito para el gráfico
+        const parityKeys = ['0P-6I','1P-5I','2P-4I','3P-3I','4P-2I','5P-1I','6P-0I'];
+        let parities = {}; 
+        parityKeys.forEach(k => parities[k] = 0);
+        
+        let lastSeen = new Array(42).fill(-1);
+        let pairsObj = {};
+        let matrix = Array(42).fill().map(()=>Array(42).fill(0));
 
+        // 3. Procesamiento
         cleanData.forEach((item, idx) => {
             let sortNums = item.nums;
             numbers.push(...sortNums);
             sums.push(sortNums.reduce((a,b)=>a+b,0));
             
-            let evens = sortNums.filter(n=>n%2===0).length;
-            parities[`${evens}P-${6-evens}I`]++;
+            let evens = sortNums.filter(n => n % 2 === 0).length;
+            let pKey = `${evens}P-${6-evens}I`;
+            if(parities[pKey] !== undefined) parities[pKey]++;
 
             for(let i=0; i<6; i++) {
                 lastSeen[sortNums[i]] = idx;
@@ -283,53 +278,75 @@
             }
         });
 
-        // Stats
+        // 4. Métricas
+        // Chi-Square
         let counts = new Array(42).fill(0);
         numbers.forEach(n => { if(n>=1 && n<=41) counts[n]++; });
         let expected = numbers.length/41;
         let chiSq = numbers.length > 0 ? counts.slice(1).reduce((a,b) => a + Math.pow(b-expected,2)/expected, 0) : 0;
         let pValue = 1 - jStat.chisquare.cdf(chiSq, 40);
 
-        // Renderizado
+        // Memoria (Lag) - Cálculo manual explícito
+        let correlation = 0;
+        if(sums.length > 1) {
+            let lagX = sums.slice(0, -1);
+            let lagY = sums.slice(1);
+            let meanX = lagX.reduce((a,b)=>a+b,0) / lagX.length;
+            let meanY = lagY.reduce((a,b)=>a+b,0) / lagY.length;
+            let num = 0, den1 = 0, den2 = 0;
+            for(let i=0; i<lagX.length; i++) {
+                let dx = lagX[i] - meanX;
+                let dy = lagY[i] - meanY;
+                num += dx * dy;
+                den1 += dx * dx;
+                den2 += dy * dy;
+            }
+            if(den1 > 0 && den2 > 0) correlation = num / Math.sqrt(den1 * den2);
+        }
+
+        // 5. Render KPIs
         document.getElementById('kpi_total').innerText = totalDraws;
         document.getElementById('kpi_pvalue').innerText = pValue.toFixed(4);
+        document.getElementById('kpi_lag').innerText = correlation.toFixed(5); // 5 decimales para ver cambios sutiles
+        
         const st = document.getElementById('kpi_status');
         st.innerText = pValue > 0.05 ? "ROBUSTO" : "SESGO";
         st.className = pValue > 0.05 ? "kpi-val status-ok" : "kpi-val status-fail";
         
-        // --- CHARTS (CON FIX VISUAL) ---
+        // 6. Charts Update
         const config = { responsive: true, displayModeBar: false };
 
-        // 1. Frecuencia (FIX: Range manual 0-42)
+        // Frecuencia
         let xArr = Array.from({length: 41}, (_, i) => i + 1);
         let yArr = counts.slice(1);
         Plotly.react('chart_freq', [{
             x: xArr, y: yArr, type: 'bar', marker: { color: yArr.map(y=>(y>expected*1.15||y<expected*0.85)?'#ff0055':'#00ff41') }
         }], { ...layout_base, xaxis: { ...layout_base.xaxis, range: [0, 42] } }, config);
 
-        // 2. Gauss
+        // Gauss
         Plotly.react('chart_sums', [{
             x: sums, type: 'histogram', marker: { color: '#00f2ff' }, opacity: 0.7
         }], { ...layout_base, bargap: 0.05, shapes: [{type:'line', x0:126, x1:126, y0:0, y1:1, xref:'x', yref:'paper', line:{color:'white', dash:'dot'}}] }, config);
 
-        // 3. Paridad
+        // Paridad (Mapeo Explícito para asegurar orden y renderizado)
+        const parValues = parityKeys.map(k => parities[k]);
         Plotly.react('chart_parity', [{
-            x: Object.keys(parities), y: Object.values(parities), type: 'bar',
+            x: parityKeys, y: parValues, type: 'bar',
             marker: { color: ['#ff0055','#ffcc00','#00ff41','#00f2ff','#00ff41','#ffcc00','#ff0055'] }
         }], layout_base, config);
 
-        // 4. Heatmap
+        // Heatmap
         Plotly.react('chart_heatmap', [{
             z: matrix.slice(1).map(r=>r.slice(1)), type: 'heatmap', colorscale: 'Viridis', showscale: false
         }], { ...layout_base, margin: {t:0,b:20,l:20,r:20} }, config);
 
-        // 5. Lag
+        // Lag
         let lagX = sums.slice(0,-1), lagY = sums.slice(1);
         Plotly.react('chart_lag', [{
             x: lagX, y: lagY, mode: 'markers', marker: { color: '#00ff41', size: 3, opacity: 0.5 }
         }], { ...layout_base, xaxis: {title:'T', ...layout_base.xaxis}, yaxis: {title:'T+1', ...layout_base.yaxis} }, config);
 
-        // 6. Sequía
+        // Sequía
         let dVal = new Array(41).fill(0).map((_,i) => lastSeen[i+1] === -1 ? totalDraws : (totalDraws-1)-lastSeen[i+1]);
         Plotly.react('chart_drought', [{
             x: xArr, y: dVal, type: 'bar', marker: { color: dVal.map(d=>d>20?'#ff0055':d>10?'#ffcc00':'#222') }
@@ -340,14 +357,8 @@
         document.getElementById('pairs_table').innerHTML = sortedPairs.map(([p,c])=>`<tr><td>[${p}]</td><td>${c}</td></tr>`).join('');
     }
 
-    // REDIMENSIONAR al cambiar tamaño ventana
     window.onresize = function() {
-        Plotly.Plots.resize('chart_freq');
-        Plotly.Plots.resize('chart_sums');
-        Plotly.Plots.resize('chart_parity');
-        Plotly.Plots.resize('chart_heatmap');
-        Plotly.Plots.resize('chart_lag');
-        Plotly.Plots.resize('chart_drought');
+        ['chart_freq','chart_sums','chart_parity','chart_heatmap','chart_lag','chart_drought'].forEach(id => Plotly.Plots.resize(id));
     };
 </script>
 </body>
