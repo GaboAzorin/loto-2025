@@ -3,11 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LOTO :: SECURITY AUDIT v2.0</title>
+    <title>LOTO :: SECURITY AUDIT v3.0</title>
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <script src="https://cdn.plot.ly/plotly-2.20.0.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jstat/1.9.4/jstat.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"/>
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
     
     <style>
         :root {
@@ -26,18 +29,58 @@
             font-family: 'Consolas', 'Monaco', monospace;
             margin: 0; padding: 20px;
             background-image: radial-gradient(circle at 50% 0%, rgba(0, 255, 65, 0.05) 0%, transparent 60%);
+            overflow-x: hidden;
         }
         .container { max-width: 1400px; margin: 0 auto; }
         
-        /* HEADER */
-        header { border-bottom: 1px solid var(--border); padding-bottom: 20px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; }
-        h1 { color: var(--accent); margin: 0; text-transform: uppercase; letter-spacing: 2px; font-size: 1.5rem; display: flex; align-items: center; gap: 10px; }
-        .back-link { color: var(--cyan); text-decoration: none; border: 1px solid var(--border); padding: 5px 15px; border-radius: 4px; transition: all 0.3s; }
+        /* HEADER & NAV */
+        header { margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 15px;}
+        h1 { color: var(--accent); margin: 0; text-transform: uppercase; font-size: 1.2rem; display: flex; align-items: center; gap: 10px; }
+        .back-link { color: var(--cyan); text-decoration: none; border: 1px solid var(--border); padding: 5px 15px; border-radius: 4px; transition: all 0.3s; font-size: 0.8rem; }
         .back-link:hover { background: rgba(0, 242, 255, 0.1); border-color: var(--cyan); }
 
-        /* GRID */
+        /* SWIPER (GAME SELECTOR) */
+        .game-selector-wrapper {
+            margin-bottom: 30px;
+            position: relative;
+            padding: 0 40px; /* Space for arrows */
+        }
+        .swiper {
+            width: 100%;
+            padding: 20px 0;
+            overflow: visible;
+        }
+        .swiper-slide {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            opacity: 0.4;
+            transform: scale(0.9);
+            transition: all 0.3s;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100px;
+        }
+        .swiper-slide-active {
+            opacity: 1;
+            transform: scale(1.05);
+            border-color: var(--accent);
+            box-shadow: 0 0 20px rgba(0, 255, 65, 0.2);
+            background: rgba(0, 255, 65, 0.05);
+        }
+        .game-title { font-size: 1.2rem; font-weight: bold; color: white; margin-bottom: 5px; }
+        .game-sub { font-size: 0.7rem; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+
+        .swiper-button-prev, .swiper-button-next { color: var(--accent); }
+        .swiper-button-prev::after, .swiper-button-next::after { font-size: 1.5rem; font-weight: bold; }
+
+        /* GRID SYSTEM */
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 20px; }
-        .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
         .full-width { grid-column: 1 / -1; }
         
         .card { 
@@ -47,6 +90,7 @@
             padding: 15px; 
             backdrop-filter: blur(10px);
             box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            transition: transform 0.3s;
         }
         
         /* KPIS */
@@ -57,89 +101,93 @@
         .status-ok { color: var(--accent); text-shadow: 0 0 10px rgba(0, 255, 65, 0.3); }
         .status-fail { color: var(--alert); }
 
-        /* TABLA */
+        /* TABLA & CHARTS */
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         td { padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.85em; }
         td:nth-child(2) { text-align: right; color: var(--cyan); font-weight: bold; }
-
-        /* LOADER */
-        #loader { text-align: center; padding: 100px; color: var(--accent); font-size: 1.2em; animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
-        
-        /* CHARTS */
         .chart-container { height: 350px; width: 100%; }
         .section-title { color: var(--text); border-left: 3px solid var(--accent); padding-left: 10px; margin-bottom: 15px; font-weight: bold; text-transform: uppercase; font-size: 0.9rem; }
+
+        #loader { text-align: center; padding: 100px; color: var(--accent); font-size: 1.2em; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
     </style>
 </head>
 <body>
 
 <div class="container">
     <header>
-        <h1><i data-lucide="shield-alert"></i> Auditoría Forense Loto</h1>
-        <a href="index.html" class="back-link"><i data-lucide="arrow-left" style="width:14px;"></i> Volver al Dashboard</a>
+        <h1><i data-lucide="shield-alert"></i> Auditoría Forense</h1>
+        <a href="index.html" class="back-link"><i data-lucide="arrow-left" style="width:14px;"></i> Volver</a>
     </header>
 
-    <div id="loader">INITIALIZING SYSTEM AUDIT PROTOCOLS...</div>
+    <div id="loader">CARGANDO BASE DE DATOS MAESTRA...</div>
 
-    <div id="dashboard" style="display:none;">
+    <div id="dashboard" style="display:none; opacity: 0; transition: opacity 1s;">
+        
+        <div class="game-selector-wrapper">
+            <div class="swiper">
+                <div class="swiper-wrapper">
+                    </div>
+            </div>
+            <div class="swiper-button-prev"></div>
+            <div class="swiper-button-next"></div>
+        </div>
         
         <div class="kpi-row">
             <div class="kpi-card">
-                <div class="kpi-lbl">Total Sorteos</div>
+                <div class="kpi-lbl">Sorteos Analizados</div>
                 <div class="kpi-val" id="kpi_total">0</div>
             </div>
             <div class="kpi-card">
-                <div class="kpi-lbl">Chi-Square (Aleatoriedad)</div>
+                <div class="kpi-lbl">Chi-Square (Azar)</div>
                 <div class="kpi-val" id="kpi_pvalue">0.00</div>
             </div>
             <div class="kpi-card">
-                <div class="kpi-lbl">Estado del Sistema</div>
+                <div class="kpi-lbl">Estado del Algoritmo</div>
                 <div class="kpi-val" id="kpi_status">...</div>
             </div>
             <div class="kpi-card">
-                <div class="kpi-lbl">Memoria (Autocorrelación)</div>
+                <div class="kpi-lbl">Memoria (Lag)</div>
                 <div class="kpi-val" id="kpi_lag">0.00</div>
             </div>
         </div>
 
         <div class="grid">
             <div class="card" style="flex: 2;">
-                <div class="section-title">1. Espectro de Frecuencia (Uniformidad)</div>
+                <div class="section-title">1. Frecuencia de Números</div>
                 <div id="chart_freq" class="chart-container"></div>
             </div>
             <div class="card" style="flex: 1;">
-                 <div class="section-title">Top 10 "Matrimonios" (Pares)</div>
+                 <div class="section-title">Top 10 Parejas</div>
                  <table id="pairs_table"></table>
             </div>
         </div>
 
         <div class="grid">
             <div class="card">
-                <div class="section-title">2. Distribución de Sumas (Campana de Gauss)</div>
+                <div class="section-title">2. Distribución de Sumas (Gauss)</div>
                 <div id="chart_sums" class="chart-container"></div>
-                <div style="text-align:center; font-size:0.8em; color:#888; margin-top:5px;">Ideal: Curva centrada en ~126</div>
             </div>
             <div class="card">
-                <div class="section-title">3. Balance Pares vs Impares</div>
+                <div class="section-title">3. Balance Paridad</div>
                 <div id="chart_parity" class="chart-container"></div>
-                <div style="text-align:center; font-size:0.8em; color:#888; margin-top:5px;">Ideal: Mayoría 3P-3I o 4P-2I</div>
             </div>
         </div>
 
         <div class="grid">
             <div class="card">
-                 <div class="section-title">4. Matriz de Co-Ocurrencia</div>
+                 <div class="section-title">4. Mapa de Calor</div>
                  <div id="chart_heatmap" class="chart-container" style="height: 400px;"></div>
             </div>
             <div class="card">
-                 <div class="section-title">5. Análisis Temporal (Lag Plot)</div>
+                 <div class="section-title">5. Lag Plot (T vs T+1)</div>
                  <div id="chart_lag" class="chart-container" style="height: 400px;"></div>
             </div>
         </div>
 
         <div class="grid">
             <div class="card full-width">
-                <div class="section-title">6. Monitor de Sequía (Sorteos desde última aparición)</div>
+                <div class="section-title">6. Monitor de Sequía (Números Fríos)</div>
                 <div id="chart_drought" class="chart-container" style="height: 300px;"></div>
             </div>
         </div>
@@ -150,10 +198,19 @@
 <script>
     lucide.createIcons();
     
-    // URL DEL CSV (Asume que está en la misma carpeta del repo)
-    const CSV_URL = 'LOTO_HISTORIAL_MAESTRO.csv'; 
+    const CSV_URL = 'LOTO_HISTORIAL_MAESTRO.csv';
+    let RAW_DATA = []; // Almacena el CSV completo
 
-    // CONFIGURACIÓN PLOTLY (Tema Cyber Dark)
+    // CONFIGURACIÓN DE LOS JUEGOS
+    const GAMES_CONFIG = [
+        { key: 'LOTO', name: 'LOTO CLÁSICO', desc: 'Sorteo Principal' },
+        { key: 'RECARGADO', name: 'RECARGADO', desc: 'Segunda Oportunidad' },
+        { key: 'REVANCHA', name: 'REVANCHA', desc: 'Tercera Oportunidad' },
+        { key: 'DESQUITE', name: 'DESQUITE', desc: 'Cuarta Oportunidad' },
+        { key: 'AHORA_SI_QUE_SI', name: 'AHORA SÍ QUE SÍ', desc: 'Quinta Oportunidad' }
+    ];
+
+    // CONFIG PLOTLY
     const layout_base = {
         paper_bgcolor: 'rgba(0,0,0,0)',
         plot_bgcolor: 'rgba(0,0,0,0)',
@@ -164,36 +221,92 @@
         showlegend: false
     };
 
+    // 1. INICIALIZAR SWIPER
+    function initCarousel() {
+        const wrapper = document.querySelector('.swiper-wrapper');
+        GAMES_CONFIG.forEach(game => {
+            const slide = document.createElement('div');
+            slide.className = 'swiper-slide';
+            slide.innerHTML = `
+                <div class="game-title">${game.name}</div>
+                <div class="game-sub">${game.desc}</div>
+            `;
+            wrapper.appendChild(slide);
+        });
+
+        const swiper = new Swiper('.swiper', {
+            slidesPerView: 1.5,
+            spaceBetween: 20,
+            centeredSlides: true,
+            loop: false,
+            navigation: { nextEl: '.swiper-button-next', prevEl: '.swiper-button-prev' },
+            breakpoints: {
+                640: { slidesPerView: 2.5 },
+                1024: { slidesPerView: 3.5 }
+            },
+            on: {
+                slideChange: function () {
+                    const activeIndex = this.activeIndex;
+                    const selectedGame = GAMES_CONFIG[activeIndex];
+                    updateDashboard(selectedGame.key);
+                }
+            }
+        });
+    }
+
+    // 2. CARGAR DATOS
     Papa.parse(CSV_URL, {
         download: true, header: true,
-        complete: function(results) { analyzeData(results.data); },
-        error: function(err) { alert("Error cargando CSV: " + err); }
+        complete: function(results) {
+            RAW_DATA = results.data;
+            initCarousel();
+            // Cargar LOTO por defecto
+            updateDashboard('LOTO'); 
+            
+            document.getElementById('loader').style.display = 'none';
+            const dash = document.getElementById('dashboard');
+            dash.style.display = 'block';
+            setTimeout(() => dash.style.opacity = 1, 100);
+        },
+        error: function(err) { alert("Error CSV: " + err); }
     });
 
-    function analyzeData(data) {
-        // Limpieza de datos
-        const cleanData = data.filter(row => row.LOTO_n1 && row.LOTO_n6 && row.sorteo);
+    // 3. CEREBRO DE LA AUDITORÍA (DINÁMICO)
+    function updateDashboard(gameKey) {
+        console.log(`[AUDIT] Analizando protocolo: ${gameKey}...`);
         
-        let numbers = []; 
-        let sums = [];
-        let rows = [];
-        let parities = { '0P-6I':0, '1P-5I':0, '2P-4I':0, '3P-3I':0, '4P-2I':0, '5P-1I':0, '6P-0I':0 };
-        
-        // Para sequía (Last Seen)
-        let lastSeen = new Array(42).fill(-1); // Indices 1-41
-        let currentDrawIndex = 0;
+        // Filtrar datos válidos para ESTE juego específico
+        // (Porque el Desquite puede haber empezado años después que el Loto)
+        const cleanData = [];
+        RAW_DATA.forEach((row, idx) => {
+            // Verificar que existan las columnas del juego seleccionado (ej: RECARGADO_n1)
+            // y que no estén vacías
+            if(row[`${gameKey}_n1`] && row[`${gameKey}_n6`] && row.sorteo) {
+                let nums = [
+                    parseInt(row[`${gameKey}_n1`]), parseInt(row[`${gameKey}_n2`]), parseInt(row[`${gameKey}_n3`]),
+                    parseInt(row[`${gameKey}_n4`]), parseInt(row[`${gameKey}_n5`]), parseInt(row[`${gameKey}_n6`])
+                ];
+                // Validación extra: todos deben ser números > 0
+                if(nums.every(n => !isNaN(n) && n > 0)) {
+                    cleanData.push({ nums: nums, sortIdx: parseInt(row.sorteo) });
+                }
+            }
+        });
 
-        // Ordenar cronológicamente (CSV suele venir desc, lo invertimos si es necesario o asumimos orden)
-        // Vamos a asumir que el CSV puede venir desordenado, lo ordenamos por sorteo numérico
-        cleanData.sort((a,b) => parseInt(a.sorteo) - parseInt(b.sorteo));
+        // Ordenar por sorteo
+        cleanData.sort((a,b) => a.sortIdx - b.sortIdx);
         const totalDraws = cleanData.length;
 
-        cleanData.forEach((row, idx) => {
-            let sortNums = [
-                parseInt(row.LOTO_n1), parseInt(row.LOTO_n2), parseInt(row.LOTO_n3),
-                parseInt(row.LOTO_n4), parseInt(row.LOTO_n5), parseInt(row.LOTO_n6)
-            ];
-            rows.push(sortNums);
+        // --- CÁLCULOS MATEMÁTICOS ---
+        let numbers = []; 
+        let sums = [];
+        let parities = { '0P-6I':0, '1P-5I':0, '2P-4I':0, '3P-3I':0, '4P-2I':0, '5P-1I':0, '6P-0I':0 };
+        let lastSeen = new Array(42).fill(-1);
+        let pairsObj = {};
+        let matrix = Array(42).fill().map(() => Array(42).fill(0));
+
+        cleanData.forEach((item, idx) => {
+            let sortNums = item.nums;
             numbers.push(...sortNums);
             
             // Suma
@@ -202,39 +315,36 @@
 
             // Paridad
             let evens = sortNums.filter(n => n % 2 === 0).length;
-            let odds = 6 - evens;
-            let key = `${evens}P-${odds}I`;
+            let key = `${evens}P-${6-evens}I`;
             if(parities[key] !== undefined) parities[key]++;
 
-            // Sequía
-            sortNums.forEach(n => {
+            // Heatmap & Pares
+            for(let i=0; i<sortNums.length; i++) {
+                // Sequía (actualizar índice de última vez visto)
+                let n = sortNums[i];
                 if(n >= 1 && n <= 41) lastSeen[n] = idx;
-            });
+
+                for(let j=i+1; j<sortNums.length; j++) {
+                    let n1 = sortNums[i], n2 = sortNums[j];
+                    if(n1 > n2) [n1, n2] = [n2, n1];
+                    if(n1>0 && n2>0 && n2<=41) {
+                        matrix[n2][n1]++; matrix[n1][n2]++;
+                        let pk = n1 + "-" + n2;
+                        pairsObj[pk] = (pairsObj[pk] || 0) + 1;
+                    }
+                }
+            }
         });
 
-        // --- CÁLCULOS ESTADÍSTICOS ---
-
-        // 1. Frecuencia
+        // 1. Frecuencia & Chi-Cuadrado
         let counts = new Array(42).fill(0);
         numbers.forEach(n => { if(n >=1 && n<=41) counts[n]++; });
         let expected = numbers.length / 41;
-        
-        // Chi-Cuadrado
         let chiSq = 0;
         for(let i=1; i<=41; i++) { chiSq += Math.pow(counts[i] - expected, 2) / expected; }
         let pValue = 1 - jStat.chisquare.cdf(chiSq, 40);
 
-        // 2. Sequía (Drought) actual
-        let drought = new Array(42).fill(0);
-        for(let i=1; i<=41; i++) {
-            if(lastSeen[i] !== -1) {
-                drought[i] = (totalDraws - 1) - lastSeen[i];
-            } else {
-                drought[i] = totalDraws; // Nunca ha salido
-            }
-        }
-
-        // 3. Autocorrelación
+        // 2. Autocorrelación (Lag)
         let lagX = sums.slice(0, -1);
         let lagY = sums.slice(1);
         let meanX = jStat.mean(lagX);
@@ -245,95 +355,67 @@
             num += dx * dy; den1 += dx*dx; den2 += dy*dy;
         }
         let correlation = num / Math.sqrt(den1 * den2);
+        if(isNaN(correlation)) correlation = 0;
 
+        // 3. Sequía Final
+        let drought = new Array(42).fill(0);
+        for(let i=1; i<=41; i++) {
+            if(lastSeen[i] !== -1) drought[i] = (totalDraws - 1) - lastSeen[i];
+            else drought[i] = totalDraws;
+        }
 
-        // --- RENDERIZADO DOM ---
-        document.getElementById('loader').style.display = 'none';
-        document.getElementById('dashboard').style.display = 'block';
-
-        // KPIs
+        // --- ACTUALIZAR DOM ---
         document.getElementById('kpi_total').innerText = totalDraws;
         document.getElementById('kpi_pvalue').innerText = pValue.toFixed(4);
         document.getElementById('kpi_lag').innerText = correlation.toFixed(4);
         
         const st = document.getElementById('kpi_status');
         if(pValue > 0.05) { st.innerText = "ROBUSTO"; st.className = "kpi-val status-ok"; }
-        else { st.innerText = "SESGO"; st.className = "kpi-val status-fail"; }
+        else { st.innerText = "SESGO DETECTADO"; st.className = "kpi-val status-fail"; }
 
-        // CHART 1: FRECUENCIA
+        // PLOTLY UPDATES (React es más rápido que newPlot)
+        
+        // Frecuencia
         let xArr = Array.from({length: 41}, (_, i) => i + 1);
         let yArr = counts.slice(1);
         let colFreq = yArr.map(y => (y > expected*1.15 || y < expected*0.85) ? '#ff0055' : '#00ff41');
-        Plotly.newPlot('chart_freq', [{
+        Plotly.react('chart_freq', [{
             x: xArr, y: yArr, type: 'bar', marker: { color: colFreq }
-        }], { ...layout_base, title: '', margin: {t:10, b:30, l:30, r:10} });
+        }], { ...layout_base, margin: {t:10, b:30, l:30, r:10} });
 
-        // CHART 2: SUMAS (GAUSS)
-        Plotly.newPlot('chart_sums', [{
+        // Gauss
+        Plotly.react('chart_sums', [{
             x: sums, type: 'histogram', 
-            marker: { color: '#00f2ff', line: {color: '#000', width: 1} },
-            opacity: 0.7
-        }], { 
-            ...layout_base, 
-            bargap: 0.05,
-            xaxis: { title: 'Suma Total', ...layout_base.xaxis },
-            shapes: [{ // Línea media teórica
-                type: 'line', x0: 126, x1: 126, y0: 0, y1: 1, xref: 'x', yref: 'paper',
-                line: { color: 'white', width: 1, dash: 'dot'}
-            }]
-        });
+            marker: { color: '#00f2ff', line: {color: '#000', width: 1} }, opacity: 0.7
+        }], { ...layout_base, bargap: 0.05, shapes: [{ type: 'line', x0: 126, x1: 126, y0: 0, y1: 1, xref: 'x', yref: 'paper', line: { color: 'white', width: 1, dash: 'dot'} }] });
 
-        // CHART 3: PARIDAD
-        let pLabels = Object.keys(parities);
-        let pValues = Object.values(parities);
-        Plotly.newPlot('chart_parity', [{
-            x: pLabels, y: pValues, type: 'bar',
+        // Paridad
+        Plotly.react('chart_parity', [{
+            x: Object.keys(parities), y: Object.values(parities), type: 'bar',
             marker: { color: ['#ff0055', '#ffcc00', '#00ff41', '#00f2ff', '#00ff41', '#ffcc00', '#ff0055'] }
-        }], { ...layout_base, xaxis: {title: ''} });
+        }], { ...layout_base });
 
-        // CHART 4: HEATMAP
-        let matrix = Array(42).fill().map(() => Array(42).fill(0));
-        let pairsObj = {};
-        rows.forEach(r => {
-            for(let i=0; i<r.length; i++) {
-                for(let j=i+1; j<r.length; j++) {
-                    let n1 = r[i], n2 = r[j];
-                    if(n1 > n2) [n1, n2] = [n2, n1];
-                    if(n1>0 && n2>0 && n2<=41) {
-                        matrix[n2][n1]++; matrix[n1][n2]++;
-                        let k = n1 + "-" + n2;
-                        pairsObj[k] = (pairsObj[k] || 0) + 1;
-                    }
-                }
-            }
-        });
-        Plotly.newPlot('chart_heatmap', [{
+        // Heatmap
+        Plotly.react('chart_heatmap', [{
             z: matrix.slice(1).map(r => r.slice(1)), 
             type: 'heatmap', colorscale: 'Viridis'
         }], { ...layout_base, margin: {t:0, b:30, l:30, r:30} });
 
-        // CHART 5: LAG PLOT
-        Plotly.newPlot('chart_lag', [{
+        // Lag
+        Plotly.react('chart_lag', [{
             x: lagX, y: lagY, mode: 'markers',
             marker: { color: '#00ff41', size: 4, opacity: 0.5 }
-        }], { 
-            ...layout_base, 
-            xaxis: { title: 'Suma T', ...layout_base.xaxis },
-            yaxis: { title: 'Suma T+1', ...layout_base.yaxis }
-        });
+        }], { ...layout_base, xaxis: { title: 'Suma T', ...layout_base.xaxis }, yaxis: { title: 'Suma T+1', ...layout_base.yaxis } });
 
-        // CHART 6: SEQUÍA (Drought)
+        // Sequía
         let dVal = drought.slice(1);
         let dCol = dVal.map(d => d > 20 ? '#ff0055' : (d > 10 ? '#ffcc00' : '#222'));
-        Plotly.newPlot('chart_drought', [{
+        Plotly.react('chart_drought', [{
             x: xArr, y: dVal, type: 'bar',
             marker: { color: dCol }
-        }], { 
-            ...layout_base, 
-            yaxis: { title: 'Sorteos sin salir', ...layout_base.yaxis }
-        });
+        }], { ...layout_base });
 
-        // TOP PARES
+        // Tabla Top Pares
         let sortedPairs = Object.entries(pairsObj).sort((a,b) => b[1] - a[1]).slice(0,10);
         let tableHTML = "";
         sortedPairs.forEach(([pair, count]) => {
