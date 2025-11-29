@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LOTO :: SECURITY AUDIT v3.3</title>
+    <title>LOTO :: SECURITY AUDIT v4.0</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <script src="https://cdn.plot.ly/plotly-2.20.0.min.js"></script>
@@ -21,6 +21,7 @@
             --accent: #00ff41;
             --cyan: #00f2ff;
             --alert: #ff0055;
+            --gold: #ffd700;
         }
         body {
             background-color: var(--bg);
@@ -32,10 +33,29 @@
         }
         .container { max-width: 1400px; margin: 0 auto; }
         
-        /* HEADER */
-        header { margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 15px;}
+        /* HEADER & CONTROLS */
+        header { 
+            margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 15px;
+            display: flex; flex-direction: column; gap: 15px;
+        }
+        .header-top { display: flex; justify-content: space-between; align-items: center; }
+        
         h1 { color: var(--accent); margin: 0; text-transform: uppercase; font-size: 1rem; display: flex; align-items: center; gap: 8px; }
         .back-link { color: var(--cyan); text-decoration: none; border: 1px solid var(--border); padding: 5px 12px; border-radius: 4px; font-size: 0.75rem; }
+
+        /* DAY FILTER SELECTOR */
+        .day-selector {
+            display: flex; gap: 10px; justify-content: center; background: rgba(0,0,0,0.3); padding: 5px; border-radius: 8px;
+        }
+        .day-btn {
+            background: transparent; border: 1px solid var(--border); color: #888;
+            padding: 8px 15px; border-radius: 6px; cursor: pointer; font-family: inherit; font-size: 0.8rem;
+            transition: all 0.2s; flex: 1; text-align: center;
+        }
+        .day-btn.active {
+            background: var(--cyan); color: #000; font-weight: bold; border-color: var(--cyan); box-shadow: 0 0 10px rgba(0, 242, 255, 0.3);
+        }
+        .day-btn:hover:not(.active) { border-color: var(--cyan); color: var(--cyan); }
 
         /* SWIPER */
         .game-selector-wrapper { margin-bottom: 25px; position: relative; }
@@ -51,17 +71,11 @@
             transition: all 0.3s;
             cursor: pointer;
             height: 90px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
         }
         .swiper-slide-active {
-            opacity: 1;
-            transform: scale(1.05);
-            border-color: var(--accent);
-            box-shadow: 0 0 15px rgba(0, 255, 65, 0.15);
-            background: rgba(0, 255, 65, 0.08);
+            opacity: 1; transform: scale(1.05); border-color: var(--accent);
+            box-shadow: 0 0 15px rgba(0, 255, 65, 0.15); background: rgba(0, 255, 65, 0.08);
         }
         .game-title { font-size: 1rem; font-weight: bold; color: white; margin-bottom: 4px; line-height: 1.2; }
         .game-sub { font-size: 0.65rem; color: #aaa; text-transform: uppercase; letter-spacing: 0.5px; }
@@ -71,21 +85,18 @@
         .kpi-card { text-align: center; padding: 15px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px; }
         .kpi-val { font-size: 1.5em; font-weight: bold; color: white; margin: 5px 0; }
         .kpi-lbl { color: #888; font-size: 0.7em; text-transform: uppercase; }
-        .status-ok { color: var(--accent); }
-        .status-fail { color: var(--alert); }
+        .status-ok { color: var(--accent); } .status-fail { color: var(--alert); }
 
         /* GRID & CHARTS */
         .grid { display: flex; flex-direction: column; gap: 20px; margin-bottom: 20px; }
         .card { 
-            background: var(--panel); 
-            border: 1px solid var(--border); 
-            border-radius: 8px; 
-            padding: 10px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            background: var(--panel); border: 1px solid var(--border); border-radius: 8px; 
+            padding: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);
         }
         .section-title { 
             color: var(--text); border-left: 3px solid var(--accent); padding-left: 10px; 
             margin-bottom: 10px; font-weight: bold; text-transform: uppercase; font-size: 0.85rem; 
+            display: flex; justify-content: space-between;
         }
         .chart-container { width: 100%; height: 280px; position: relative; }
 
@@ -96,6 +107,9 @@
         #loader { text-align: center; padding: 50px; color: var(--accent); font-size: 1rem; }
         
         @media (min-width: 768px) {
+            .header-top { margin-bottom: 10px; }
+            header { display: block; }
+            .day-selector { width: fit-content; margin-top: 10px; }
             .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
             .full-width { grid-column: 1 / -1; }
             .kpi-row { display: flex; }
@@ -108,11 +122,23 @@
 
 <div class="container">
     <header>
-        <h1><i data-lucide="shield-check" style="width:18px;"></i> Auditoría Forense</h1>
-        <a href="index.html" class="back-link"><i data-lucide="arrow-left" style="width:12px;"></i> Volver</a>
+        <div class="header-top">
+            <h1><i data-lucide="shield-check" style="width:18px;"></i> Auditoría Forense v4.0</h1>
+            <a href="index.html" class="back-link"><i data-lucide="arrow-left" style="width:12px;"></i> Volver</a>
+        </div>
+        
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+            <span style="font-size:0.8rem; color:#888; text-transform:uppercase;">Filtrar por Día:</span>
+            <div class="day-selector">
+                <button class="day-btn active" onclick="setDayFilter('ALL', this)">TODOS</button>
+                <button class="day-btn" onclick="setDayFilter('Tue', this)">MARTES</button>
+                <button class="day-btn" onclick="setDayFilter('Thu', this)">JUEVES</button>
+                <button class="day-btn" onclick="setDayFilter('Sun', this)">DOMINGO</button>
+            </div>
+        </div>
     </header>
 
-    <div id="loader">CARGANDO SISTEMA...</div>
+    <div id="loader">CARGANDO BASE DE DATOS MAESTRA...</div>
 
     <div id="dashboard" style="display:none; opacity: 0; transition: opacity 0.5s;">
         <div class="game-selector-wrapper">
@@ -122,7 +148,7 @@
         </div>
         
         <div class="kpi-row">
-            <div class="kpi-card"><div class="kpi-lbl">Sorteos</div><div class="kpi-val" id="kpi_total">0</div></div>
+            <div class="kpi-card"><div class="kpi-lbl">Muestra (Sorteos)</div><div class="kpi-val" id="kpi_total">0</div></div>
             <div class="kpi-card"><div class="kpi-lbl">Chi-Square</div><div class="kpi-val" id="kpi_pvalue">0.00</div></div>
             <div class="kpi-card"><div class="kpi-lbl">Estado</div><div class="kpi-val" id="kpi_status">...</div></div>
             <div class="kpi-card"><div class="kpi-lbl">Memoria (Lag)</div><div class="kpi-val" id="kpi_lag">0.00</div></div>
@@ -141,7 +167,7 @@
 
         <div class="grid">
             <div class="card">
-                <div class="section-title">2. Distribución de Sumas</div>
+                <div class="section-title">2. Distribución de Sumas (Gauss)</div>
                 <div id="chart_sums" class="chart-container"></div>
             </div>
             <div class="card">
@@ -152,12 +178,16 @@
 
         <div class="grid">
             <div class="card">
-                 <div class="section-title">4. Mapa de Calor</div>
-                 <div id="chart_heatmap" class="chart-container"></div>
+                 <div class="section-title">
+                     <span>4. Balance Altos vs Bajos</span>
+                     <span style="font-size:0.7em; color:var(--gold);">NEW</span>
+                 </div>
+                 <div id="chart_highlow" class="chart-container"></div>
+                 <div style="text-align:center; font-size:0.7em; color:#888;">Bajos (1-20) | Altos (21-41)</div>
             </div>
             <div class="card">
-                 <div class="section-title">5. Lag Plot</div>
-                 <div id="chart_lag" class="chart-container"></div>
+                 <div class="section-title">5. Mapa de Calor</div>
+                 <div id="chart_heatmap" class="chart-container"></div>
             </div>
         </div>
 
@@ -174,6 +204,8 @@
     lucide.createIcons();
     const CSV_URL = 'LOTO_HISTORIAL_MAESTRO.csv';
     let RAW_DATA = [];
+    let CURRENT_GAME = 'LOTO';
+    let CURRENT_DAY = 'ALL';
 
     const GAMES_CONFIG = [
         { key: 'LOTO', name: 'LOTO', desc: 'Clásico' },
@@ -183,7 +215,6 @@
         { key: 'AHORA_SI_QUE_SI', name: 'AHORA SÍ', desc: 'Opción 5' }
     ];
 
-    // Layout Base Genérico
     const layout_base = {
         paper_bgcolor: 'rgba(0,0,0,0)',
         plot_bgcolor: 'rgba(0,0,0,0)',
@@ -209,8 +240,18 @@
             spaceBetween: 10,
             centeredSlides: true,
             breakpoints: { 640: { slidesPerView: 3.5, spaceBetween: 20 } },
-            on: { slideChange: function () { updateDashboard(GAMES_CONFIG[this.activeIndex].key); } }
+            on: { slideChange: function () { 
+                CURRENT_GAME = GAMES_CONFIG[this.activeIndex].key;
+                updateDashboard(); 
+            } }
         });
+    }
+
+    function setDayFilter(day, btn) {
+        CURRENT_DAY = day;
+        document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        updateDashboard();
     }
 
     Papa.parse(CSV_URL, {
@@ -218,7 +259,7 @@
         complete: function(results) {
             RAW_DATA = results.data;
             initCarousel();
-            updateDashboard('LOTO');
+            updateDashboard();
             document.getElementById('loader').style.display = 'none';
             const d = document.getElementById('dashboard');
             d.style.display = 'block';
@@ -226,32 +267,52 @@
         }
     });
 
-    function updateDashboard(gameKey) {
-        // 1. Filtrado de Datos
+    function updateDashboard() {
+        const gameKey = CURRENT_GAME;
+        
+        // 1. Filtrado de Datos (Juego + Día)
         const cleanData = [];
         RAW_DATA.forEach(row => {
-            const n1 = row[`${gameKey}_n1`];
-            const n6 = row[`${gameKey}_n6`];
-            if(n1 && n6 && row.sorteo) {
-                let nums = [
-                    parseInt(row[`${gameKey}_n1`]), parseInt(row[`${gameKey}_n2`]), parseInt(row[`${gameKey}_n3`]),
-                    parseInt(row[`${gameKey}_n4`]), parseInt(row[`${gameKey}_n5`]), parseInt(row[`${gameKey}_n6`])
-                ];
-                if(nums.every(n => !isNaN(n) && n > 0)) {
-                    cleanData.push({ nums: nums, sortIdx: parseInt(row.sorteo) });
+            // Verificar columnas válidas
+            if(row[`${gameKey}_n1`] && row[`${gameKey}_n6`] && row.sorteo && row.fecha) {
+                
+                // Filtro de Día (Day Slicing)
+                let passDay = true;
+                if(CURRENT_DAY !== 'ALL') {
+                    // Convertir fecha string a objeto Date
+                    // Asumimos formato YYYY-MM-DD HH:mm:ss o similar
+                    // Ojo: Playwright scraper suele dar formato compatible
+                    const d = new Date(row.fecha.replace(' ', 'T')); // ISO format trick
+                    const dayStr = d.toDateString(); // "Tue Jan 01 2016"
+                    if(!dayStr.includes(CURRENT_DAY)) passDay = false;
+                }
+
+                if(passDay) {
+                    let nums = [
+                        parseInt(row[`${gameKey}_n1`]), parseInt(row[`${gameKey}_n2`]), parseInt(row[`${gameKey}_n3`]),
+                        parseInt(row[`${gameKey}_n4`]), parseInt(row[`${gameKey}_n5`]), parseInt(row[`${gameKey}_n6`])
+                    ];
+                    if(nums.every(n => !isNaN(n) && n > 0)) {
+                        cleanData.push({ nums: nums, sortIdx: parseInt(row.sorteo) });
+                    }
                 }
             }
         });
+
+        // Ordenar
         cleanData.sort((a,b) => a.sortIdx - b.sortIdx);
         const totalDraws = cleanData.length;
 
         // 2. Variables de Cálculo
         let numbers = [];
         let sums = [];
-        // Definir orden explícito de llaves para Paridad
         const parityKeys = ['0P-6I','1P-5I','2P-4I','3P-3I','4P-2I','5P-1I','6P-0I'];
         let parities = {}; parityKeys.forEach(k => parities[k]=0);
         
+        // Altos vs Bajos
+        const highLowKeys = ['6B-0A','5B-1A','4B-2A','3B-3A','2B-4A','1B-5A','0B-6A'];
+        let highLows = {}; highLowKeys.forEach(k => highLows[k]=0);
+
         let lastSeen = new Array(42).fill(-1);
         let pairsObj = {};
         let matrix = Array(42).fill().map(()=>Array(42).fill(0));
@@ -262,9 +323,13 @@
             numbers.push(...sortNums);
             sums.push(sortNums.reduce((a,b)=>a+b,0));
             
+            // Paridad
             let evens = sortNums.filter(n => n % 2 === 0).length;
-            let pKey = `${evens}P-${6-evens}I`;
-            if(parities[pKey] !== undefined) parities[pKey]++;
+            parities[`${evens}P-${6-evens}I`]++;
+
+            // Altos/Bajos (Bajo <= 20, Alto >= 21)
+            let lows = sortNums.filter(n => n <= 20).length;
+            highLows[`${lows}B-${6-lows}A`]++;
 
             for(let i=0; i<6; i++) {
                 lastSeen[sortNums[i]] = idx;
@@ -284,22 +349,17 @@
         let chiSq = numbers.length > 0 ? counts.slice(1).reduce((a,b) => a + Math.pow(b-expected,2)/expected, 0) : 0;
         let pValue = 1 - jStat.chisquare.cdf(chiSq, 40);
 
-        // Memoria (Correlación Serial)
+        // Memoria
         let correlation = 0;
         if(sums.length > 1) {
-            let lagX = sums.slice(0, -1);
-            let lagY = sums.slice(1);
-            let meanX = lagX.reduce((a,b)=>a+b,0) / lagX.length;
-            let meanY = lagY.reduce((a,b)=>a+b,0) / lagY.length;
-            let num = 0, den1 = 0, den2 = 0;
+            let lagX = sums.slice(0, -1), lagY = sums.slice(1);
+            let meanX = lagX.reduce((a,b)=>a+b,0)/lagX.length, meanY = lagY.reduce((a,b)=>a+b,0)/lagY.length;
+            let num=0, den1=0, den2=0;
             for(let i=0; i<lagX.length; i++) {
-                let dx = lagX[i] - meanX;
-                let dy = lagY[i] - meanY;
-                num += dx * dy;
-                den1 += dx * dx;
-                den2 += dy * dy;
+                let dx=lagX[i]-meanX, dy=lagY[i]-meanY;
+                num+=dx*dy; den1+=dx*dx; den2+=dy*dy;
             }
-            if(den1 > 0 && den2 > 0) correlation = num / Math.sqrt(den1 * den2);
+            if(den1>0 && den2>0) correlation = num/Math.sqrt(den1*den2);
         }
 
         // 5. Render KPIs
@@ -307,29 +367,37 @@
         document.getElementById('kpi_pvalue').innerText = pValue.toFixed(4);
         document.getElementById('kpi_lag').innerText = correlation.toFixed(5);
         const st = document.getElementById('kpi_status');
-        st.innerText = pValue > 0.05 ? "ROBUSTO" : "SESGO";
-        st.className = pValue > 0.05 ? "kpi-val status-ok" : "kpi-val status-fail";
+        if(totalDraws < 10) {
+            st.innerText = "INSUFICIENTE"; st.className = "kpi-val status-fail";
+        } else {
+            st.innerText = pValue > 0.05 ? "ROBUSTO" : "SESGO";
+            st.className = pValue > 0.05 ? "kpi-val status-ok" : "kpi-val status-fail";
+        }
         
-        // 6. Charts Config
+        // 6. Charts
         const config = { responsive: true, displayModeBar: false };
 
-        // Frecuencia (Numérico)
+        // Frecuencia
         let xArr = Array.from({length: 41}, (_, i) => i + 1);
         let yArr = counts.slice(1);
         Plotly.react('chart_freq', [{
             x: xArr, y: yArr, type: 'bar', marker: { color: yArr.map(y=>(y>expected*1.15||y<expected*0.85)?'#ff0055':'#00ff41') }
         }], { ...layout_base, xaxis: { ...layout_base.xaxis, range: [0.5, 41.5] } }, config);
 
-        // Gauss (Numérico)
+        // Gauss
         Plotly.react('chart_sums', [{
             x: sums, type: 'histogram', marker: { color: '#00f2ff' }, opacity: 0.7
         }], { ...layout_base, bargap: 0.05, shapes: [{type:'line', x0:126, x1:126, y0:0, y1:1, xref:'x', yref:'paper', line:{color:'white', dash:'dot'}}] }, config);
 
-        // Paridad (Categoría - AQUÍ ESTABA EL ERROR)
-        // Forzamos xaxis type: 'category' para que no herede configuración numérica
-        const parValues = parityKeys.map(k => parities[k]);
+        // Paridad
         Plotly.react('chart_parity', [{
-            x: parityKeys, y: parValues, type: 'bar',
+            x: parityKeys, y: parityKeys.map(k=>parities[k]), type: 'bar',
+            marker: { color: ['#ff0055','#ffcc00','#00ff41','#00f2ff','#00ff41','#ffcc00','#ff0055'] }
+        }], { ...layout_base, xaxis: { ...layout_base.xaxis, type: 'category' } }, config);
+
+        // Altos vs Bajos (NUEVO)
+        Plotly.react('chart_highlow', [{
+            x: highLowKeys, y: highLowKeys.map(k=>highLows[k]), type: 'bar',
             marker: { color: ['#ff0055','#ffcc00','#00ff41','#00f2ff','#00ff41','#ffcc00','#ff0055'] }
         }], { ...layout_base, xaxis: { ...layout_base.xaxis, type: 'category' } }, config);
 
@@ -337,12 +405,6 @@
         Plotly.react('chart_heatmap', [{
             z: matrix.slice(1).map(r=>r.slice(1)), type: 'heatmap', colorscale: 'Viridis', showscale: false
         }], { ...layout_base, margin: {t:0,b:20,l:20,r:20} }, config);
-
-        // Lag
-        let lagX = sums.slice(0,-1), lagY = sums.slice(1);
-        Plotly.react('chart_lag', [{
-            x: lagX, y: lagY, mode: 'markers', marker: { color: '#00ff41', size: 3, opacity: 0.5 }
-        }], { ...layout_base, xaxis: {title:'T', ...layout_base.xaxis}, yaxis: {title:'T+1', ...layout_base.yaxis} }, config);
 
         // Sequía
         let dVal = new Array(41).fill(0).map((_,i) => lastSeen[i+1] === -1 ? totalDraws : (totalDraws-1)-lastSeen[i+1]);
@@ -356,7 +418,7 @@
     }
 
     window.onresize = function() {
-        ['chart_freq','chart_sums','chart_parity','chart_heatmap','chart_lag','chart_drought'].forEach(id => Plotly.Plots.resize(id));
+        ['chart_freq','chart_sums','chart_parity','chart_highlow','chart_heatmap','chart_drought'].forEach(id => Plotly.Plots.resize(id));
     };
 </script>
 </body>
