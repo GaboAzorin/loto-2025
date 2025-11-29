@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LOTO :: SECURITY AUDIT v3.2</title>
+    <title>LOTO :: SECURITY AUDIT v3.3</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <script src="https://cdn.plot.ly/plotly-2.20.0.min.js"></script>
@@ -15,7 +15,7 @@
     <style>
         :root {
             --bg: #050a14;
-            --panel: rgba(20, 30, 50, 0.9);
+            --panel: rgba(20, 30, 50, 0.95);
             --border: rgba(255, 255, 255, 0.15);
             --text: #e0e0e0;
             --accent: #00ff41;
@@ -26,7 +26,7 @@
             background-color: var(--bg);
             color: var(--text);
             font-family: 'Consolas', 'Monaco', monospace;
-            margin: 0; padding: 15px;
+            margin: 0; padding: 10px;
             background-image: radial-gradient(circle at 50% 0%, rgba(0, 255, 65, 0.05) 0%, transparent 60%);
             overflow-x: hidden;
         }
@@ -87,7 +87,7 @@
             color: var(--text); border-left: 3px solid var(--accent); padding-left: 10px; 
             margin-bottom: 10px; font-weight: bold; text-transform: uppercase; font-size: 0.85rem; 
         }
-        .chart-container { width: 100%; height: 300px; position: relative; }
+        .chart-container { width: 100%; height: 280px; position: relative; }
 
         table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
         td { padding: 8px 4px; border-bottom: 1px solid rgba(255,255,255,0.05); }
@@ -183,6 +183,7 @@
         { key: 'AHORA_SI_QUE_SI', name: 'AHORA SÍ', desc: 'Opción 5' }
     ];
 
+    // Layout Base Genérico
     const layout_base = {
         paper_bgcolor: 'rgba(0,0,0,0)',
         plot_bgcolor: 'rgba(0,0,0,0)',
@@ -229,7 +230,6 @@
         // 1. Filtrado de Datos
         const cleanData = [];
         RAW_DATA.forEach(row => {
-            // Verificar claves dinámicas usando bracket notation
             const n1 = row[`${gameKey}_n1`];
             const n6 = row[`${gameKey}_n6`];
             if(n1 && n6 && row.sorteo) {
@@ -245,13 +245,12 @@
         cleanData.sort((a,b) => a.sortIdx - b.sortIdx);
         const totalDraws = cleanData.length;
 
-        // 2. Variables de Cálculo (Reiniciar siempre)
+        // 2. Variables de Cálculo
         let numbers = [];
         let sums = [];
-        // Paridad: Orden explícito para el gráfico
+        // Definir orden explícito de llaves para Paridad
         const parityKeys = ['0P-6I','1P-5I','2P-4I','3P-3I','4P-2I','5P-1I','6P-0I'];
-        let parities = {}; 
-        parityKeys.forEach(k => parities[k] = 0);
+        let parities = {}; parityKeys.forEach(k => parities[k]=0);
         
         let lastSeen = new Array(42).fill(-1);
         let pairsObj = {};
@@ -279,14 +278,13 @@
         });
 
         // 4. Métricas
-        // Chi-Square
         let counts = new Array(42).fill(0);
         numbers.forEach(n => { if(n>=1 && n<=41) counts[n]++; });
         let expected = numbers.length/41;
         let chiSq = numbers.length > 0 ? counts.slice(1).reduce((a,b) => a + Math.pow(b-expected,2)/expected, 0) : 0;
         let pValue = 1 - jStat.chisquare.cdf(chiSq, 40);
 
-        // Memoria (Lag) - Cálculo manual explícito
+        // Memoria (Correlación Serial)
         let correlation = 0;
         if(sums.length > 1) {
             let lagX = sums.slice(0, -1);
@@ -307,33 +305,33 @@
         // 5. Render KPIs
         document.getElementById('kpi_total').innerText = totalDraws;
         document.getElementById('kpi_pvalue').innerText = pValue.toFixed(4);
-        document.getElementById('kpi_lag').innerText = correlation.toFixed(5); // 5 decimales para ver cambios sutiles
-        
+        document.getElementById('kpi_lag').innerText = correlation.toFixed(5);
         const st = document.getElementById('kpi_status');
         st.innerText = pValue > 0.05 ? "ROBUSTO" : "SESGO";
         st.className = pValue > 0.05 ? "kpi-val status-ok" : "kpi-val status-fail";
         
-        // 6. Charts Update
+        // 6. Charts Config
         const config = { responsive: true, displayModeBar: false };
 
-        // Frecuencia
+        // Frecuencia (Numérico)
         let xArr = Array.from({length: 41}, (_, i) => i + 1);
         let yArr = counts.slice(1);
         Plotly.react('chart_freq', [{
             x: xArr, y: yArr, type: 'bar', marker: { color: yArr.map(y=>(y>expected*1.15||y<expected*0.85)?'#ff0055':'#00ff41') }
-        }], { ...layout_base, xaxis: { ...layout_base.xaxis, range: [0, 42] } }, config);
+        }], { ...layout_base, xaxis: { ...layout_base.xaxis, range: [0.5, 41.5] } }, config);
 
-        // Gauss
+        // Gauss (Numérico)
         Plotly.react('chart_sums', [{
             x: sums, type: 'histogram', marker: { color: '#00f2ff' }, opacity: 0.7
         }], { ...layout_base, bargap: 0.05, shapes: [{type:'line', x0:126, x1:126, y0:0, y1:1, xref:'x', yref:'paper', line:{color:'white', dash:'dot'}}] }, config);
 
-        // Paridad (Mapeo Explícito para asegurar orden y renderizado)
+        // Paridad (Categoría - AQUÍ ESTABA EL ERROR)
+        // Forzamos xaxis type: 'category' para que no herede configuración numérica
         const parValues = parityKeys.map(k => parities[k]);
         Plotly.react('chart_parity', [{
             x: parityKeys, y: parValues, type: 'bar',
             marker: { color: ['#ff0055','#ffcc00','#00ff41','#00f2ff','#00ff41','#ffcc00','#ff0055'] }
-        }], layout_base, config);
+        }], { ...layout_base, xaxis: { ...layout_base.xaxis, type: 'category' } }, config);
 
         // Heatmap
         Plotly.react('chart_heatmap', [{
@@ -350,7 +348,7 @@
         let dVal = new Array(41).fill(0).map((_,i) => lastSeen[i+1] === -1 ? totalDraws : (totalDraws-1)-lastSeen[i+1]);
         Plotly.react('chart_drought', [{
             x: xArr, y: dVal, type: 'bar', marker: { color: dVal.map(d=>d>20?'#ff0055':d>10?'#ffcc00':'#222') }
-        }], { ...layout_base, xaxis: { ...layout_base.xaxis, range: [0, 42] } }, config);
+        }], { ...layout_base, xaxis: { ...layout_base.xaxis, range: [0.5, 41.5] } }, config);
 
         // Tabla
         let sortedPairs = Object.entries(pairsObj).sort((a,b)=>b[1]-a[1]).slice(0,10);
