@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LOTO :: SECURITY AUDIT v4.0</title>
+    <title>LOTO :: SECURITY AUDIT v5.0</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <script src="https://cdn.plot.ly/plotly-2.20.0.min.js"></script>
@@ -123,7 +123,7 @@
 <div class="container">
     <header>
         <div class="header-top">
-            <h1><i data-lucide="shield-check" style="width:18px;"></i> Auditoría Forense v4.0</h1>
+            <h1><i data-lucide="shield-check" style="width:18px;"></i> Auditoría Forense v5.0</h1>
             <a href="index.html" class="back-link"><i data-lucide="arrow-left" style="width:12px;"></i> Volver</a>
         </div>
         
@@ -178,16 +178,37 @@
 
         <div class="grid">
             <div class="card">
-                 <div class="section-title">
-                     <span>4. Balance Altos vs Bajos</span>
-                     <span style="font-size:0.7em; color:var(--gold);">NEW</span>
-                 </div>
+                 <div class="section-title">4. Balance Altos vs Bajos</div>
                  <div id="chart_highlow" class="chart-container"></div>
-                 <div style="text-align:center; font-size:0.7em; color:#888;">Bajos (1-20) | Altos (21-41)</div>
             </div>
             <div class="card">
                  <div class="section-title">5. Mapa de Calor</div>
                  <div id="chart_heatmap" class="chart-container"></div>
+            </div>
+        </div>
+
+        <div class="grid">
+            <div class="card full-width">
+                <div class="section-title">
+                    <span>7. Análisis Económico-Conductual</span>
+                    <span style="font-size:0.7em; color:var(--gold);">NEW</span>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                    <div>
+                        <div style="font-size:0.7em; color:#888; margin-bottom:5px; text-align:center;">SUMA vs CANTIDAD DE GANADORES</div>
+                        <div id="chart_econ_sum_winners" style="height:250px;"></div>
+                        <div style="font-size:0.6em; color:#666; text-align:center;">¿Gana más gente cuando la suma es baja (fechas)?</div>
+                    </div>
+                    <div>
+                        <div style="font-size:0.7em; color:#888; margin-bottom:5px; text-align:center;">POZO ACUMULADO vs GANADORES</div>
+                        <div id="chart_econ_pool_winners" style="height:250px;"></div>
+                        <div style="font-size:0.6em; color:#666; text-align:center;">¿Pozos grandes traen más ganadores?</div>
+                    </div>
+                    <div>
+                        <div style="font-size:0.7em; color:#888; margin-bottom:5px; text-align:center;">MATRIZ DE CORRELACIÓN</div>
+                        <div id="chart_corr_matrix" style="height:250px;"></div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -207,12 +228,13 @@
     let CURRENT_GAME = 'LOTO';
     let CURRENT_DAY = 'ALL';
 
+    // MAPEO DE COLUMNAS ESPECÍFICAS POR JUEGO
     const GAMES_CONFIG = [
-        { key: 'LOTO', name: 'LOTO', desc: 'Clásico' },
-        { key: 'RECARGADO', name: 'RECARGADO', desc: 'Opción 2' },
-        { key: 'REVANCHA', name: 'REVANCHA', desc: 'Opción 3' },
-        { key: 'DESQUITE', name: 'DESQUITE', desc: 'Opción 4' },
-        { key: 'AHORA_SI_QUE_SI', name: 'AHORA SÍ', desc: 'Opción 5' }
+        { key: 'LOTO', name: 'LOTO', desc: 'Clásico', cols: { winners: 'LOTO_GANADORES', amount: 'LOTO_MONTO', pool: 'LOTO_POZO_ACUMULADO' } },
+        { key: 'RECARGADO', name: 'RECARGADO', desc: 'Opción 2', cols: { winners: 'RECARGADO_6_ACIERTOS_GANADORES', amount: 'RECARGADO_6_ACIERTOS_MONTO', pool: 'RECARGADO_POZO_ACUMULADO' } },
+        { key: 'REVANCHA', name: 'REVANCHA', desc: 'Opción 3', cols: { winners: 'REVANCHA_GANADORES', amount: 'REVANCHA_MONTO', pool: 'REVANCHA_POZO_ACUMULADO' } },
+        { key: 'DESQUITE', name: 'DESQUITE', desc: 'Opción 4', cols: { winners: 'DESQUITE_GANADORES', amount: 'DESQUITE_MONTO', pool: 'DESQUITE_POZO_ACUMULADO' } },
+        { key: 'AHORA_SI_QUE_SI', name: 'AHORA SÍ', desc: 'Opción 5', cols: { winners: 'AHORA_SI_QUE_SI_GANADORES', amount: 'AHORA_SI_QUE_SI_MONTO', pool: 'AHORA_SI_QUE_SI_ACUMULADO' } }
     ];
 
     const layout_base = {
@@ -268,23 +290,17 @@
     });
 
     function updateDashboard() {
-        const gameKey = CURRENT_GAME;
+        const gameConfig = GAMES_CONFIG.find(g => g.key === CURRENT_GAME);
+        const gameKey = gameConfig.key;
         
-        // 1. Filtrado de Datos (Juego + Día)
+        // 1. Filtrado de Datos
         const cleanData = [];
         RAW_DATA.forEach(row => {
-            // Verificar columnas válidas
             if(row[`${gameKey}_n1`] && row[`${gameKey}_n6`] && row.sorteo && row.fecha) {
-                
-                // Filtro de Día (Day Slicing)
                 let passDay = true;
                 if(CURRENT_DAY !== 'ALL') {
-                    // Convertir fecha string a objeto Date
-                    // Asumimos formato YYYY-MM-DD HH:mm:ss o similar
-                    // Ojo: Playwright scraper suele dar formato compatible
-                    const d = new Date(row.fecha.replace(' ', 'T')); // ISO format trick
-                    const dayStr = d.toDateString(); // "Tue Jan 01 2016"
-                    if(!dayStr.includes(CURRENT_DAY)) passDay = false;
+                    const d = new Date(row.fecha.replace(' ', 'T'));
+                    if(!d.toDateString().includes(CURRENT_DAY)) passDay = false;
                 }
 
                 if(passDay) {
@@ -292,14 +308,25 @@
                         parseInt(row[`${gameKey}_n1`]), parseInt(row[`${gameKey}_n2`]), parseInt(row[`${gameKey}_n3`]),
                         parseInt(row[`${gameKey}_n4`]), parseInt(row[`${gameKey}_n5`]), parseInt(row[`${gameKey}_n6`])
                     ];
+                    // Extracción de datos económicos
+                    let winners = parseInt(row[gameConfig.cols.winners]) || 0;
+                    let amount = parseInt(row[gameConfig.cols.amount]) || 0;
+                    let pool = parseInt(row[gameConfig.cols.pool]) || 0;
+
                     if(nums.every(n => !isNaN(n) && n > 0)) {
-                        cleanData.push({ nums: nums, sortIdx: parseInt(row.sorteo) });
+                        cleanData.push({ 
+                            nums: nums, 
+                            sortIdx: parseInt(row.sorteo),
+                            winners: winners,
+                            amount: amount,
+                            pool: pool,
+                            sum: nums.reduce((a,b)=>a+b,0)
+                        });
                     }
                 }
             }
         });
 
-        // Ordenar
         cleanData.sort((a,b) => a.sortIdx - b.sortIdx);
         const totalDraws = cleanData.length;
 
@@ -308,8 +335,6 @@
         let sums = [];
         const parityKeys = ['0P-6I','1P-5I','2P-4I','3P-3I','4P-2I','5P-1I','6P-0I'];
         let parities = {}; parityKeys.forEach(k => parities[k]=0);
-        
-        // Altos vs Bajos
         const highLowKeys = ['6B-0A','5B-1A','4B-2A','3B-3A','2B-4A','1B-5A','0B-6A'];
         let highLows = {}; highLowKeys.forEach(k => highLows[k]=0);
 
@@ -317,17 +342,26 @@
         let pairsObj = {};
         let matrix = Array(42).fill().map(()=>Array(42).fill(0));
 
-        // 3. Procesamiento
+        // Arrays para Económico
+        let econ_sums = [];
+        let econ_winners = [];
+        let econ_pool = [];
+        let econ_amounts = [];
+
         cleanData.forEach((item, idx) => {
             let sortNums = item.nums;
             numbers.push(...sortNums);
-            sums.push(sortNums.reduce((a,b)=>a+b,0));
+            sums.push(item.sum);
             
-            // Paridad
+            // Económico
+            econ_sums.push(item.sum);
+            econ_winners.push(item.winners);
+            econ_pool.push(item.pool);
+            econ_amounts.push(item.amount);
+
             let evens = sortNums.filter(n => n % 2 === 0).length;
             parities[`${evens}P-${6-evens}I`]++;
 
-            // Altos/Bajos (Bajo <= 20, Alto >= 21)
             let lows = sortNums.filter(n => n <= 20).length;
             highLows[`${lows}B-${6-lows}A`]++;
 
@@ -342,7 +376,20 @@
             }
         });
 
-        // 4. Métricas
+        // 3. Correlación Económica
+        function getCorrelation(x, y) {
+            if(x.length < 2) return 0;
+            let mx = x.reduce((a,b)=>a+b,0)/x.length;
+            let my = y.reduce((a,b)=>a+b,0)/y.length;
+            let num=0, d1=0, d2=0;
+            for(let i=0; i<x.length; i++){
+                let dx=x[i]-mx, dy=y[i]-my;
+                num+=dx*dy; d1+=dx*dx; d2+=dy*dy;
+            }
+            return (d1>0 && d2>0) ? num/Math.sqrt(d1*d2) : 0;
+        }
+
+        // 4. Métricas Básicas
         let counts = new Array(42).fill(0);
         numbers.forEach(n => { if(n>=1 && n<=41) counts[n]++; });
         let expected = numbers.length/41;
@@ -353,28 +400,18 @@
         let correlation = 0;
         if(sums.length > 1) {
             let lagX = sums.slice(0, -1), lagY = sums.slice(1);
-            let meanX = lagX.reduce((a,b)=>a+b,0)/lagX.length, meanY = lagY.reduce((a,b)=>a+b,0)/lagY.length;
-            let num=0, den1=0, den2=0;
-            for(let i=0; i<lagX.length; i++) {
-                let dx=lagX[i]-meanX, dy=lagY[i]-meanY;
-                num+=dx*dy; den1+=dx*dx; den2+=dy*dy;
-            }
-            if(den1>0 && den2>0) correlation = num/Math.sqrt(den1*den2);
+            correlation = getCorrelation(lagX, lagY);
         }
 
-        // 5. Render KPIs
+        // Render KPIs
         document.getElementById('kpi_total').innerText = totalDraws;
         document.getElementById('kpi_pvalue').innerText = pValue.toFixed(4);
         document.getElementById('kpi_lag').innerText = correlation.toFixed(5);
         const st = document.getElementById('kpi_status');
-        if(totalDraws < 10) {
-            st.innerText = "INSUFICIENTE"; st.className = "kpi-val status-fail";
-        } else {
-            st.innerText = pValue > 0.05 ? "ROBUSTO" : "SESGO";
-            st.className = pValue > 0.05 ? "kpi-val status-ok" : "kpi-val status-fail";
-        }
+        st.innerText = pValue > 0.05 ? "ROBUSTO" : "SESGO";
+        st.className = pValue > 0.05 ? "kpi-val status-ok" : "kpi-val status-fail";
         
-        // 6. Charts
+        // --- CHARTS ---
         const config = { responsive: true, displayModeBar: false };
 
         // Frecuencia
@@ -389,13 +426,12 @@
             x: sums, type: 'histogram', marker: { color: '#00f2ff' }, opacity: 0.7
         }], { ...layout_base, bargap: 0.05, shapes: [{type:'line', x0:126, x1:126, y0:0, y1:1, xref:'x', yref:'paper', line:{color:'white', dash:'dot'}}] }, config);
 
-        // Paridad
+        // Paridad & Altos/Bajos
         Plotly.react('chart_parity', [{
             x: parityKeys, y: parityKeys.map(k=>parities[k]), type: 'bar',
             marker: { color: ['#ff0055','#ffcc00','#00ff41','#00f2ff','#00ff41','#ffcc00','#ff0055'] }
         }], { ...layout_base, xaxis: { ...layout_base.xaxis, type: 'category' } }, config);
-
-        // Altos vs Bajos (NUEVO)
+        
         Plotly.react('chart_highlow', [{
             x: highLowKeys, y: highLowKeys.map(k=>highLows[k]), type: 'bar',
             marker: { color: ['#ff0055','#ffcc00','#00ff41','#00f2ff','#00ff41','#ffcc00','#ff0055'] }
@@ -405,6 +441,30 @@
         Plotly.react('chart_heatmap', [{
             z: matrix.slice(1).map(r=>r.slice(1)), type: 'heatmap', colorscale: 'Viridis', showscale: false
         }], { ...layout_base, margin: {t:0,b:20,l:20,r:20} }, config);
+
+        // --- CHARTS ECONÓMICOS ---
+        // 1. Suma vs Ganadores
+        Plotly.react('chart_econ_sum_winners', [{
+            x: econ_sums, y: econ_winners, mode: 'markers', type: 'scatter',
+            marker: { size: 6, color: '#ffd700', opacity: 0.6 }
+        }], { ...layout_base, xaxis: {title:'Suma'}, yaxis: {title:'Ganadores'} }, config);
+
+        // 2. Pozo vs Ganadores
+        Plotly.react('chart_econ_pool_winners', [{
+            x: econ_pool, y: econ_winners, mode: 'markers', type: 'scatter',
+            marker: { size: 6, color: '#00ff41', opacity: 0.6 }
+        }], { ...layout_base, xaxis: {title:'Pozo ($)'}, yaxis: {title:'Ganadores'} }, config);
+
+        // 3. Matriz Correlación
+        let corrVals = [
+            [1, getCorrelation(econ_sums, econ_winners), getCorrelation(econ_sums, econ_pool)],
+            [getCorrelation(econ_winners, econ_sums), 1, getCorrelation(econ_winners, econ_pool)],
+            [getCorrelation(econ_pool, econ_sums), getCorrelation(econ_pool, econ_winners), 1]
+        ];
+        Plotly.react('chart_corr_matrix', [{
+            z: corrVals, x: ['Suma', 'Ganadores', 'Pozo'], y: ['Suma', 'Ganadores', 'Pozo'],
+            type: 'heatmap', colorscale: 'RdBu', zmin: -1, zmax: 1
+        }], { ...layout_base, margin: {t:0,b:30,l:30,r:0} }, config);
 
         // Sequía
         let dVal = new Array(41).fill(0).map((_,i) => lastSeen[i+1] === -1 ? totalDraws : (totalDraws-1)-lastSeen[i+1]);
@@ -418,7 +478,7 @@
     }
 
     window.onresize = function() {
-        ['chart_freq','chart_sums','chart_parity','chart_highlow','chart_heatmap','chart_drought'].forEach(id => Plotly.Plots.resize(id));
+        ['chart_freq','chart_sums','chart_parity','chart_highlow','chart_heatmap','chart_drought','chart_econ_sum_winners','chart_econ_pool_winners','chart_corr_matrix'].forEach(id => Plotly.Plots.resize(id));
     };
 </script>
 </body>
