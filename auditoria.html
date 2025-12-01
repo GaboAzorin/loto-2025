@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LOTO :: SECURITY AUDIT v5.1</title>
+    <title>LOTO :: SECURITY AUDIT v5.2</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <script src="https://cdn.plot.ly/plotly-2.20.0.min.js"></script>
@@ -86,7 +86,7 @@
         .grid { display: flex; flex-direction: column; gap: 20px; margin-bottom: 20px; }
         .card { 
             background: var(--panel); border: 1px solid var(--border); border-radius: 8px; 
-            padding: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            padding: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); overflow: hidden; /* FIX DESBORDE */
         }
         .section-title { 
             color: var(--text); border-left: 3px solid var(--accent); padding-left: 10px; 
@@ -118,7 +118,7 @@
 <div class="container">
     <header>
         <div class="header-top">
-            <h1><i data-lucide="shield-check" style="width:18px;"></i> Auditoría Forense v5.1</h1>
+            <h1><i data-lucide="shield-check" style="width:18px;"></i> Auditoría Forense v5.2</h1>
             <a href="index.html" class="back-link"><i data-lucide="arrow-left" style="width:12px;"></i> Volver</a>
         </div>
         
@@ -199,7 +199,9 @@
                     </div>
                     <div>
                         <div style="font-size:0.7em; color:#888; margin-bottom:5px; text-align:center;">MATRIZ DE CORRELACIÓN</div>
-                        <div id="chart_corr_matrix" style="height:250px;"></div>
+                        <div style="width: 100%; height: 250px; overflow: hidden; position: relative;">
+                            <div id="chart_corr_matrix" style="width: 100%; height: 100%;"></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -330,7 +332,6 @@
         let pairsObj = {};
         let matrix = Array(42).fill().map(()=>Array(42).fill(0));
 
-        // Econ Arrays
         let econ_sums = [], econ_winners = [], econ_pool = [];
 
         cleanData.forEach((item, idx) => {
@@ -359,7 +360,6 @@
             }
         });
 
-        // Correlación
         function getCorrelation(x, y) {
             if(x.length < 2) return 0;
             let mx = x.reduce((a,b)=>a+b,0)/x.length;
@@ -372,7 +372,6 @@
             return (d1>0 && d2>0) ? num/Math.sqrt(d1*d2) : 0;
         }
 
-        // Stats
         let counts = new Array(42).fill(0);
         numbers.forEach(n => { if(n>=1 && n<=41) counts[n]++; });
         let expected = numbers.length/41;
@@ -385,7 +384,6 @@
             correlation = getCorrelation(lagX, lagY);
         }
 
-        // DOM Update
         document.getElementById('kpi_total').innerText = totalDraws;
         document.getElementById('kpi_pvalue').innerText = pValue.toFixed(4);
         document.getElementById('kpi_lag').innerText = correlation.toFixed(5);
@@ -395,19 +393,16 @@
         
         const config = { responsive: true, displayModeBar: false };
 
-        // 1. Frecuencia
-        let xArr = Array.from({length: 41}, (_, i) => i + 1);
-        let yArr = counts.slice(1);
         Plotly.react('chart_freq', [{
-            x: xArr, y: yArr, type: 'bar', marker: { color: yArr.map(y=>(y>expected*1.15||y<expected*0.85)?'#ff0055':'#00ff41') }
+            x: Array.from({length: 41}, (_, i) => i + 1), 
+            y: counts.slice(1), 
+            type: 'bar', marker: { color: counts.slice(1).map(y=>(y>expected*1.15||y<expected*0.85)?'#ff0055':'#00ff41') }
         }], { ...layout_base, xaxis: { ...layout_base.xaxis, range: [0.5, 41.5] } }, config);
 
-        // 2. Gauss
         Plotly.react('chart_sums', [{
             x: sums, type: 'histogram', marker: { color: '#00f2ff' }, opacity: 0.7
         }], { ...layout_base, bargap: 0.05, shapes: [{type:'line', x0:126, x1:126, y0:0, y1:1, xref:'x', yref:'paper', line:{color:'white', dash:'dot'}}] }, config);
 
-        // 3. Paridad
         Plotly.react('chart_parity', [{
             x: parityKeys, y: parityKeys.map(k=>parities[k]), type: 'bar',
             marker: { color: ['#ff0055','#ffcc00','#00ff41','#00f2ff','#00ff41','#ffcc00','#ff0055'] }
@@ -418,12 +413,10 @@
             marker: { color: ['#ff0055','#ffcc00','#00ff41','#00f2ff','#00ff41','#ffcc00','#ff0055'] }
         }], { ...layout_base, xaxis: { ...layout_base.xaxis, type: 'category' } }, config);
 
-        // 5. Heatmap
         Plotly.react('chart_heatmap', [{
             z: matrix.slice(1).map(r=>r.slice(1)), type: 'heatmap', colorscale: 'Viridis', showscale: false
         }], { ...layout_base, margin: {t:0,b:20,l:20,r:20} }, config);
 
-        // 7. Gráficos Económicos (FIX: Layout Específico)
         Plotly.react('chart_econ_sum_winners', [{
             x: econ_sums, y: econ_winners, mode: 'markers', type: 'scatter',
             marker: { size: 6, color: '#ffd700', opacity: 0.6 }
@@ -434,7 +427,7 @@
             marker: { size: 6, color: '#00ff41', opacity: 0.6 }
         }], { ...layout_base, xaxis: {title:'Pozo ($)'}, yaxis: {title:'Ganadores'} }, config);
 
-        // Matriz de Correlación (FIX: Ejes Categóricos)
+        // --- MATRIZ CORRELACIÓN FIX v5.2 ---
         let corrVals = [[0,0,0],[0,0,0],[0,0,0]];
         if(econ_sums.length > 5) {
             const c_sum_win = getCorrelation(econ_sums, econ_winners);
@@ -443,14 +436,15 @@
             corrVals = [[1, c_sum_win, c_sum_pool],[c_sum_win, 1, c_win_pool],[c_sum_pool, c_win_pool, 1]];
         }
 
-        // Layout Exclusivo para la matriz
+        // Layout Limpio y Aislado
         const layout_matrix = {
             paper_bgcolor: 'rgba(0,0,0,0)',
             plot_bgcolor: 'rgba(0,0,0,0)',
             font: { color: '#e0e0e0', family: 'Consolas', size: 9 },
-            margin: { t: 10, b: 30, l: 30, r: 0 },
-            xaxis: { side: 'bottom', type: 'category' },
-            yaxis: { autorange: 'reversed', type: 'category' }
+            margin: { t: 30, b: 50, l: 50, r: 50 }, // Margen suficiente para etiquetas
+            xaxis: { side: 'bottom', type: 'category', color: '#e0e0e0', automargin: true },
+            yaxis: { autorange: 'reversed', type: 'category', color: '#e0e0e0', automargin: true },
+            autosize: true
         };
 
         Plotly.react('chart_corr_matrix', [{
@@ -459,13 +453,11 @@
             text: corrVals.map(r => r.map(v => v.toFixed(2))), hoverinfo: 'text'
         }], layout_matrix, config);
 
-        // 6. Sequía
         let dVal = new Array(41).fill(0).map((_,i) => lastSeen[i+1] === -1 ? totalDraws : (totalDraws-1)-lastSeen[i+1]);
         Plotly.react('chart_drought', [{
-            x: xArr, y: dVal, type: 'bar', marker: { color: dVal.map(d=>d>20?'#ff0055':d>10?'#ffcc00':'#222') }
+            x: Array.from({length: 41}, (_, i) => i + 1), y: dVal, type: 'bar', marker: { color: dVal.map(d=>d>20?'#ff0055':d>10?'#ffcc00':'#222') }
         }], { ...layout_base, xaxis: { ...layout_base.xaxis, range: [0.5, 41.5] } }, config);
 
-        // Tabla
         let sortedPairs = Object.entries(pairsObj).sort((a,b)=>b[1]-a[1]).slice(0,10);
         document.getElementById('pairs_table').innerHTML = sortedPairs.map(([p,c])=>`<tr><td>[${p}]</td><td>${c}</td></tr>`).join('');
     }
