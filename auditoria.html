@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LOTO :: SECURITY AUDIT v5.0</title>
+    <title>LOTO :: SECURITY AUDIT v5.1</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <script src="https://cdn.plot.ly/plotly-2.20.0.min.js"></script>
@@ -33,7 +33,6 @@
         }
         .container { max-width: 1400px; margin: 0 auto; }
         
-        /* HEADER & CONTROLS */
         header { 
             margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 15px;
             display: flex; flex-direction: column; gap: 15px;
@@ -43,7 +42,6 @@
         h1 { color: var(--accent); margin: 0; text-transform: uppercase; font-size: 1rem; display: flex; align-items: center; gap: 8px; }
         .back-link { color: var(--cyan); text-decoration: none; border: 1px solid var(--border); padding: 5px 12px; border-radius: 4px; font-size: 0.75rem; }
 
-        /* DAY FILTER SELECTOR */
         .day-selector {
             display: flex; gap: 10px; justify-content: center; background: rgba(0,0,0,0.3); padding: 5px; border-radius: 8px;
         }
@@ -57,7 +55,6 @@
         }
         .day-btn:hover:not(.active) { border-color: var(--cyan); color: var(--cyan); }
 
-        /* SWIPER */
         .game-selector-wrapper { margin-bottom: 25px; position: relative; }
         .swiper { width: 100%; padding: 10px 0; overflow: visible; }
         .swiper-slide {
@@ -80,14 +77,12 @@
         .game-title { font-size: 1rem; font-weight: bold; color: white; margin-bottom: 4px; line-height: 1.2; }
         .game-sub { font-size: 0.65rem; color: #aaa; text-transform: uppercase; letter-spacing: 0.5px; }
 
-        /* KPIS */
         .kpi-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
         .kpi-card { text-align: center; padding: 15px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px; }
         .kpi-val { font-size: 1.5em; font-weight: bold; color: white; margin: 5px 0; }
         .kpi-lbl { color: #888; font-size: 0.7em; text-transform: uppercase; }
         .status-ok { color: var(--accent); } .status-fail { color: var(--alert); }
 
-        /* GRID & CHARTS */
         .grid { display: flex; flex-direction: column; gap: 20px; margin-bottom: 20px; }
         .card { 
             background: var(--panel); border: 1px solid var(--border); border-radius: 8px; 
@@ -123,7 +118,7 @@
 <div class="container">
     <header>
         <div class="header-top">
-            <h1><i data-lucide="shield-check" style="width:18px;"></i> Auditoría Forense v5.0</h1>
+            <h1><i data-lucide="shield-check" style="width:18px;"></i> Auditoría Forense v5.1</h1>
             <a href="index.html" class="back-link"><i data-lucide="arrow-left" style="width:12px;"></i> Volver</a>
         </div>
         
@@ -197,12 +192,10 @@
                     <div>
                         <div style="font-size:0.7em; color:#888; margin-bottom:5px; text-align:center;">SUMA vs CANTIDAD DE GANADORES</div>
                         <div id="chart_econ_sum_winners" style="height:250px;"></div>
-                        <div style="font-size:0.6em; color:#666; text-align:center;">¿Gana más gente cuando la suma es baja (fechas)?</div>
                     </div>
                     <div>
                         <div style="font-size:0.7em; color:#888; margin-bottom:5px; text-align:center;">POZO ACUMULADO vs GANADORES</div>
                         <div id="chart_econ_pool_winners" style="height:250px;"></div>
-                        <div style="font-size:0.6em; color:#666; text-align:center;">¿Pozos grandes traen más ganadores?</div>
                     </div>
                     <div>
                         <div style="font-size:0.7em; color:#888; margin-bottom:5px; text-align:center;">MATRIZ DE CORRELACIÓN</div>
@@ -228,7 +221,6 @@
     let CURRENT_GAME = 'LOTO';
     let CURRENT_DAY = 'ALL';
 
-    // MAPEO DE COLUMNAS ESPECÍFICAS POR JUEGO
     const GAMES_CONFIG = [
         { key: 'LOTO', name: 'LOTO', desc: 'Clásico', cols: { winners: 'LOTO_GANADORES', amount: 'LOTO_MONTO', pool: 'LOTO_POZO_ACUMULADO' } },
         { key: 'RECARGADO', name: 'RECARGADO', desc: 'Opción 2', cols: { winners: 'RECARGADO_6_ACIERTOS_GANADORES', amount: 'RECARGADO_6_ACIERTOS_MONTO', pool: 'RECARGADO_POZO_ACUMULADO' } },
@@ -293,7 +285,6 @@
         const gameConfig = GAMES_CONFIG.find(g => g.key === CURRENT_GAME);
         const gameKey = gameConfig.key;
         
-        // 1. Filtrado de Datos
         const cleanData = [];
         RAW_DATA.forEach(row => {
             if(row[`${gameKey}_n1`] && row[`${gameKey}_n6`] && row.sorteo && row.fecha) {
@@ -308,7 +299,6 @@
                         parseInt(row[`${gameKey}_n1`]), parseInt(row[`${gameKey}_n2`]), parseInt(row[`${gameKey}_n3`]),
                         parseInt(row[`${gameKey}_n4`]), parseInt(row[`${gameKey}_n5`]), parseInt(row[`${gameKey}_n6`])
                     ];
-                    // Extracción de datos económicos
                     let winners = parseInt(row[gameConfig.cols.winners]) || 0;
                     let amount = parseInt(row[gameConfig.cols.amount]) || 0;
                     let pool = parseInt(row[gameConfig.cols.pool]) || 0;
@@ -330,9 +320,7 @@
         cleanData.sort((a,b) => a.sortIdx - b.sortIdx);
         const totalDraws = cleanData.length;
 
-        // 2. Variables de Cálculo
-        let numbers = [];
-        let sums = [];
+        let numbers = [], sums = [];
         const parityKeys = ['0P-6I','1P-5I','2P-4I','3P-3I','4P-2I','5P-1I','6P-0I'];
         let parities = {}; parityKeys.forEach(k => parities[k]=0);
         const highLowKeys = ['6B-0A','5B-1A','4B-2A','3B-3A','2B-4A','1B-5A','0B-6A'];
@@ -342,22 +330,17 @@
         let pairsObj = {};
         let matrix = Array(42).fill().map(()=>Array(42).fill(0));
 
-        // Arrays para Económico
-        let econ_sums = [];
-        let econ_winners = [];
-        let econ_pool = [];
-        let econ_amounts = [];
+        // Econ Arrays
+        let econ_sums = [], econ_winners = [], econ_pool = [];
 
         cleanData.forEach((item, idx) => {
             let sortNums = item.nums;
             numbers.push(...sortNums);
             sums.push(item.sum);
             
-            // Económico
             econ_sums.push(item.sum);
             econ_winners.push(item.winners);
             econ_pool.push(item.pool);
-            econ_amounts.push(item.amount);
 
             let evens = sortNums.filter(n => n % 2 === 0).length;
             parities[`${evens}P-${6-evens}I`]++;
@@ -376,7 +359,7 @@
             }
         });
 
-        // 3. Correlación Económica
+        // Correlación
         function getCorrelation(x, y) {
             if(x.length < 2) return 0;
             let mx = x.reduce((a,b)=>a+b,0)/x.length;
@@ -389,21 +372,20 @@
             return (d1>0 && d2>0) ? num/Math.sqrt(d1*d2) : 0;
         }
 
-        // 4. Métricas Básicas
+        // Stats
         let counts = new Array(42).fill(0);
         numbers.forEach(n => { if(n>=1 && n<=41) counts[n]++; });
         let expected = numbers.length/41;
         let chiSq = numbers.length > 0 ? counts.slice(1).reduce((a,b) => a + Math.pow(b-expected,2)/expected, 0) : 0;
         let pValue = 1 - jStat.chisquare.cdf(chiSq, 40);
 
-        // Memoria
         let correlation = 0;
         if(sums.length > 1) {
             let lagX = sums.slice(0, -1), lagY = sums.slice(1);
             correlation = getCorrelation(lagX, lagY);
         }
 
-        // Render KPIs
+        // DOM Update
         document.getElementById('kpi_total').innerText = totalDraws;
         document.getElementById('kpi_pvalue').innerText = pValue.toFixed(4);
         document.getElementById('kpi_lag').innerText = correlation.toFixed(5);
@@ -411,22 +393,21 @@
         st.innerText = pValue > 0.05 ? "ROBUSTO" : "SESGO";
         st.className = pValue > 0.05 ? "kpi-val status-ok" : "kpi-val status-fail";
         
-        // --- CHARTS ---
         const config = { responsive: true, displayModeBar: false };
 
-        // Frecuencia
+        // 1. Frecuencia
         let xArr = Array.from({length: 41}, (_, i) => i + 1);
         let yArr = counts.slice(1);
         Plotly.react('chart_freq', [{
             x: xArr, y: yArr, type: 'bar', marker: { color: yArr.map(y=>(y>expected*1.15||y<expected*0.85)?'#ff0055':'#00ff41') }
         }], { ...layout_base, xaxis: { ...layout_base.xaxis, range: [0.5, 41.5] } }, config);
 
-        // Gauss
+        // 2. Gauss
         Plotly.react('chart_sums', [{
             x: sums, type: 'histogram', marker: { color: '#00f2ff' }, opacity: 0.7
         }], { ...layout_base, bargap: 0.05, shapes: [{type:'line', x0:126, x1:126, y0:0, y1:1, xref:'x', yref:'paper', line:{color:'white', dash:'dot'}}] }, config);
 
-        // Paridad & Altos/Bajos
+        // 3. Paridad
         Plotly.react('chart_parity', [{
             x: parityKeys, y: parityKeys.map(k=>parities[k]), type: 'bar',
             marker: { color: ['#ff0055','#ffcc00','#00ff41','#00f2ff','#00ff41','#ffcc00','#ff0055'] }
@@ -437,59 +418,48 @@
             marker: { color: ['#ff0055','#ffcc00','#00ff41','#00f2ff','#00ff41','#ffcc00','#ff0055'] }
         }], { ...layout_base, xaxis: { ...layout_base.xaxis, type: 'category' } }, config);
 
-        // Heatmap
+        // 5. Heatmap
         Plotly.react('chart_heatmap', [{
             z: matrix.slice(1).map(r=>r.slice(1)), type: 'heatmap', colorscale: 'Viridis', showscale: false
         }], { ...layout_base, margin: {t:0,b:20,l:20,r:20} }, config);
 
-        // --- CHARTS ECONÓMICOS ---
-        // 1. Suma vs Ganadores
+        // 7. Gráficos Económicos (FIX: Layout Específico)
         Plotly.react('chart_econ_sum_winners', [{
             x: econ_sums, y: econ_winners, mode: 'markers', type: 'scatter',
             marker: { size: 6, color: '#ffd700', opacity: 0.6 }
         }], { ...layout_base, xaxis: {title:'Suma'}, yaxis: {title:'Ganadores'} }, config);
 
-        // 2. Pozo vs Ganadores
         Plotly.react('chart_econ_pool_winners', [{
             x: econ_pool, y: econ_winners, mode: 'markers', type: 'scatter',
             marker: { size: 6, color: '#00ff41', opacity: 0.6 }
         }], { ...layout_base, xaxis: {title:'Pozo ($)'}, yaxis: {title:'Ganadores'} }, config);
 
-// 3. Matriz Correlación (FIX ROBUSTO)
+        // Matriz de Correlación (FIX: Ejes Categóricos)
         let corrVals = [[0,0,0],[0,0,0],[0,0,0]];
-        
-        // Solo calculamos si hay datos y varianza
         if(econ_sums.length > 5) {
             const c_sum_win = getCorrelation(econ_sums, econ_winners);
             const c_sum_pool = getCorrelation(econ_sums, econ_pool);
-            const c_win_pool = getCorrelation(econ_winners, econ_pool); // La clave: Hype vs Ganadores
-
-            corrVals = [
-                [1, c_sum_win, c_sum_pool],
-                [c_sum_win, 1, c_win_pool],
-                [c_sum_pool, c_win_pool, 1]
-            ];
+            const c_win_pool = getCorrelation(econ_winners, econ_pool);
+            corrVals = [[1, c_sum_win, c_sum_pool],[c_sum_win, 1, c_win_pool],[c_sum_pool, c_win_pool, 1]];
         }
 
-        Plotly.react('chart_corr_matrix', [{
-            z: corrVals, 
-            x: ['Suma', 'Ganadores', 'Pozo'], 
-            y: ['Suma', 'Ganadores', 'Pozo'],
-            type: 'heatmap', 
-            colorscale: 'RdBu', 
-            zmin: -1, 
-            zmax: 1,
-            text: corrVals.map(r => r.map(v => v.toFixed(2))), // Mostrar valor al pasar mouse
-            hoverinfo: 'text'
-        }], { 
-            ...layout_base, 
-            margin: {t:20, b:20, l:20, r:20},
-            // IMPORTANTE: Sobrescribimos los ejes para liberar la escala fija
-            xaxis: { visible: true, type: 'category', color: '#e0e0e0' },
-            yaxis: { visible: true, type: 'category', color: '#e0e0e0' }
-        }, config);
+        // Layout Exclusivo para la matriz
+        const layout_matrix = {
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            font: { color: '#e0e0e0', family: 'Consolas', size: 9 },
+            margin: { t: 10, b: 30, l: 30, r: 0 },
+            xaxis: { side: 'bottom', type: 'category' },
+            yaxis: { autorange: 'reversed', type: 'category' }
+        };
 
-        // Sequía
+        Plotly.react('chart_corr_matrix', [{
+            z: corrVals, x: ['Suma', 'Ganadores', 'Pozo'], y: ['Suma', 'Ganadores', 'Pozo'],
+            type: 'heatmap', colorscale: 'RdBu', zmin: -1, zmax: 1,
+            text: corrVals.map(r => r.map(v => v.toFixed(2))), hoverinfo: 'text'
+        }], layout_matrix, config);
+
+        // 6. Sequía
         let dVal = new Array(41).fill(0).map((_,i) => lastSeen[i+1] === -1 ? totalDraws : (totalDraws-1)-lastSeen[i+1]);
         Plotly.react('chart_drought', [{
             x: xArr, y: dVal, type: 'bar', marker: { color: dVal.map(d=>d>20?'#ff0055':d>10?'#ffcc00':'#222') }
