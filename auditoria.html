@@ -3,113 +3,123 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LOTO :: SECURITY AUDIT v5.2</title>
+    <title>LOTO AI • Auditoría Forense</title>
     
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
-    <script src="https://cdn.plot.ly/plotly-2.20.0.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jstat/1.9.4/jstat.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet"/>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"/>
-    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
-    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
+
     <style>
         :root {
             --bg: #050a14;
-            --panel: rgba(20, 30, 50, 0.95);
-            --border: rgba(255, 255, 255, 0.15);
-            --text: #e0e0e0;
-            --accent: #00ff41;
-            --cyan: #00f2ff;
-            --alert: #ff0055;
+            --card: rgba(20, 30, 50, 0.65); 
+            --border: rgba(255, 255, 255, 0.1);
+            --text: #ffffff;
+            --text-muted: #a0aec0;
+            --neon-cyan: #00f2ff;
             --gold: #ffd700;
+            --matrix: #00ff41;
+            --danger: #ff3b5c;
         }
+
+        * { margin:0; padding:0; box-sizing:border-box; }
         body {
-            background-color: var(--bg);
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
             color: var(--text);
-            font-family: 'Consolas', 'Monaco', monospace;
-            margin: 0; padding: 10px;
-            background-image: radial-gradient(circle at 50% 0%, rgba(0, 255, 65, 0.05) 0%, transparent 60%);
-            overflow-x: hidden;
+            min-height: 100vh;
+            background-image: radial-gradient(circle at 50% 0%, rgba(0, 242, 255, 0.05) 0%, transparent 60%);
+            padding-bottom: 50px;
         }
-        .container { max-width: 1400px; margin: 0 auto; }
+
+        .container { max-width: 1400px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+        /* HEADER */
+        header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 3rem; padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+        .brand { font-family: 'JetBrains Mono', monospace; font-weight: 900; font-size: 1.5rem; color: white; letter-spacing: -1px; }
+        .brand span { color: var(--gold); }
+        .back-btn {
+            text-decoration: none; color: var(--text-muted); font-size: 0.9rem;
+            display: flex; align-items: center; gap: 8px; transition: color 0.3s;
+        }
+        .back-btn:hover { color: white; }
+
+        /* KPI CARDS */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+        .stat-card {
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: 1rem; padding: 1.5rem;
+            display: flex; flex-direction: column; gap: 5px;
+            /* FIX DE DESBORDAMIENTO FLEX */
+            min-width: 0;
+        }
+        .stat-title { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+        .stat-value { font-size: 2rem; font-weight: 900; color: white; }
+        .stat-sub { font-size: 0.8rem; color: var(--matrix); display: flex; align-items: center; gap: 5px; }
         
-        header { 
-            margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 15px;
-            display: flex; flex-direction: column; gap: 15px;
+        /* CHARTS GRID */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
         }
-        .header-top { display: flex; justify-content: space-between; align-items: center; }
+        .chart-card {
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: 1.5rem; padding: 1.5rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            /* FIX DE DESBORDAMIENTO FLEX */
+            min-width: 0; 
+            display: flex; flex-direction: column;
+        }
+        .chart-header {
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;
+        }
+        .chart-title { font-weight: 700; color: white; display: flex; align-items: center; gap: 10px; }
         
-        h1 { color: var(--accent); margin: 0; text-transform: uppercase; font-size: 1rem; display: flex; align-items: center; gap: 8px; }
-        .back-link { color: var(--cyan); text-decoration: none; border: 1px solid var(--border); padding: 5px 12px; border-radius: 4px; font-size: 0.75rem; }
+        /* --- CORRECCIÓN CRÍTICA DE TAMAÑO DE GRÁFICOS --- */
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+            overflow: hidden; /* Evita que se salga */
+        }
 
-        .day-selector {
-            display: flex; gap: 10px; justify-content: center; background: rgba(0,0,0,0.3); padding: 5px; border-radius: 8px;
+        /* TABLE */
+        .history-section {
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: 1.5rem; overflow: hidden;
         }
-        .day-btn {
-            background: transparent; border: 1px solid var(--border); color: #888;
-            padding: 8px 15px; border-radius: 6px; cursor: pointer; font-family: inherit; font-size: 0.8rem;
-            transition: all 0.2s; flex: 1; text-align: center;
-        }
-        .day-btn.active {
-            background: var(--cyan); color: #000; font-weight: bold; border-color: var(--cyan); box-shadow: 0 0 10px rgba(0, 242, 255, 0.3);
-        }
-        .day-btn:hover:not(.active) { border-color: var(--cyan); color: var(--cyan); }
-
-        .game-selector-wrapper { margin-bottom: 25px; position: relative; }
-        .swiper { width: 100%; padding: 10px 0; overflow: visible; }
-        .swiper-slide {
-            background: rgba(30, 40, 60, 0.8);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 15px 10px;
-            text-align: center;
-            opacity: 0.5;
-            transform: scale(0.92);
-            transition: all 0.3s;
-            cursor: pointer;
-            height: 90px;
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-        }
-        .swiper-slide-active {
-            opacity: 1; transform: scale(1.05); border-color: var(--accent);
-            box-shadow: 0 0 15px rgba(0, 255, 65, 0.15); background: rgba(0, 255, 65, 0.08);
-        }
-        .game-title { font-size: 1rem; font-weight: bold; color: white; margin-bottom: 4px; line-height: 1.2; }
-        .game-sub { font-size: 0.65rem; color: #aaa; text-transform: uppercase; letter-spacing: 0.5px; }
-
-        .kpi-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
-        .kpi-card { text-align: center; padding: 15px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px; }
-        .kpi-val { font-size: 1.5em; font-weight: bold; color: white; margin: 5px 0; }
-        .kpi-lbl { color: #888; font-size: 0.7em; text-transform: uppercase; }
-        .status-ok { color: var(--accent); } .status-fail { color: var(--alert); }
-
-        .grid { display: flex; flex-direction: column; gap: 20px; margin-bottom: 20px; }
-        .card { 
-            background: var(--panel); border: 1px solid var(--border); border-radius: 8px; 
-            padding: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); overflow: hidden; /* FIX DESBORDE */
-        }
-        .section-title { 
-            color: var(--text); border-left: 3px solid var(--accent); padding-left: 10px; 
-            margin-bottom: 10px; font-weight: bold; text-transform: uppercase; font-size: 0.85rem; 
-            display: flex; justify-content: space-between;
-        }
-        .chart-container { width: 100%; height: 280px; position: relative; }
-
-        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-        td { padding: 8px 4px; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        td:nth-child(2) { text-align: right; color: var(--cyan); }
-
-        #loader { text-align: center; padding: 50px; color: var(--accent); font-size: 1rem; }
+        .table-header { padding: 1.5rem; border-bottom: 1px solid var(--border); background: rgba(0,0,0,0.2); }
+        .table-scroll { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 800px; }
+        th { text-align: left; padding: 1rem; color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; background: rgba(255,255,255,0.02); }
+        td { padding: 1rem; border-bottom: 1px solid var(--border); font-size: 0.9rem; color: white; vertical-align: middle; }
+        tr:last-child td { border-bottom: none; }
         
-        @media (min-width: 768px) {
-            .header-top { margin-bottom: 10px; }
-            header { display: block; }
-            .day-selector { width: fit-content; margin-top: 10px; }
-            .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
-            .full-width { grid-column: 1 / -1; }
-            .kpi-row { display: flex; }
-            .card { padding: 15px; }
-            .chart-container { height: 350px; }
+        .badge {
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 4px 10px; border-radius: 99px; font-size: 0.75rem; font-weight: 700; font-family: 'JetBrains Mono', monospace;
+        }
+        .badge-pending { background: rgba(255, 215, 0, 0.15); color: var(--gold); border: 1px solid rgba(255, 215, 0, 0.3); }
+        .badge-success { background: rgba(0, 255, 65, 0.15); color: var(--matrix); border: 1px solid rgba(0, 255, 65, 0.3); }
+        .badge-fail { background: rgba(255, 59, 92, 0.15); color: var(--danger); border: 1px solid rgba(255, 59, 92, 0.3); }
+
+        /* JSON PRETTY */
+        .json-box { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: #a0aec0; max-width: 300px; white-space: pre-wrap; word-break: break-all; }
+
+        @media (max-width: 768px) {
+            .charts-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -117,354 +127,259 @@
 
 <div class="container">
     <header>
-        <div class="header-top">
-            <h1><i data-lucide="shield-check" style="width:18px;"></i> Auditoría Forense v5.2</h1>
-            <a href="index.html" class="back-link"><i data-lucide="arrow-left" style="width:12px;"></i> Volver</a>
-        </div>
-        
-        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-            <span style="font-size:0.8rem; color:#888; text-transform:uppercase;">Filtrar por Día:</span>
-            <div class="day-selector">
-                <button class="day-btn active" onclick="setDayFilter('ALL', this)">TODOS</button>
-                <button class="day-btn" onclick="setDayFilter('Tue', this)">MARTES</button>
-                <button class="day-btn" onclick="setDayFilter('Thu', this)">JUEVES</button>
-                <button class="day-btn" onclick="setDayFilter('Sun', this)">DOMINGO</button>
-            </div>
-        </div>
+        <div class="brand">LOTO<span>AI</span> /// AUDITORÍA</div>
+        <a href="index.html" class="back-btn"><i data-lucide="arrow-left"></i> Volver al Generador</a>
     </header>
 
-    <div id="loader">CARGANDO BASE DE DATOS MAESTRA...</div>
+    <div class="kpi-grid">
+        <div class="stat-card">
+            <div class="stat-title">Precisión Histórica</div>
+            <div class="stat-value" id="kpi-acc">0%</div>
+            <div class="stat-sub"><i data-lucide="target" width="14"></i> Aciertos > 0</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-title">Error Promedio</div>
+            <div class="stat-value" id="kpi-error">0.0</div>
+            <div class="stat-sub"><i data-lucide="activity" width="14"></i> Desviación numérica</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-title">Jugadas Auditadas</div>
+            <div class="stat-value" id="kpi-total">0</div>
+            <div class="stat-sub"><i data-lucide="database" width="14"></i> Total registros</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-title">Paridad OK</div>
+            <div class="stat-value" id="kpi-parity">0%</div>
+            <div class="stat-sub"><i data-lucide="scale" width="14"></i> Estructura correcta</div>
+        </div>
+    </div>
 
-    <div id="dashboard" style="display:none; opacity: 0; transition: opacity 0.5s;">
-        <div class="game-selector-wrapper">
-            <div class="swiper">
-                <div class="swiper-wrapper"></div>
+    <div class="charts-grid">
+        <div class="chart-card">
+            <div class="chart-header">
+                <div class="chart-title"><i data-lucide="bar-chart-2" style="color:var(--neon-cyan)"></i> Distribución de Aciertos</div>
+            </div>
+            <div class="chart-container">
+                <canvas id="hitsChart"></canvas>
             </div>
         </div>
-        
-        <div class="kpi-row">
-            <div class="kpi-card"><div class="kpi-lbl">Muestra (Sorteos)</div><div class="kpi-val" id="kpi_total">0</div></div>
-            <div class="kpi-card"><div class="kpi-lbl">Chi-Square</div><div class="kpi-val" id="kpi_pvalue">0.00</div></div>
-            <div class="kpi-card"><div class="kpi-lbl">Estado</div><div class="kpi-val" id="kpi_status">...</div></div>
-            <div class="kpi-card"><div class="kpi-lbl">Memoria (Lag)</div><div class="kpi-val" id="kpi_lag">0.00</div></div>
-        </div>
-
-        <div class="grid">
-            <div class="card" style="flex: 2;">
-                <div class="section-title">1. Frecuencia (1-41)</div>
-                <div id="chart_freq" class="chart-container"></div>
+        <div class="chart-card">
+            <div class="chart-header">
+                <div class="chart-title"><i data-lucide="activity" style="color:var(--gold)"></i> Tendencia de Error (Proximidad)</div>
             </div>
-            <div class="card" style="flex: 1;">
-                 <div class="section-title">Top Parejas</div>
-                 <table id="pairs_table"></table>
-            </div>
-        </div>
-
-        <div class="grid">
-            <div class="card">
-                <div class="section-title">2. Distribución de Sumas (Gauss)</div>
-                <div id="chart_sums" class="chart-container"></div>
-            </div>
-            <div class="card">
-                <div class="section-title">3. Paridad</div>
-                <div id="chart_parity" class="chart-container"></div>
-            </div>
-        </div>
-
-        <div class="grid">
-            <div class="card">
-                 <div class="section-title">4. Balance Altos vs Bajos</div>
-                 <div id="chart_highlow" class="chart-container"></div>
-            </div>
-            <div class="card">
-                 <div class="section-title">5. Mapa de Calor</div>
-                 <div id="chart_heatmap" class="chart-container"></div>
-            </div>
-        </div>
-
-        <div class="grid">
-            <div class="card full-width">
-                <div class="section-title">
-                    <span>7. Análisis Económico-Conductual</span>
-                    <span style="font-size:0.7em; color:var(--gold);">NEW</span>
-                </div>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
-                    <div>
-                        <div style="font-size:0.7em; color:#888; margin-bottom:5px; text-align:center;">SUMA vs CANTIDAD DE GANADORES</div>
-                        <div id="chart_econ_sum_winners" style="height:250px;"></div>
-                    </div>
-                    <div>
-                        <div style="font-size:0.7em; color:#888; margin-bottom:5px; text-align:center;">POZO ACUMULADO vs GANADORES</div>
-                        <div id="chart_econ_pool_winners" style="height:250px;"></div>
-                    </div>
-                    <div>
-                        <div style="font-size:0.7em; color:#888; margin-bottom:5px; text-align:center;">MATRIZ DE CORRELACIÓN</div>
-                        <div style="width: 100%; height: 250px; overflow: hidden; position: relative;">
-                            <div id="chart_corr_matrix" style="width: 100%; height: 100%;"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="grid">
-            <div class="card full-width">
-                <div class="section-title">6. Monitor de Sequía</div>
-                <div id="chart_drought" class="chart-container" style="height: 250px;"></div>
+            <div class="chart-container">
+                <canvas id="proxChart"></canvas>
             </div>
         </div>
     </div>
+
+    <div class="history-section">
+        <div class="table-header">
+            <h3 style="color:white; font-size:1.1rem; font-weight:700;">Registro Forense de Predicciones</h3>
+        </div>
+        <div class="table-scroll">
+            <table id="audit-table">
+                <thead>
+                    <tr>
+                        <th>ID / Fecha</th>
+                        <th>Estado</th>
+                        <th>Predicción vs Realidad</th>
+                        <th>Métricas (Aciertos | Desv)</th>
+                        <th>Análisis Estructural</th>
+                    </tr>
+                </thead>
+                <tbody id="audit-body">
+                    <tr><td colspan="5" style="text-align:center; padding:2rem;">Cargando datos forenses...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
 </div>
 
 <script>
     lucide.createIcons();
-    const CSV_URL = 'LOTO_HISTORIAL_MAESTRO.csv';
-    let RAW_DATA = [];
-    let CURRENT_GAME = 'LOTO';
-    let CURRENT_DAY = 'ALL';
+    
+    // Configuración global de Chart.js para modo oscuro y responsive
+    Chart.defaults.color = '#a0aec0';
+    Chart.defaults.borderColor = 'rgba(255,255,255,0.1)';
+    Chart.defaults.font.family = "'JetBrains Mono', monospace";
 
-    const GAMES_CONFIG = [
-        { key: 'LOTO', name: 'LOTO', desc: 'Clásico', cols: { winners: 'LOTO_GANADORES', amount: 'LOTO_MONTO', pool: 'LOTO_POZO_ACUMULADO' } },
-        { key: 'RECARGADO', name: 'RECARGADO', desc: 'Opción 2', cols: { winners: 'RECARGADO_6_ACIERTOS_GANADORES', amount: 'RECARGADO_6_ACIERTOS_MONTO', pool: 'RECARGADO_POZO_ACUMULADO' } },
-        { key: 'REVANCHA', name: 'REVANCHA', desc: 'Opción 3', cols: { winners: 'REVANCHA_GANADORES', amount: 'REVANCHA_MONTO', pool: 'REVANCHA_POZO_ACUMULADO' } },
-        { key: 'DESQUITE', name: 'DESQUITE', desc: 'Opción 4', cols: { winners: 'DESQUITE_GANADORES', amount: 'DESQUITE_MONTO', pool: 'DESQUITE_POZO_ACUMULADO' } },
-        { key: 'AHORA_SI_QUE_SI', name: 'AHORA SÍ', desc: 'Opción 5', cols: { winners: 'AHORA_SI_QUE_SI_GANADORES', amount: 'AHORA_SI_QUE_SI_MONTO', pool: 'AHORA_SI_QUE_SI_ACUMULADO' } }
-    ];
-
-    const layout_base = {
-        paper_bgcolor: 'rgba(0,0,0,0)',
-        plot_bgcolor: 'rgba(0,0,0,0)',
-        font: { color: '#e0e0e0', family: 'Consolas', size: 10 },
-        xaxis: { gridcolor: '#333', zerolinecolor: '#444', fixedrange: true },
-        yaxis: { gridcolor: '#333', zerolinecolor: '#444', fixedrange: true },
-        margin: { t: 20, b: 30, l: 30, r: 10 },
-        showlegend: false,
-        autosize: true
-    };
-
-    function initCarousel() {
-        const wrapper = document.querySelector('.swiper-wrapper');
-        GAMES_CONFIG.forEach(game => {
-            const slide = document.createElement('div');
-            slide.className = 'swiper-slide';
-            slide.innerHTML = `<div class="game-title">${game.name}</div><div class="game-sub">${game.desc}</div>`;
-            wrapper.appendChild(slide);
-        });
-
-        new Swiper('.swiper', {
-            slidesPerView: 2.2,
-            spaceBetween: 10,
-            centeredSlides: true,
-            breakpoints: { 640: { slidesPerView: 3.5, spaceBetween: 20 } },
-            on: { slideChange: function () { 
-                CURRENT_GAME = GAMES_CONFIG[this.activeIndex].key;
-                updateDashboard(); 
-            } }
-        });
-    }
-
-    function setDayFilter(day, btn) {
-        CURRENT_DAY = day;
-        document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        updateDashboard();
-    }
-
-    Papa.parse(CSV_URL, {
-        download: true, header: true,
+    Papa.parse('LOTO_JUGADAS.csv', {
+        download: true,
+        header: true,
+        skipEmptyLines: true,
         complete: function(results) {
-            RAW_DATA = results.data;
-            initCarousel();
-            updateDashboard();
-            document.getElementById('loader').style.display = 'none';
-            const d = document.getElementById('dashboard');
-            d.style.display = 'block';
-            setTimeout(() => d.style.opacity = 1, 100);
+            processData(results.data);
+        },
+        error: function(err) {
+            console.error("Error CSV:", err);
+            document.getElementById('audit-body').innerHTML = '<tr><td colspan="5" style="text-align:center; color:red;">Error cargando LOTO_JUGADAS.csv. Asegúrate de haber ejecutado el scraper.</td></tr>';
         }
     });
 
-    function updateDashboard() {
-        const gameConfig = GAMES_CONFIG.find(g => g.key === CURRENT_GAME);
-        const gameKey = gameConfig.key;
+    function processData(data) {
+        // Filtrar solo jugadas finalizadas para estadísticas
+        const completed = data.filter(r => r.estado === 'FINALIZADO');
+        const total = data.length;
         
-        const cleanData = [];
-        RAW_DATA.forEach(row => {
-            if(row[`${gameKey}_n1`] && row[`${gameKey}_n6`] && row.sorteo && row.fecha) {
-                let passDay = true;
-                if(CURRENT_DAY !== 'ALL') {
-                    const d = new Date(row.fecha.replace(' ', 'T'));
-                    if(!d.toDateString().includes(CURRENT_DAY)) passDay = false;
+        // 1. CALCULAR KPIS
+        const hits = completed.filter(r => parseInt(r.aciertos) > 0).length;
+        const totalError = completed.reduce((sum, r) => sum + parseFloat(r.proximidad_prom || 0), 0);
+        
+        // Calcular paridad correcta (basado en paridad_info "Pred:X - Real:X")
+        let parityOk = 0;
+        completed.forEach(r => {
+            if(r.paridad_info && r.paridad_info.includes("Pred:") && r.paridad_info.includes("Real:")) {
+                // Parseo simple: extraer números y comparar
+                // Formato esperado: "Pred:3P - Real:3P"
+                const parts = r.paridad_info.match(/Pred:(\d+)P.*Real:(\d+)P/);
+                if(parts && parts[1] === parts[2]) parityOk++;
+            }
+        });
+
+        document.getElementById('kpi-acc').innerText = completed.length ? Math.round((hits / completed.length)*100) + '%' : '0%';
+        document.getElementById('kpi-error').innerText = completed.length ? (totalError / completed.length).toFixed(1) : '0.0';
+        document.getElementById('kpi-total').innerText = total;
+        document.getElementById('kpi-parity').innerText = completed.length ? Math.round((parityOk / completed.length)*100) + '%' : '0%';
+
+        // 2. RENDERIZAR TABLA
+        renderTable(data.reverse()); // Mostrar más recientes primero
+
+        // 3. RENDERIZAR GRÁFICOS
+        renderCharts(completed);
+    }
+
+    function renderTable(rows) {
+        const tbody = document.getElementById('audit-body');
+        tbody.innerHTML = rows.map(r => {
+            const isPending = r.estado === 'PENDIENTE';
+            
+            // Badge Estado
+            let statusBadge = isPending 
+                ? `<span class="badge badge-pending"><i data-lucide="clock" width="12"></i> PENDIENTE</span>` 
+                : `<span class="badge badge-success"><i data-lucide="check-circle" width="12"></i> FINALIZADO</span>`;
+            
+            // Formateo de números
+            let nums = "Error formato";
+            try { nums = JSON.parse(r.numeros).join(', '); } catch(e) { nums = r.numeros; }
+
+            // Detalles métricas
+            let metricsHtml = isPending ? '<span style="color:#555;">Esperando sorteo...</span>' : 
+                `<div style="display:flex; flex-direction:column; gap:2px;">
+                    <span style="color:${parseInt(r.aciertos)>0 ? '#00ff41' : 'white'}; font-weight:bold;">${r.aciertos} Aciertos</span>
+                    <span style="font-size:0.8rem;">Desviación: ${r.proximidad_prom}</span>
+                    <span style="font-size:0.75rem; color:#a0aec0;">Target: #${r.sorteo_objetivo}</span>
+                 </div>`;
+
+            // Análisis Estructural (columna analisis_extra o nuevas columnas)
+            let structHtml = '';
+            if(isPending) {
+                structHtml = '-';
+            } else {
+                // Usamos las columnas nuevas si existen, o fallback al JSON antiguo
+                let paridad = r.paridad_info || '-';
+                let rango = r.rango_info || '-';
+                let primos = r.primos_info || '-';
+                
+                structHtml = `
+                    <div style="font-size:0.75rem; display:grid; grid-template-columns:1fr 1fr; gap:5px;">
+                        <div><span style="color:#a0aec0;">Paridad:</span> ${paridad.includes('Pred') ? (paridad.split(' ')[0].replace('Pred:','') + '/' + paridad.split('Real:')[1]) : paridad}</div>
+                        <div><span style="color:#a0aec0;">Rango:</span> ${rango}</div>
+                        <div><span style="color:#a0aec0;">Primos:</span> ${primos}</div>
+                        <div><span style="color:#a0aec0;">Zonas:</span> ${r.zonas_ok}/6</div>
+                    </div>
+                `;
+            }
+
+            return `
+                <tr>
+                    <td>
+                        <div style="font-weight:bold; color:white;">${r.fecha_generacion.split(' ')[0]}</div>
+                        <div style="font-size:0.7rem; color:var(--text-muted);">ID: ${r.id}</div>
+                    </td>
+                    <td>${statusBadge}</td>
+                    <td>
+                        <div style="font-family:'JetBrains Mono'; color:var(--gold); letter-spacing:1px;">${nums}</div>
+                        <div style="font-size:0.75rem; margin-top:4px; color:${r.jugado_realmente==='SI'?'#00f2ff':'#a0aec0'}">
+                            ${r.jugado_realmente==='SI' ? '⚡ Jugada Real' : 'Simulación'}
+                        </div>
+                    </td>
+                    <td>${metricsHtml}</td>
+                    <td>${structHtml}</td>
+                </tr>
+            `;
+        }).join('');
+        lucide.createIcons();
+    }
+
+    function renderCharts(data) {
+        // Ordenar cronológicamente para el gráfico de línea
+        const chronoData = [...data].sort((a,b) => a.id - b.id);
+        
+        // GRÁFICO 1: Distribución de Aciertos (Barras)
+        const hitCounts = {0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0};
+        data.forEach(r => {
+            let ac = parseInt(r.aciertos) || 0;
+            if(hitCounts[ac] !== undefined) hitCounts[ac]++;
+        });
+
+        new Chart(document.getElementById('hitsChart'), {
+            type: 'bar',
+            data: {
+                labels: ['0', '1', '2', '3', '4', '5', '6'],
+                datasets: [{
+                    label: 'Frecuencia de Aciertos',
+                    data: Object.values(hitCounts),
+                    backgroundColor: 'rgba(0, 242, 255, 0.5)',
+                    borderColor: '#00f2ff',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false, // CLAVE PARA QUE NO SE DESBORDE
+                scales: {
+                    y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } },
+                    x: { grid: { display: false } }
                 }
+            }
+        });
 
-                if(passDay) {
-                    let nums = [
-                        parseInt(row[`${gameKey}_n1`]), parseInt(row[`${gameKey}_n2`]), parseInt(row[`${gameKey}_n3`]),
-                        parseInt(row[`${gameKey}_n4`]), parseInt(row[`${gameKey}_n5`]), parseInt(row[`${gameKey}_n6`])
-                    ];
-                    let winners = parseInt(row[gameConfig.cols.winners]) || 0;
-                    let amount = parseInt(row[gameConfig.cols.amount]) || 0;
-                    let pool = parseInt(row[gameConfig.cols.pool]) || 0;
-
-                    if(nums.every(n => !isNaN(n) && n > 0)) {
-                        cleanData.push({ 
-                            nums: nums, 
-                            sortIdx: parseInt(row.sorteo),
-                            winners: winners,
-                            amount: amount,
-                            pool: pool,
-                            sum: nums.reduce((a,b)=>a+b,0)
-                        });
+        // GRÁFICO 2: Proximidad (Línea)
+        new Chart(document.getElementById('proxChart'), {
+            type: 'line',
+            data: {
+                labels: chronoData.map(r => r.fecha_generacion.split(' ')[0]), // Fechas en eje X
+                datasets: [{
+                    label: 'Desviación Promedio (Menor es mejor)',
+                    data: chronoData.map(r => parseFloat(r.proximidad_prom)),
+                    borderColor: '#ffd700',
+                    backgroundColor: 'rgba(255, 215, 0, 0.1)',
+                    borderWidth: 2,
+                    pointRadius: 3,
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false, // CLAVE PARA QUE NO SE DESBORDE
+                scales: {
+                    y: { grid: { color: 'rgba(255,255,255,0.05)' }, title: { display: true, text: 'Distancia Numérica' } },
+                    x: { display: false } // Ocultar etiquetas si son muchas
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: (ctx) => `Desv: ${ctx.raw} (Target #${chronoData[ctx.dataIndex].sorteo_objetivo})`
+                        }
                     }
                 }
             }
         });
-
-        cleanData.sort((a,b) => a.sortIdx - b.sortIdx);
-        const totalDraws = cleanData.length;
-
-        let numbers = [], sums = [];
-        const parityKeys = ['0P-6I','1P-5I','2P-4I','3P-3I','4P-2I','5P-1I','6P-0I'];
-        let parities = {}; parityKeys.forEach(k => parities[k]=0);
-        const highLowKeys = ['6B-0A','5B-1A','4B-2A','3B-3A','2B-4A','1B-5A','0B-6A'];
-        let highLows = {}; highLowKeys.forEach(k => highLows[k]=0);
-
-        let lastSeen = new Array(42).fill(-1);
-        let pairsObj = {};
-        let matrix = Array(42).fill().map(()=>Array(42).fill(0));
-
-        let econ_sums = [], econ_winners = [], econ_pool = [];
-
-        cleanData.forEach((item, idx) => {
-            let sortNums = item.nums;
-            numbers.push(...sortNums);
-            sums.push(item.sum);
-            
-            econ_sums.push(item.sum);
-            econ_winners.push(item.winners);
-            econ_pool.push(item.pool);
-
-            let evens = sortNums.filter(n => n % 2 === 0).length;
-            parities[`${evens}P-${6-evens}I`]++;
-
-            let lows = sortNums.filter(n => n <= 20).length;
-            highLows[`${lows}B-${6-lows}A`]++;
-
-            for(let i=0; i<6; i++) {
-                lastSeen[sortNums[i]] = idx;
-                for(let j=i+1; j<6; j++) {
-                    let n1=sortNums[i], n2=sortNums[j];
-                    if(n1>n2)[n1,n2]=[n2,n1];
-                    matrix[n2][n1]++; matrix[n1][n2]++;
-                    pairsObj[`${n1}-${n2}`] = (pairsObj[`${n1}-${n2}`]||0)+1;
-                }
-            }
-        });
-
-        function getCorrelation(x, y) {
-            if(x.length < 2) return 0;
-            let mx = x.reduce((a,b)=>a+b,0)/x.length;
-            let my = y.reduce((a,b)=>a+b,0)/y.length;
-            let num=0, d1=0, d2=0;
-            for(let i=0; i<x.length; i++){
-                let dx=x[i]-mx, dy=y[i]-my;
-                num+=dx*dy; d1+=dx*dx; d2+=dy*dy;
-            }
-            return (d1>0 && d2>0) ? num/Math.sqrt(d1*d2) : 0;
-        }
-
-        let counts = new Array(42).fill(0);
-        numbers.forEach(n => { if(n>=1 && n<=41) counts[n]++; });
-        let expected = numbers.length/41;
-        let chiSq = numbers.length > 0 ? counts.slice(1).reduce((a,b) => a + Math.pow(b-expected,2)/expected, 0) : 0;
-        let pValue = 1 - jStat.chisquare.cdf(chiSq, 40);
-
-        let correlation = 0;
-        if(sums.length > 1) {
-            let lagX = sums.slice(0, -1), lagY = sums.slice(1);
-            correlation = getCorrelation(lagX, lagY);
-        }
-
-        document.getElementById('kpi_total').innerText = totalDraws;
-        document.getElementById('kpi_pvalue').innerText = pValue.toFixed(4);
-        document.getElementById('kpi_lag').innerText = correlation.toFixed(5);
-        const st = document.getElementById('kpi_status');
-        st.innerText = pValue > 0.05 ? "ROBUSTO" : "SESGO";
-        st.className = pValue > 0.05 ? "kpi-val status-ok" : "kpi-val status-fail";
-        
-        const config = { responsive: true, displayModeBar: false };
-
-        Plotly.react('chart_freq', [{
-            x: Array.from({length: 41}, (_, i) => i + 1), 
-            y: counts.slice(1), 
-            type: 'bar', marker: { color: counts.slice(1).map(y=>(y>expected*1.15||y<expected*0.85)?'#ff0055':'#00ff41') }
-        }], { ...layout_base, xaxis: { ...layout_base.xaxis, range: [0.5, 41.5] } }, config);
-
-        Plotly.react('chart_sums', [{
-            x: sums, type: 'histogram', marker: { color: '#00f2ff' }, opacity: 0.7
-        }], { ...layout_base, bargap: 0.05, shapes: [{type:'line', x0:126, x1:126, y0:0, y1:1, xref:'x', yref:'paper', line:{color:'white', dash:'dot'}}] }, config);
-
-        Plotly.react('chart_parity', [{
-            x: parityKeys, y: parityKeys.map(k=>parities[k]), type: 'bar',
-            marker: { color: ['#ff0055','#ffcc00','#00ff41','#00f2ff','#00ff41','#ffcc00','#ff0055'] }
-        }], { ...layout_base, xaxis: { ...layout_base.xaxis, type: 'category' } }, config);
-        
-        Plotly.react('chart_highlow', [{
-            x: highLowKeys, y: highLowKeys.map(k=>highLows[k]), type: 'bar',
-            marker: { color: ['#ff0055','#ffcc00','#00ff41','#00f2ff','#00ff41','#ffcc00','#ff0055'] }
-        }], { ...layout_base, xaxis: { ...layout_base.xaxis, type: 'category' } }, config);
-
-        Plotly.react('chart_heatmap', [{
-            z: matrix.slice(1).map(r=>r.slice(1)), type: 'heatmap', colorscale: 'Viridis', showscale: false
-        }], { ...layout_base, margin: {t:0,b:20,l:20,r:20} }, config);
-
-        Plotly.react('chart_econ_sum_winners', [{
-            x: econ_sums, y: econ_winners, mode: 'markers', type: 'scatter',
-            marker: { size: 6, color: '#ffd700', opacity: 0.6 }
-        }], { ...layout_base, xaxis: {title:'Suma'}, yaxis: {title:'Ganadores'} }, config);
-
-        Plotly.react('chart_econ_pool_winners', [{
-            x: econ_pool, y: econ_winners, mode: 'markers', type: 'scatter',
-            marker: { size: 6, color: '#00ff41', opacity: 0.6 }
-        }], { ...layout_base, xaxis: {title:'Pozo ($)'}, yaxis: {title:'Ganadores'} }, config);
-
-        // --- MATRIZ CORRELACIÓN FIX v5.2 ---
-        let corrVals = [[0,0,0],[0,0,0],[0,0,0]];
-        if(econ_sums.length > 5) {
-            const c_sum_win = getCorrelation(econ_sums, econ_winners);
-            const c_sum_pool = getCorrelation(econ_sums, econ_pool);
-            const c_win_pool = getCorrelation(econ_winners, econ_pool);
-            corrVals = [[1, c_sum_win, c_sum_pool],[c_sum_win, 1, c_win_pool],[c_sum_pool, c_win_pool, 1]];
-        }
-
-        // Layout Limpio y Aislado
-        const layout_matrix = {
-            paper_bgcolor: 'rgba(0,0,0,0)',
-            plot_bgcolor: 'rgba(0,0,0,0)',
-            font: { color: '#e0e0e0', family: 'Consolas', size: 9 },
-            margin: { t: 30, b: 50, l: 50, r: 50 }, // Margen suficiente para etiquetas
-            xaxis: { side: 'bottom', type: 'category', color: '#e0e0e0', automargin: true },
-            yaxis: { autorange: 'reversed', type: 'category', color: '#e0e0e0', automargin: true },
-            autosize: true
-        };
-
-        Plotly.react('chart_corr_matrix', [{
-            z: corrVals, x: ['Suma', 'Ganadores', 'Pozo'], y: ['Suma', 'Ganadores', 'Pozo'],
-            type: 'heatmap', colorscale: 'RdBu', zmin: -1, zmax: 1,
-            text: corrVals.map(r => r.map(v => v.toFixed(2))), hoverinfo: 'text'
-        }], layout_matrix, config);
-
-        let dVal = new Array(41).fill(0).map((_,i) => lastSeen[i+1] === -1 ? totalDraws : (totalDraws-1)-lastSeen[i+1]);
-        Plotly.react('chart_drought', [{
-            x: Array.from({length: 41}, (_, i) => i + 1), y: dVal, type: 'bar', marker: { color: dVal.map(d=>d>20?'#ff0055':d>10?'#ffcc00':'#222') }
-        }], { ...layout_base, xaxis: { ...layout_base.xaxis, range: [0.5, 41.5] } }, config);
-
-        let sortedPairs = Object.entries(pairsObj).sort((a,b)=>b[1]-a[1]).slice(0,10);
-        document.getElementById('pairs_table').innerHTML = sortedPairs.map(([p,c])=>`<tr><td>[${p}]</td><td>${c}</td></tr>`).join('');
     }
-
-    window.onresize = function() {
-        ['chart_freq','chart_sums','chart_parity','chart_highlow','chart_heatmap','chart_drought','chart_econ_sum_winners','chart_econ_pool_winners','chart_corr_matrix'].forEach(id => Plotly.Plots.resize(id));
-    };
 </script>
+
 </body>
 </html>
