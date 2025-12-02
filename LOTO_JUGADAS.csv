@@ -1,0 +1,7 @@
+id,fecha_generacion,numeros,jugado_realmente,estado,sorteo_objetivo,aciertos,delta_suma,proximidad_prom,analisis_extra
+1764696983,14/10/2025 20:11:05,"[2, 13, 17, 25, 34, 41]",SI,FINALIZADO,5334,0,9,3.2,"{""estructura_paridad"": ""FALLO"", ""pares_predichos"": 2, ""pares_reales"": 3, ""aciertos_zonas"": 5, ""aciertos_terminaciones"": 1}"
+1764696984,16/10/2025 19:19:19,"[1, 12, 13, 15, 17, 25]",SI,FINALIZADO,5335,0,10,3.3,"{""estructura_paridad"": ""FALLO"", ""pares_predichos"": 1, ""pares_reales"": 5, ""aciertos_zonas"": 4, ""aciertos_terminaciones"": 2}"
+1764696985,21/10/2025 19:31:20,"[5, 9, 12, 9, 33, 41]",SI,FINALIZADO,5337,0,11,7.2,"{""estructura_paridad"": ""FALLO"", ""pares_predichos"": 1, ""pares_reales"": 2, ""aciertos_zonas"": 3, ""aciertos_terminaciones"": 3}"
+1764696986,30/10/2025 9:08:22,"[1, 13, 14, 28, 30, 35]",SI,FINALIZADO,5341,0,-4,5.0,"{""estructura_paridad"": ""OK"", ""pares_predichos"": 3, ""pares_reales"": 3, ""aciertos_zonas"": 4, ""aciertos_terminaciones"": 4}"
+1764696987,29/11/2025 17:32:01,"[6, 8, 22, 27, 29, 41]",SI,FINALIZADO,5354,0,28,7.7,"{""estructura_paridad"": ""OK"", ""pares_predichos"": 3, ""pares_reales"": 3, ""aciertos_zonas"": 0, ""aciertos_terminaciones"": 4}"
+1764696988,1/12/2025 23:14:05,"[11, 12, 22, 25, 32, 38]",SI,PENDIENTE,,,,,
