@@ -21,6 +21,7 @@
       --neon-cyan: #00f2ff;
       --gold: #ffd700;
       --matrix: #00ff41;
+      --danger: #ff3b5c;
     }
 
     * { margin:0; padding:0; box-sizing:border-box; }
@@ -44,7 +45,7 @@
     .time-num { font-size: 2rem; font-weight: 900; color: var(--neon-cyan); }
     .time-label { font-size: 0.7rem; color: var(--text-muted); letter-spacing: 1px; margin-top: 5px; }
 
-    /* --- GENERADOR CUÁNTICO (NUEVO) --- */
+    /* --- GENERADOR CUÁNTICO (MEJORADO) --- */
     .generator-card {
         background: linear-gradient(145deg, rgba(20,30,50,0.9), rgba(10,15,25,0.95));
         border: 1px solid var(--gold);
@@ -78,16 +79,38 @@
     .gen-btn:active { transform: scale(0.95); }
     
     .gen-result { margin-top: 2rem; min-height: 100px; display: none; opacity: 0; transition: opacity 0.5s; }
-    .gen-balls { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin-bottom: 1rem; }
+    .gen-balls { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin-bottom: 1.5rem; }
     .gen-ball {
-        width: 50px; height: 50px; border-radius: 50%;
+        width: 55px; height: 55px; border-radius: 50%;
         background: radial-gradient(circle at 30% 30%, #ffd700, #bfa100);
-        color: black; font-weight: 900; font-size: 1.2rem;
+        color: black; font-weight: 900; font-size: 1.3rem;
         display: flex; align-items: center; justify-content: center;
         box-shadow: 0 5px 15px rgba(0,0,0,0.5);
         border: 2px solid white;
     }
-    .gen-stats { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--matrix); background: rgba(0, 255, 65, 0.1); padding: 0.5rem 1rem; border-radius: 8px; display: inline-block; }
+
+    /* TELEMETRÍA (NUEVO) */
+    .telemetry-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 10px;
+        margin-bottom: 1.5rem;
+        padding: 1rem;
+        background: rgba(0,0,0,0.2);
+        border-radius: 12px;
+        border: 1px solid rgba(255, 215, 0, 0.1);
+    }
+    .tele-item {
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        padding: 0.5rem; border-radius: 8px; background: rgba(255,255,255,0.03);
+    }
+    .tele-label { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+    .tele-val { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 0.9rem; color: white; display: flex; align-items: center; gap: 5px; }
+    
+    /* Indicadores de calidad visual */
+    .metric-good { color: var(--matrix); }
+    .metric-warn { color: #fbbf24; }
+    .metric-bad { color: var(--danger); }
 
     /* --- Buscador --- */
     .search-wrapper { max-width: 500px; margin: 0 auto 3rem; text-align: center; }
@@ -179,6 +202,9 @@
 
         <div id="gen-output" class="gen-result">
             <div class="gen-balls" id="gen-balls-container"></div>
+            
+            <div id="telemetry-panel" class="telemetry-grid"></div>
+            
             <div class="gen-stats" id="gen-stats-text"></div>
         </div>
     </div>
@@ -208,7 +234,7 @@
       <label class="toggle-switch">
         <input type="checkbox" id="filter-winners">
         <span class="slider"></span>
-        <span class="label-text">Ver solo con ganadores</span>
+        <span class="label-text">Ver solo con Ganadores</span>
       </label>
     </div>
 
@@ -245,10 +271,11 @@
     
     let allData = [];
     let sortedData = [];
-    let pastCombinations = new Set(); // Para búsqueda rápida de duplicados
-    
-    // --- NUEVA VARIABLE GLOBAL PARA GUARDAR LA ÚLTIMA JUGADA ---
+    let pastCombinations = new Set();
     let currentGeneratedNumbers = [];
+    
+    // Conjunto de números primos hasta el 41
+    const PRIMOS_LOTO = new Set([2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41]);
 
     function formatMoney(n) { return '$' + Number(n).toLocaleString('es-CL'); }
 
@@ -258,7 +285,6 @@
         complete: function(results) {
           allData = results.data;
           
-          // Pre-procesar historial para el generador
           allData.forEach(row => {
               if(row.LOTO_n1 && row.LOTO_n6) {
                   let nums = [
@@ -291,19 +317,19 @@
       document.getElementById('status-text').textContent = "Error al iniciar la carga de datos.";
     }
 
-    // --- LÓGICA DEL GENERADOR DE JUGADAS (ACTUALIZADA) ---
+    // --- LÓGICA DEL GENERADOR MEJORADO ---
     function generateLuckyNumbers() {
         const output = document.getElementById('gen-output');
         const container = document.getElementById('gen-balls-container');
+        const telemetry = document.getElementById('telemetry-panel');
         const stats = document.getElementById('gen-stats-text');
         
-        // Animación simple de "Pensando"
         output.style.display = 'block';
         output.style.opacity = '1';
         container.innerHTML = '<div style="color:var(--gold);">Calculando entropía...</div>';
+        telemetry.innerHTML = '';
         stats.innerHTML = '';
         
-        // Limpiar botones antiguos si existen para no duplicar
         const oldActions = document.getElementById('gen-actions');
         if(oldActions) oldActions.remove();
 
@@ -312,61 +338,88 @@
             let success = false;
             let finalNums = [];
 
-            while(attempt < 5000) { // Evitar bucle infinito
+            while(attempt < 5000) {
                 attempt++;
-                // 1. Generar 6 números únicos
                 let candidates = new Set();
-                while(candidates.size < 6) {
-                    candidates.add(Math.floor(Math.random() * 41) + 1);
-                }
+                while(candidates.size < 6) candidates.add(Math.floor(Math.random() * 41) + 1);
                 let nums = Array.from(candidates).sort((a,b) => a-b);
 
-                // 2. Filtro Gaussiano (Suma 100-150)
+                // Filtros Básicos
                 let sum = nums.reduce((a,b) => a+b, 0);
                 if(sum < 100 || sum > 150) continue;
 
-                // 3. Filtro Paridad (3-3, 4-2, 2-4)
                 let evens = nums.filter(n => n % 2 === 0).length;
                 if(evens < 2 || evens > 4) continue;
 
-                // 4. Filtro Histórico (NO REPETIR)
                 if(pastCombinations.has(nums.join('-'))) continue;
 
-                // 5. Filtro Consecutivos (Opcional: máx 2 seguidos)
-                let cons = 0;
-                let maxCons = 0;
+                let maxCons = 0; let cons = 0;
                 for(let i=0; i<nums.length-1; i++) {
-                    if(nums[i+1] === nums[i]+1) cons++;
-                    else cons = 0;
+                    if(nums[i+1] === nums[i]+1) cons++; else cons = 0;
                     if(cons > maxCons) maxCons = cons;
                 }
-                if(maxCons >= 2) continue; // Descarta tríos seguidos (ej: 4,5,6)
+                if(maxCons >= 2) continue;
 
-                // ¡ÉXITO!
                 finalNums = nums;
                 success = true;
                 break;
             }
 
             if(success) {
-                // GUARDAR NÚMEROS GLOBALMENTE
                 currentGeneratedNumbers = finalNums;
 
+                // Render Bolas
                 let html = finalNums.map(n => `<div class="gen-ball">${n}</div>`).join('');
                 container.innerHTML = html;
                 
+                // Cálculos de Telemetría
                 let sum = finalNums.reduce((a,b) => a+b, 0);
                 let evens = finalNums.filter(n => n % 2 === 0).length;
-                stats.innerHTML = `Suma: ${sum} (Ideal) | Paridad: ${evens}P-${6-evens}I | ✨ Inédita en historial`;
+                let range = finalNums[finalNums.length-1] - finalNums[0];
+                let primesCount = finalNums.filter(n => PRIMOS_LOTO.has(n)).length;
+                let decades = new Set(finalNums.map(n => Math.floor(n/10))).size;
+                
+                let consecutivesCount = 0;
+                for(let i=0; i<finalNums.length-1; i++) {
+                    if(finalNums[i+1] === finalNums[i]+1) consecutivesCount++;
+                }
 
-                // --- INYECCIÓN DE BOTONES DE ACCIÓN ---
+                // Render Telemetría
+                // Colores: metric-good (verde), metric-warn (amarillo), metric-bad (rojo)
+                
+                let rangeClass = (range >= 20 && range <= 38) ? 'metric-good' : 'metric-warn';
+                let primeClass = (primesCount >= 1 && primesCount <= 3) ? 'metric-good' : 'metric-warn';
+                let zoneClass = (decades >= 3) ? 'metric-good' : 'metric-warn';
+                let consClass = (consecutivesCount === 0) ? 'metric-good' : 'metric-warn';
+
+                telemetry.innerHTML = `
+                    <div class="tele-item">
+                        <span class="tele-label">Rango (20-38)</span>
+                        <span class="tele-val ${rangeClass}"><i data-lucide="ruler" width="14"></i> ${range}</span>
+                    </div>
+                    <div class="tele-item">
+                        <span class="tele-label">Primos (1-3)</span>
+                        <span class="tele-val ${primeClass}"><i data-lucide="hash" width="14"></i> ${primesCount}</span>
+                    </div>
+                    <div class="tele-item">
+                        <span class="tele-label">Zonas (>3)</span>
+                        <span class="tele-val ${zoneClass}"><i data-lucide="map" width="14"></i> ${decades}</span>
+                    </div>
+                    <div class="tele-item">
+                        <span class="tele-label">Consecutivos</span>
+                        <span class="tele-val ${consClass}"><i data-lucide="link" width="14"></i> ${consecutivesCount}</span>
+                    </div>
+                `;
+
+                stats.innerHTML = `Suma: ${sum} | Paridad: ${evens}P-${6-evens}I | ✨ Inédita en historial`;
+
                 const actionsDiv = document.createElement('div');
                 actionsDiv.id = 'gen-actions';
                 actionsDiv.style.marginTop = '1.5rem';
                 actionsDiv.style.display = 'flex';
                 actionsDiv.style.justifyContent = 'center';
                 actionsDiv.style.gap = '15px';
-                actionsDiv.style.flexWrap = 'wrap'; // Para móviles
+                actionsDiv.style.flexWrap = 'wrap';
                 
                 actionsDiv.innerHTML = `
                     <button onclick="savePlay(true)" class="gen-btn" style="font-size:0.8rem; padding:0.8rem 1.5rem; background:#00ff41; color:black; border:none; box-shadow:0 0 15px rgba(0,255,65,0.3);">
@@ -377,29 +430,27 @@
                     </button>
                 `;
                 output.appendChild(actionsDiv);
-                lucide.createIcons(); // Recargar iconos nuevos
+                lucide.createIcons();
 
             } else {
                 container.innerHTML = "Error de convergencia. Intente de nuevo.";
             }
 
-        }, 500); // Pequeño delay dramático
+        }, 400);
     }
 
-    // --- FUNCIÓN PARA GUARDAR EN GOOGLE SHEETS ---
     async function savePlay(playedReal) {
         if(currentGeneratedNumbers.length === 0) return;
 
         const btnContainer = document.getElementById('gen-actions');
         btnContainer.innerHTML = '<span style="color:var(--neon-cyan);">Sincronizando con la nube...</span>';
 
-        // TU URL REAL DE GOOGLE APPS SCRIPT
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwBZd2vTrvxVdTjJnLoK2vMCR90qJqyH3ZfSDkNK4_n0aFYe3jCoeIZ3R58XNQBM1xQ3A/exec";
 
         try {
             await fetch(GOOGLE_SCRIPT_URL, {
                 method: 'POST',
-                mode: 'no-cors', // Importante para evitar errores de seguridad del navegador
+                mode: 'no-cors',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     numeros: currentGeneratedNumbers,
@@ -407,10 +458,7 @@
                 })
             });
 
-            // Con 'no-cors' no recibimos respuesta legible, así que asumimos éxito si no salta al catch
             btnContainer.innerHTML = '<span style="color:#00ff41; font-weight:bold;">✨ ¡Guardado en la Nube!</span>';
-            
-            // Opcional: Ocultar mensaje después de 3 segs
             setTimeout(() => { if(btnContainer) btnContainer.style.opacity = '0'; }, 3000);
 
         } catch (error) {
