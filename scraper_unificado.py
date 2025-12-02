@@ -10,7 +10,7 @@ from playwright.async_api import async_playwright
 
 # Importamos tu parser existente
 try:
-    from loto_parser_v3 import parse_loto_flat
+    from loto_parser_v3 import parse_loto_rich as parse_loto_flat
 except ImportError:
     print("❌ ERROR: Falta 'loto_parser_v3.py'.")
     exit()
@@ -257,7 +257,7 @@ def auditoria_retroactiva_inteligente():
                 row_completa = {col: j.get(col, "") for col in HEADERS_JUGADAS}
                 writer.writerow(row_completa)
         print("      💾 Base de datos actualizada con nuevas auditorías.")
-        
+
 # --- SCRAPER ---
 def get_last_draw_id():
     if not os.path.exists(CSV_FILENAME): return SORTEO_INICIAL_DEFAULT - 1
