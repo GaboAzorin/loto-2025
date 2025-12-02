@@ -197,50 +197,67 @@ def auditoria_retroactiva_inteligente():
     historial = []
     with open(CSV_FILENAME, 'r', encoding='utf-8') as f:
         historial = list(csv.DictReader(f))
-    historial.sort(key=lambda x: int(x['sorteo'])) 
+    # Ordenar historial por fecha para asegurar cronología
+    historial.sort(key=lambda x: parsear_fecha(x['fecha']))
 
     jugadas = []
     with open(PREDICTIONS_CSV, 'r', encoding='utf-8') as f:
         jugadas = list(csv.DictReader(f))
     
-    # Validar headers
     if not jugadas: return
-    current_headers = list(jugadas[0].keys())
-    
+    # Asegurar headers
+    campos = list(jugadas[0].keys())
+    # Si falta alguna columna nueva en el archivo viejo, la agregamos a la lista de campos
+    for col in HEADERS_JUGADAS:
+        if col not in campos: campos.append(col)
+
     cambios = False
+    pendientes_ignoradas = 0
+
     for jugada in jugadas:
         if jugada['estado'] == 'PENDIENTE':
             fecha_jugada = parsear_fecha(jugada['fecha_generacion'])
             sorteo_objetivo = None
             
+            # Buscamos el PRIMER sorteo cuya fecha sea estrictamente posterior a la jugada
             for sorteo in historial:
                 if parsear_fecha(sorteo['fecha']) > fecha_jugada:
                     sorteo_objetivo = sorteo
                     break
 
             if sorteo_objetivo:
+                # ¡ENCONTRAMOS SORTEO! PROCEDEMOS A CALCULAR
                 pred_nums = json.loads(jugada['numeros'])
                 pred_nums.sort()
                 
                 res = calcular_metricas(pred_nums, sorteo_objetivo)
                 
-                # Actualizar campos planos
+                # Actualizar campos
                 jugada['sorteo_objetivo'] = sorteo_objetivo['sorteo']
                 jugada['estado'] = 'FINALIZADO'
-                # Merge de resultados
+                # Rellenar datos
                 for k, v in res.items():
-                    if k in jugada: jugada[k] = v
+                    jugada[k] = v
                 
                 cambios = True
-                print(f"      🎯 Jugada {jugada['id']} -> Sorteo #{sorteo_objetivo['sorteo']} | Aciertos: {res['aciertos']} | Rango: {res.get('rango_info')}")
+                print(f"      🎯 Jugada {jugada['id']} auditada vs Sorteo #{sorteo_objetivo['sorteo']}")
+            else:
+                # AUN NO HAY SORTEO (CASO CORRECTO PARA TU JUGADA DE AYER)
+                pendientes_ignoradas += 1
+
+    if pendientes_ignoradas > 0:
+        print(f"      ⏳ {pendientes_ignoradas} jugadas se mantienen PENDIENTES (esperando sorteo futuro).")
 
     if cambios:
         with open(PREDICTIONS_CSV, 'w', encoding='utf-8', newline='') as f:
-            writer = csv.DictWriter(f, fieldnames=HEADERS_JUGADAS) # Usamos los headers nuevos definidos arriba
+            writer = csv.DictWriter(f, fieldnames=HEADERS_JUGADAS)
             writer.writeheader()
-            writer.writerows(jugadas)
-        print("      💾 Auditoría guardada.")
-
+            # Al escribir, nos aseguramos de que cada fila tenga todos los campos
+            for j in jugadas:
+                row_completa = {col: j.get(col, "") for col in HEADERS_JUGADAS}
+                writer.writerow(row_completa)
+        print("      💾 Base de datos actualizada con nuevas auditorías.")
+        
 # --- SCRAPER ---
 def get_last_draw_id():
     if not os.path.exists(CSV_FILENAME): return SORTEO_INICIAL_DEFAULT - 1
