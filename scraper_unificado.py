@@ -106,48 +106,91 @@ def sincronizar_nube_a_local():
         print(f"❌ Error descargando nube: {e}")
 
 def auditar_predicciones(sorteo_real):
-    """Compara jugadas PENDIENTES contra el sorteo recién bajado."""
+    """Compara jugadas PENDIENTES contra el sorteo real con métricas avanzadas."""
     if not os.path.exists(PREDICTIONS_CSV): return
 
-    print(f"   🕵️ Auditando predicciones contra Sorteo #{sorteo_real['sorteo']}...")
+    print(f"   🕵️ Auditando predicciones avanzadas contra Sorteo #{sorteo_real['sorteo']}...")
     filas_todas = []
     cambios = False
     
+    # Datos del Sorteo Real
     real_nums = [int(sorteo_real[f'LOTO_n{i}']) for i in range(1,7)]
     real_nums.sort()
     fecha_sorteo = datetime.strptime(sorteo_real['fecha'], '%Y-%m-%d %H:%M:%S')
 
+    # Métricas del Real (Para comparar)
+    real_pares = len([n for n in real_nums if n % 2 == 0])
+    real_decenas = [n // 10 for n in real_nums] # [0, 1, 1, 2, 3, 4]
+    real_terminaciones = [n % 10 for n in real_nums] # [5, 2, 8...]
+
     with open(PREDICTIONS_CSV, 'r', encoding='utf-8') as f:
         reader = csv.DictReader(f)
         campos = reader.fieldnames
+        
+        # Si no existe la columna de análisis extra, la agregamos virtualmente
+        if 'analisis_extra' not in campos:
+            campos.append('analisis_extra')
+
         for row in reader:
             if row['estado'] == 'PENDIENTE':
                 try:
                     fecha_gen = datetime.strptime(row['fecha_generacion'], '%Y-%m-%d %H:%M:%S')
-                except:
-                    # Si falla el parseo de fecha, asumimos que es vieja y la auditamos igual
-                    fecha_gen = datetime.min
+                except: fecha_gen = datetime.min
 
-                # Solo auditamos si la jugada fue ANTES del sorteo
                 if fecha_gen < fecha_sorteo:
                     pred_nums = json.loads(row['numeros'])
                     pred_nums.sort()
                     
-                    # 1. Aciertos
+                    # --- CÁLCULO DE MÉTRICAS ---
+                    
+                    # 1. Aciertos Exactos
                     aciertos = len(set(real_nums) & set(pred_nums))
                     
-                    # 2. Proximidad (Diferencia promedio por bola)
+                    # 2. Proximidad (Distancia media)
                     diff_total = sum(abs(r - p) for r, p in zip(real_nums, pred_nums))
                     prox = round(diff_total / 6, 1)
 
+                    # 3. Delta Suma
+                    delta_suma = sum(pred_nums) - sum(real_nums)
+
+                    # 4. Coincidencia de Estructura (Pares)
+                    pred_pares = len([n for n in pred_nums if n % 2 == 0])
+                    match_paridad = (pred_pares == real_pares)
+                    
+                    # 5. Coincidencia de Zonas (Decenas)
+                    # Contamos cuántos números cayeron en la misma decena
+                    pred_decenas = [n // 10 for n in pred_nums]
+                    aciertos_decenas = 0
+                    # Comparación simple de distribución
+                    from collections import Counter
+                    c_real = Counter(real_decenas)
+                    c_pred = Counter(pred_decenas)
+                    # Calculamos solapamiento de histogramas
+                    interseccion_zonas = sum((c_real & c_pred).values())
+
+                    # 6. Coincidencia de Terminaciones
+                    pred_term = [n % 10 for n in pred_nums]
+                    aciertos_term = len(set(real_terminaciones) & set(pred_term))
+
+                    # --- GUARDADO ---
                     row['sorteo_objetivo'] = sorteo_real['sorteo']
                     row['aciertos'] = aciertos
-                    row['delta_suma'] = sum(pred_nums) - sum(real_nums)
+                    row['delta_suma'] = delta_suma
                     row['proximidad_prom'] = prox
                     row['estado'] = 'FINALIZADO'
                     
+                    # Guardamos el análisis rico en JSON dentro de una columna nueva
+                    analisis = {
+                        "estructura_paridad": "OK" if match_paridad else "FALLO",
+                        "pares_predichos": pred_pares,
+                        "pares_reales": real_pares,
+                        "aciertos_zonas": interseccion_zonas, # Ej: 4 significa que acertaste la decena de 4 números
+                        "aciertos_terminaciones": aciertos_term
+                    }
+                    row['analisis_extra'] = json.dumps(analisis)
+                    
                     cambios = True
-                    print(f"      🎯 Jugada {row['id']}: {aciertos} aciertos (Desv: {prox})")
+                    print(f"      🎯 Jugada {row['id']}: {aciertos} aciertos | Zonas: {interseccion_zonas}/6 | Paridad: {analisis['estructura_paridad']}")
             
             filas_todas.append(row)
 
@@ -156,8 +199,8 @@ def auditar_predicciones(sorteo_real):
             writer = csv.DictWriter(f, fieldnames=campos)
             writer.writeheader()
             writer.writerows(filas_todas)
-        print("      💾 Auditoría guardada en LOTO_JUGADAS.csv")
-
+        print("      💾 Auditoría avanzada guardada.")
+        
 def get_last_draw_id():
     if not os.path.exists(CSV_FILENAME): return SORTEO_INICIAL_DEFAULT - 1
     max_id = 0
