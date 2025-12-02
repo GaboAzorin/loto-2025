@@ -60,45 +60,43 @@
             background: var(--card); border: 1px solid var(--border);
             border-radius: 1rem; padding: 1.5rem;
             display: flex; flex-direction: column; gap: 5px;
-            /* FIX DE DESBORDAMIENTO FLEX */
-            min-width: 0;
+            min-width: 0; /* FIX VISUAL IMPORTANTE */
         }
         .stat-title { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
         .stat-value { font-size: 2rem; font-weight: 900; color: white; }
         .stat-sub { font-size: 0.8rem; color: var(--matrix); display: flex; align-items: center; gap: 5px; }
         
-        /* CHARTS GRID */
+        /* SECCIONES Y GRÁFICOS */
+        .section-title { color: white; margin-bottom: 1.5rem; font-size: 1.2rem; display: flex; align-items: center; gap: 10px; border-left: 4px solid var(--neon-cyan); padding-left: 10px; }
+        
         .charts-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
             gap: 1.5rem;
-            margin-bottom: 3rem;
+            margin-bottom: 4rem;
         }
         .chart-card {
             background: var(--card); border: 1px solid var(--border);
             border-radius: 1.5rem; padding: 1.5rem;
             box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            /* FIX DE DESBORDAMIENTO FLEX */
-            min-width: 0; 
+            min-width: 0; /* FIX VISUAL IMPORTANTE */
             display: flex; flex-direction: column;
         }
-        .chart-header {
-            display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;
-        }
+        .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
         .chart-title { font-weight: 700; color: white; display: flex; align-items: center; gap: 10px; }
         
-        /* --- CORRECCIÓN CRÍTICA DE TAMAÑO DE GRÁFICOS --- */
+        /* FIX DE TAMAÑO DE GRÁFICOS */
         .chart-container {
             position: relative;
             height: 300px;
             width: 100%;
-            overflow: hidden; /* Evita que se salga */
+            overflow: hidden;
         }
 
         /* TABLE */
         .history-section {
             background: var(--card); border: 1px solid var(--border);
-            border-radius: 1.5rem; overflow: hidden;
+            border-radius: 1.5rem; overflow: hidden; margin-top: 2rem;
         }
         .table-header { padding: 1.5rem; border-bottom: 1px solid var(--border); background: rgba(0,0,0,0.2); }
         .table-scroll { overflow-x: auto; }
@@ -115,9 +113,6 @@
         .badge-success { background: rgba(0, 255, 65, 0.15); color: var(--matrix); border: 1px solid rgba(0, 255, 65, 0.3); }
         .badge-fail { background: rgba(255, 59, 92, 0.15); color: var(--danger); border: 1px solid rgba(255, 59, 92, 0.3); }
 
-        /* JSON PRETTY */
-        .json-box { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: #a0aec0; max-width: 300px; white-space: pre-wrap; word-break: break-all; }
-
         @media (max-width: 768px) {
             .charts-grid { grid-template-columns: 1fr; }
         }
@@ -127,13 +122,13 @@
 
 <div class="container">
     <header>
-        <div class="brand">LOTO<span>AI</span> /// AUDITORÍA</div>
+        <div class="brand">LOTO<span>AI</span> /// AUDITORÍA FORENSE</div>
         <a href="index.html" class="back-btn"><i data-lucide="arrow-left"></i> Volver al Generador</a>
     </header>
 
     <div class="kpi-grid">
         <div class="stat-card">
-            <div class="stat-title">Precisión Histórica</div>
+            <div class="stat-title">Precisión Algoritmo</div>
             <div class="stat-value" id="kpi-acc">0%</div>
             <div class="stat-sub"><i data-lucide="target" width="14"></i> Aciertos > 0</div>
         </div>
@@ -154,6 +149,7 @@
         </div>
     </div>
 
+    <h3 class="section-title">Análisis de Desempeño (Mis Jugadas)</h3>
     <div class="charts-grid">
         <div class="chart-card">
             <div class="chart-header">
@@ -165,7 +161,7 @@
         </div>
         <div class="chart-card">
             <div class="chart-header">
-                <div class="chart-title"><i data-lucide="activity" style="color:var(--gold)"></i> Tendencia de Error (Proximidad)</div>
+                <div class="chart-title"><i data-lucide="activity" style="color:var(--gold)"></i> Calibración del Algoritmo (Error)</div>
             </div>
             <div class="chart-container">
                 <canvas id="proxChart"></canvas>
@@ -173,9 +169,29 @@
         </div>
     </div>
 
+    <h3 class="section-title">Análisis del Entorno (Histórico Loto)</h3>
+    <div class="charts-grid">
+        <div class="chart-card">
+            <div class="chart-header">
+                <div class="chart-title"><i data-lucide="thermometer" style="color:#ff3b5c"></i> Mapa de Calor (Frecuencia Histórica)</div>
+            </div>
+            <div class="chart-container">
+                <canvas id="freqChart"></canvas>
+            </div>
+        </div>
+        <div class="chart-card">
+            <div class="chart-header">
+                <div class="chart-title"><i data-lucide="scale" style="color:#a0aec0"></i> Tendencia de Paridad (Últimos 30)</div>
+            </div>
+            <div class="chart-container">
+                <canvas id="globalParityChart"></canvas>
+            </div>
+        </div>
+    </div>
+
     <div class="history-section">
         <div class="table-header">
-            <h3 style="color:white; font-size:1.1rem; font-weight:700;">Registro Forense de Predicciones</h3>
+            <h3 style="color:white; font-size:1.1rem; font-weight:700;">Registro Detallado de Predicciones</h3>
         </div>
         <div class="table-scroll">
             <table id="audit-table">
@@ -200,42 +216,37 @@
 <script>
     lucide.createIcons();
     
-    // Configuración global de Chart.js para modo oscuro y responsive
+    // Configuración global de Chart.js
     Chart.defaults.color = '#a0aec0';
     Chart.defaults.borderColor = 'rgba(255,255,255,0.1)';
     Chart.defaults.font.family = "'JetBrains Mono', monospace";
 
-    Papa.parse('LOTO_JUGADAS.csv', {
-        download: true,
-        header: true,
-        skipEmptyLines: true,
-        complete: function(results) {
-            processData(results.data);
-        },
-        error: function(err) {
-            console.error("Error CSV:", err);
-            document.getElementById('audit-body').innerHTML = '<tr><td colspan="5" style="text-align:center; color:red;">Error cargando LOTO_JUGADAS.csv. Asegúrate de haber ejecutado el scraper.</td></tr>';
-        }
+    // CARGA DE DATOS EN PARALELO
+    Promise.all([
+        new Promise(resolve => Papa.parse('LOTO_JUGADAS.csv', { download: true, header: true, skipEmptyLines: true, complete: res => resolve(res.data) })),
+        new Promise(resolve => Papa.parse('LOTO_HISTORIAL_MAESTRO.csv', { download: true, header: true, skipEmptyLines: true, complete: res => resolve(res.data) }))
+    ]).then(([jugadasData, historialData]) => {
+        processUserStats(jugadasData);
+        processGlobalStats(historialData);
+    }).catch(err => {
+        console.error("Error cargando CSVs:", err);
+        document.getElementById('audit-body').innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--danger);">Error cargando bases de datos. Verifique que scraper_unificado.py se haya ejecutado.</td></tr>';
     });
 
-    function processData(data) {
-        // Filtrar solo jugadas finalizadas para estadísticas
+    // --- PROCESAMIENTO JUGADAS USUARIO ---
+    function processUserStats(data) {
         const completed = data.filter(r => r.estado === 'FINALIZADO');
         const total = data.length;
         
-        // 1. CALCULAR KPIS
+        // KPIS
         const hits = completed.filter(r => parseInt(r.aciertos) > 0).length;
         const totalError = completed.reduce((sum, r) => sum + parseFloat(r.proximidad_prom || 0), 0);
         
-        // Calcular paridad correcta (basado en paridad_info "Pred:X - Real:X")
+        // Calcular paridad desde columna o JSON antiguo
         let parityOk = 0;
         completed.forEach(r => {
-            if(r.paridad_info && r.paridad_info.includes("Pred:") && r.paridad_info.includes("Real:")) {
-                // Parseo simple: extraer números y comparar
-                // Formato esperado: "Pred:3P - Real:3P"
-                const parts = r.paridad_info.match(/Pred:(\d+)P.*Real:(\d+)P/);
-                if(parts && parts[1] === parts[2]) parityOk++;
-            }
+            let pInfo = r.paridad_info || (r.analisis_extra ? JSON.parse(r.analisis_extra).estructura_paridad : "");
+            if(pInfo.includes("OK") || (pInfo.includes("Pred") && pInfo.split('P')[0].slice(-1) === pInfo.split('Real:')[1].split('P')[0])) parityOk++;
         });
 
         document.getElementById('kpi-acc').innerText = completed.length ? Math.round((hits / completed.length)*100) + '%' : '0%';
@@ -243,51 +254,162 @@
         document.getElementById('kpi-total').innerText = total;
         document.getElementById('kpi-parity').innerText = completed.length ? Math.round((parityOk / completed.length)*100) + '%' : '0%';
 
-        // 2. RENDERIZAR TABLA
-        renderTable(data.reverse()); // Mostrar más recientes primero
+        renderTable(data.reverse());
+        renderUserCharts(completed);
+    }
 
-        // 3. RENDERIZAR GRÁFICOS
-        renderCharts(completed);
+    // --- PROCESAMIENTO HISTORIAL GLOBAL ---
+    function processGlobalStats(data) {
+        // Filtro básico de datos válidos
+        const validData = data.filter(r => r.LOTO_n1 && r.LOTO_n6);
+        
+        // 1. Frecuencia
+        const freq = {};
+        for(let i=1; i<=41; i++) freq[i] = 0;
+        validData.forEach(row => {
+            for(let i=1; i<=6; i++) {
+                let n = parseInt(row[`LOTO_n${i}`]);
+                if(n) freq[n]++;
+            }
+        });
+        
+        // Top 15 Frecuentes
+        const sortedFreq = Object.entries(freq).sort((a,b) => b[1] - a[1]).slice(0, 15);
+        
+        new Chart(document.getElementById('freqChart'), {
+            type: 'bar',
+            data: {
+                labels: sortedFreq.map(x => x[0]),
+                datasets: [{
+                    label: 'Veces que ha salido',
+                    data: sortedFreq.map(x => x[1]),
+                    backgroundColor: 'rgba(255, 59, 92, 0.5)',
+                    borderColor: '#ff3b5c',
+                    borderWidth: 1
+                }]
+            },
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false, // CLAVE PARA QUE NO SE DESBORDE
+                scales: { x: {grid:{display:false}}, y: {beginAtZero:false} } 
+            }
+        });
+
+        // 2. Paridad Histórica (Últimos 30)
+        const last30 = validData.slice(-30);
+        const parityData = last30.map(r => {
+            let pares = 0;
+            for(let i=1; i<=6; i++) if(parseInt(r[`LOTO_n${i}`]) % 2 === 0) pares++;
+            return pares;
+        });
+
+        new Chart(document.getElementById('globalParityChart'), {
+            type: 'line',
+            data: {
+                labels: last30.map(r => r.sorteo),
+                datasets: [{
+                    label: 'Pares por Sorteo',
+                    data: parityData,
+                    borderColor: '#ffffff',
+                    backgroundColor: 'rgba(255,255,255,0.05)',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    fill: true,
+                    pointRadius: 2
+                }]
+            },
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false, // CLAVE PARA QUE NO SE DESBORDE
+                scales: { x: {display:false}, y: {min:0, max:6} } 
+            }
+        });
+    }
+
+    function renderUserCharts(data) {
+        const chronoData = [...data].sort((a,b) => a.id - b.id);
+        
+        // Aciertos
+        const hitCounts = {0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0};
+        data.forEach(r => {
+            let ac = parseInt(r.aciertos) || 0;
+            if(hitCounts[ac] !== undefined) hitCounts[ac]++;
+        });
+
+        new Chart(document.getElementById('hitsChart'), {
+            type: 'bar',
+            data: {
+                labels: Object.keys(hitCounts),
+                datasets: [{
+                    label: 'Frecuencia de Aciertos',
+                    data: Object.values(hitCounts),
+                    backgroundColor: 'rgba(0, 242, 255, 0.5)',
+                    borderColor: '#00f2ff',
+                    borderWidth: 1
+                }]
+            },
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false, // CLAVE
+                scales: { y: {beginAtZero:true}, x: {grid:{display:false}} } 
+            }
+        });
+
+        // Proximidad
+        new Chart(document.getElementById('proxChart'), {
+            type: 'line',
+            data: {
+                labels: chronoData.map(r => r.fecha_generacion.split(' ')[0]),
+                datasets: [{
+                    label: 'Desviación (Menor es mejor)',
+                    data: chronoData.map(r => parseFloat(r.proximidad_prom)),
+                    borderColor: '#ffd700',
+                    backgroundColor: 'rgba(255, 215, 0, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false, // CLAVE
+                scales: { x: {display:false} } 
+            }
+        });
     }
 
     function renderTable(rows) {
         const tbody = document.getElementById('audit-body');
         tbody.innerHTML = rows.map(r => {
             const isPending = r.estado === 'PENDIENTE';
-            
-            // Badge Estado
             let statusBadge = isPending 
                 ? `<span class="badge badge-pending"><i data-lucide="clock" width="12"></i> PENDIENTE</span>` 
                 : `<span class="badge badge-success"><i data-lucide="check-circle" width="12"></i> FINALIZADO</span>`;
             
-            // Formateo de números
-            let nums = "Error formato";
+            let nums = "Error";
             try { nums = JSON.parse(r.numeros).join(', '); } catch(e) { nums = r.numeros; }
 
-            // Detalles métricas
             let metricsHtml = isPending ? '<span style="color:#555;">Esperando sorteo...</span>' : 
                 `<div style="display:flex; flex-direction:column; gap:2px;">
                     <span style="color:${parseInt(r.aciertos)>0 ? '#00ff41' : 'white'}; font-weight:bold;">${r.aciertos} Aciertos</span>
-                    <span style="font-size:0.8rem;">Desviación: ${r.proximidad_prom}</span>
+                    <span style="font-size:0.8rem;">Desv: ${r.proximidad_prom}</span>
                     <span style="font-size:0.75rem; color:#a0aec0;">Target: #${r.sorteo_objetivo}</span>
                  </div>`;
 
-            // Análisis Estructural (columna analisis_extra o nuevas columnas)
             let structHtml = '';
             if(isPending) {
                 structHtml = '-';
             } else {
-                // Usamos las columnas nuevas si existen, o fallback al JSON antiguo
                 let paridad = r.paridad_info || '-';
                 let rango = r.rango_info || '-';
                 let primos = r.primos_info || '-';
                 
                 structHtml = `
-                    <div style="font-size:0.75rem; display:grid; grid-template-columns:1fr 1fr; gap:5px;">
-                        <div><span style="color:#a0aec0;">Paridad:</span> ${paridad.includes('Pred') ? (paridad.split(' ')[0].replace('Pred:','') + '/' + paridad.split('Real:')[1]) : paridad}</div>
-                        <div><span style="color:#a0aec0;">Rango:</span> ${rango}</div>
-                        <div><span style="color:#a0aec0;">Primos:</span> ${primos}</div>
-                        <div><span style="color:#a0aec0;">Zonas:</span> ${r.zonas_ok}/6</div>
+                    <div style="font-size:0.75rem; display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                        <div title="Paridad"><i data-lucide="scale" width="10" style="display:inline"></i> ${paridad.includes('Pred') ? (paridad.split(' ')[0].replace('Pred:','') + '/' + paridad.split('Real:')[1]) : paridad}</div>
+                        <div title="Rango"><i data-lucide="ruler" width="10" style="display:inline"></i> ${rango}</div>
+                        <div title="Primos"><i data-lucide="hash" width="10" style="display:inline"></i> ${primos}</div>
+                        <div title="Zonas"><i data-lucide="map" width="10" style="display:inline"></i> ${r.zonas_ok}/6</div>
                     </div>
                 `;
             }
@@ -296,7 +418,7 @@
                 <tr>
                     <td>
                         <div style="font-weight:bold; color:white;">${r.fecha_generacion.split(' ')[0]}</div>
-                        <div style="font-size:0.7rem; color:var(--text-muted);">ID: ${r.id}</div>
+                        <div style="font-size:0.7rem; color:var(--text-muted);">${r.id}</div>
                     </td>
                     <td>${statusBadge}</td>
                     <td>
@@ -311,73 +433,6 @@
             `;
         }).join('');
         lucide.createIcons();
-    }
-
-    function renderCharts(data) {
-        // Ordenar cronológicamente para el gráfico de línea
-        const chronoData = [...data].sort((a,b) => a.id - b.id);
-        
-        // GRÁFICO 1: Distribución de Aciertos (Barras)
-        const hitCounts = {0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0};
-        data.forEach(r => {
-            let ac = parseInt(r.aciertos) || 0;
-            if(hitCounts[ac] !== undefined) hitCounts[ac]++;
-        });
-
-        new Chart(document.getElementById('hitsChart'), {
-            type: 'bar',
-            data: {
-                labels: ['0', '1', '2', '3', '4', '5', '6'],
-                datasets: [{
-                    label: 'Frecuencia de Aciertos',
-                    data: Object.values(hitCounts),
-                    backgroundColor: 'rgba(0, 242, 255, 0.5)',
-                    borderColor: '#00f2ff',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false, // CLAVE PARA QUE NO SE DESBORDE
-                scales: {
-                    y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } },
-                    x: { grid: { display: false } }
-                }
-            }
-        });
-
-        // GRÁFICO 2: Proximidad (Línea)
-        new Chart(document.getElementById('proxChart'), {
-            type: 'line',
-            data: {
-                labels: chronoData.map(r => r.fecha_generacion.split(' ')[0]), // Fechas en eje X
-                datasets: [{
-                    label: 'Desviación Promedio (Menor es mejor)',
-                    data: chronoData.map(r => parseFloat(r.proximidad_prom)),
-                    borderColor: '#ffd700',
-                    backgroundColor: 'rgba(255, 215, 0, 0.1)',
-                    borderWidth: 2,
-                    pointRadius: 3,
-                    tension: 0.4,
-                    fill: true
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false, // CLAVE PARA QUE NO SE DESBORDE
-                scales: {
-                    y: { grid: { color: 'rgba(255,255,255,0.05)' }, title: { display: true, text: 'Distancia Numérica' } },
-                    x: { display: false } // Ocultar etiquetas si son muchas
-                },
-                plugins: {
-                    tooltip: {
-                        callbacks: {
-                            label: (ctx) => `Desv: ${ctx.raw} (Target #${chronoData[ctx.dataIndex].sorteo_objetivo})`
-                        }
-                    }
-                }
-            }
-        });
     }
 </script>
 
