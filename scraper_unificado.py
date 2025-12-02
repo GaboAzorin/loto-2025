@@ -5,6 +5,7 @@ import csv
 import time
 import requests
 from datetime import datetime
+from collections import Counter
 from playwright.async_api import async_playwright
 
 # Importamos tu parser existente
@@ -18,7 +19,7 @@ except ImportError:
 CSV_FILENAME = "LOTO_HISTORIAL_MAESTRO.csv"
 PREDICTIONS_CSV = "LOTO_JUGADAS.csv"
 
-# ⚠️ PEGA AQUÍ EL ENLACE DE "PUBLICAR EN LA WEB" (FORMATO CSV) DE TU GOOGLE SHEET ⚠️
+# ⚠️ TU ENLACE DE GOOGLE SHEETS YA CONFIGURADO ⚠️
 GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQnOXW1U2VkJdNw6DplTvNGb5R3Fc6yNPKuewnBqh9w9C01m9ht2N8dNi3C4oqvIyL6An-coGf0TjhR/pub?output=csv"
 
 BASE_URL = "https://www.polla.cl/es/view/resultados"
@@ -72,7 +73,7 @@ def sincronizar_nube_a_local():
             # Crear archivo si no existe
             with open(PREDICTIONS_CSV, 'w', encoding='utf-8', newline='') as f:
                 writer = csv.writer(f)
-                writer.writerow(["id", "fecha_generacion", "numeros", "jugado_realmente", "estado", "sorteo_objetivo", "aciertos", "delta_suma", "proximidad_prom"])
+                writer.writerow(["id", "fecha_generacion", "numeros", "jugado_realmente", "estado", "sorteo_objetivo", "aciertos", "delta_suma", "proximidad_prom", "analisis_extra"])
 
         nuevas = 0
         with open(PREDICTIONS_CSV, 'a', encoding='utf-8', newline='') as f:
@@ -92,9 +93,9 @@ def sincronizar_nube_a_local():
                     key = f"{fecha_fmt}_{nums_json}"
                     if key in jugadas_existentes: continue
                     
-                    # Guardar nueva jugada
+                    # Guardar nueva jugada (con campo extra vacío al final)
                     id_gen = int(time.time()) + nuevas # ID simple
-                    writer.writerow([id_gen, fecha_fmt, nums_json, jugado, "PENDIENTE", "", "", "", ""])
+                    writer.writerow([id_gen, fecha_fmt, nums_json, jugado, "PENDIENTE", "", "", "", "", ""])
                     jugadas_existentes.add(key)
                     nuevas += 1
                 except: continue
@@ -116,7 +117,11 @@ def auditar_predicciones(sorteo_real):
     # Datos del Sorteo Real
     real_nums = [int(sorteo_real[f'LOTO_n{i}']) for i in range(1,7)]
     real_nums.sort()
-    fecha_sorteo = datetime.strptime(sorteo_real['fecha'], '%Y-%m-%d %H:%M:%S')
+    try:
+        fecha_sorteo = datetime.strptime(sorteo_real['fecha'], '%Y-%m-%d %H:%M:%S')
+    except:
+        # Fallback por si la fecha viene rara
+        fecha_sorteo = datetime.now()
 
     # Métricas del Real (Para comparar)
     real_pares = len([n for n in real_nums if n % 2 == 0])
@@ -137,6 +142,7 @@ def auditar_predicciones(sorteo_real):
                     fecha_gen = datetime.strptime(row['fecha_generacion'], '%Y-%m-%d %H:%M:%S')
                 except: fecha_gen = datetime.min
 
+                # Solo auditamos si la jugada fue ANTES del sorteo
                 if fecha_gen < fecha_sorteo:
                     pred_nums = json.loads(row['numeros'])
                     pred_nums.sort()
@@ -158,14 +164,9 @@ def auditar_predicciones(sorteo_real):
                     match_paridad = (pred_pares == real_pares)
                     
                     # 5. Coincidencia de Zonas (Decenas)
-                    # Contamos cuántos números cayeron en la misma decena
                     pred_decenas = [n // 10 for n in pred_nums]
-                    aciertos_decenas = 0
-                    # Comparación simple de distribución
-                    from collections import Counter
                     c_real = Counter(real_decenas)
                     c_pred = Counter(pred_decenas)
-                    # Calculamos solapamiento de histogramas
                     interseccion_zonas = sum((c_real & c_pred).values())
 
                     # 6. Coincidencia de Terminaciones
@@ -184,7 +185,7 @@ def auditar_predicciones(sorteo_real):
                         "estructura_paridad": "OK" if match_paridad else "FALLO",
                         "pares_predichos": pred_pares,
                         "pares_reales": real_pares,
-                        "aciertos_zonas": interseccion_zonas, # Ej: 4 significa que acertaste la decena de 4 números
+                        "aciertos_zonas": interseccion_zonas, 
                         "aciertos_terminaciones": aciertos_term
                     }
                     row['analisis_extra'] = json.dumps(analisis)
@@ -200,7 +201,26 @@ def auditar_predicciones(sorteo_real):
             writer.writeheader()
             writer.writerows(filas_todas)
         print("      💾 Auditoría avanzada guardada.")
-        
+
+def forzar_auditoria_historica():
+    """
+    Carga el último sorteo guardado en el historial local y ejecuta la auditoría
+    por si quedaron jugadas pendientes de revisión (caso 'desincronización').
+    """
+    if not os.path.exists(CSV_FILENAME): return
+
+    print("   🔙 Verificando auditorías pendientes con el último sorteo guardado...")
+    try:
+        with open(CSV_FILENAME, 'r', encoding='utf-8') as f:
+            rows = list(csv.DictReader(f))
+            if not rows: return
+            
+            ultimo_sorteo = rows[-1] # El último de la lista
+            auditar_predicciones(ultimo_sorteo)
+            
+    except Exception as e:
+        print(f"   ⚠️ No se pudo realizar auditoría histórica: {e}")
+
 def get_last_draw_id():
     if not os.path.exists(CSV_FILENAME): return SORTEO_INICIAL_DEFAULT - 1
     max_id = 0
@@ -240,7 +260,11 @@ async def run():
     # 1. Sincronizar Nube
     sincronizar_nube_a_local()
     
-    # 2. Scraping Polla
+    # 2. Forzar revisión con el último sorteo conocido
+    # (Esto arregla el problema de las fechas desincronizadas)
+    forzar_auditoria_historica()
+    
+    # 3. Scraping Polla
     last_id = get_last_draw_id()
     current_target = last_id + 1
     print(f"🔎 Buscando sorteo Polla #{current_target}...")
