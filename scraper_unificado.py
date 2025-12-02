@@ -19,7 +19,7 @@ except ImportError:
 CSV_FILENAME = "LOTO_HISTORIAL_MAESTRO.csv"
 PREDICTIONS_CSV = "LOTO_JUGADAS.csv"
 
-# ⚠️ TU ENLACE DE GOOGLE SHEETS YA CONFIGURADO ⚠️
+# ⚠️ TU ENLACE DE GOOGLE SHEETS ⚠️
 GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQnOXW1U2VkJdNw6DplTvNGb5R3Fc6yNPKuewnBqh9w9C01m9ht2N8dNi3C4oqvIyL6An-coGf0TjhR/pub?output=csv"
 
 BASE_URL = "https://www.polla.cl/es/view/resultados"
@@ -37,22 +37,84 @@ FIXED_ORDER = [
     "AHORA_SI_QUE_SI_n1", "AHORA_SI_QUE_SI_n6", "AHORA_SI_QUE_SI_GANADORES", "AHORA_SI_QUE_SI_ACUMULADO"
 ]
 
+# --- UTILIDAD: PARSEO DE FECHAS ROBUSTO ---
+def parsear_fecha(fecha_str):
+    """Intenta interpretar la fecha en varios formatos (ISO o DD/MM/YYYY)."""
+    if not fecha_str: return datetime.max
+    # Limpieza previa
+    f = fecha_str.replace("T", " ").replace("Z", "").split(".")[0].strip()
+    formatos = [
+        '%Y-%m-%d %H:%M:%S', # Formato estándar CSV
+        '%Y-%m-%d',          # Formato fecha simple
+        '%d/%m/%Y %H:%M:%S', # Formato Google Sheets típico
+        '%d/%m/%Y',          # Formato Google Sheets corto
+        '%d-%m-%Y %H:%M:%S',
+        '%d-%m-%Y'
+    ]
+    for fmt in formatos:
+        try:
+            return datetime.strptime(f, fmt)
+        except ValueError:
+            continue
+    return datetime.max # Si falla todo, devolvemos futuro lejano para no auditar por error
+
+# --- UTILIDAD: CÁLCULO DE MÉTRICAS ---
+def calcular_metricas(pred_nums, sorteo_real):
+    """Compara números predichos vs sorteo real y devuelve diccionario de resultados."""
+    real_nums = [int(sorteo_real[f'LOTO_n{i}']) for i in range(1,7)]
+    real_nums.sort()
+    
+    # Métricas del Real
+    real_pares = len([n for n in real_nums if n % 2 == 0])
+    real_terminaciones = [n % 10 for n in real_nums]
+    real_decenas = [n // 10 for n in real_nums]
+
+    # Cálculos
+    aciertos = len(set(real_nums) & set(pred_nums))
+    diff_total = sum(abs(r - p) for r, p in zip(real_nums, pred_nums))
+    prox = round(diff_total / 6, 1)
+    delta_suma = sum(pred_nums) - sum(real_nums)
+
+    # Estructura Avanzada
+    pred_pares = len([n for n in pred_nums if n % 2 == 0])
+    match_paridad = (pred_pares == real_pares)
+    
+    pred_decenas = [n // 10 for n in pred_nums]
+    c_real = Counter(real_decenas)
+    c_pred = Counter(pred_decenas)
+    interseccion_zonas = sum((c_real & c_pred).values())
+
+    pred_term = [n % 10 for n in pred_nums]
+    aciertos_term = len(set(real_terminaciones) & set(pred_term))
+
+    analisis = {
+        "estructura_paridad": "OK" if match_paridad else "FALLO",
+        "pares_predichos": pred_pares,
+        "pares_reales": real_pares,
+        "aciertos_zonas": interseccion_zonas, 
+        "aciertos_terminaciones": aciertos_term
+    }
+
+    return {
+        "aciertos": aciertos,
+        "proximidad": prox,
+        "delta_suma": delta_suma,
+        "analisis_json": json.dumps(analisis),
+        "analisis_obj": analisis # Para imprimir en consola
+    }
+
+# --- FUNCIONES PRINCIPALES ---
+
 def sincronizar_nube_a_local():
     """Descarga jugadas nuevas desde Google Sheets y las guarda localmente."""
-    if "PEGAR_AQUI" in GOOGLE_SHEET_CSV_URL:
-        print("⚠️ SALTO: No has configurado la URL de Google Sheets en el script.")
-        return
-
     print("☁️ Sincronizando jugadas desde la nube...")
     try:
         response = requests.get(GOOGLE_SHEET_CSV_URL)
         response.raise_for_status()
         
-        # Leemos los datos de la nube
         lineas = response.text.splitlines()
         filas_nube = list(csv.reader(lineas))
         
-        # Saltamos encabezado si existe
         if len(filas_nube) > 0 and "fecha" in filas_nube[0][0].lower():
             filas_nube.pop(0)
 
@@ -60,17 +122,14 @@ def sincronizar_nube_a_local():
             print("   ✅ No hay datos nuevos en la nube.")
             return
 
-        # Cargamos jugadas locales para no repetir
         jugadas_existentes = set()
         if os.path.exists(PREDICTIONS_CSV):
             with open(PREDICTIONS_CSV, 'r', encoding='utf-8') as f:
                 reader = csv.DictReader(f)
                 for row in reader:
-                    # Usamos fecha+numeros como ID único
                     key = f"{row.get('fecha_generacion','')}_{row.get('numeros','')}"
                     jugadas_existentes.add(key)
         else:
-            # Crear archivo si no existe
             with open(PREDICTIONS_CSV, 'w', encoding='utf-8', newline='') as f:
                 writer = csv.writer(f)
                 writer.writerow(["id", "fecha_generacion", "numeros", "jugado_realmente", "estado", "sorteo_objetivo", "aciertos", "delta_suma", "proximidad_prom", "analisis_extra"])
@@ -80,21 +139,17 @@ def sincronizar_nube_a_local():
             writer = csv.writer(f)
             for fila in filas_nube:
                 try:
-                    # Google manda: [fecha_iso, "1-2-3...", "SI/NO"]
                     fecha_raw, nums_str, jugado = fila[0], fila[1], fila[2]
-                    
-                    # Limpieza básica de fecha
+                    # Normalizamos la fecha visualmente para el CSV, pero mantenemos formato origen
                     fecha_fmt = fecha_raw.replace("T", " ").replace("Z", "").split(".")[0]
                     
-                    # Convertir números "1-2-3" a array JSON "[1, 2, 3]"
                     nums_list = [int(n) for n in nums_str.split('-')]
                     nums_json = json.dumps(nums_list)
                     
                     key = f"{fecha_fmt}_{nums_json}"
                     if key in jugadas_existentes: continue
                     
-                    # Guardar nueva jugada (con campo extra vacío al final)
-                    id_gen = int(time.time()) + nuevas # ID simple
+                    id_gen = int(time.time()) + nuevas
                     writer.writerow([id_gen, fecha_fmt, nums_json, jugado, "PENDIENTE", "", "", "", "", ""])
                     jugadas_existentes.add(key)
                     nuevas += 1
@@ -106,120 +161,78 @@ def sincronizar_nube_a_local():
     except Exception as e:
         print(f"❌ Error descargando nube: {e}")
 
-def auditar_predicciones(sorteo_real):
-    """Compara jugadas PENDIENTES contra el sorteo real con métricas avanzadas."""
-    if not os.path.exists(PREDICTIONS_CSV): return
+def auditoria_retroactiva_inteligente():
+    """
+    Recorre TODAS las jugadas PENDIENTES y busca en TODO el historial 
+    el sorteo exacto que le corresponde (el inmediatamente posterior a la jugada).
+    """
+    if not os.path.exists(PREDICTIONS_CSV) or not os.path.exists(CSV_FILENAME): return
 
-    print(f"   🕵️ Auditando predicciones avanzadas contra Sorteo #{sorteo_real['sorteo']}...")
-    filas_todas = []
+    print("   🧠 Ejecutando auditoría cronológica inteligente...")
+    
+    # 1. Cargar Historial Completo y ordenarlo por fecha
+    historial = []
+    with open(CSV_FILENAME, 'r', encoding='utf-8') as f:
+        historial = list(csv.DictReader(f))
+    
+    # Aseguramos orden ascendente (antiguo -> nuevo) para buscar el "siguiente" sorteo
+    historial.sort(key=lambda x: int(x['sorteo']))
+
+    # 2. Cargar Jugadas y Procesar
+    jugadas = []
+    with open(PREDICTIONS_CSV, 'r', encoding='utf-8') as f:
+        jugadas = list(csv.DictReader(f))
+        
+    campos = jugadas[0].keys() if jugadas else []
+    if 'analisis_extra' not in campos and jugadas:
+        # Corrección si falta columna
+        campos = list(jugadas[0].keys()) + ['analisis_extra']
+
     cambios = False
     
-    # Datos del Sorteo Real
-    real_nums = [int(sorteo_real[f'LOTO_n{i}']) for i in range(1,7)]
-    real_nums.sort()
-    try:
-        fecha_sorteo = datetime.strptime(sorteo_real['fecha'], '%Y-%m-%d %H:%M:%S')
-    except:
-        # Fallback por si la fecha viene rara
-        fecha_sorteo = datetime.now()
-
-    # Métricas del Real (Para comparar)
-    real_pares = len([n for n in real_nums if n % 2 == 0])
-    real_decenas = [n // 10 for n in real_nums] # [0, 1, 1, 2, 3, 4]
-    real_terminaciones = [n % 10 for n in real_nums] # [5, 2, 8...]
-
-    with open(PREDICTIONS_CSV, 'r', encoding='utf-8') as f:
-        reader = csv.DictReader(f)
-        campos = reader.fieldnames
-        
-        # Si no existe la columna de análisis extra, la agregamos virtualmente
-        if 'analisis_extra' not in campos:
-            campos.append('analisis_extra')
-
-        for row in reader:
-            if row['estado'] == 'PENDIENTE':
-                try:
-                    fecha_gen = datetime.strptime(row['fecha_generacion'], '%Y-%m-%d %H:%M:%S')
-                except: fecha_gen = datetime.min
-
-                # Solo auditamos si la jugada fue ANTES del sorteo
-                if fecha_gen < fecha_sorteo:
-                    pred_nums = json.loads(row['numeros'])
-                    pred_nums.sort()
-                    
-                    # --- CÁLCULO DE MÉTRICAS ---
-                    
-                    # 1. Aciertos Exactos
-                    aciertos = len(set(real_nums) & set(pred_nums))
-                    
-                    # 2. Proximidad (Distancia media)
-                    diff_total = sum(abs(r - p) for r, p in zip(real_nums, pred_nums))
-                    prox = round(diff_total / 6, 1)
-
-                    # 3. Delta Suma
-                    delta_suma = sum(pred_nums) - sum(real_nums)
-
-                    # 4. Coincidencia de Estructura (Pares)
-                    pred_pares = len([n for n in pred_nums if n % 2 == 0])
-                    match_paridad = (pred_pares == real_pares)
-                    
-                    # 5. Coincidencia de Zonas (Decenas)
-                    pred_decenas = [n // 10 for n in pred_nums]
-                    c_real = Counter(real_decenas)
-                    c_pred = Counter(pred_decenas)
-                    interseccion_zonas = sum((c_real & c_pred).values())
-
-                    # 6. Coincidencia de Terminaciones
-                    pred_term = [n % 10 for n in pred_nums]
-                    aciertos_term = len(set(real_terminaciones) & set(pred_term))
-
-                    # --- GUARDADO ---
-                    row['sorteo_objetivo'] = sorteo_real['sorteo']
-                    row['aciertos'] = aciertos
-                    row['delta_suma'] = delta_suma
-                    row['proximidad_prom'] = prox
-                    row['estado'] = 'FINALIZADO'
-                    
-                    # Guardamos el análisis rico en JSON dentro de una columna nueva
-                    analisis = {
-                        "estructura_paridad": "OK" if match_paridad else "FALLO",
-                        "pares_predichos": pred_pares,
-                        "pares_reales": real_pares,
-                        "aciertos_zonas": interseccion_zonas, 
-                        "aciertos_terminaciones": aciertos_term
-                    }
-                    row['analisis_extra'] = json.dumps(analisis)
-                    
-                    cambios = True
-                    print(f"      🎯 Jugada {row['id']}: {aciertos} aciertos | Zonas: {interseccion_zonas}/6 | Paridad: {analisis['estructura_paridad']}")
+    for jugada in jugadas:
+        if jugada['estado'] == 'PENDIENTE':
+            fecha_jugada = parsear_fecha(jugada['fecha_generacion'])
             
-            filas_todas.append(row)
+            # Buscamos el sorteo correspondiente (Timeline Matching)
+            sorteo_objetivo = None
+            
+            for sorteo in historial:
+                fecha_sorteo = parsear_fecha(sorteo['fecha'])
+                
+                # REGLA DE ORO: El sorteo debe ser POSTERIOR a la jugada
+                if fecha_sorteo > fecha_jugada:
+                    sorteo_objetivo = sorteo
+                    break # Encontramos el primero siguiente, paramos de buscar.
+
+            if sorteo_objetivo:
+                # Si encontramos un sorteo futuro válido, calculamos métricas
+                pred_nums = json.loads(jugada['numeros'])
+                pred_nums.sort()
+                
+                res = calcular_metricas(pred_nums, sorteo_objetivo)
+                
+                # Actualizamos la jugada
+                jugada['sorteo_objetivo'] = sorteo_objetivo['sorteo']
+                jugada['aciertos'] = res['aciertos']
+                jugada['delta_suma'] = res['delta_suma']
+                jugada['proximidad_prom'] = res['proximidad']
+                jugada['analisis_extra'] = res['analisis_json']
+                jugada['estado'] = 'FINALIZADO'
+                
+                cambios = True
+                print(f"      🎯 Jugada {jugada['id']} ({jugada['fecha_generacion']}) -> Sorteo #{sorteo_objetivo['sorteo']}: {res['aciertos']} aciertos")
+            else:
+                # Si no encontramos sorteo (ej: jugada de hoy vs historial hasta ayer)
+                # Se mantiene PENDIENTE silenciosamente
+                pass
 
     if cambios:
         with open(PREDICTIONS_CSV, 'w', encoding='utf-8', newline='') as f:
             writer = csv.DictWriter(f, fieldnames=campos)
             writer.writeheader()
-            writer.writerows(filas_todas)
-        print("      💾 Auditoría avanzada guardada.")
-
-def forzar_auditoria_historica():
-    """
-    Carga el último sorteo guardado en el historial local y ejecuta la auditoría
-    por si quedaron jugadas pendientes de revisión (caso 'desincronización').
-    """
-    if not os.path.exists(CSV_FILENAME): return
-
-    print("   🔙 Verificando auditorías pendientes con el último sorteo guardado...")
-    try:
-        with open(CSV_FILENAME, 'r', encoding='utf-8') as f:
-            rows = list(csv.DictReader(f))
-            if not rows: return
-            
-            ultimo_sorteo = rows[-1] # El último de la lista
-            auditar_predicciones(ultimo_sorteo)
-            
-    except Exception as e:
-        print(f"   ⚠️ No se pudo realizar auditoría histórica: {e}")
+            writer.writerows(jugadas)
+        print("      💾 Auditoría cronológica guardada correctamente.")
 
 def get_last_draw_id():
     if not os.path.exists(CSV_FILENAME): return SORTEO_INICIAL_DEFAULT - 1
@@ -251,8 +264,8 @@ def save_row(new_rows):
             writer.writerow(filtered_row)
             
     print(f"💾 Guardado sorteo #{new_rows[0]['sorteo']} ({new_rows[0]['fecha']})")
-    # --- TRIGGER DE AUDITORÍA ---
-    auditar_predicciones(new_rows[0])
+    # Al guardar uno nuevo, volvemos a correr la auditoría inteligente
+    auditoria_retroactiva_inteligente()
 
 async def run():
     print("--- 🌀 INICIANDO SISTEMA INTEGRAL LOTO AI ---")
@@ -260,9 +273,8 @@ async def run():
     # 1. Sincronizar Nube
     sincronizar_nube_a_local()
     
-    # 2. Forzar revisión con el último sorteo conocido
-    # (Esto arregla el problema de las fechas desincronizadas)
-    forzar_auditoria_historica()
+    # 2. Auditoría Inteligente (Revisión Histórica Correcta)
+    auditoria_retroactiva_inteligente()
     
     # 3. Scraping Polla
     last_id = get_last_draw_id()
