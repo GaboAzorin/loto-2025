@@ -812,9 +812,7 @@
     }
 
     // 2. Algoritmo de Selección Ponderada (Weighted Random)
-    // Elige un número proporcional a su peso en esa posición
     function getWeightedNumber(weightsObj) {
-        // weightsObj es { "1": 0.05, "2": 0.01 ... }
         const entries = Object.entries(weightsObj);
         let totalWeight = entries.reduce((acc, [num, w]) => acc + w, 0);
         let random = Math.random() * totalWeight;
@@ -823,7 +821,6 @@
             random -= weight;
             if (random <= 0) return parseInt(num);
         }
-        // Fallback por si acaso
         return parseInt(entries[0][0]);
     }
 
@@ -847,7 +844,6 @@
         let numbers = [];
         let detailsHTML = '<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap:10px; margin-top:15px;">';
         
-        // Obtener las posiciones disponibles en este juego (generalmente 1 a 6)
         const availablePositions = Object.keys(game.positions).sort((a,b)=>a-b);
 
         for (let posKey of availablePositions) {
@@ -857,16 +853,15 @@
             let num = getWeightedNumber(w);
             let safety = 0;
             
-            // Evitar duplicados en la misma jugada (re-roll si ya salió)
+            // Evitar duplicados
             while (numbers.includes(num) && safety < 50) {
                 num = getWeightedNumber(w);
                 safety++;
             }
             numbers.push(num);
 
-            // Crear explicación visual para "ADN de la Jugada"
+            // Crear explicación visual
             let chance = (w[num] * 100).toFixed(2);
-            // Destacar si la probabilidad es alta (> 3.0% es alto para Loto)
             let isHot = chance > 3.0 ? 'color:var(--neon-cyan); font-weight:bold;' : 'color:var(--text-muted);';
             
             detailsHTML += `
@@ -878,10 +873,14 @@
             `;
         }
 
-        // Ordenar números para la vista principal de bolas
+        // Ordenar números
         let sortedNumbers = [...numbers].sort((a,b) => a-b);
 
-        // Renderizar todo el bloque
+        // --- INTEGRACIÓN CLAVE: ACTUALIZAR LA VARIABLE GLOBAL PARA GUARDADO ---
+        // Esto permite que la función savePlay() sepa qué números guardar
+        currentGeneratedNumbers = sortedNumbers;
+
+        // Renderizar todo el bloque + BOTONES DE ACCIÓN (Reutilizando savePlay)
         outputDiv.innerHTML = `
             <div style="display:flex; flex-direction:column; gap:10px; animation: fadeIn 0.5s ease;">
                 <div style="text-align:center; color:var(--text-muted); font-size:0.8rem; margin-bottom:5px;">
@@ -896,7 +895,16 @@
                     ).join('')}
                 </div>
 
-                <div style="border-top:1px solid var(--border); padding-top:10px;">
+                <div id="gen-actions-forensic" style="margin-top: 1rem; display: flex; justify-content: center; gap: 15px;">
+                    <button onclick="savePlay(true)" class="gen-btn" style="font-size:0.8rem; padding:0.8rem 1.5rem; background:#00ff41; color:black; border:none; box-shadow:0 0 15px rgba(0,255,65,0.3);">
+                        <i data-lucide="ticket" style="width:16px; margin-right:5px;"></i> ¡LA JUGUÉ!
+                    </button>
+                    <button onclick="savePlay(false)" class="gen-btn" style="font-size:0.8rem; padding:0.8rem 1.5rem; background:transparent; border:1px solid #a0aec0; color:#a0aec0; box-shadow:none;">
+                        <i data-lucide="save" style="width:16px; margin-right:5px;"></i> Solo Guardar
+                    </button>
+                </div>
+
+                <div style="border-top:1px solid var(--border); padding-top:10px; margin-top:10px;">
                     <div style="font-size:0.8rem; color:white; margin-bottom:5px; display:flex; align-items:center; gap:5px;">
                         <i data-lucide="microscope" width="14"></i> ADN DE LA JUGADA (Peso por Posición Real)
                     </div>
