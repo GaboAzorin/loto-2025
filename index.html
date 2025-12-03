@@ -98,7 +98,7 @@
     }
 
     /* =========================================
-       COMPONENTE: TELEMETRÍA
+       COMPONENTE: TELEMETRÍA CON TOOLTIPS
        ========================================= */
     .telemetry-grid {
         display: grid;
@@ -110,10 +110,48 @@
         border-radius: 12px;
         border: 1px solid rgba(255, 215, 0, 0.1);
     }
+    
+    /* Estilo base del item */
     .tele-item {
         display: flex; flex-direction: column; align-items: center; justify-content: center;
         padding: 0.5rem; border-radius: 8px; background: rgba(255,255,255,0.03);
+        position: relative; /* Necesario para el tooltip */
+        cursor: help;       /* Cursor de ayuda */
+        transition: background 0.2s;
     }
+    .tele-item:hover { background: rgba(255,255,255,0.08); }
+
+    /* TOOLTIP CSS (NUEVO) */
+    .tele-item::after {
+        content: attr(data-title); /* Toma el texto del atributo data-title */
+        position: absolute;
+        bottom: 110%; /* Arriba del elemento */
+        left: 50%;
+        transform: translateX(-50%) translateY(10px);
+        width: 220px;
+        background: rgba(5, 15, 25, 0.98);
+        border: 1px solid var(--neon-cyan);
+        color: #fff;
+        text-align: center;
+        padding: 10px;
+        border-radius: 8px;
+        font-size: 0.75rem;
+        font-weight: normal;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.2s ease-in-out;
+        pointer-events: none; /* Para que no interfiera con el mouse */
+        z-index: 100;
+        line-height: 1.3;
+    }
+
+    .tele-item:hover::after {
+        opacity: 1;
+        visibility: visible;
+        transform: translateX(-50%) translateY(0);
+    }
+
     .tele-label { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
     .tele-val { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 0.9rem; color: white; display: flex; align-items: center; gap: 5px; }
     
@@ -445,11 +483,17 @@
                 let zoneClass = (decades >= 3) ? 'metric-good' : 'metric-warn';
                 let consClass = (consecutivesCount === 0) ? 'metric-good' : 'metric-warn';
 
+                // --- TEXTOS EXPLICATIVOS PARA TOOLTIPS ---
+                const rangeTip = `RANGO: La resta entre el número mayor y el menor es ${range}. Lo ideal es entre 20 y 38 para cubrir bien el cartón.`;
+                const primeTip = `PRIMOS: Hay ${primesCount} números primos. La estadística sugiere jugar entre 1 y 3 primos por sorteo.`;
+                const zoneTip = `ZONAS: Tus números cubren ${decades} decenas diferentes. Lo ideal es no concentrar todo en una sola decena.`;
+                const consTip = `CONSECUTIVOS: Tienes ${consecutivesCount} números seguidos. Es mejor tener 0 o máximo 1 par consecutivo.`;
+
                 telemetry.innerHTML = `
-                    <div class="tele-item"><span class="tele-label">Rango (20-38)</span><span class="tele-val ${rangeClass}"><i data-lucide="ruler" width="14"></i> ${range}</span></div>
-                    <div class="tele-item"><span class="tele-label">Primos (1-3)</span><span class="tele-val ${primeClass}"><i data-lucide="hash" width="14"></i> ${primesCount}</span></div>
-                    <div class="tele-item"><span class="tele-label">Zonas (>3)</span><span class="tele-val ${zoneClass}"><i data-lucide="map" width="14"></i> ${decades}</span></div>
-                    <div class="tele-item"><span class="tele-label">Consecutivos</span><span class="tele-val ${consClass}"><i data-lucide="link" width="14"></i> ${consecutivesCount}</span></div>
+                    <div class="tele-item" data-title="${rangeTip}"><span class="tele-label">Rango (20-38)</span><span class="tele-val ${rangeClass}"><i data-lucide="ruler" width="14"></i> ${range}</span></div>
+                    <div class="tele-item" data-title="${primeTip}"><span class="tele-label">Primos (1-3)</span><span class="tele-val ${primeClass}"><i data-lucide="hash" width="14"></i> ${primesCount}</span></div>
+                    <div class="tele-item" data-title="${zoneTip}"><span class="tele-label">Zonas (>3)</span><span class="tele-val ${zoneClass}"><i data-lucide="map" width="14"></i> ${decades}</span></div>
+                    <div class="tele-item" data-title="${consTip}"><span class="tele-label">Consecutivos</span><span class="tele-val ${consClass}"><i data-lucide="link" width="14"></i> ${consecutivesCount}</span></div>
                 `;
                 stats.innerHTML = `Suma: ${sum} | Paridad: ${evens}P-${6-evens}I | ✨ Inédita`;
 
