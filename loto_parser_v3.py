@@ -42,26 +42,30 @@ def parse_loto_rich(data_source):
     row['ventas_totales'] = ventas
     row['boletos_estimados'] = int(ventas / precio) if precio and ventas else 0
 
-    # --- 3. EXTRACCIÓN DE NÚMEROS ---
-    # A) LOTO PRINCIPAL
+    # --- 3. EXTRACCIÓN DE NÚMEROS (Con orden Físico y Numérico) ---
+    
+    # A) LOTO PRINCIPAL (Resultados en raíz)
     results_root = data.get('results', [])
     if results_root:
+        # Ordenar por salida de la tómbola (campo 'order')
         loto_ordered = sorted(results_root, key=lambda x: x.get('order', 999))
         loto_main = loto_ordered[:6]
         loto_wild = loto_ordered[6] if len(loto_ordered) > 6 else None
         
-        # Posicional (Físico)
+        # Guardar Posicional (Físico)
         for i, item in enumerate(loto_main):
             row[f'LOTO_pos{i+1}'] = int(item.get('number'))
-        # Numérico (Legacy)
+            
+        # Guardar Numérico (Ordenado)
         vals_num = sorted([int(x.get('number')) for x in loto_main])
         for i, val in enumerate(vals_num):
             row[f'LOTO_n{i+1}'] = val
+            
         # Comodín
         if loto_wild:
             row['LOTO_comodin'] = int(loto_wild.get('number'))
 
-    # B) OTROS JUEGOS
+    # B) OTROS JUEGOS (Resultados en additionalGameResults)
     additional = data.get('additionalGameResults', [])
     keywords = {
         'RECARGADO': 'RECARGADO', 'REVANCHA': 'REVANCHA', 'DESQUITE': 'DESQUITE',
@@ -76,6 +80,7 @@ def parse_loto_rich(data_source):
             if key in raw_name:
                 prefix = val
                 break
+        
         if prefix == 'JUBILAZO':
             prefix = f'JUBILAZO_{jubilazo_counter}'
             jubilazo_counter += 1
@@ -84,15 +89,17 @@ def parse_loto_rich(data_source):
             winning_nums = area.get('winningNumbers', [])
             if not winning_nums: continue
 
-            # Posicional
+            # Orden Físico
             ordered_nums = sorted(winning_nums, key=lambda x: x.get('order', 999))
             vals_pos = [int(n.get('number')) for n in ordered_nums]
             for i, val in enumerate(vals_pos):
                 row[f'{prefix}_pos{i+1}'] = val
-            # Numérico
+
+            # Orden Numérico
             vals_sort = sorted(vals_pos)
             for i, val in enumerate(vals_sort):
                 row[f'{prefix}_n{i+1}'] = val
+            
             # Comodín
             supp = area.get('supplementaryNumbers')
             if supp:
@@ -112,6 +119,7 @@ def parse_loto_rich(data_source):
         cat_id = p.get('id', {}).get('categoryCd')
         col_prefix = CAT_ID_MAP.get(cat_id)
 
+        # Intento de corrección de nombre si falla el ID
         if not col_prefix:
             cat_name = p.get('name') or p.get('categoryName')
             if cat_name:
@@ -122,12 +130,10 @@ def parse_loto_rich(data_source):
             row[f'{col_prefix}_GANADORES'] = p.get('winners', 0)
             row[f'{col_prefix}_MONTO'] = p.get('prizePerWinner', 0) or p.get('winningAmount', 0)
             
-            # --- NUEVO: Extraer Pozo Matemático Real ---
-            # Si el premio tiene un "jackpot" interno (dinero en caja), lo guardamos.
-            # Esto capturará el 115.003.083 del Loto.
-            pozo_real = p.get('jackpot', 0)
-            if pozo_real > 0:
-                row[f'{col_prefix}_POZO_REAL'] = pozo_real
+            # --- CORRECCIÓN FINAL: Guardar Pozo Real SIEMPRE ---
+            # Quitamos el 'if pozo > 0' para que el dato '0' se escriba explícitamente
+            # y el scraper detecte la columna desde el primer sorteo.
+            row[f'{col_prefix}_POZO_REAL'] = p.get('jackpot', 0)
 
     # Pozo acumulado COMERCIAL (el que sale en la tele)
     row['LOTO_POZO_ACUMULADO'] = data.get('poolAccumulated', 0) or data.get('jackpotAmount', 0)
