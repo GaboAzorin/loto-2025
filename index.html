@@ -231,7 +231,7 @@
     <div class="generator-card">
         <h3 style="color:white; margin-bottom:1.5rem; text-transform:uppercase; letter-spacing:2px; font-size:0.9rem;">
             <i data-lucide="cpu" style="width:16px; vertical-align:middle; margin-right:5px; color:var(--gold);"></i>
-            Algoritmo Predictivo Gaussiano
+            Algoritmo Predictivo Gaussiano (Peso Mecánico)
         </h3>
         
         <button class="gen-btn" onclick="generateLuckyNumbers()">
@@ -359,7 +359,7 @@
     }
 
     // =========================================
-    // 2. LÓGICA DEL GENERADOR CUÁNTICO
+    // 2. LÓGICA DEL GENERADOR CUÁNTICO (MODIFICADO CON PESO MECÁNICO)
     // =========================================
     function generateLuckyNumbers() {
         const output = document.getElementById('gen-output');
@@ -368,23 +368,63 @@
         const stats = document.getElementById('gen-stats-text');
         
         output.style.display = 'block'; output.style.opacity = '1';
-        container.innerHTML = '<div style="color:var(--gold);">Calculando entropía...</div>';
+        container.innerHTML = '<div style="color:var(--gold);">Simulando extracción física...</div>';
         telemetry.innerHTML = ''; stats.innerHTML = '';
         const oldActions = document.getElementById('gen-actions'); if(oldActions) oldActions.remove();
 
         setTimeout(() => {
             let attempt = 0, success = false, finalNums = [];
+            
             while(attempt < 5000) {
                 attempt++;
                 let candidates = new Set();
-                while(candidates.size < 6) candidates.add(Math.floor(Math.random() * 41) + 1);
+
+                // --- NUEVA LÓGICA: SELECCIÓN POR TORNEO POSICIONAL ---
+                // Simulamos la salida de la bola 1, luego la 2, hasta la 6
+                for (let pos = 1; pos <= 6; pos++) {
+                    let bestCandidate = null;
+                    let maxScore = -1;
+                    
+                    // Probamos 5 candidatos al azar para esta posición
+                    for (let k = 0; k < 5; k++) {
+                        let testNum = Math.floor(Math.random() * 41) + 1;
+                        
+                        // Si ya salió en esta jugada, lo ignoramos
+                        if (candidates.has(testNum)) continue;
+                        
+                        // Calculamos su "afinidad" por esta posición específica
+                        let weight = getMechanicalWeight(testNum, pos, allData);
+                        
+                        // Factor aleatorio para mantener la variabilidad
+                        let score = weight * Math.random();
+                        
+                        if (score > maxScore) {
+                            maxScore = score;
+                            bestCandidate = testNum;
+                        }
+                    }
+                    
+                    // Si encontramos candidato, lo agregamos. Si no (mala suerte), azar puro.
+                    if (bestCandidate && !candidates.has(bestCandidate)) {
+                        candidates.add(bestCandidate);
+                    } else {
+                        let r = Math.floor(Math.random() * 41) + 1;
+                        while(candidates.has(r)) r = Math.floor(Math.random() * 41) + 1;
+                        candidates.add(r);
+                    }
+                }
+                // -----------------------------------------------------
+
                 let nums = Array.from(candidates).sort((a,b) => a-b);
+                
+                // Filtros estándar (Suma, Paridad, Inédita, Consecutivos)
                 let sum = nums.reduce((a,b) => a+b, 0); if(sum < 100 || sum > 150) continue;
                 let evens = nums.filter(n => n % 2 === 0).length; if(evens < 2 || evens > 4) continue;
                 if(pastCombinations.has(nums.join('-'))) continue;
                 let maxCons = 0, cons = 0;
                 for(let i=0; i<nums.length-1; i++) { if(nums[i+1] === nums[i]+1) cons++; else cons = 0; if(cons > maxCons) maxCons = cons; }
                 if(maxCons >= 2) continue;
+                
                 finalNums = nums; success = true; break;
             }
 
@@ -441,10 +481,10 @@
     }
 
     // =========================================
-    // 3. RENDERIZADO DEL DASHBOARD (CORREGIDO)
+    // 3. RENDERIZADO DEL DASHBOARD
     // =========================================
     function renderDashboard(row) {
-      // A. CÁLCULO TOTAL REPARTIDO (CORREGIDO)
+      // A. CÁLCULO TOTAL REPARTIDO
       let totalRepartido = 0;
       let totalGanadores = 0;
 
@@ -456,7 +496,6 @@
             const prefix = key.replace('_GANADORES', '');
             const amountKey = prefix + '_MONTO';
             const amount = parseInt(row[amountKey]) || 0;
-            // CORRECCIÓN: NO MULTIPLICAR. EL MONTO YA ES EL TOTAL DE LA CATEGORÍA.
             totalRepartido += amount; 
           }
         }
@@ -502,7 +541,6 @@
         const ganadores = parseInt(row[`${game.key}_GANADORES`]) || 0;
         const monto = parseInt(row[`${game.key}_MONTO`]) || 0;
         
-        // Footer de la tarjeta Swiper
         let footerHtml = ganadores > 0 ? 
            `<div style="margin-top:auto; padding-top:1rem; border-top: 1px solid rgba(74, 222, 128, 0.3);">
               <div style="background: rgba(20, 83, 45, 0.4); border: 1px solid rgba(74, 222, 128, 0.4); border-radius: 12px; padding: 10px; text-align: center;">
@@ -564,7 +602,6 @@
                 if (pozoCol) displayAmount = parseInt(row[pozoCol]) || 0;
             }
 
-            // Calculo individual: Si hay ganadores, dividimos el monto total entre ellos.
             let prizePerPerson = winners > 0 ? amountTotal / winners : 0;
 
             breakdownHtml += `
@@ -652,6 +689,41 @@
       setInterval(update, 1000); update();
     }
     initTimer();
+
+    // =========================================
+    // 6. FUNCIONES AUXILIARES (PESO MECÁNICO)
+    // =========================================
+    function getMechanicalWeight(number, targetPosition, historyData) {
+        let count = 0;
+        let totalDraws = 0;
+        
+        // Analizamos los últimos 100 sorteos para capturar la tendencia actual de la máquina
+        const recentData = historyData.slice(0, 100); 
+
+        recentData.forEach(row => {
+            // Intentamos leer la posición física (LOTO_pos1...pos6)
+            // Si no existe la columna 'pos', usamos la 'n' (aunque 'n' suele estar ordenada, 
+            // si el CSV original tiene el orden de extracción en 'n', funcionará igual).
+            let valInPos = parseInt(row[`LOTO_pos${targetPosition}`]) || parseInt(row[`LOTO_n${targetPosition}`]);
+            
+            if (valInPos === number) {
+                count++;
+            }
+            if (row.LOTO_n1) totalDraws++;
+        });
+
+        if (totalDraws === 0) return 1; 
+
+        let frequency = count / totalDraws;
+        
+        // Si el número sale más del 5% de las veces en esa posición específica, es un "favorito"
+        if (frequency > 0.05) return 1.5; 
+        // Si nunca ha salido en esa posición recientemente, penalizamos
+        if (count === 0) return 0.5; 
+        
+        return 1; 
+    }
+
   </script>
 </body>
 </html>
