@@ -25,7 +25,7 @@ GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQnOXW1U
 BASE_URL = "https://www.polla.cl/es/view/resultados"
 API_URL = "https://www.polla.cl/es/get/draw/results"
 GAME_ID_LOTO = "5271"
-SORTEO_INICIAL_DEFAULT = 3803 
+SORTEO_INICIAL_DEFAULT = 3803
 
 PRIMOS_LOTO = {2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41}
 
@@ -38,9 +38,10 @@ HEADERS_JUGADAS = [
     "rango_info", "consecutivos_info", "primos_info"
 ]
 
-# Orden visual para mantener tu CSV maestro ordenado
+# Orden visual para mantener tu CSV maestro ordenado al principio
 FIXED_ORDER = [
-    "sorteo", "fecha", "LOTO_n1", "LOTO_n2", "LOTO_n3", "LOTO_n4", "LOTO_n5", "LOTO_n6", "LOTO_comodin",
+    "sorteo", "fecha", "ventas_totales", "boletos_estimados", # Agregué ventas aquí para que se vea al inicio
+    "LOTO_n1", "LOTO_n2", "LOTO_n3", "LOTO_n4", "LOTO_n5", "LOTO_n6", "LOTO_comodin",
     "LOTO_GANADORES", "LOTO_MONTO", "LOTO_POZO_ACUMULADO",
     "RECARGADO_n1", "RECARGADO_n6", "RECARGADO_6_ACIERTOS_GANADORES", "RECARGADO_POZO_ACUMULADO",
     "REVANCHA_n1", "REVANCHA_n6", "REVANCHA_GANADORES", "REVANCHA_POZO_ACUMULADO",
@@ -75,7 +76,6 @@ def calcular_metricas(pred_nums, sorteo_real):
     # 2. Análisis Estructural
     pred_pares = len([n for n in pred_nums if n % 2 == 0])
     real_pares = len([n for n in real_nums if n % 2 == 0])
-    # Formato visual: "3P/3I vs 2P/4I"
     paridad_str = f"Pred:{pred_pares}P - Real:{real_pares}P"
 
     pred_decenas = [n // 10 for n in pred_nums]
@@ -107,7 +107,6 @@ def calcular_metricas(pred_nums, sorteo_real):
     primos_real = len(set(real_nums) & PRIMOS_LOTO)
     primos_str = f"P:{primos_pred} / R:{primos_real}"
 
-    # Devolvemos diccionario plano listo para escribir en CSV
     return {
         "aciertos": aciertos,
         "proximidad_prom": prox,
@@ -125,69 +124,68 @@ def calcular_metricas(pred_nums, sorteo_real):
 def sincronizar_nube_a_local():
     print("☁️ Sincronizando jugadas desde la nube...")
     try:
-        response = requests.get(GOOGLE_SHEET_CSV_URL)
-        response.raise_for_status()
-        lineas = response.text.splitlines()
-        filas_nube = list(csv.reader(lineas))
-        
-        if len(filas_nube) > 0 and "fecha" in filas_nube[0][0].lower(): filas_nube.pop(0)
-        if not filas_nube: 
-            print("   ✅ No hay datos nuevos en la nube.")
-            return
+        response = requests.get(GOOGLE_SHEET_CSV_URL, timeout=10)
+        if response.status_code == 200:
+            lineas = response.text.splitlines()
+            filas_nube = list(csv.reader(lineas))
+            
+            if len(filas_nube) > 0 and "fecha" in filas_nube[0][0].lower(): filas_nube.pop(0)
+            if not filas_nube: 
+                print("   ✅ No hay datos nuevos en la nube.")
+                return
 
-        jugadas_existentes = set()
-        
-        # Verificar si el archivo existe y tiene las cabeceras correctas
-        if os.path.exists(PREDICTIONS_CSV):
-            with open(PREDICTIONS_CSV, 'r', encoding='utf-8') as f:
-                reader = csv.DictReader(f)
-                # Si las columnas no coinciden con las nuevas, forzamos re-creación (backup manual recomendado)
-                if reader.fieldnames != HEADERS_JUGADAS:
-                    print("   ⚠️ Estructura de columnas antigua detectada. Se actualizará el archivo.")
-                    # Aquí podrías implementar migración, pero por simplicidad reescribiremos
-                else:
-                    for row in reader:
-                        key = f"{row.get('fecha_generacion','')}_{row.get('numeros','')}"
-                        jugadas_existentes.add(key)
+            jugadas_existentes = set()
+            
+            if os.path.exists(PREDICTIONS_CSV):
+                with open(PREDICTIONS_CSV, 'r', encoding='utf-8') as f:
+                    try:
+                        reader = csv.DictReader(f)
+                        if reader.fieldnames != HEADERS_JUGADAS:
+                            print("   ⚠️ Estructura antigua detectada. Se actualizará.")
+                        else:
+                            for row in reader:
+                                key = f"{row.get('fecha_generacion','')}_{row.get('numeros','')}"
+                                jugadas_existentes.add(key)
+                    except: pass
 
-        # Si no existe o se decidió reescribir, creamos con nuevos headers
-        if not os.path.exists(PREDICTIONS_CSV) or len(jugadas_existentes) == 0:
-            with open(PREDICTIONS_CSV, 'w', encoding='utf-8', newline='') as f:
+            if not os.path.exists(PREDICTIONS_CSV) or len(jugadas_existentes) == 0:
+                with open(PREDICTIONS_CSV, 'w', encoding='utf-8', newline='') as f:
+                    writer = csv.DictWriter(f, fieldnames=HEADERS_JUGADAS)
+                    writer.writeheader()
+
+            nuevas = 0
+            with open(PREDICTIONS_CSV, 'a', encoding='utf-8', newline='') as f:
                 writer = csv.DictWriter(f, fieldnames=HEADERS_JUGADAS)
-                writer.writeheader()
-
-        nuevas = 0
-        with open(PREDICTIONS_CSV, 'a', encoding='utf-8', newline='') as f:
-            writer = csv.DictWriter(f, fieldnames=HEADERS_JUGADAS)
-            for fila in filas_nube:
-                try:
-                    fecha_raw, nums_str, jugado = fila[0], fila[1], fila[2]
-                    fecha_fmt = fecha_raw.replace("T", " ").replace("Z", "").split(".")[0]
-                    nums_list = [int(n) for n in nums_str.split('-')]
-                    nums_json = json.dumps(nums_list)
-                    
-                    key = f"{fecha_fmt}_{nums_json}"
-                    if key in jugadas_existentes: continue
-                    
-                    id_gen = int(time.time()) + nuevas
-                    
-                    # Creamos fila vacía con estructura
-                    row_data = {col: "" for col in HEADERS_JUGADAS}
-                    row_data.update({
-                        "id": id_gen,
-                        "fecha_generacion": fecha_fmt,
-                        "numeros": nums_json,
-                        "jugado_realmente": jugado,
-                        "estado": "PENDIENTE"
-                    })
-                    
-                    writer.writerow(row_data)
-                    jugadas_existentes.add(key)
-                    nuevas += 1
-                except: continue
-        
-        if nuevas > 0: print(f"   📥 Se descargaron {nuevas} jugadas nuevas.")
-        else: print("   ✅ Base de datos local al día.")
+                for fila in filas_nube:
+                    try:
+                        fecha_raw, nums_str, jugado = fila[0], fila[1], fila[2]
+                        fecha_fmt = fecha_raw.replace("T", " ").replace("Z", "").split(".")[0]
+                        nums_list = [int(n) for n in nums_str.split('-')]
+                        nums_json = json.dumps(nums_list)
+                        
+                        key = f"{fecha_fmt}_{nums_json}"
+                        if key in jugadas_existentes: continue
+                        
+                        id_gen = int(time.time()) + nuevas
+                        
+                        row_data = {col: "" for col in HEADERS_JUGADAS}
+                        row_data.update({
+                            "id": id_gen,
+                            "fecha_generacion": fecha_fmt,
+                            "numeros": nums_json,
+                            "jugado_realmente": jugado,
+                            "estado": "PENDIENTE"
+                        })
+                        
+                        writer.writerow(row_data)
+                        jugadas_existentes.add(key)
+                        nuevas += 1
+                    except: continue
+            
+            if nuevas > 0: print(f"   📥 Se descargaron {nuevas} jugadas nuevas.")
+            else: print("   ✅ Base de datos local al día.")
+        else:
+             print("   ⚠️ No se pudo conectar a Sheets. Usando archivo local.")
     except Exception as e: print(f"❌ Error descargando nube: {e}")
 
 def auditoria_retroactiva_inteligente():
@@ -197,7 +195,6 @@ def auditoria_retroactiva_inteligente():
     historial = []
     with open(CSV_FILENAME, 'r', encoding='utf-8') as f:
         historial = list(csv.DictReader(f))
-    # Ordenar historial por fecha para asegurar cronología
     historial.sort(key=lambda x: parsear_fecha(x['fecha']))
 
     jugadas = []
@@ -205,9 +202,7 @@ def auditoria_retroactiva_inteligente():
         jugadas = list(csv.DictReader(f))
     
     if not jugadas: return
-    # Asegurar headers
     campos = list(jugadas[0].keys())
-    # Si falta alguna columna nueva en el archivo viejo, la agregamos a la lista de campos
     for col in HEADERS_JUGADAS:
         if col not in campos: campos.append(col)
 
@@ -219,30 +214,25 @@ def auditoria_retroactiva_inteligente():
             fecha_jugada = parsear_fecha(jugada['fecha_generacion'])
             sorteo_objetivo = None
             
-            # Buscamos el PRIMER sorteo cuya fecha sea estrictamente posterior a la jugada
             for sorteo in historial:
                 if parsear_fecha(sorteo['fecha']) > fecha_jugada:
                     sorteo_objetivo = sorteo
                     break
 
             if sorteo_objetivo:
-                # ¡ENCONTRAMOS SORTEO! PROCEDEMOS A CALCULAR
                 pred_nums = json.loads(jugada['numeros'])
                 pred_nums.sort()
                 
                 res = calcular_metricas(pred_nums, sorteo_objetivo)
                 
-                # Actualizar campos
                 jugada['sorteo_objetivo'] = sorteo_objetivo['sorteo']
                 jugada['estado'] = 'FINALIZADO'
-                # Rellenar datos
                 for k, v in res.items():
                     jugada[k] = v
                 
                 cambios = True
                 print(f"      🎯 Jugada {jugada['id']} auditada vs Sorteo #{sorteo_objetivo['sorteo']}")
             else:
-                # AUN NO HAY SORTEO (CASO CORRECTO PARA TU JUGADA DE AYER)
                 pendientes_ignoradas += 1
 
     if pendientes_ignoradas > 0:
@@ -252,7 +242,6 @@ def auditoria_retroactiva_inteligente():
         with open(PREDICTIONS_CSV, 'w', encoding='utf-8', newline='') as f:
             writer = csv.DictWriter(f, fieldnames=HEADERS_JUGADAS)
             writer.writeheader()
-            # Al escribir, nos aseguramos de que cada fila tenga todos los campos
             for j in jugadas:
                 row_completa = {col: j.get(col, "") for col in HEADERS_JUGADAS}
                 writer.writerow(row_completa)
@@ -272,21 +261,37 @@ def get_last_draw_id():
     except: pass
     return max_id
 
+# --- MODIFICACIÓN CLAVE: ESCRITURA DINÁMICA DE COLUMNAS ---
 def save_row(new_rows):
     if not new_rows: return
     file_exists = os.path.exists(CSV_FILENAME)
-    existing_headers = []
+    
+    # Determinar encabezados dinámicamente
     if file_exists:
         with open(CSV_FILENAME, 'r', encoding='utf-8') as f:
-            existing_headers = csv.DictReader(f).fieldnames or []
-    headers_to_use = existing_headers if existing_headers else FIXED_ORDER
+            # Si el archivo existe, usamos los encabezados que ya tiene para no corromper
+            headers_to_use = csv.DictReader(f).fieldnames or []
+    else:
+        # Si es NUEVO: Construimos el esquema completo
+        # 1. Obtenemos TODAS las claves que trae la fila (incluye _pos, ventas, etc)
+        data_keys = list(new_rows[0].keys())
+        
+        # 2. Priorizamos el FIXED_ORDER para que las columnas clásicas salgan primero
+        headers_ordered = [k for k in FIXED_ORDER if k in data_keys]
+        
+        # 3. Agregamos las columnas nuevas (las que no están en FIXED_ORDER) al final
+        new_cols = [k for k in data_keys if k not in headers_ordered]
+        headers_to_use = headers_ordered + new_cols
 
     with open(CSV_FILENAME, 'a', encoding='utf-8', newline='') as f:
-        writer = csv.DictWriter(f, fieldnames=headers_to_use)
+        # extrasaction='ignore' previene errores si hay columnas de más, 
+        # pero si borraste el archivo, se crearán todas las columnas.
+        writer = csv.DictWriter(f, fieldnames=headers_to_use, extrasaction='ignore')
+        
         if not file_exists: writer.writeheader()
+        
         for row in new_rows:
-            filtered_row = {k: v for k, v in row.items() if k in headers_to_use}
-            writer.writerow(filtered_row)
+            writer.writerow(row)
             
     print(f"💾 Guardado sorteo #{new_rows[0]['sorteo']} ({new_rows[0]['fecha']})")
     auditoria_retroactiva_inteligente()
@@ -323,17 +328,17 @@ async def run():
         while True:
             try:
                 await asyncio.sleep(0.5)
+                # Esta es la petición exacta que te funcionaba:
                 response = await page.request.post(API_URL, data={"gameId": GAME_ID_LOTO, "drawId": current_target, "csrfToken": token}, headers={"x-requested-with": "XMLHttpRequest"})
+                
                 if response.status == 200:
                     try: json_data = await response.json()
                     except: json_data = {}
                     
                     if not json_data: break
                     
-                    # --- VALIDACIÓN CRÍTICA DE FECHA FUTURA ---
+                    # Validación futura
                     draw_date_ms = json_data.get('drawDate')
-                    
-                    # 1. Chequear si es fecha futura
                     if draw_date_ms:
                         draw_date_dt = datetime.fromtimestamp(draw_date_ms / 1000)
                         if draw_date_dt > datetime.now():
@@ -341,8 +346,6 @@ async def run():
                             print("   ✅ Tu base de datos está actualizada al máximo.")
                             break
 
-                    # 2. Chequear si el resultado está vacío (polla a veces publica el ID sin numeros)
-                    # Si no hay resultados de la tómbola principal, es un sorteo no jugado o inválido
                     results_list = json_data.get('results', [])
                     if not results_list:
                          print(f"⚠️ El sorteo #{current_target} existe pero no tiene resultados aún.")
@@ -350,7 +353,6 @@ async def run():
 
                     flat_row = parse_loto_flat(json_data)
                     
-                    # 3. Doble chequeo de que parseo algo útil
                     if not flat_row.get('LOTO_n1'):
                          print(f"⚠️ Datos incompletos en sorteo #{current_target}. Saltando.")
                          break
