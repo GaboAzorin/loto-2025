@@ -367,10 +367,11 @@
   <script>
     lucide.createIcons();
     
+    // VARIABLES GLOBALES (Compartidas por ambos generadores)
     let allData = [];
     let sortedData = [];
     let pastCombinations = new Set();
-    let currentGeneratedNumbers = [];
+    let currentGeneratedNumbers = []; // IMPORTANTE: Aquí se guardan los números antes de enviarlos
     
     const PRIMOS_LOTO = new Set([2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41]);
 
@@ -532,17 +533,27 @@
 
     async function savePlay(playedReal) {
         if(currentGeneratedNumbers.length === 0) return;
-        const btnContainer = document.getElementById('gen-actions');
-        btnContainer.innerHTML = '<span style="color:var(--neon-cyan);">Sincronizando...</span>';
+        
+        // MODIFICACIÓN: Buscar contenedor del panel dorado O el panel forense
+        let btnContainer = document.getElementById('gen-actions');
+        if(!btnContainer || btnContainer.offsetParent === null) {
+            btnContainer = document.getElementById('gen-actions-forensic');
+        }
+
+        if(btnContainer) btnContainer.innerHTML = '<span style="color:var(--neon-cyan);">Sincronizando...</span>';
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwBZd2vTrvxVdTjJnLoK2vMCR90qJqyH3ZfSDkNK4_n0aFYe3jCoeIZ3R58XNQBM1xQ3A/exec";
         try {
             await fetch(GOOGLE_SCRIPT_URL, {
                 method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ numeros: currentGeneratedNumbers, jugado: playedReal ? "SI" : "NO" })
             });
-            btnContainer.innerHTML = '<span style="color:#00ff41; font-weight:bold;">✨ ¡Guardado!</span>';
-            setTimeout(() => { if(btnContainer) btnContainer.style.opacity = '0'; }, 3000);
-        } catch (error) { btnContainer.innerHTML = '<span style="color:red;">Error de conexión.</span>'; }
+            if(btnContainer) {
+                btnContainer.innerHTML = '<span style="color:#00ff41; font-weight:bold;">✨ ¡Guardado!</span>';
+                setTimeout(() => { btnContainer.style.opacity = '0'; }, 3000);
+            }
+        } catch (error) { 
+            if(btnContainer) btnContainer.innerHTML = '<span style="color:red;">Error de conexión.</span>'; 
+        }
     }
 
     // =========================================
@@ -756,7 +767,7 @@
     initTimer();
 
     // =========================================
-    // 6. FUNCIONES AUXILIARES (PESO MECÁNICO CLÁSICO - PARA GENERADOR GAUSSIANO)
+    // 6. FUNCIONES AUXILIARES (PESO MECÁNICO)
     // =========================================
     function getMechanicalWeight(number, targetPosition, historyData) {
         let count = 0;
@@ -766,6 +777,9 @@
         const recentData = historyData.slice(0, 100); 
 
         recentData.forEach(row => {
+            // Intentamos leer la posición física (LOTO_pos1...pos6)
+            // Si no existe la columna 'pos', usamos la 'n' (aunque 'n' suele estar ordenada, 
+            // si el CSV original tiene el orden de extracción en 'n', funcionará igual).
             let valInPos = parseInt(row[`LOTO_pos${targetPosition}`]) || parseInt(row[`LOTO_n${targetPosition}`]);
             
             if (valInPos === number) {
@@ -775,10 +789,14 @@
         });
 
         if (totalDraws === 0) return 1; 
+
         let frequency = count / totalDraws;
         
+        // Si el número sale más del 5% de las veces en esa posición específica, es un "favorito"
         if (frequency > 0.05) return 1.5; 
+        // Si nunca ha salido en esa posición recientemente, penalizamos
         if (count === 0) return 0.5; 
+        
         return 1; 
     }
 
@@ -812,7 +830,9 @@
     }
 
     // 2. Algoritmo de Selección Ponderada (Weighted Random)
+    // Elige un número proporcional a su peso en esa posición
     function getWeightedNumber(weightsObj) {
+        // weightsObj es { "1": 0.05, "2": 0.01 ... }
         const entries = Object.entries(weightsObj);
         let totalWeight = entries.reduce((acc, [num, w]) => acc + w, 0);
         let random = Math.random() * totalWeight;
@@ -821,6 +841,7 @@
             random -= weight;
             if (random <= 0) return parseInt(num);
         }
+        // Fallback por si acaso
         return parseInt(entries[0][0]);
     }
 
@@ -844,6 +865,7 @@
         let numbers = [];
         let detailsHTML = '<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap:10px; margin-top:15px;">';
         
+        // Obtener las posiciones disponibles en este juego (generalmente 1 a 6)
         const availablePositions = Object.keys(game.positions).sort((a,b)=>a-b);
 
         for (let posKey of availablePositions) {
@@ -853,15 +875,16 @@
             let num = getWeightedNumber(w);
             let safety = 0;
             
-            // Evitar duplicados
+            // Evitar duplicados en la misma jugada (re-roll si ya salió)
             while (numbers.includes(num) && safety < 50) {
                 num = getWeightedNumber(w);
                 safety++;
             }
             numbers.push(num);
 
-            // Crear explicación visual
+            // Crear explicación visual para "ADN de la Jugada"
             let chance = (w[num] * 100).toFixed(2);
+            // Destacar si la probabilidad es alta (> 3.0% es alto para Loto)
             let isHot = chance > 3.0 ? 'color:var(--neon-cyan); font-weight:bold;' : 'color:var(--text-muted);';
             
             detailsHTML += `
@@ -873,14 +896,13 @@
             `;
         }
 
-        // Ordenar números
+        // Ordenar números para la vista principal de bolas
         let sortedNumbers = [...numbers].sort((a,b) => a-b);
 
         // --- INTEGRACIÓN CLAVE: ACTUALIZAR LA VARIABLE GLOBAL PARA GUARDADO ---
-        // Esto permite que la función savePlay() sepa qué números guardar
         currentGeneratedNumbers = sortedNumbers;
 
-        // Renderizar todo el bloque + BOTONES DE ACCIÓN (Reutilizando savePlay)
+        // Renderizar todo el bloque
         outputDiv.innerHTML = `
             <div style="display:flex; flex-direction:column; gap:10px; animation: fadeIn 0.5s ease;">
                 <div style="text-align:center; color:var(--text-muted); font-size:0.8rem; margin-bottom:5px;">
