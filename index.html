@@ -177,6 +177,44 @@
     tr:hover { background: rgba(255,255,255,0.03); }
     
     .status-bar { text-align: center; margin-top: 2rem; color: var(--text-muted); font-size: 0.8rem; }
+
+    /* ========================================================================== */
+    /* NUEVOS ESTILOS PARA EL DESGLOSE DE PREMIOS (AÑADIDO)                       */
+    /* ========================================================================== */
+    .breakdown-container {
+        margin-top: 3rem;
+        padding-top: 2rem;
+        border-top: 1px solid var(--border);
+    }
+    .breakdown-header {
+        display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 10px;
+    }
+    .total-repartido-badge {
+        background: linear-gradient(90deg, rgba(0,242,255,0.1), rgba(0,242,255,0));
+        border-left: 3px solid var(--neon-cyan);
+        padding: 0.5rem 1rem; font-family: 'JetBrains Mono', monospace;
+        font-size: 1.1rem; color: var(--neon-cyan);
+    }
+    .prize-grid {
+        display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem;
+    }
+    .prize-card {
+        background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border);
+        border-radius: 12px; padding: 1rem; transition: all 0.3s ease;
+    }
+    .prize-card:hover { background: rgba(255, 255, 255, 0.07); transform: translateY(-3px); border-color: var(--neon-cyan); }
+    .prize-card.jackpot { background: linear-gradient(145deg, rgba(255, 215, 0, 0.05), rgba(0,0,0,0)); border-color: rgba(255, 215, 0, 0.3); }
+    
+    .prize-title { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 0.5rem; font-weight: 700; }
+    .prize-winners { display: flex; align-items: center; gap: 0.5rem; font-size: 1.1rem; font-weight: 700; color: white; margin-bottom: 0.25rem; }
+    .prize-amount { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: var(--gold); }
+    .vacante-tag { font-size: 0.75rem; color: var(--danger); border: 1px solid rgba(255, 59, 92, 0.3); padding: 2px 6px; border-radius: 4px; text-transform: uppercase; }
+    
+    .individual-prize {
+        font-size: 0.75rem; color: var(--text-muted); margin-top: 6px;
+        border-top: 1px solid rgba(255,255,255,0.1); padding-top: 6px;
+        display: flex; justify-content: space-between;
+    }
   </style>
 </head>
 <body>
@@ -220,7 +258,7 @@
       </div>
 
       <div class="hero-stats">
-        <div><div class="stat-val" id="dash-money">$0</div><div class="stat-lbl">Total repartido estimado</div></div>
+        <div><div class="stat-val" id="dash-money">$0</div><div class="stat-lbl">Total repartido efectivo</div></div>
         <div><div class="stat-val" id="dash-winners">0</div><div class="stat-lbl">Ganadores totales</div></div>
       </div>
 
@@ -228,13 +266,16 @@
         <div class="swiper-wrapper" id="games-container"></div>
         <div class="swiper-pagination"></div>
       </div>
+
+      <div id="prizes-breakdown"></div>
+
     </div>
 
     <div class="table-controls">
       <label class="toggle-switch">
         <input type="checkbox" id="filter-winners">
         <span class="slider"></span>
-        <span class="label-text">Ver solo con Ganadores</span>
+        <span class="label-text">Ver solo con ganadores</span>
       </label>
     </div>
 
@@ -274,7 +315,6 @@
     let pastCombinations = new Set();
     let currentGeneratedNumbers = [];
     
-    // Conjunto de números primos hasta el 41
     const PRIMOS_LOTO = new Set([2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41]);
 
     function formatMoney(n) { return '$' + Number(n).toLocaleString('es-CL'); }
@@ -344,7 +384,6 @@
                 while(candidates.size < 6) candidates.add(Math.floor(Math.random() * 41) + 1);
                 let nums = Array.from(candidates).sort((a,b) => a-b);
 
-                // Filtros Básicos
                 let sum = nums.reduce((a,b) => a+b, 0);
                 if(sum < 100 || sum > 150) continue;
 
@@ -368,11 +407,9 @@
             if(success) {
                 currentGeneratedNumbers = finalNums;
 
-                // Render Bolas
                 let html = finalNums.map(n => `<div class="gen-ball">${n}</div>`).join('');
                 container.innerHTML = html;
                 
-                // Cálculos de Telemetría
                 let sum = finalNums.reduce((a,b) => a+b, 0);
                 let evens = finalNums.filter(n => n % 2 === 0).length;
                 let range = finalNums[finalNums.length-1] - finalNums[0];
@@ -384,9 +421,6 @@
                     if(finalNums[i+1] === finalNums[i]+1) consecutivesCount++;
                 }
 
-                // Render Telemetría
-                // Colores: metric-good (verde), metric-warn (amarillo), metric-bad (rojo)
-                
                 let rangeClass = (range >= 20 && range <= 38) ? 'metric-good' : 'metric-warn';
                 let primeClass = (primesCount >= 1 && primesCount <= 3) ? 'metric-good' : 'metric-warn';
                 let zoneClass = (decades >= 3) ? 'metric-good' : 'metric-warn';
@@ -479,7 +513,7 @@
             const prefix = key.replace('_GANADORES', '');
             const amountKey = prefix + '_MONTO';
             const amount = parseInt(row[amountKey]) || 0;
-            totalRepartido += (winners * amount);
+            totalRepartido += (winners * amount); // Tu lógica original era correcta para premios normales
           }
         }
       });
@@ -551,6 +585,76 @@
       swiperWrapper.innerHTML = slidesHtml;
       if(window.mySwiper) { window.mySwiper.update(); window.mySwiper.slideTo(0); }
       else { window.mySwiper = new Swiper('.swiper', { slidesPerView: 1, spaceBetween: 20, centeredSlides: false, pagination: { el: '.swiper-pagination', clickable: true }, breakpoints: { 640: { slidesPerView: 1.2, centeredSlides: true }, 768: { slidesPerView: 2 }, 1024: { slidesPerView: 3 } } }); }
+
+      // =========================================================
+      // LÓGICA AGREGADA: DESGLOSE DETALLADO (Tarjetas de Cristal)
+      // =========================================================
+      const categories = [
+            { key: 'LOTO', label: 'Loto 6 Aciertos', type: 'jackpot' },
+            { key: 'RECARGADO_6_ACIERTOS', label: 'Recargado', type: 'jackpot' },
+            { key: 'REVANCHA', label: 'Revancha', type: 'jackpot' },
+            { key: 'DESQUITE', label: 'Desquite', type: 'jackpot' },
+            { key: 'AHORA_SI_QUE_SI', label: 'Ahora Sí que Sí', type: 'jackpot' },
+            { key: 'SUPER_QUINA_5_ACIERTOS_COMODIN', label: 'S. Quina + Comodín', type: 'secondary' },
+            { key: 'QUINA_5_ACIERTOS', label: 'Quina', type: 'secondary' },
+            { key: 'SUPER_CUATERNA_4_ACIERTOS_COMODIN', label: 'S. Cuaterna + Comodín', type: 'secondary' },
+            { key: 'CUATERNA_4_ACIERTOS', label: 'Cuaterna', type: 'secondary' },
+            { key: 'SUPER_TERNA_3_ACIERTOS_COMODIN', label: 'S. Terna + Comodín', type: 'secondary' },
+            { key: 'TERNA_3_ACIERTOS', label: 'Terna', type: 'secondary' },
+            { key: 'SUPER_DUPLA_2_ACIERTOS_COMODIN', label: 'S. Dupla + Comodín', type: 'secondary' }
+      ];
+
+      let breakdownHtml = '';
+      categories.forEach(cat => {
+            const winnersCol = `${cat.key}_GANADORES`;
+            const amountCol = `${cat.key}_MONTO`;
+            
+            const winners = parseInt(row[winnersCol]) || 0;
+            let amountTotal = parseInt(row[amountCol]) || 0;
+            
+            let displayAmount = amountTotal;
+            let isVacante = winners === 0;
+
+            if (isVacante) {
+                const pozoCol = `${cat.key}_POZO_REAL` in row ? `${cat.key}_POZO_REAL` : (`${cat.key}_ACUMULADO` in row ? `${cat.key}_ACUMULADO` : null);
+                if (pozoCol) displayAmount = parseInt(row[pozoCol]) || 0;
+            }
+
+            let prizePerPerson = winners > 0 ? amountTotal / winners : 0;
+
+            breakdownHtml += `
+                <div class="prize-card ${cat.type === 'jackpot' ? 'jackpot' : ''}">
+                    <div class="prize-title">${cat.label}</div>
+                    <div class="prize-winners">
+                        ${isVacante 
+                            ? `<span class="vacante-tag">VACANTE</span>` 
+                            : `<i data-lucide="users" width="18"></i> ${winners.toLocaleString('es-CL')}`
+                        }
+                    </div>
+                    <div class="prize-amount">
+                        ${isVacante ? 'Pozo Estimado: ' : 'Total Repartido: '} ${formatMoney(displayAmount)}
+                    </div>
+                    ${!isVacante ? `
+                        <div class="individual-prize">
+                            <span>c/u:</span>
+                            <span style="color:var(--neon-cyan)">${formatMoney(prizePerPerson)}</span>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+      });
+
+      document.getElementById('prizes-breakdown').innerHTML = `
+            <div class="breakdown-container">
+                <div class="breakdown-header">
+                    <h3 style="color:white; font-size:1.2rem;">💰 Desglose Detallado</h3>
+                </div>
+                <div class="prize-grid">
+                    ${breakdownHtml}
+                </div>
+            </div>
+      `;
+      lucide.createIcons(); // Re-iniciar iconos para la nueva sección
     }
 
     function updateHistoryTable() {
