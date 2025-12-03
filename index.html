@@ -12,6 +12,9 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"/>
 
   <style>
+    /* =========================================
+       VARIABLES Y ESTILOS GLOBALES
+       ========================================= */
     :root {
       --bg: #050a14;
       --card: rgba(20, 30, 50, 0.65); 
@@ -25,6 +28,7 @@
     }
 
     * { margin:0; padding:0; box-sizing:border-box; }
+    
     body {
       font-family: 'Inter', sans-serif;
       background: var(--bg);
@@ -36,7 +40,9 @@
 
     .container { max-width: 1400px; margin: 0 auto; padding: 2rem 1.5rem; }
 
-    /* --- Timer --- */
+    /* =========================================
+       COMPONENTE: TEMPORIZADOR (TIMER)
+       ========================================= */
     .timer { display: flex; justify-content: center; gap: 1rem; margin: 2rem 0; flex-wrap: wrap; }
     .time-box {
       background: var(--card); border: 1px solid var(--border);
@@ -45,7 +51,9 @@
     .time-num { font-size: 2rem; font-weight: 900; color: var(--neon-cyan); }
     .time-label { font-size: 0.7rem; color: var(--text-muted); letter-spacing: 1px; margin-top: 5px; }
 
-    /* --- GENERADOR CUÁNTICO (MEJORADO) --- */
+    /* =========================================
+       COMPONENTE: GENERADOR CUÁNTICO
+       ========================================= */
     .generator-card {
         background: linear-gradient(145deg, rgba(20,30,50,0.9), rgba(10,15,25,0.95));
         border: 1px solid var(--gold);
@@ -89,7 +97,9 @@
         border: 2px solid white;
     }
 
-    /* TELEMETRÍA (NUEVO) */
+    /* =========================================
+       COMPONENTE: TELEMETRÍA
+       ========================================= */
     .telemetry-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
@@ -107,39 +117,13 @@
     .tele-label { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
     .tele-val { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 0.9rem; color: white; display: flex; align-items: center; gap: 5px; }
     
-    /* Indicadores de calidad visual */
     .metric-good { color: var(--matrix); }
     .metric-warn { color: #fbbf24; }
     .metric-bad { color: var(--danger); }
 
-    /* --- Buscador --- */
-    .search-wrapper { max-width: 500px; margin: 0 auto 3rem; text-align: center; }
-    #search {
-      width: 100%; padding: 1rem 1.5rem; border-radius: 99px;
-      background: var(--card); border: 1px solid var(--border); color: white;
-      font-size: 1.1rem; text-align: center;
-    }
-    #search:focus { outline: none; border-color: var(--neon-cyan); box-shadow: 0 0 20px rgba(0,242,255,0.2); }
-
-    /* --- Controles --- */
-    .table-controls { display: flex; justify-content: flex-end; align-items: center; margin-bottom: 1rem; padding: 0 0.5rem; }
-    .toggle-switch { position: relative; display: flex; align-items: center; gap: 10px; cursor: pointer; user-select: none; }
-    .toggle-switch input { opacity: 0; width: 0; height: 0; position: absolute; }
-    .slider {
-      position: relative; width: 44px; height: 24px;
-      background-color: rgba(255,255,255,0.1); border-radius: 34px;
-      transition: .4s; border: 1px solid rgba(255,255,255,0.2);
-    }
-    .slider:before {
-      position: absolute; content: ""; height: 18px; width: 18px;
-      left: 2px; bottom: 2px; background-color: white; border-radius: 50%; transition: .4s;
-    }
-    input:checked + .slider { background-color: rgba(0, 255, 157, 0.4); border-color: #00ff9d; }
-    input:checked + .slider:before { transform: translateX(20px); background-color: #00ff9d; box-shadow: 0 0 10px #00ff9d; }
-    .label-text { font-size: 0.9rem; color: var(--text-muted); transition: color 0.3s; }
-    input:checked ~ .label-text { color: #00ff9d; font-weight: bold; }
-
-    /* --- Hero Dashboard --- */
+    /* =========================================
+       DASHBOARD HERO & SWIPER
+       ========================================= */
     .hero {
       background: var(--card); border: 1px solid var(--border);
       border-radius: 2rem; padding: 2rem; margin-bottom: 3rem;
@@ -152,7 +136,7 @@
     .stat-val { font-size: 2rem; font-weight: 700; color: #ff00c8; }
     .stat-lbl { color: var(--text-muted); font-size: 0.9rem; }
 
-    /* --- Swiper --- */
+    /* Estilos del Swiper (Carrusel de bolitas) */
     .swiper { padding: 10px; padding-bottom: 40px !important; }
     .ball {
       width: 40px; height: 40px; border-radius: 50%;
@@ -168,19 +152,9 @@
     .ball.AHORA_SI_QUE_SI { background: radial-gradient(circle at 30% 30%, #22d3ee, #0891b2); }
     .ball.COMODIN { background: transparent; border: 2px solid #ff3b5c; color: #ff3b5c; box-shadow: 0 0 10px rgba(255, 59, 92, 0.3); }
 
-    /* --- Tabla --- */
-    .table-wrapper { background: var(--card); border: 1px solid var(--border); border-radius: 1.5rem; overflow: hidden; }
-    .table-scroll { max-height: 600px; overflow-y: auto; }
-    table { width: 100%; border-collapse: collapse; }
-    th { position: sticky; top: 0; background: #0a1020; padding: 1rem; text-align: left; color: var(--neon-cyan); z-index: 10; font-size: 0.9rem; text-transform: uppercase; }
-    td { padding: 1rem; border-bottom: 1px solid var(--border); font-size: 0.95rem; }
-    tr:hover { background: rgba(255,255,255,0.03); }
-    
-    .status-bar { text-align: center; margin-top: 2rem; color: var(--text-muted); font-size: 0.8rem; }
-
-    /* ========================================================================== */
-    /* NUEVOS ESTILOS PARA EL DESGLOSE DE PREMIOS (AÑADIDO)                       */
-    /* ========================================================================== */
+    /* =========================================
+       DESGLOSE DETALLADO (TARJETAS DE CRISTAL)
+       ========================================= */
     .breakdown-container {
         margin-top: 3rem;
         padding-top: 2rem;
@@ -215,6 +189,32 @@
         border-top: 1px solid rgba(255,255,255,0.1); padding-top: 6px;
         display: flex; justify-content: space-between;
     }
+
+    /* =========================================
+       TABLA DE HISTORIAL Y CONTROLES
+       ========================================= */
+    .table-wrapper { background: var(--card); border: 1px solid var(--border); border-radius: 1.5rem; overflow: hidden; }
+    .table-scroll { max-height: 600px; overflow-y: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th { position: sticky; top: 0; background: #0a1020; padding: 1rem; text-align: left; color: var(--neon-cyan); z-index: 10; font-size: 0.9rem; text-transform: uppercase; }
+    td { padding: 1rem; border-bottom: 1px solid var(--border); font-size: 0.95rem; }
+    tr:hover { background: rgba(255,255,255,0.03); }
+    
+    .search-wrapper { max-width: 500px; margin: 0 auto 3rem; text-align: center; }
+    #search { width: 100%; padding: 1rem 1.5rem; border-radius: 99px; background: var(--card); border: 1px solid var(--border); color: white; font-size: 1.1rem; text-align: center; }
+    #search:focus { outline: none; border-color: var(--neon-cyan); }
+    
+    .table-controls { display: flex; justify-content: flex-end; align-items: center; margin-bottom: 1rem; padding: 0 0.5rem; }
+    .toggle-switch { position: relative; display: flex; align-items: center; gap: 10px; cursor: pointer; user-select: none; }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+    .slider { position: relative; width: 44px; height: 24px; background-color: rgba(255,255,255,0.1); border-radius: 34px; transition: .4s; border: 1px solid rgba(255,255,255,0.2); }
+    .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 2px; bottom: 2px; background-color: white; border-radius: 50%; transition: .4s; }
+    input:checked + .slider { background-color: rgba(0, 255, 157, 0.4); border-color: #00ff9d; }
+    input:checked + .slider:before { transform: translateX(20px); background-color: #00ff9d; }
+    .label-text { font-size: 0.9rem; color: var(--text-muted); transition: color 0.3s; }
+    input:checked ~ .label-text { color: #00ff9d; font-weight: bold; }
+
+    .status-bar { text-align: center; margin-top: 2rem; color: var(--text-muted); font-size: 0.8rem; }
   </style>
 </head>
 <body>
@@ -240,9 +240,7 @@
 
         <div id="gen-output" class="gen-result">
             <div class="gen-balls" id="gen-balls-container"></div>
-            
             <div id="telemetry-panel" class="telemetry-grid"></div>
-            
             <div class="gen-stats" id="gen-stats-text"></div>
         </div>
     </div>
@@ -319,6 +317,9 @@
 
     function formatMoney(n) { return '$' + Number(n).toLocaleString('es-CL'); }
 
+    // =========================================
+    // 1. CARGA DE DATOS CSV
+    // =========================================
     try {
       Papa.parse('LOTO_HISTORIAL_MAESTRO.csv', {
         download: true, header: true, skipEmptyLines: true,
@@ -357,69 +358,47 @@
       document.getElementById('status-text').textContent = "Error al iniciar la carga de datos.";
     }
 
-    // --- LÓGICA DEL GENERADOR MEJORADO ---
+    // =========================================
+    // 2. LÓGICA DEL GENERADOR CUÁNTICO
+    // =========================================
     function generateLuckyNumbers() {
         const output = document.getElementById('gen-output');
         const container = document.getElementById('gen-balls-container');
         const telemetry = document.getElementById('telemetry-panel');
         const stats = document.getElementById('gen-stats-text');
         
-        output.style.display = 'block';
-        output.style.opacity = '1';
+        output.style.display = 'block'; output.style.opacity = '1';
         container.innerHTML = '<div style="color:var(--gold);">Calculando entropía...</div>';
-        telemetry.innerHTML = '';
-        stats.innerHTML = '';
-        
-        const oldActions = document.getElementById('gen-actions');
-        if(oldActions) oldActions.remove();
+        telemetry.innerHTML = ''; stats.innerHTML = '';
+        const oldActions = document.getElementById('gen-actions'); if(oldActions) oldActions.remove();
 
         setTimeout(() => {
-            let attempt = 0;
-            let success = false;
-            let finalNums = [];
-
+            let attempt = 0, success = false, finalNums = [];
             while(attempt < 5000) {
                 attempt++;
                 let candidates = new Set();
                 while(candidates.size < 6) candidates.add(Math.floor(Math.random() * 41) + 1);
                 let nums = Array.from(candidates).sort((a,b) => a-b);
-
-                let sum = nums.reduce((a,b) => a+b, 0);
-                if(sum < 100 || sum > 150) continue;
-
-                let evens = nums.filter(n => n % 2 === 0).length;
-                if(evens < 2 || evens > 4) continue;
-
+                let sum = nums.reduce((a,b) => a+b, 0); if(sum < 100 || sum > 150) continue;
+                let evens = nums.filter(n => n % 2 === 0).length; if(evens < 2 || evens > 4) continue;
                 if(pastCombinations.has(nums.join('-'))) continue;
-
-                let maxCons = 0; let cons = 0;
-                for(let i=0; i<nums.length-1; i++) {
-                    if(nums[i+1] === nums[i]+1) cons++; else cons = 0;
-                    if(cons > maxCons) maxCons = cons;
-                }
+                let maxCons = 0, cons = 0;
+                for(let i=0; i<nums.length-1; i++) { if(nums[i+1] === nums[i]+1) cons++; else cons = 0; if(cons > maxCons) maxCons = cons; }
                 if(maxCons >= 2) continue;
-
-                finalNums = nums;
-                success = true;
-                break;
+                finalNums = nums; success = true; break;
             }
 
             if(success) {
                 currentGeneratedNumbers = finalNums;
-
-                let html = finalNums.map(n => `<div class="gen-ball">${n}</div>`).join('');
-                container.innerHTML = html;
+                container.innerHTML = finalNums.map(n => `<div class="gen-ball">${n}</div>`).join('');
                 
                 let sum = finalNums.reduce((a,b) => a+b, 0);
                 let evens = finalNums.filter(n => n % 2 === 0).length;
                 let range = finalNums[finalNums.length-1] - finalNums[0];
                 let primesCount = finalNums.filter(n => PRIMOS_LOTO.has(n)).length;
                 let decades = new Set(finalNums.map(n => Math.floor(n/10))).size;
-                
                 let consecutivesCount = 0;
-                for(let i=0; i<finalNums.length-1; i++) {
-                    if(finalNums[i+1] === finalNums[i]+1) consecutivesCount++;
-                }
+                for(let i=0; i<finalNums.length-1; i++) if(finalNums[i+1] === finalNums[i]+1) consecutivesCount++;
 
                 let rangeClass = (range >= 20 && range <= 38) ? 'metric-good' : 'metric-warn';
                 let primeClass = (primesCount >= 1 && primesCount <= 3) ? 'metric-good' : 'metric-warn';
@@ -427,81 +406,45 @@
                 let consClass = (consecutivesCount === 0) ? 'metric-good' : 'metric-warn';
 
                 telemetry.innerHTML = `
-                    <div class="tele-item">
-                        <span class="tele-label">Rango (20-38)</span>
-                        <span class="tele-val ${rangeClass}"><i data-lucide="ruler" width="14"></i> ${range}</span>
-                    </div>
-                    <div class="tele-item">
-                        <span class="tele-label">Primos (1-3)</span>
-                        <span class="tele-val ${primeClass}"><i data-lucide="hash" width="14"></i> ${primesCount}</span>
-                    </div>
-                    <div class="tele-item">
-                        <span class="tele-label">Zonas (>3)</span>
-                        <span class="tele-val ${zoneClass}"><i data-lucide="map" width="14"></i> ${decades}</span>
-                    </div>
-                    <div class="tele-item">
-                        <span class="tele-label">Consecutivos</span>
-                        <span class="tele-val ${consClass}"><i data-lucide="link" width="14"></i> ${consecutivesCount}</span>
-                    </div>
+                    <div class="tele-item"><span class="tele-label">Rango (20-38)</span><span class="tele-val ${rangeClass}"><i data-lucide="ruler" width="14"></i> ${range}</span></div>
+                    <div class="tele-item"><span class="tele-label">Primos (1-3)</span><span class="tele-val ${primeClass}"><i data-lucide="hash" width="14"></i> ${primesCount}</span></div>
+                    <div class="tele-item"><span class="tele-label">Zonas (>3)</span><span class="tele-val ${zoneClass}"><i data-lucide="map" width="14"></i> ${decades}</span></div>
+                    <div class="tele-item"><span class="tele-label">Consecutivos</span><span class="tele-val ${consClass}"><i data-lucide="link" width="14"></i> ${consecutivesCount}</span></div>
                 `;
-
-                stats.innerHTML = `Suma: ${sum} | Paridad: ${evens}P-${6-evens}I | ✨ Inédita en historial`;
+                stats.innerHTML = `Suma: ${sum} | Paridad: ${evens}P-${6-evens}I | ✨ Inédita`;
 
                 const actionsDiv = document.createElement('div');
                 actionsDiv.id = 'gen-actions';
-                actionsDiv.style.marginTop = '1.5rem';
-                actionsDiv.style.display = 'flex';
-                actionsDiv.style.justifyContent = 'center';
-                actionsDiv.style.gap = '15px';
-                actionsDiv.style.flexWrap = 'wrap';
-                
+                actionsDiv.style.marginTop = '1.5rem'; actionsDiv.style.display = 'flex'; actionsDiv.style.justifyContent = 'center'; actionsDiv.style.gap = '15px';
                 actionsDiv.innerHTML = `
-                    <button onclick="savePlay(true)" class="gen-btn" style="font-size:0.8rem; padding:0.8rem 1.5rem; background:#00ff41; color:black; border:none; box-shadow:0 0 15px rgba(0,255,65,0.3);">
-                        <i data-lucide="ticket" style="width:16px; margin-right:5px;"></i> ¡LA JUGUÉ!
-                    </button>
-                    <button onclick="savePlay(false)" class="gen-btn" style="font-size:0.8rem; padding:0.8rem 1.5rem; background:transparent; border:1px solid #a0aec0; color:#a0aec0; box-shadow:none;">
-                        <i data-lucide="save" style="width:16px; margin-right:5px;"></i> Solo Guardar
-                    </button>
-                `;
+                    <button onclick="savePlay(true)" class="gen-btn" style="font-size:0.8rem; padding:0.8rem 1.5rem; background:#00ff41; color:black; border:none; box-shadow:0 0 15px rgba(0,255,65,0.3);"><i data-lucide="ticket" style="width:16px; margin-right:5px;"></i> ¡LA JUGUÉ!</button>
+                    <button onclick="savePlay(false)" class="gen-btn" style="font-size:0.8rem; padding:0.8rem 1.5rem; background:transparent; border:1px solid #a0aec0; color:#a0aec0; box-shadow:none;"><i data-lucide="save" style="width:16px; margin-right:5px;"></i> Solo Guardar</button>`;
                 output.appendChild(actionsDiv);
                 lucide.createIcons();
-
-            } else {
-                container.innerHTML = "Error de convergencia. Intente de nuevo.";
-            }
-
+            } else container.innerHTML = "Error de convergencia.";
         }, 400);
     }
 
     async function savePlay(playedReal) {
         if(currentGeneratedNumbers.length === 0) return;
-
         const btnContainer = document.getElementById('gen-actions');
-        btnContainer.innerHTML = '<span style="color:var(--neon-cyan);">Sincronizando con la nube...</span>';
-
+        btnContainer.innerHTML = '<span style="color:var(--neon-cyan);">Sincronizando...</span>';
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwBZd2vTrvxVdTjJnLoK2vMCR90qJqyH3ZfSDkNK4_n0aFYe3jCoeIZ3R58XNQBM1xQ3A/exec";
-
         try {
             await fetch(GOOGLE_SCRIPT_URL, {
-                method: 'POST',
-                mode: 'no-cors',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    numeros: currentGeneratedNumbers,
-                    jugado: playedReal ? "SI" : "NO"
-                })
+                method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ numeros: currentGeneratedNumbers, jugado: playedReal ? "SI" : "NO" })
             });
-
-            btnContainer.innerHTML = '<span style="color:#00ff41; font-weight:bold;">✨ ¡Guardado en la Nube!</span>';
+            btnContainer.innerHTML = '<span style="color:#00ff41; font-weight:bold;">✨ ¡Guardado!</span>';
             setTimeout(() => { if(btnContainer) btnContainer.style.opacity = '0'; }, 3000);
-
-        } catch (error) {
-            console.error("Error al guardar:", error);
-            btnContainer.innerHTML = '<span style="color:red;">Error de conexión. Intenta de nuevo.</span>';
-        }
+        } catch (error) { btnContainer.innerHTML = '<span style="color:red;">Error de conexión.</span>'; }
     }
 
+    // =========================================
+    // 3. RENDERIZADO DEL DASHBOARD (CORREGIDO)
+    // =========================================
     function renderDashboard(row) {
+      // A. CÁLCULO TOTAL REPARTIDO (CORREGIDO)
       let totalRepartido = 0;
       let totalGanadores = 0;
 
@@ -513,7 +456,8 @@
             const prefix = key.replace('_GANADORES', '');
             const amountKey = prefix + '_MONTO';
             const amount = parseInt(row[amountKey]) || 0;
-            totalRepartido += (winners * amount); // Tu lógica original era correcta para premios normales
+            // CORRECCIÓN: NO MULTIPLICAR. EL MONTO YA ES EL TOTAL DE LA CATEGORÍA.
+            totalRepartido += amount; 
           }
         }
       });
@@ -528,6 +472,7 @@
       if(elMoney) elMoney.innerText = formatMoney(totalRepartido);
       if(elWinners) elWinners.innerText = totalGanadores.toLocaleString('es-CL');
 
+      // B. RENDERIZADO DE SWIPER (BOLITAS)
       const gamesConfig = [
         { key: 'LOTO', title: 'LOTO CLÁSICO', color: '#facc15' },
         { key: 'RECARGADO', title: 'RECARGADO', color: '#fbbf24' },
@@ -557,11 +502,12 @@
         const ganadores = parseInt(row[`${game.key}_GANADORES`]) || 0;
         const monto = parseInt(row[`${game.key}_MONTO`]) || 0;
         
+        // Footer de la tarjeta Swiper
         let footerHtml = ganadores > 0 ? 
            `<div style="margin-top:auto; padding-top:1rem; border-top: 1px solid rgba(74, 222, 128, 0.3);">
               <div style="background: rgba(20, 83, 45, 0.4); border: 1px solid rgba(74, 222, 128, 0.4); border-radius: 12px; padding: 10px; text-align: center;">
                  <div style="color:#4ade80; font-size:0.75rem; font-weight:bold;">¡${ganadores} Ganador(es)!</div>
-                 <div style="font-size:1.2rem; font-weight:900; color:white; font-family:monospace;">${formatMoney(monto)}</div>
+                 <div style="font-size:1.1rem; font-weight:900; color:white; font-family:monospace;">${formatMoney(monto)}</div>
               </div></div>` : 
            `<div style="margin-top:auto; padding-top:1rem; border-top: 1px solid rgba(255,255,255,0.05);">
               <div style="background: rgba(255,255,255,0.05); border-radius: 12px; padding: 10px; text-align: center;">
@@ -586,9 +532,7 @@
       if(window.mySwiper) { window.mySwiper.update(); window.mySwiper.slideTo(0); }
       else { window.mySwiper = new Swiper('.swiper', { slidesPerView: 1, spaceBetween: 20, centeredSlides: false, pagination: { el: '.swiper-pagination', clickable: true }, breakpoints: { 640: { slidesPerView: 1.2, centeredSlides: true }, 768: { slidesPerView: 2 }, 1024: { slidesPerView: 3 } } }); }
 
-      // =========================================================
-      // LÓGICA AGREGADA: DESGLOSE DETALLADO (Tarjetas de Cristal)
-      // =========================================================
+      // C. RENDERIZADO DEL DESGLOSE DETALLADO
       const categories = [
             { key: 'LOTO', label: 'Loto 6 Aciertos', type: 'jackpot' },
             { key: 'RECARGADO_6_ACIERTOS', label: 'Recargado', type: 'jackpot' },
@@ -620,6 +564,7 @@
                 if (pozoCol) displayAmount = parseInt(row[pozoCol]) || 0;
             }
 
+            // Calculo individual: Si hay ganadores, dividimos el monto total entre ellos.
             let prizePerPerson = winners > 0 ? amountTotal / winners : 0;
 
             breakdownHtml += `
@@ -647,16 +592,20 @@
       document.getElementById('prizes-breakdown').innerHTML = `
             <div class="breakdown-container">
                 <div class="breakdown-header">
-                    <h3 style="color:white; font-size:1.2rem;">💰 Desglose Detallado</h3>
+                    <h3 style="color:white; font-size:1.2rem;">💰 Detalle Financiero</h3>
+                    <div class="total-repartido-badge">Repartido Real: ${formatMoney(totalRepartido)}</div>
                 </div>
                 <div class="prize-grid">
                     ${breakdownHtml}
                 </div>
             </div>
       `;
-      lucide.createIcons(); // Re-iniciar iconos para la nueva sección
+      lucide.createIcons();
     }
 
+    // =========================================
+    // 4. TABLA DE HISTORIAL
+    // =========================================
     function updateHistoryTable() {
       const checkbox = document.getElementById('filter-winners');
       const showWinnersOnly = checkbox ? checkbox.checked : false;
@@ -685,6 +634,9 @@
     document.getElementById('filter-winners').addEventListener('change', updateHistoryTable);
     window.loadDraw = (id) => { const row = allData.find(r => r.sorteo == id); if(row) { renderDashboard(row); document.getElementById('dashboard').scrollIntoView({behavior: 'smooth'}); } }
 
+    // =========================================
+    // 5. INICIALIZACIÓN DEL TEMPORIZADOR
+    // =========================================
     function initTimer() {
       const update = () => {
         const now = new Date(); let next = new Date(); next.setHours(21, 0, 0, 0);
