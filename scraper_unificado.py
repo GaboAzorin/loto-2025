@@ -40,9 +40,9 @@ HEADERS_JUGADAS = [
 
 # Orden visual para mantener tu CSV maestro ordenado al principio
 FIXED_ORDER = [
-    "sorteo", "fecha", "ventas_totales", "boletos_estimados", # Agregué ventas aquí para que se vea al inicio
+    "sorteo", "fecha", "ventas_totales", "boletos_estimados",
     "LOTO_n1", "LOTO_n2", "LOTO_n3", "LOTO_n4", "LOTO_n5", "LOTO_n6", "LOTO_comodin",
-    "LOTO_GANADORES", "LOTO_MONTO", "LOTO_POZO_ACUMULADO",
+    "LOTO_GANADORES", "LOTO_MONTO", "LOTO_POZO_ACUMULADO", "LOTO_POZO_REAL",
     "RECARGADO_n1", "RECARGADO_n6", "RECARGADO_6_ACIERTOS_GANADORES", "RECARGADO_POZO_ACUMULADO",
     "REVANCHA_n1", "REVANCHA_n6", "REVANCHA_GANADORES", "REVANCHA_POZO_ACUMULADO",
     "DESQUITE_n1", "DESQUITE_n6", "DESQUITE_GANADORES", "DESQUITE_POZO_ACUMULADO",
