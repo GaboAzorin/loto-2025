@@ -93,6 +93,70 @@
             overflow: hidden;
         }
 
+        /* --- ESTILOS PARA LA MATRIZ MECÁNICA (NUEVO) --- */
+        .mech-dashboard {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 1.5rem;
+            padding: 1.5rem;
+            margin-bottom: 4rem;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .mech-grid-container {
+            display: grid;
+            /* 41 números (filas) + 1 encabezado */
+            grid-template-rows: auto repeat(41, 1fr); 
+            /* 1 columna etiqueta + 6 columnas de bolas */
+            grid-template-columns: 50px repeat(6, 1fr); 
+            gap: 6px;
+            font-size: 0.8rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .mech-header {
+            text-align: center;
+            color: var(--text-muted);
+            font-weight: bold;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 5px;
+        }
+
+        .mech-cell {
+            background: rgba(255,255,255,0.03);
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            height: 28px;
+            transition: all 0.2s;
+            font-size: 0.75rem;
+        }
+        
+        .mech-cell:hover { border: 1px solid white; transform: scale(1.05); }
+
+        .mech-row-label {
+            color: var(--gold);
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 215, 0, 0.05);
+            border-radius: 4px;
+        }
+
+        /* Niveles de calor para la visualización */
+        .heat-1 { background: rgba(0, 242, 255, 0.05); color: #aaa; }
+        .heat-2 { background: rgba(0, 242, 255, 0.15); color: #ddd; }
+        .heat-3 { background: rgba(0, 242, 255, 0.30); color: #fff; font-weight:bold; border: 1px solid rgba(0,242,255,0.3);}
+        .heat-4 { background: rgba(0, 242, 255, 0.60); color: #000; font-weight:bold; }
+        .heat-5 { background: #00f2ff; color: #000; font-weight:900; box-shadow: 0 0 15px rgba(0, 242, 255, 0.4); }
+
+
         /* TABLE */
         .history-section {
             background: var(--card); border: 1px solid var(--border);
@@ -115,6 +179,7 @@
 
         @media (max-width: 768px) {
             .charts-grid { grid-template-columns: 1fr; }
+            .mech-grid-container { font-size: 0.6rem; gap: 2px; }
         }
     </style>
 </head>
@@ -173,7 +238,7 @@
     <div class="charts-grid">
         <div class="chart-card">
             <div class="chart-header">
-                <div class="chart-title"><i data-lucide="thermometer" style="color:#ff3b5c"></i> Mapa de Calor (Frecuencia Histórica)</div>
+                <div class="chart-title"><i data-lucide="thermometer" style="color:#ff3b5c"></i> Frecuencia General</div>
             </div>
             <div class="chart-container">
                 <canvas id="freqChart"></canvas>
@@ -187,6 +252,20 @@
                 <canvas id="globalParityChart"></canvas>
             </div>
         </div>
+    </div>
+
+    <h3 class="section-title">Huella Mecánica (Orden de Salida)</h3>
+    <div class="mech-dashboard">
+        <div style="display:flex; justify-content:space-between; align-items:end; margin-bottom:10px; border-bottom:1px solid var(--border); padding-bottom:10px;">
+            <div style="font-size:0.9rem; color:var(--text-muted);">
+                <i data-lucide="cpu" style="display:inline; width:16px;"></i> 
+                Muestra qué números prefieren salir en qué posición (Bola 1 a Bola 6). <br>
+                <span style="color:var(--neon-cyan)">Azul Brillante</span> = Alta probabilidad mecánica.
+            </div>
+        </div>
+        
+        <div id="mechanical-matrix" class="mech-grid-container">
+            </div>
     </div>
 
     <div class="history-section">
@@ -228,6 +307,7 @@
     ]).then(([jugadasData, historialData]) => {
         processUserStats(jugadasData);
         processGlobalStats(historialData);
+        renderMechanicalStats(historialData); // NUEVO: Renderizar matriz mecánica
     }).catch(err => {
         console.error("Error cargando CSVs:", err);
         document.getElementById('audit-body').innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--danger);">Error cargando bases de datos. Verifique que scraper_unificado.py se haya ejecutado.</td></tr>';
@@ -260,7 +340,6 @@
 
     // --- PROCESAMIENTO HISTORIAL GLOBAL ---
     function processGlobalStats(data) {
-        // Filtro básico de datos válidos
         const validData = data.filter(r => r.LOTO_n1 && r.LOTO_n6);
         
         // 1. Frecuencia
@@ -290,12 +369,12 @@
             },
             options: { 
                 responsive: true, 
-                maintainAspectRatio: false, // CLAVE PARA QUE NO SE DESBORDE
+                maintainAspectRatio: false, 
                 scales: { x: {grid:{display:false}}, y: {beginAtZero:false} } 
             }
         });
 
-        // 2. Paridad Histórica (Últimos 30)
+        // 2. Paridad Histórica
         const last30 = validData.slice(-30);
         const parityData = last30.map(r => {
             let pares = 0;
@@ -320,7 +399,7 @@
             },
             options: { 
                 responsive: true, 
-                maintainAspectRatio: false, // CLAVE PARA QUE NO SE DESBORDE
+                maintainAspectRatio: false, 
                 scales: { x: {display:false}, y: {min:0, max:6} } 
             }
         });
@@ -329,7 +408,6 @@
     function renderUserCharts(data) {
         const chronoData = [...data].sort((a,b) => a.id - b.id);
         
-        // Aciertos
         const hitCounts = {0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0};
         data.forEach(r => {
             let ac = parseInt(r.aciertos) || 0;
@@ -350,12 +428,11 @@
             },
             options: { 
                 responsive: true, 
-                maintainAspectRatio: false, // CLAVE
+                maintainAspectRatio: false,
                 scales: { y: {beginAtZero:true}, x: {grid:{display:false}} } 
             }
         });
 
-        // Proximidad
         new Chart(document.getElementById('proxChart'), {
             type: 'line',
             data: {
@@ -372,10 +449,69 @@
             },
             options: { 
                 responsive: true, 
-                maintainAspectRatio: false, // CLAVE
+                maintainAspectRatio: false,
                 scales: { x: {display:false} } 
             }
         });
+    }
+
+    // --- NUEVA FUNCIÓN DE LÓGICA MECÁNICA ---
+    function renderMechanicalStats(data) {
+        // Inicializar Matriz [Número 1-41][Posición 0-5]
+        // Array de 42 para ignorar el índice 0 y facilitar mapeo
+        let counts = Array.from({length: 42}, () => Array(6).fill(0));
+        let maxFreq = 0;
+
+        data.forEach(row => {
+            // Verificar si existen columnas de posición real (LOTO_pos1...6)
+            // Si no, usamos las columnas ordenadas (n1...n6) como fallback
+            const hasPos = row['LOTO_pos1'] !== undefined;
+            
+            for(let i=1; i<=6; i++) {
+                let val = hasPos ? parseInt(row[`LOTO_pos${i}`]) : parseInt(row[`LOTO_n${i}`]);
+                
+                if (!isNaN(val) && val >= 1 && val <= 41) {
+                    counts[val][i-1]++; // i-1 para índice 0-5
+                    if (counts[val][i-1] > maxFreq) maxFreq = counts[val][i-1];
+                }
+            }
+        });
+
+        const container = document.getElementById('mechanical-matrix');
+        container.innerHTML = ''; // Limpiar
+
+        // 1. Encabezados
+        container.appendChild(createCell('Num', 'mech-header'));
+        ['Bola 1', 'Bola 2', 'Bola 3', 'Bola 4', 'Bola 5', 'Bola 6'].forEach(h => {
+            container.appendChild(createCell(h, 'mech-header'));
+        });
+
+        // 2. Filas
+        for (let num = 1; num <= 41; num++) {
+            // Etiqueta Número
+            container.appendChild(createCell(num, 'mech-row-label'));
+
+            // Celdas de posición
+            for (let pos = 0; pos < 6; pos++) {
+                let freq = counts[num][pos];
+                let cell = createCell(freq > 0 ? freq : '-', 'mech-cell');
+                
+                if (freq > 0) {
+                    // Calcular intensidad (1 a 5)
+                    let intensity = Math.ceil((freq / maxFreq) * 5);
+                    cell.classList.add(`heat-${intensity}`);
+                    cell.title = `El #${num} salió ${freq} veces en la Posición ${pos+1}`;
+                }
+                container.appendChild(cell);
+            }
+        }
+    }
+
+    function createCell(content, className) {
+        let d = document.createElement('div');
+        d.className = className || '';
+        d.textContent = content;
+        return d;
     }
 
     function renderTable(rows) {
