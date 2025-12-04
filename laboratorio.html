@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔬 Laboratorio LotoAI - Monitor de Bots</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg: #0d1117;
+            --card: #161b22;
+            --text: #c9d1d9;
+            --accent: #58a6ff;
+            --success: #2ea043;
+            --warning: #d29922;
+            --danger: #f85149;
+            --border: #30363d;
+        }
+        body {
+            font-family: 'JetBrains Mono', monospace;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        
+        /* Header */
+        header { border-bottom: 1px solid var(--border); padding-bottom: 20px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        h1 { margin: 0; font-size: 1.5rem; color: var(--accent); }
+        .status-badge { background: var(--success); color: white; padding: 5px 10px; border-radius: 4px; font-size: 0.8rem; }
+        
+        /* KPI Cards */
+        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px; }
+        .card { background: var(--card); border: 1px solid var(--border); padding: 15px; border-radius: 6px; }
+        .card h3 { margin: 0 0 10px 0; font-size: 0.9rem; color: #8b949e; }
+        .card .value { font-size: 1.8rem; font-weight: bold; }
+        
+        /* Gráficos */
+        .chart-container { background: var(--card); border: 1px solid var(--border); padding: 20px; border-radius: 6px; margin-bottom: 30px; height: 300px; }
+
+        /* Tabla */
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem; }
+        th { text-align: left; color: #8b949e; border-bottom: 1px solid var(--border); padding: 10px; }
+        td { padding: 10px; border-bottom: 1px solid var(--border); }
+        .num-badge { background: #21262d; padding: 2px 6px; border-radius: 4px; margin-right: 2px; display: inline-block; }
+        
+        .pending { color: var(--warning); }
+        .audited { color: var(--success); }
+        
+        /* Navegación */
+        .nav-link { color: var(--text); text-decoration: none; border: 1px solid var(--border); padding: 5px 10px; border-radius: 4px; transition: background 0.2s; }
+        .nav-link:hover { background: var(--border); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div>
+                <h1>🔬 Laboratorio LotoAI</h1>
+                <p style="margin: 5px 0 0 0; font-size: 0.8rem; color: #8b949e;">Monitor de Simulación Forense Automatizada</p>
+            </div>
+            <div>
+                <span class="status-badge" id="last-update">Actualizando...</span>
+                <a href="auditoria.html" class="nav-link" style="margin-left: 10px;">⚖️ Auditoría</a>
+                <a href="index.html" class="nav-link" style="margin-left: 10px;">🏠 Inicio</a>
+            </div>
+        </header>
+
+        <div class="kpi-grid">
+            <div class="card">
+                <h3>Total Simulaciones</h3>
+                <div class="value" id="total-sims">0</div>
+            </div>
+            <div class="card">
+                <h3>Sorteo Objetivo Actual</h3>
+                <div class="value" id="target-draw" style="color: var(--warning)">...</div>
+            </div>
+            <div class="card">
+                <h3>Mejor Hora (Histórica)</h3>
+                <div class="value" id="best-hour">--:00</div>
+            </div>
+            <div class="card">
+                <h3>Precisión Promedio</h3>
+                <div class="value" id="avg-score">0%</div>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <canvas id="hourlyChart"></canvas>
+        </div>
+
+        <div class="card">
+            <h3>📝 Bitácora del Bot (Últimas 10 predicciones)</h3>
+            <table id="logs-table">
+                <thead>
+                    <tr>
+                        <th>Hora</th>
+                        <th>Sorteo Obj.</th>
+                        <th>Predicción</th>
+                        <th>Estado</th>
+                        <th>Score</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const CSV_URL = 'LOTO_SIMULACIONES.csv';
+
+        async function loadData() {
+            try {
+                const response = await fetch(CSV_URL);
+                const text = await response.text();
+                processCSV(text);
+            } catch (error) {
+                console.error("Error cargando CSV:", error);
+                document.getElementById('last-update').textContent = "Error de conexión";
+                document.getElementById('last-update').style.background = "var(--danger)";
+            }
+        }
+
+        function processCSV(csvText) {
+            // Parser simple de CSV a JSON
+            const lines = csvText.trim().split('\n');
+            const headers = lines[0].split(',');
+            const data = lines.slice(1).map(line => {
+                // Manejo básico de comillas para el array de números "[1, 2]"
+                const parts = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+                return {
+                    id: parts[0],
+                    fecha: parts[1],
+                    numeros: parts[2].replace(/"/g, ''),
+                    objetivo: parts[3],
+                    estado: parts[4],
+                    aciertos: parseInt(parts[5]),
+                    score: parseFloat(parts[6]),
+                    hora: parseInt(parts[7]),
+                    algoritmo: parts[8]
+                };
+            }).reverse(); // Invertir para ver los más recientes primero
+
+            updateDashboard(data);
+        }
+
+        function updateDashboard(data) {
+            // 1. KPIs
+            document.getElementById('total-sims').textContent = data.length;
+            document.getElementById('target-draw').textContent = "#" + (data[0]?.objetivo || 'N/A');
+            document.getElementById('last-update').textContent = "Último pulso: " + (data[0]?.fecha.split(' ')[1] || 'N/A');
+
+            // 2. Calcular Mejor Hora y Promedios (Solo de los AUDITADOS)
+            const auditados = data.filter(d => d.estado === 'AUDITADO');
+            let hourScores = {};
+            let hourCounts = {};
+
+            auditados.forEach(d => {
+                if (!hourScores[d.hora]) { hourScores[d.hora] = 0; hourCounts[d.hora] = 0; }
+                hourScores[d.hora] += d.score;
+                hourCounts[d.hora]++;
+            });
+
+            // Preparar datos para el gráfico
+            const hours = Array.from({length: 24}, (_, i) => i);
+            const scores = hours.map(h => {
+                return hourCounts[h] ? (hourScores[h] / hourCounts[h]).toFixed(1) : 0;
+            });
+
+            // Encontrar la mejor hora
+            let bestH = -1; let maxS = -1;
+            hours.forEach(h => {
+                if (parseFloat(scores[h]) > maxS) { maxS = parseFloat(scores[h]); bestH = h; }
+            });
+            document.getElementById('best-hour').textContent = maxS > 0 ? `${bestH}:00 hrs` : "Calculando...";
+            
+            // Promedio global
+            const globalAvg = auditados.length > 0 
+                ? (auditados.reduce((a, b) => a + b.score, 0) / auditados.length).toFixed(1) 
+                : 0;
+            document.getElementById('avg-score').textContent = globalAvg + "%";
+
+            // 3. Renderizar Gráfico
+            renderChart(hours, scores);
+
+            // 4. Llenar Tabla (Top 10)
+            const tbody = document.querySelector('#logs-table tbody');
+            tbody.innerHTML = '';
+            data.slice(0, 10).forEach(row => {
+                const tr = document.createElement('tr');
+                const badgeClass = row.estado === 'AUDITADO' ? 'audited' : 'pending';
+                const scoreDisplay = row.estado === 'AUDITADO' ? `<b>${row.score}%</b>` : '-';
+                
+                // Formatear números visualmente
+                const numsClean = row.numeros.replace('[', '').replace(']', '').split(', ');
+                const numsHTML = numsClean.map(n => `<span class="num-badge">${n}</span>`).join('');
+
+                tr.innerHTML = `
+                    <td>${row.fecha.split(' ')[1]}</td>
+                    <td>${row.objetivo}</td>
+                    <td>${numsHTML}</td>
+                    <td class="${badgeClass}">${row.estado}</td>
+                    <td>${scoreDisplay}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderChart(labels, dataPoints) {
+            const ctx = document.getElementById('hourlyChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels.map(h => `${h}:00`),
+                    datasets: [{
+                        label: 'Afinidad Promedio por Hora (0-100%)',
+                        data: dataPoints,
+                        backgroundColor: 'rgba(88, 166, 255, 0.5)',
+                        borderColor: '#58a6ff',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, max: 100, grid: { color: '#30363d' } },
+                        x: { grid: { display: false } }
+                    },
+                    plugins: {
+                        legend: { labels: { color: '#c9d1d9' } }
+                    }
+                }
+            });
+        }
+
+        // Iniciar
+        loadData();
+    </script>
+</body>
+</html>
