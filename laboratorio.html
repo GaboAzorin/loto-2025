@@ -40,9 +40,32 @@
         /* Gráficos */
         .chart-container { background: var(--card); border: 1px solid var(--border); padding: 20px; border-radius: 6px; margin-bottom: 30px; height: 300px; }
 
+        /* Filtros */
+        .filters-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .filter-group label { display: block; font-size: 0.8rem; color: #8b949e; margin-bottom: 5px; }
+        .filter-select {
+            width: 100%;
+            background: #0d1117;
+            color: var(--text);
+            border: 1px solid var(--border);
+            padding: 8px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .btn-reset {
+            background: var(--border); color: var(--text); border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; height: 35px; align-self: end;
+        }
+        .btn-reset:hover { background: #444; }
+
         /* Tabla */
+        .table-scroll { overflow-x: auto; max-height: 500px; overflow-y: auto; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem; }
-        th { text-align: left; color: #8b949e; border-bottom: 1px solid var(--border); padding: 10px; }
+        th { text-align: left; color: #8b949e; border-bottom: 1px solid var(--border); padding: 10px; position: sticky; top: 0; background: var(--card); z-index: 10; }
         td { padding: 10px; border-bottom: 1px solid var(--border); }
         .num-badge { background: #21262d; padding: 2px 6px; border-radius: 4px; margin-right: 2px; display: inline-block; }
         
@@ -92,25 +115,79 @@
         </div>
 
         <div class="card">
-            <h3>📝 Bitácora del Bot (Últimas 10 predicciones)</h3>
-            <table id="logs-table">
-                <thead>
-                    <tr>
-                        <th>Hora</th>
-                        <th>Sorteo Obj.</th>
-                        <th>Predicción</th>
-                        <th>Estado</th>
-                        <th>Score</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    </tbody>
-            </table>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h3>🔍 Explorador de Simulaciones</h3>
+                <span id="filtered-count" style="font-size:0.8rem; color:#8b949e">Mostrando 0 registros</span>
+            </div>
+
+            <div class="filters-container">
+                <div class="filter-group">
+                    <label>Sorteo Objetivo</label>
+                    <select id="f-sorteo" class="filter-select" onchange="applyFilters()">
+                        <option value="ALL">Todos los Sorteos</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Mes</label>
+                    <select id="f-mes" class="filter-select" onchange="applyFilters()">
+                        <option value="ALL">Todos los Meses</option>
+                        <option value="0">Enero</option> <option value="1">Febrero</option>
+                        <option value="2">Marzo</option> <option value="3">Abril</option>
+                        <option value="4">Mayo</option> <option value="5">Junio</option>
+                        <option value="6">Julio</option> <option value="7">Agosto</option>
+                        <option value="8">Septiembre</option> <option value="9">Octubre</option>
+                        <option value="10">Noviembre</option> <option value="11">Diciembre</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Día de Semana</label>
+                    <select id="f-dia" class="filter-select" onchange="applyFilters()">
+                        <option value="ALL">Todos los Días</option>
+                        <option value="1">Lunes</option> <option value="2">Martes</option>
+                        <option value="3">Miércoles</option> <option value="4">Jueves</option>
+                        <option value="5">Viernes</option> <option value="6">Sábado</option>
+                        <option value="0">Domingo</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Hora (Bloque)</label>
+                    <select id="f-hora" class="filter-select" onchange="applyFilters()">
+                        <option value="ALL">Todas las Horas</option>
+                        </select>
+                </div>
+                <button class="btn-reset" onclick="resetFilters()">Limpiar Filtros</button>
+            </div>
+
+            <div class="table-scroll">
+                <table id="logs-table">
+                    <thead>
+                        <tr>
+                            <th>Fecha/Hora</th>
+                            <th>Sorteo Obj.</th>
+                            <th>Predicción</th>
+                            <th>Estado</th>
+                            <th>Score</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
     <script>
         const CSV_URL = 'LOTO_SIMULACIONES.csv';
+        let GLOBAL_DATA = []; // Almacenamiento global para filtrar sin recargar
+
+        // Inicializar selector de horas
+        const hourSelect = document.getElementById('f-hora');
+        for(let i=0; i<24; i++) {
+            let opt = document.createElement('option');
+            opt.value = i;
+            opt.textContent = i.toString().padStart(2, '0') + ":00";
+            hourSelect.appendChild(opt);
+        }
 
         async function loadData() {
             try {
@@ -125,15 +202,20 @@
         }
 
         function processCSV(csvText) {
-            // Parser simple de CSV a JSON
             const lines = csvText.trim().split('\n');
-            const headers = lines[0].split(',');
-            const data = lines.slice(1).map(line => {
-                // Manejo básico de comillas para el array de números "[1, 2]"
+            // Parsear CSV a JSON
+            GLOBAL_DATA = lines.slice(1).map(line => {
                 const parts = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+                if(parts.length < 8) return null; // Saltar líneas corruptas
+                
+                // Parsear fecha para filtros (YYYY-MM-DD HH:MM:SS)
+                // Reemplazar espacio por T para compatibilidad Date en Safari/Mobile
+                const dateObj = new Date(parts[1].replace(' ', 'T'));
+                
                 return {
                     id: parts[0],
-                    fecha: parts[1],
+                    fechaStr: parts[1], // String original para mostrar
+                    dateObj: dateObj,   // Objeto fecha para filtrar
                     numeros: parts[2].replace(/"/g, ''),
                     objetivo: parts[3],
                     estado: parts[4],
@@ -142,40 +224,34 @@
                     hora: parseInt(parts[7]),
                     algoritmo: parts[8]
                 };
-            }).reverse(); // Invertir para ver los más recientes primero
+            }).filter(item => item !== null).reverse(); // Ordenar: más reciente primero
 
-            updateDashboard(data);
+            initDrawFilter();
+            updateDashboard(GLOBAL_DATA); // KPIs generales con toda la data
+            applyFilters(); // Render inicial de tabla
+        }
+
+        // Llenar el dropdown de Sorteos con los que existen en la DB
+        function initDrawFilter() {
+            const uniqueDraws = [...new Set(GLOBAL_DATA.map(d => d.objetivo))];
+            const select = document.getElementById('f-sorteo');
+            
+            uniqueDraws.forEach(draw => {
+                let opt = document.createElement('option');
+                opt.value = draw;
+                opt.textContent = "Sorteo #" + draw;
+                select.appendChild(opt);
+            });
         }
 
         function updateDashboard(data) {
-            // 1. KPIs
+            // 1. KPIs Generales (Siempre muestran el total real)
             document.getElementById('total-sims').textContent = data.length;
             document.getElementById('target-draw').textContent = "#" + (data[0]?.objetivo || 'N/A');
-            document.getElementById('last-update').textContent = "Último pulso: " + (data[0]?.fecha.split(' ')[1] || 'N/A');
+            document.getElementById('last-update').textContent = "Último pulso: " + (data[0]?.fechaStr.split(' ')[1] || 'N/A');
 
-            // 2. Calcular Mejor Hora y Promedios (Solo de los AUDITADOS)
+            // 2. Gráficos y Estadísticas Globales
             const auditados = data.filter(d => d.estado === 'AUDITADO');
-            let hourScores = {};
-            let hourCounts = {};
-
-            auditados.forEach(d => {
-                if (!hourScores[d.hora]) { hourScores[d.hora] = 0; hourCounts[d.hora] = 0; }
-                hourScores[d.hora] += d.score;
-                hourCounts[d.hora]++;
-            });
-
-            // Preparar datos para el gráfico
-            const hours = Array.from({length: 24}, (_, i) => i);
-            const scores = hours.map(h => {
-                return hourCounts[h] ? (hourScores[h] / hourCounts[h]).toFixed(1) : 0;
-            });
-
-            // Encontrar la mejor hora
-            let bestH = -1; let maxS = -1;
-            hours.forEach(h => {
-                if (parseFloat(scores[h]) > maxS) { maxS = parseFloat(scores[h]); bestH = h; }
-            });
-            document.getElementById('best-hour').textContent = maxS > 0 ? `${bestH}:00 hrs` : "Calculando...";
             
             // Promedio global
             const globalAvg = auditados.length > 0 
@@ -183,23 +259,85 @@
                 : 0;
             document.getElementById('avg-score').textContent = globalAvg + "%";
 
-            // 3. Renderizar Gráfico
-            renderChart(hours, scores);
+            // Mejor Hora
+            let hourScores = {}, hourCounts = {};
+            auditados.forEach(d => {
+                if (!hourScores[d.hora]) { hourScores[d.hora] = 0; hourCounts[d.hora] = 0; }
+                hourScores[d.hora] += d.score;
+                hourCounts[d.hora]++;
+            });
 
-            // 4. Llenar Tabla (Top 10)
+            const hours = Array.from({length: 24}, (_, i) => i);
+            const scores = hours.map(h => hourCounts[h] ? (hourScores[h] / hourCounts[h]).toFixed(1) : 0);
+            
+            let bestH = -1, maxS = -1;
+            hours.forEach(h => {
+                if (parseFloat(scores[h]) > maxS) { maxS = parseFloat(scores[h]); bestH = h; }
+            });
+            document.getElementById('best-hour').textContent = maxS > 0 ? `${bestH}:00 hrs` : "Calculando...";
+            
+            renderChart(hours, scores);
+        }
+
+        // --- LÓGICA DE FILTRADO ---
+        function applyFilters() {
+            const fSorteo = document.getElementById('f-sorteo').value;
+            const fMes = document.getElementById('f-mes').value;
+            const fDia = document.getElementById('f-dia').value;
+            const fHora = document.getElementById('f-hora').value;
+
+            const filtered = GLOBAL_DATA.filter(item => {
+                let match = true;
+                // Validar Sorteo
+                if (fSorteo !== 'ALL' && item.objetivo !== fSorteo) match = false;
+                
+                // Validar Mes
+                if (fMes !== 'ALL' && item.dateObj.getMonth().toString() !== fMes) match = false;
+                
+                // Validar Día Semana
+                if (fDia !== 'ALL' && item.dateObj.getDay().toString() !== fDia) match = false;
+                
+                // Validar Hora
+                if (fHora !== 'ALL' && item.hora.toString() !== fHora) match = false;
+
+                return match;
+            });
+
+            renderTable(filtered);
+        }
+
+        function resetFilters() {
+            document.getElementById('f-sorteo').value = 'ALL';
+            document.getElementById('f-mes').value = 'ALL';
+            document.getElementById('f-dia').value = 'ALL';
+            document.getElementById('f-hora').value = 'ALL';
+            applyFilters();
+        }
+
+        function renderTable(data) {
             const tbody = document.querySelector('#logs-table tbody');
             tbody.innerHTML = '';
-            data.slice(0, 10).forEach(row => {
+            
+            document.getElementById('filtered-count').textContent = `Mostrando ${data.length} registros`;
+
+            // Límite visual para no colgar el navegador si hay miles de datos
+            // Si el usuario filtra, probablemente quiera ver todo lo que coincida, 
+            // pero ponemos un límite seguro de 500 filas.
+            const displayData = data.slice(0, 500);
+
+            displayData.forEach(row => {
                 const tr = document.createElement('tr');
                 const badgeClass = row.estado === 'AUDITADO' ? 'audited' : 'pending';
                 const scoreDisplay = row.estado === 'AUDITADO' ? `<b>${row.score}%</b>` : '-';
                 
-                // Formatear números visualmente
                 const numsClean = row.numeros.replace('[', '').replace(']', '').split(', ');
                 const numsHTML = numsClean.map(n => `<span class="num-badge">${n}</span>`).join('');
 
+                // Formatear fecha bonita
+                const fechaShort = row.fechaStr.split(' ')[0].slice(5) + " " + row.fechaStr.split(' ')[1].slice(0,5); 
+
                 tr.innerHTML = `
-                    <td>${row.fecha.split(' ')[1]}</td>
+                    <td title="${row.fechaStr}">${fechaShort}</td>
                     <td>${row.objetivo}</td>
                     <td>${numsHTML}</td>
                     <td class="${badgeClass}">${row.estado}</td>
@@ -207,11 +345,20 @@
                 `;
                 tbody.appendChild(tr);
             });
+            
+            if (data.length > 500) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td colspan="5" style="text-align:center; color:#8b949e; font-style:italic;">... y ${data.length - 500} registros más (usa filtros para ver detalles) ...</td>`;
+                tbody.appendChild(tr);
+            }
         }
 
         function renderChart(labels, dataPoints) {
             const ctx = document.getElementById('hourlyChart').getContext('2d');
-            new Chart(ctx, {
+            // Destruir gráfico previo si existe para evitar superposición
+            if (window.myChart) window.myChart.destroy();
+            
+            window.myChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: labels.map(h => `${h}:00`),
