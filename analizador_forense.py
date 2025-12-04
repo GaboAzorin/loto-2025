@@ -11,7 +11,8 @@ class LotoForense:
         self.csv_path = csv_path
         self.df = None
         self.structure = {} 
-        self.stats_matrix = {} 
+        self.stats_matrix = {}
+        self.past_combinations = set() # NUEVO: Memoria de jugadas pasadas para el Gaussiano
         
         print(f"[{datetime.now().strftime('%H:%M:%S')}] 🔧 Inicializando LotoForense...")
         
@@ -25,9 +26,11 @@ class LotoForense:
             except:
                 print("⚠️ Error leyendo JSON, se recalculará desde cero.")
         
-        # 2. Si no hay matriz en caché, cargar datos y calcular
+        # Siempre cargamos datos para tener el historial disponible para el filtro Gaussiano
+        self.load_data()
+        
+        # 2. Si no hay matriz en caché, calcular
         if not self.stats_matrix:
-            self.load_data()
             self._detect_game_structure() # Asegurar que tenemos la estructura antes de calcular
             self.generate_mechanical_matrix()
 
@@ -40,6 +43,25 @@ class LotoForense:
         self.df = pd.read_csv(self.csv_path)
         print(f"[{datetime.now().strftime('%H:%M:%S')}] 📂 Datos cargados: {len(self.df)} sorteos históricos.")
         
+        # --- NUEVO BLOQUE: Cargar historial de combinaciones para evitar repetirlas (Lógica Gaussiana) ---
+        try:
+            # Asumimos columnas LOTO_n1 a LOTO_n6 para verificar duplicados
+            cols = [f'LOTO_n{i}' for i in range(1, 7)]
+            # Filtrar filas válidas donde existan estos datos
+            if all(c in self.df.columns for c in cols):
+                valid_df = self.df.dropna(subset=cols)
+                for _, row in valid_df.iterrows():
+                    try:
+                        # Creamos una tupla ordenada de los números ganadores pasados
+                        nums = sorted([int(row[c]) for c in cols])
+                        self.past_combinations.add(tuple(nums))
+                    except:
+                        continue
+                print(f"[{datetime.now().strftime('%H:%M:%S')}] 📚 Historial Gaussiano: {len(self.past_combinations)} jugadas pasadas memorizadas.")
+        except Exception as e:
+            print(f"⚠️ Alerta menor: No se pudo cargar historial de combinaciones ({e})")
+        # ------------------------------------------------------------------------------------------------
+
         # Ejecutar detección de estructura si no se ha hecho
         if not self.structure:
             self._detect_game_structure()
@@ -74,13 +96,10 @@ class LotoForense:
                 game_map[prefix]['comodin'] = col
 
         self.structure = game_map
-        # (Opcional) Imprimir estructura detectada solo si estamos en modo verbose
-        # print(f"[{datetime.now().strftime('%H:%M:%S')}] 👁️ Estructura detectada: {len(game_map)} modalidades.")
 
     def generate_mechanical_matrix(self):
         """
         Genera una matriz de probabilidades basada en la física de la extracción.
-        (Mantenemos TU lógica original intacta)
         """
         if self.df is None:
             self.load_data()
@@ -161,7 +180,7 @@ class LotoForense:
         return f"El número {number} ha salido {total_hits} veces en {game_mode}."
 
     # ==============================================================================
-    # 🔮 NUEVA FUNCIÓN: MOTOR DE PREDICCIÓN BIOMÉTRICA
+    # 🔮 MOTOR DE PREDICCIÓN BIOMÉTRICA (FÍSICA)
     # ==============================================================================
     def predict_numbers(self, game_mode="LOTO", n=6):
         """
@@ -222,12 +241,67 @@ class LotoForense:
         # El resultado final siempre se ordena ascendente para el usuario
         return sorted(prediction)
 
+    # ==============================================================================
+    # 📐 NUEVO: MOTOR DE PREDICCIÓN GAUSSIANA (ESTADÍSTICA / 'BOTÓN AMARILLO')
+    # ==============================================================================
+    def predict_gaussian(self, n=6):
+        """
+        Replica la lógica del 'Generador Cuántico' (Botón Amarillo):
+        - Suma: 100-150
+        - Pares: 2-4
+        - No repetida en historia
+        - Consecutivos: Max 2 seguidos (ej: 1,2 OK; 1,2,3 NO)
+        """
+        attempts = 0
+        max_attempts = 5000
+        
+        while attempts < max_attempts:
+            attempts += 1
+            
+            # 1. Generar aleatorio base (sin reposición)
+            nums = sorted(random.sample(range(1, 42), n))
+            
+            # 2. Filtro de Suma (100 - 150)
+            suma = sum(nums)
+            if suma < 100 or suma > 150:
+                continue
+            
+            # 3. Filtro de Paridad (2 a 4 pares)
+            evens = len([x for x in nums if x % 2 == 0])
+            if evens < 2 or evens > 4:
+                continue
+            
+            # 4. Filtro Histórico (Inédita)
+            # Verifica si la tupla de números ya existe en el historial cargado
+            if tuple(nums) in self.past_combinations:
+                continue
+            
+            # 5. Filtro Consecutivos (Max 1 pareja consecutiva)
+            # Ej: 1,2,3 -> Rechazado (2 saltos seguidos). 1,2,5,6 -> Aceptado.
+            consecutivos = 0
+            max_consecutivos = 0
+            for i in range(len(nums)-1):
+                if nums[i+1] == nums[i] + 1:
+                    consecutivos += 1
+                else:
+                    consecutivos = 0
+                
+                if consecutivos > max_consecutivos:
+                    max_consecutivos = consecutivos
+            
+            if max_consecutivos >= 2: # Si hay 3 números seguidos (2 enlaces) o más
+                continue
+                
+            # Si pasa todos los filtros, es una jugada válida
+            return nums
+            
+        # Si falla demasiadas veces, devolvemos uno aleatorio para no romper el flujo
+        print("⚠️ Advertencia: No se encontró combinación gaussiana perfecta. Devolviendo aleatorio.")
+        return sorted(random.sample(range(1, 42), n))
+
 if __name__ == "__main__":
-    # Test rápido al ejecutar directamente
+    # Test rápido
     forense = LotoForense()
     print("\n--- TEST DE PREDICCIÓN ---")
-    pred = forense.predict_numbers("LOTO")
-    print(f"🔮 Predicción LOTO: {pred}")
-    
-    pred_revancha = forense.predict_numbers("REVANCHA")
-    print(f"🔮 Predicción REVANCHA: {pred_revancha}")
+    print(f"🔮 Biométrico: {forense.predict_numbers('LOTO')}")
+    print(f"📐 Gaussiano:  {forense.predict_gaussian()}")

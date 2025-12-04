@@ -16,6 +16,8 @@
             --warning: #d29922;
             --danger: #f85149;
             --border: #30363d;
+            --bio-color: #58a6ff; /* Azul para Biométrico */
+            --gauss-color: #f1e05a; /* Amarillo para Gaussiano */
         }
         body {
             font-family: 'JetBrains Mono', monospace;
@@ -38,7 +40,7 @@
         .card .value { font-size: 1.8rem; font-weight: bold; }
         
         /* Gráficos */
-        .chart-container { background: var(--card); border: 1px solid var(--border); padding: 20px; border-radius: 6px; margin-bottom: 30px; height: 300px; }
+        .chart-container { background: var(--card); border: 1px solid var(--border); padding: 20px; border-radius: 6px; margin-bottom: 30px; height: 350px; }
 
         /* Filtros */
         .filters-container {
@@ -72,6 +74,11 @@
         .pending { color: var(--warning); }
         .audited { color: var(--success); }
         
+        /* Badges de Algoritmo */
+        .algo-badge { font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; border: 1px solid transparent; }
+        .algo-bio { color: var(--bio-color); border-color: rgba(88, 166, 255, 0.3); background: rgba(88, 166, 255, 0.1); }
+        .algo-gauss { color: var(--gauss-color); border-color: rgba(241, 224, 90, 0.3); background: rgba(241, 224, 90, 0.1); }
+
         /* Navegación */
         .nav-link { color: var(--text); text-decoration: none; border: 1px solid var(--border); padding: 5px 10px; border-radius: 4px; transition: background 0.2s; }
         .nav-link:hover { background: var(--border); }
@@ -128,6 +135,14 @@
                     </select>
                 </div>
                 <div class="filter-group">
+                    <label>Algoritmo</label>
+                    <select id="f-algo" class="filter-select" onchange="applyFilters()">
+                        <option value="ALL">Todos</option>
+                        <option value="forense_biometrico_v1">🔮 Biométrico (Físico)</option>
+                        <option value="gaussiano_tactico_v1">📐 Gaussiano (Estadístico)</option>
+                    </select>
+                </div>
+                <div class="filter-group">
                     <label>Mes</label>
                     <select id="f-mes" class="filter-select" onchange="applyFilters()">
                         <option value="ALL">Todos los Meses</option>
@@ -163,6 +178,7 @@
                     <thead>
                         <tr>
                             <th>Fecha/Hora</th>
+                            <th>Algoritmo</th>
                             <th>Sorteo Obj.</th>
                             <th>Predicción</th>
                             <th>Estado</th>
@@ -209,32 +225,32 @@
                 if(parts.length < 8) return null; // Saltar líneas corruptas
                 
                 // Parsear fecha para filtros (YYYY-MM-DD HH:MM:SS)
-                // Reemplazar espacio por T para compatibilidad Date en Safari/Mobile
                 const dateObj = new Date(parts[1].replace(' ', 'T'));
                 
                 return {
                     id: parts[0],
-                    fechaStr: parts[1], // String original para mostrar
-                    dateObj: dateObj,   // Objeto fecha para filtrar
+                    fechaStr: parts[1], // String original
+                    dateObj: dateObj,   // Objeto para filtros
                     numeros: parts[2].replace(/"/g, ''),
                     objetivo: parts[3],
                     estado: parts[4],
                     aciertos: parseInt(parts[5]),
                     score: parseFloat(parts[6]),
                     hora: parseInt(parts[7]),
-                    algoritmo: parts[8]
+                    algoritmo: parts[8] ? parts[8].replace('\r', '') : 'desconocido' // Limpiar saltos de línea
                 };
-            }).filter(item => item !== null).reverse(); // Ordenar: más reciente primero
+            }).filter(item => item !== null).reverse();
 
             initDrawFilter();
-            updateDashboard(GLOBAL_DATA); // KPIs generales con toda la data
-            applyFilters(); // Render inicial de tabla
+            updateDashboard(GLOBAL_DATA);
+            applyFilters();
         }
 
         // Llenar el dropdown de Sorteos con los que existen en la DB
         function initDrawFilter() {
             const uniqueDraws = [...new Set(GLOBAL_DATA.map(d => d.objetivo))];
             const select = document.getElementById('f-sorteo');
+            select.innerHTML = '<option value="ALL">Todos los Sorteos</option>'; // Reset
             
             uniqueDraws.forEach(draw => {
                 let opt = document.createElement('option');
@@ -245,38 +261,47 @@
         }
 
         function updateDashboard(data) {
-            // 1. KPIs Generales (Siempre muestran el total real)
+            // 1. KPIs Generales
             document.getElementById('total-sims').textContent = data.length;
             document.getElementById('target-draw').textContent = "#" + (data[0]?.objetivo || 'N/A');
             document.getElementById('last-update').textContent = "Último pulso: " + (data[0]?.fechaStr.split(' ')[1] || 'N/A');
 
-            // 2. Gráficos y Estadísticas Globales
+            // 2. Gráfico Comparativo: Biométrico vs Gaussiano
             const auditados = data.filter(d => d.estado === 'AUDITADO');
             
-            // Promedio global
+            // Promedio Global del filtro actual
             const globalAvg = auditados.length > 0 
                 ? (auditados.reduce((a, b) => a + b.score, 0) / auditados.length).toFixed(1) 
                 : 0;
             document.getElementById('avg-score').textContent = globalAvg + "%";
 
-            // Mejor Hora
-            let hourScores = {}, hourCounts = {};
-            auditados.forEach(d => {
-                if (!hourScores[d.hora]) { hourScores[d.hora] = 0; hourCounts[d.hora] = 0; }
-                hourScores[d.hora] += d.score;
-                hourCounts[d.hora]++;
-            });
-
+            // Preparar datos para el gráfico
             const hours = Array.from({length: 24}, (_, i) => i);
-            const scores = hours.map(h => hourCounts[h] ? (hourScores[h] / hourCounts[h]).toFixed(1) : 0);
             
+            // Calcular promedios por hora separados por algoritmo
+            const bioScores = hours.map(h => calculateHourlyAvg(auditados, h, 'forense_biometrico_v1'));
+            const gaussScores = hours.map(h => calculateHourlyAvg(auditados, h, 'gaussiano_tactico_v1'));
+
+            // Calcular Mejor Hora General
             let bestH = -1, maxS = -1;
             hours.forEach(h => {
-                if (parseFloat(scores[h]) > maxS) { maxS = parseFloat(scores[h]); bestH = h; }
+                // Promedio combinado simple para el KPI "Mejor Hora"
+                let valBio = parseFloat(bioScores[h]) || 0;
+                let valGauss = parseFloat(gaussScores[h]) || 0;
+                let combined = (valBio + valGauss) / ( (valBio>0?1:0) + (valGauss>0?1:0) || 1 ); // Evitar div 0
+                
+                if (combined > maxS) { maxS = combined; bestH = h; }
             });
             document.getElementById('best-hour').textContent = maxS > 0 ? `${bestH}:00 hrs` : "Calculando...";
             
-            renderChart(hours, scores);
+            renderChart(hours, bioScores, gaussScores);
+        }
+
+        function calculateHourlyAvg(data, hour, algoName) {
+            const filtered = data.filter(d => d.hora === hour && d.algoritmo.includes(algoName));
+            if (filtered.length === 0) return 0;
+            const sum = filtered.reduce((acc, curr) => acc + curr.score, 0);
+            return (sum / filtered.length).toFixed(1);
         }
 
         // --- LÓGICA DE FILTRADO ---
@@ -285,24 +310,20 @@
             const fMes = document.getElementById('f-mes').value;
             const fDia = document.getElementById('f-dia').value;
             const fHora = document.getElementById('f-hora').value;
+            const fAlgo = document.getElementById('f-algo').value;
 
             const filtered = GLOBAL_DATA.filter(item => {
                 let match = true;
-                // Validar Sorteo
                 if (fSorteo !== 'ALL' && item.objetivo !== fSorteo) match = false;
-                
-                // Validar Mes
                 if (fMes !== 'ALL' && item.dateObj.getMonth().toString() !== fMes) match = false;
-                
-                // Validar Día Semana
                 if (fDia !== 'ALL' && item.dateObj.getDay().toString() !== fDia) match = false;
-                
-                // Validar Hora
                 if (fHora !== 'ALL' && item.hora.toString() !== fHora) match = false;
-
+                if (fAlgo !== 'ALL' && !item.algoritmo.includes(fAlgo)) match = false; // Includes para flexibilidad
                 return match;
             });
 
+            // Actualizar KPIs también al filtrar (opcional, pero útil)
+            updateDashboard(filtered); 
             renderTable(filtered);
         }
 
@@ -311,18 +332,16 @@
             document.getElementById('f-mes').value = 'ALL';
             document.getElementById('f-dia').value = 'ALL';
             document.getElementById('f-hora').value = 'ALL';
+            document.getElementById('f-algo').value = 'ALL';
             applyFilters();
         }
 
         function renderTable(data) {
             const tbody = document.querySelector('#logs-table tbody');
             tbody.innerHTML = '';
-            
             document.getElementById('filtered-count').textContent = `Mostrando ${data.length} registros`;
 
-            // Límite visual para no colgar el navegador si hay miles de datos
-            // Si el usuario filtra, probablemente quiera ver todo lo que coincida, 
-            // pero ponemos un límite seguro de 500 filas.
+            // Límite visual de seguridad
             const displayData = data.slice(0, 500);
 
             displayData.forEach(row => {
@@ -332,12 +351,16 @@
                 
                 const numsClean = row.numeros.replace('[', '').replace(']', '').split(', ');
                 const numsHTML = numsClean.map(n => `<span class="num-badge">${n}</span>`).join('');
-
-                // Formatear fecha bonita
                 const fechaShort = row.fechaStr.split(' ')[0].slice(5) + " " + row.fechaStr.split(' ')[1].slice(0,5); 
+
+                // Identificar Algoritmo
+                let algoBadge = '<span class="algo-badge" style="color:#888; border:1px solid #444;">Desconocido</span>';
+                if(row.algoritmo.includes('biometrico')) algoBadge = '<span class="algo-badge algo-bio">🔮 Biométrico</span>';
+                if(row.algoritmo.includes('gaussiano')) algoBadge = '<span class="algo-badge algo-gauss">📐 Gaussiano</span>';
 
                 tr.innerHTML = `
                     <td title="${row.fechaStr}">${fechaShort}</td>
+                    <td>${algoBadge}</td>
                     <td>${row.objetivo}</td>
                     <td>${numsHTML}</td>
                     <td class="${badgeClass}">${row.estado}</td>
@@ -348,37 +371,50 @@
             
             if (data.length > 500) {
                 const tr = document.createElement('tr');
-                tr.innerHTML = `<td colspan="5" style="text-align:center; color:#8b949e; font-style:italic;">... y ${data.length - 500} registros más (usa filtros para ver detalles) ...</td>`;
+                tr.innerHTML = `<td colspan="6" style="text-align:center; color:#8b949e; font-style:italic;">... y ${data.length - 500} registros más ...</td>`;
                 tbody.appendChild(tr);
             }
         }
 
-        function renderChart(labels, dataPoints) {
+        function renderChart(labels, bioData, gaussData) {
             const ctx = document.getElementById('hourlyChart').getContext('2d');
-            // Destruir gráfico previo si existe para evitar superposición
             if (window.myChart) window.myChart.destroy();
             
             window.myChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: labels.map(h => `${h}:00`),
-                    datasets: [{
-                        label: 'Afinidad Promedio por Hora (0-100%)',
-                        data: dataPoints,
-                        backgroundColor: 'rgba(88, 166, 255, 0.5)',
-                        borderColor: '#58a6ff',
-                        borderWidth: 1
-                    }]
+                    datasets: [
+                        {
+                            label: 'Biométrico (Físico)',
+                            data: bioData,
+                            backgroundColor: 'rgba(88, 166, 255, 0.6)',
+                            borderColor: '#58a6ff',
+                            borderWidth: 1,
+                            barPercentage: 0.7,
+                            categoryPercentage: 0.8
+                        },
+                        {
+                            label: 'Gaussiano (Estadístico)',
+                            data: gaussData,
+                            backgroundColor: 'rgba(241, 224, 90, 0.6)', // Color amarillo JS
+                            borderColor: '#f1e05a',
+                            borderWidth: 1,
+                            barPercentage: 0.7,
+                            categoryPercentage: 0.8
+                        }
+                    ]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     scales: {
-                        y: { beginAtZero: true, max: 100, grid: { color: '#30363d' } },
+                        y: { beginAtZero: true, max: 100, grid: { color: '#30363d' }, title: {display: true, text: 'Afinidad %'} },
                         x: { grid: { display: false } }
                     },
                     plugins: {
-                        legend: { labels: { color: '#c9d1d9' } }
+                        legend: { labels: { color: '#c9d1d9' } },
+                        tooltip: { mode: 'index', intersect: false } // Comparar al pasar el mouse
                     }
                 }
             });
