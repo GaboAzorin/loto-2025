@@ -40,7 +40,15 @@
         .card .value { font-size: 1.8rem; font-weight: bold; }
         
         /* Gráficos */
-        .chart-container { background: var(--card); border: 1px solid var(--border); padding: 20px; border-radius: 6px; margin-bottom: 30px; height: 350px; }
+        .chart-wrapper { background: var(--card); border: 1px solid var(--border); padding: 20px; border-radius: 6px; margin-bottom: 30px; }
+        .chart-header-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .chart-container { position: relative; height: 350px; width: 100%; }
+
+        /* Radio Buttons Custom para el Gráfico */
+        .chart-radios { display: flex; gap: 10px; background: #0d1117; padding: 5px; border-radius: 4px; border: 1px solid var(--border); }
+        .chart-radios label { cursor: pointer; padding: 5px 10px; border-radius: 4px; font-size: 0.8rem; color: #8b949e; transition: all 0.2s; }
+        .chart-radios input[type="radio"] { display: none; }
+        .chart-radios input[type="radio"]:checked + span { color: var(--text); font-weight: bold; text-shadow: 0 0 5px rgba(255,255,255,0.2); }
 
         /* Filtros */
         .filters-container {
@@ -108,8 +116,8 @@
                 <div class="value" id="target-draw" style="color: var(--warning)">...</div>
             </div>
             <div class="card">
-                <h3>Mejor hora (Histórica)</h3>
-                <div class="value" id="best-hour">--:00</div>
+                <h3>Mejor Momento (Histórico)</h3>
+                <div class="value" id="best-moment">--</div>
             </div>
             <div class="card">
                 <h3>Precisión promedio</h3>
@@ -117,8 +125,18 @@
             </div>
         </div>
 
-        <div class="chart-container">
-            <canvas id="hourlyChart"></canvas>
+        <div class="chart-wrapper">
+            <div class="chart-header-controls">
+                <h3 style="margin:0; color:#8b949e; font-size:1rem;">Rendimiento Comparativo (Afinidad %)</h3>
+                <div class="chart-radios">
+                    <label><input type="radio" name="chartView" value="hour" checked onchange="switchChartView(this.value)"><span>Hora</span></label>
+                    <label><input type="radio" name="chartView" value="day" onchange="switchChartView(this.value)"><span>Día Sem.</span></label>
+                    <label><input type="radio" name="chartView" value="month" onchange="switchChartView(this.value)"><span>Mes</span></label>
+                </div>
+            </div>
+            <div class="chart-container">
+                <canvas id="mainChart"></canvas>
+            </div>
         </div>
 
         <div class="card">
@@ -194,7 +212,8 @@
 
     <script>
         const CSV_URL = 'LOTO_SIMULACIONES.csv';
-        let GLOBAL_DATA = []; // Almacenamiento global para filtrar sin recargar
+        let GLOBAL_DATA = []; // Almacenamiento global
+        let CURRENT_CHART_MODE = 'hour'; // 'hour', 'day', 'month'
 
         // Inicializar selector de horas
         const hourSelect = document.getElementById('f-hora');
@@ -219,39 +238,34 @@
 
         function processCSV(csvText) {
             const lines = csvText.trim().split('\n');
-            // Parsear CSV a JSON
             GLOBAL_DATA = lines.slice(1).map(line => {
                 const parts = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
-                if(parts.length < 8) return null; // Saltar líneas corruptas
+                if(parts.length < 8) return null; 
                 
-                // Parsear fecha para filtros (YYYY-MM-DD HH:MM:SS)
                 const dateObj = new Date(parts[1].replace(' ', 'T'));
                 
                 return {
                     id: parts[0],
-                    fechaStr: parts[1], // String original
-                    dateObj: dateObj,   // Objeto para filtros
+                    fechaStr: parts[1],
+                    dateObj: dateObj,
                     numeros: parts[2].replace(/"/g, ''),
                     objetivo: parts[3],
                     estado: parts[4],
                     aciertos: parseInt(parts[5]),
                     score: parseFloat(parts[6]),
                     hora: parseInt(parts[7]),
-                    algoritmo: parts[8] ? parts[8].replace('\r', '') : 'desconocido' // Limpiar saltos de línea
+                    algoritmo: parts[8] ? parts[8].replace('\r', '') : 'desconocido'
                 };
             }).filter(item => item !== null).reverse();
 
             initDrawFilter();
-            updateDashboard(GLOBAL_DATA);
-            applyFilters();
+            applyFilters(); // Esto dispara updateDashboard y renderTable
         }
 
-        // Llenar el dropdown de Sorteos con los que existen en la DB
         function initDrawFilter() {
             const uniqueDraws = [...new Set(GLOBAL_DATA.map(d => d.objetivo))];
             const select = document.getElementById('f-sorteo');
-            select.innerHTML = '<option value="ALL">Todos los Sorteos</option>'; // Reset
-            
+            select.innerHTML = '<option value="ALL">Todos los Sorteos</option>';
             uniqueDraws.forEach(draw => {
                 let opt = document.createElement('option');
                 opt.value = draw;
@@ -260,51 +274,86 @@
             });
         }
 
+        // Función para cambiar vista del gráfico
+        function switchChartView(mode) {
+            CURRENT_CHART_MODE = mode;
+            applyFilters(); // Re-calcula todo con la vista nueva
+        }
+
         function updateDashboard(data) {
             // 1. KPIs Generales
             document.getElementById('total-sims').textContent = data.length;
             document.getElementById('target-draw').textContent = "#" + (data[0]?.objetivo || 'N/A');
             document.getElementById('last-update').textContent = "Último pulso: " + (data[0]?.fechaStr.split(' ')[1] || 'N/A');
 
-            // 2. Gráfico Comparativo: Biométrico vs Gaussiano
+            // 2. Filtrar Auditados para Gráficos
             const auditados = data.filter(d => d.estado === 'AUDITADO');
             
-            // Promedio Global del filtro actual
+            // Promedio Global
             const globalAvg = auditados.length > 0 
                 ? (auditados.reduce((a, b) => a + b.score, 0) / auditados.length).toFixed(1) 
                 : 0;
             document.getElementById('avg-score').textContent = globalAvg + "%";
 
-            // Preparar datos para el gráfico
-            const hours = Array.from({length: 24}, (_, i) => i);
-            
-            // Calcular promedios por hora separados por algoritmo
-            const bioScores = hours.map(h => calculateHourlyAvg(auditados, h, 'forense_biometrico_v1'));
-            const gaussScores = hours.map(h => calculateHourlyAvg(auditados, h, 'gaussiano_tactico_v1'));
+            // 3. Preparar Datos del Gráfico según Modo
+            let labels = [];
+            let bioScores = [];
+            let gaussScores = [];
+            let bestMomentLabel = "--";
+            let maxScoreFound = -1;
 
-            // Calcular Mejor Hora General
-            let bestH = -1, maxS = -1;
-            hours.forEach(h => {
-                // Promedio combinado simple para el KPI "Mejor Hora"
-                let valBio = parseFloat(bioScores[h]) || 0;
-                let valGauss = parseFloat(gaussScores[h]) || 0;
-                let combined = (valBio + valGauss) / ( (valBio>0?1:0) + (valGauss>0?1:0) || 1 ); // Evitar div 0
-                
-                if (combined > maxS) { maxS = combined; bestH = h; }
-            });
-            document.getElementById('best-hour').textContent = maxS > 0 ? `${bestH}:00 hrs` : "Calculando...";
-            
-            renderChart(hours, bioScores, gaussScores);
+            if (CURRENT_CHART_MODE === 'hour') {
+                labels = Array.from({length: 24}, (_, i) => `${i}:00`);
+                // Calcular para cada hora 0-23
+                for (let i = 0; i < 24; i++) {
+                    const bioVal = calculateAvg(auditados, d => d.hora === i && d.algoritmo.includes('forense_biometrico'));
+                    const gaussVal = calculateAvg(auditados, d => d.hora === i && d.algoritmo.includes('gaussiano'));
+                    bioScores.push(bioVal);
+                    gaussScores.push(gaussVal);
+                    
+                    // Check Best Moment (Promedio de ambos)
+                    let combined = (parseFloat(bioVal) + parseFloat(gaussVal)) / 2; // Simplificado
+                    if(combined > maxScoreFound) { maxScoreFound = combined; bestMomentLabel = `${i}:00 hrs`; }
+                }
+            } else if (CURRENT_CHART_MODE === 'day') {
+                const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+                labels = days;
+                // Calcular para cada día 0-6
+                for (let i = 0; i < 7; i++) {
+                    const bioVal = calculateAvg(auditados, d => d.dateObj.getDay() === i && d.algoritmo.includes('forense_biometrico'));
+                    const gaussVal = calculateAvg(auditados, d => d.dateObj.getDay() === i && d.algoritmo.includes('gaussiano'));
+                    bioScores.push(bioVal);
+                    gaussScores.push(gaussVal);
+
+                    let combined = (parseFloat(bioVal) + parseFloat(gaussVal)) / 2;
+                    if(combined > maxScoreFound) { maxScoreFound = combined; bestMomentLabel = days[i]; }
+                }
+            } else if (CURRENT_CHART_MODE === 'month') {
+                const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+                labels = months;
+                // Calcular para cada mes 0-11
+                for (let i = 0; i < 12; i++) {
+                    const bioVal = calculateAvg(auditados, d => d.dateObj.getMonth() === i && d.algoritmo.includes('forense_biometrico'));
+                    const gaussVal = calculateAvg(auditados, d => d.dateObj.getMonth() === i && d.algoritmo.includes('gaussiano'));
+                    bioScores.push(bioVal);
+                    gaussScores.push(gaussVal);
+
+                    let combined = (parseFloat(bioVal) + parseFloat(gaussVal)) / 2;
+                    if(combined > maxScoreFound) { maxScoreFound = combined; bestMomentLabel = months[i]; }
+                }
+            }
+
+            document.getElementById('best-moment').textContent = maxScoreFound > 0 ? bestMomentLabel : "Calculando...";
+            renderChart(labels, bioScores, gaussScores);
         }
 
-        function calculateHourlyAvg(data, hour, algoName) {
-            const filtered = data.filter(d => d.hora === hour && d.algoritmo.includes(algoName));
-            if (filtered.length === 0) return 0;
-            const sum = filtered.reduce((acc, curr) => acc + curr.score, 0);
-            return (sum / filtered.length).toFixed(1);
+        function calculateAvg(data, filterFn) {
+            const subset = data.filter(filterFn);
+            if (subset.length === 0) return 0;
+            const sum = subset.reduce((acc, curr) => acc + curr.score, 0);
+            return (sum / subset.length).toFixed(1);
         }
 
-        // --- LÓGICA DE FILTRADO ---
         function applyFilters() {
             const fSorteo = document.getElementById('f-sorteo').value;
             const fMes = document.getElementById('f-mes').value;
@@ -318,11 +367,10 @@
                 if (fMes !== 'ALL' && item.dateObj.getMonth().toString() !== fMes) match = false;
                 if (fDia !== 'ALL' && item.dateObj.getDay().toString() !== fDia) match = false;
                 if (fHora !== 'ALL' && item.hora.toString() !== fHora) match = false;
-                if (fAlgo !== 'ALL' && !item.algoritmo.includes(fAlgo)) match = false; // Includes para flexibilidad
+                if (fAlgo !== 'ALL' && !item.algoritmo.includes(fAlgo)) match = false; 
                 return match;
             });
 
-            // Actualizar KPIs también al filtrar (opcional, pero útil)
             updateDashboard(filtered); 
             renderTable(filtered);
         }
@@ -341,7 +389,6 @@
             tbody.innerHTML = '';
             document.getElementById('filtered-count').textContent = `Mostrando ${data.length} registros`;
 
-            // Límite visual de seguridad
             const displayData = data.slice(0, 500);
 
             displayData.forEach(row => {
@@ -353,7 +400,6 @@
                 const numsHTML = numsClean.map(n => `<span class="num-badge">${n}</span>`).join('');
                 const fechaShort = row.fechaStr.split(' ')[0].slice(5) + " " + row.fechaStr.split(' ')[1].slice(0,5); 
 
-                // Identificar Algoritmo
                 let algoBadge = '<span class="algo-badge" style="color:#888; border:1px solid #444;">Desconocido</span>';
                 if(row.algoritmo.includes('biometrico')) algoBadge = '<span class="algo-badge algo-bio">🔮 Biométrico</span>';
                 if(row.algoritmo.includes('gaussiano')) algoBadge = '<span class="algo-badge algo-gauss">📐 Gaussiano</span>';
@@ -377,13 +423,13 @@
         }
 
         function renderChart(labels, bioData, gaussData) {
-            const ctx = document.getElementById('hourlyChart').getContext('2d');
+            const ctx = document.getElementById('mainChart').getContext('2d');
             if (window.myChart) window.myChart.destroy();
             
             window.myChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: labels.map(h => `${h}:00`),
+                    labels: labels,
                     datasets: [
                         {
                             label: 'Biométrico (Físico)',
@@ -397,7 +443,7 @@
                         {
                             label: 'Gaussiano (Estadístico)',
                             data: gaussData,
-                            backgroundColor: 'rgba(241, 224, 90, 0.6)', // Color amarillo JS
+                            backgroundColor: 'rgba(241, 224, 90, 0.6)',
                             borderColor: '#f1e05a',
                             borderWidth: 1,
                             barPercentage: 0.7,
@@ -414,7 +460,7 @@
                     },
                     plugins: {
                         legend: { labels: { color: '#c9d1d9' } },
-                        tooltip: { mode: 'index', intersect: false } // Comparar al pasar el mouse
+                        tooltip: { mode: 'index', intersect: false }
                     }
                 }
             });
