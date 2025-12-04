@@ -1,0 +1,2 @@
+id,fecha_generacion,numeros,sorteo_objetivo,estado,aciertos,score_afinidad,hora_dia,algoritmo
+1764874292,2025-12-04 15:51:32,"[1, 9, 15, 16, 22, 36]",5356,PENDIENTE,0,0.0,15,forense_biometrico_v1
