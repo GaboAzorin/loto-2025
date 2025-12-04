@@ -2,3 +2,4 @@ id,fecha_generacion,numeros,sorteo_objetivo,estado,aciertos,score_afinidad,hora_
 1764874292,2025-12-04 15:51:32,"[1, 9, 15, 16, 22, 36]",5356,PENDIENTE,0,0.0,15,forense_biometrico_v1
 1764875420,2025-12-04 16:10:20,"[13, 24, 27, 29, 32, 36]",5356,PENDIENTE,0,0.0,16,forense_biometrico_v1
 1764876928,2025-12-04 16:35:28,"[4, 5, 17, 21, 29, 32]",5356,PENDIENTE,0,0.0,16,forense_biometrico_v1
+1764880155,2025-12-04 17:29:15,"[8, 10, 26, 27, 31, 39]",5356,PENDIENTE,0,0.0,17,forense_biometrico_v1
