@@ -3,7 +3,12 @@ name: Bot Soñador (Generador de Predicciones)
 on:
   schedule:
     - cron: '*/30 * * * *' # Corre cada 30 minutos
-  workflow_dispatch: # Permite correrlo manualmente si quieres probar
+  workflow_dispatch: # Permite correrlo manualmente
+
+# --- ESTO ES LO QUE FALTABA (PERMISOS DE ESCRITURA) ---
+permissions:
+  contents: write
+# ------------------------------------------------------
 
 jobs:
   dream:
@@ -29,6 +34,8 @@ jobs:
       run: |
         git config --global user.name 'LotoAI Bot'
         git config --global user.email 'bot@lotoai.com'
+        # Usamos 'git pull' antes para evitar conflictos si hubo cambios mientras corría
+        git pull
         git add LOTO_SIMULACIONES.csv
         git commit -m "🤖 Nueva predicción generada por Bot Soñador" || exit 0
         git push
