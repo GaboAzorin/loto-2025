@@ -1,0 +1,34 @@
+name: Bot Soñador (Generador de Predicciones)
+
+on:
+  schedule:
+    - cron: '*/30 * * * *' # Corre cada 30 minutos
+  workflow_dispatch: # Permite correrlo manualmente si quieres probar
+
+jobs:
+  dream:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - name: Install dependencies
+      run: |
+        pip install pandas numpy pytz
+
+    - name: Run Bot Dreamer
+      run: python bot_dreamer.py
+
+    - name: Commit and Push
+      run: |
+        git config --global user.name 'LotoAI Bot'
+        git config --global user.email 'bot@lotoai.com'
+        git add LOTO_SIMULACIONES.csv
+        git commit -m "🤖 Nueva predicción generada por Bot Soñador" || exit 0
+        git push

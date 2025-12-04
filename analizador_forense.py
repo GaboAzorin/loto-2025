@@ -3,48 +3,63 @@ import numpy as np
 import json
 import re
 import os
+import random
 from datetime import datetime
 
 class LotoForense:
     def __init__(self, csv_path="LOTO_HISTORIAL_MAESTRO.csv"):
         self.csv_path = csv_path
         self.df = None
-        self.structure = {} # Almacenará la estructura detectada de la base de datos
-        self.stats_matrix = {} # Almacenará los pesos calculados
+        self.structure = {} 
+        self.stats_matrix = {} 
         
         print(f"[{datetime.now().strftime('%H:%M:%S')}] 🔧 Inicializando LotoForense...")
-        self.load_data()
+        
+        # 1. Intentar cargar biometría existente para ahorrar tiempo de cómputo
+        # Esto es útil si el script corre cada 30 min
+        if os.path.exists("loto_biometrics.json"):
+            try:
+                with open("loto_biometrics.json", "r", encoding='utf-8') as f:
+                    self.stats_matrix = json.load(f)
+                print(f"[{datetime.now().strftime('%H:%M:%S')}] 🧠 Biometría cargada desde JSON (Caché).")
+            except:
+                print("⚠️ Error leyendo JSON, se recalculará desde cero.")
+        
+        # 2. Si no hay matriz en caché, cargar datos y calcular
+        if not self.stats_matrix:
+            self.load_data()
+            self._detect_game_structure() # Asegurar que tenemos la estructura antes de calcular
+            self.generate_mechanical_matrix()
 
     def load_data(self):
         if not os.path.exists(self.csv_path):
-            raise FileNotFoundError(f"❌ No se encontró el archivo maestro: {self.csv_path}")
-        
-        # Cargar CSV
+            # Si no existe el CSV, intentamos continuar sin datos (para modo predicción solo con JSON)
+            print(f"⚠️ Advertencia: No se encontró {self.csv_path}. Se dependerá del JSON biométrico.")
+            return
+
         self.df = pd.read_csv(self.csv_path)
         print(f"[{datetime.now().strftime('%H:%M:%S')}] 📂 Datos cargados: {len(self.df)} sorteos históricos.")
         
-        # Ejecutar detección de estructura
-        self._detect_game_structure()
+        # Ejecutar detección de estructura si no se ha hecho
+        if not self.structure:
+            self._detect_game_structure()
 
     def _detect_game_structure(self):
         """
         Escanea dinámicamente todas las columnas para identificar modalidades de juego.
-        Busca patrones _n{d} y _pos{d} para agruparlos por prefijo (ej: JUBILAZO_1, DESQUITE).
         """
+        if self.df is None: return
+
         columns = self.df.columns.tolist()
         game_map = {}
-
-        # Expresión regular para capturar: NOMBRE_JUEGO + TIPO (n/pos) + INDICE (1-6)
-        # Ejemplo: JUBILAZO_1_pos4 -> Grupo 1: JUBILAZO_1, Grupo 2: pos, Grupo 3: 4
         pattern = re.compile(r'^(.*)_(n|pos)(\d+)$')
 
         for col in columns:
-            # 1. Chequeo de bolas normales y posiciones
             match = pattern.match(col)
             if match:
-                prefix = match.group(1) # Ej: LOTO, RECARGADO, JUBILAZO_1
-                type_ = match.group(2)  # 'n' o 'pos'
-                idx = int(match.group(3)) # 1, 2, 3...
+                prefix = match.group(1) 
+                type_ = match.group(2)  
+                idx = int(match.group(3)) 
 
                 if prefix not in game_map:
                     game_map[prefix] = {'n': {}, 'pos': {}, 'comodin': None}
@@ -52,7 +67,6 @@ class LotoForense:
                 game_map[prefix][type_][idx] = col
                 continue
 
-            # 2. Chequeo de comodines
             if col.endswith('_comodin'):
                 prefix = col.replace('_comodin', '')
                 if prefix not in game_map:
@@ -60,18 +74,18 @@ class LotoForense:
                 game_map[prefix]['comodin'] = col
 
         self.structure = game_map
-        
-        print(f"[{datetime.now().strftime('%H:%M:%S')}] 👁️  Estructura detectada ({len(game_map)} modalidades):")
-        for mode in sorted(game_map.keys()):
-            has_pos = len(game_map[mode]['pos']) > 0
-            detail = "✅ Datos Físicos (POS)" if has_pos else "⚠️ Solo Ordenados (N)"
-            print(f"   • {mode:<20} {detail}")
+        # (Opcional) Imprimir estructura detectada solo si estamos en modo verbose
+        # print(f"[{datetime.now().strftime('%H:%M:%S')}] 👁️ Estructura detectada: {len(game_map)} modalidades.")
 
     def generate_mechanical_matrix(self):
         """
         Genera una matriz de probabilidades basada en la física de la extracción.
-        Prioriza columnas '_pos' si existen.
+        (Mantenemos TU lógica original intacta)
         """
+        if self.df is None:
+            self.load_data()
+            if self.df is None: return {} # No se puede generar sin datos
+
         print(f"[{datetime.now().strftime('%H:%M:%S')}] ⚙️  Calculando Matriz de Peso Mecánico...")
         
         report = {
@@ -82,13 +96,10 @@ class LotoForense:
             "games": {}
         }
 
-        # Iterar sobre CADA modalidad descubierta (Loto, Desquite, Jubilazos...)
         for mode, cols in self.structure.items():
-            
-            # Determinar si usamos datos mecánicos (pos) o estadísticos (n)
             use_pos = len(cols['pos']) > 0
             source_type = 'pos' if use_pos else 'n'
-            target_cols = cols[source_type] # Diccionario {1: 'col_name', 2: 'col_name'...}
+            target_cols = cols[source_type]
 
             if not target_cols:
                 continue
@@ -96,38 +107,27 @@ class LotoForense:
             mode_data = {
                 "source_type": "MECHANICAL" if use_pos else "SORTED",
                 "positions": {},
-                "global_heat": {} # Frecuencia global del número en este juego sin importar posición
+                "global_heat": {}
             }
 
-            # Contadores globales para este juego
             global_counts = pd.Series(dtype=int)
 
-            # Analizar cada posición (1 a 6 típicamente)
             for pos_idx in sorted(target_cols.keys()):
                 col_name = target_cols[pos_idx]
-                
-                # Obtener frecuencia de valores (1-41)
-                # value_counts() devuelve cuantos veces salió cada número
                 vc = self.df[col_name].value_counts()
-                
-                # Sumar al global
                 global_counts = global_counts.add(vc, fill_value=0)
-
-                # Convertir a dict nativo (int: int)
                 freq_dict = {int(k): int(v) for k, v in vc.items()}
                 
-                # Calcular "Frecuencia Relativa" (Probabilidad histórica)
                 total_valid_draws = self.df[col_name].count()
-                prob_dict = {k: round(v / total_valid_draws, 5) for k, v in freq_dict.items()}
+                prob_dict = {str(k): round(v / total_valid_draws, 5) for k, v in freq_dict.items()}
 
-                mode_data["positions"][pos_idx] = {
+                mode_data["positions"][str(pos_idx)] = {
                     "col_name": col_name,
                     "counts": freq_dict,
-                    "weights": prob_dict,
+                    "weights": prob_dict, # Usado para la predicción
                     "most_frequent": int(vc.idxmax()) if not vc.empty else None
                 }
 
-            # Procesar Comodín si existe
             if cols['comodin']:
                 c_col = cols['comodin']
                 vc_c = self.df[c_col].value_counts()
@@ -136,50 +136,98 @@ class LotoForense:
                     "counts": {int(k): int(v) for k, v in vc_c.items()}
                 }
 
-            # Guardar mapa de calor global de este juego
             global_counts = global_counts.sort_values(ascending=False)
-            mode_data["global_heat"] = {int(k): int(v) for k, v in global_counts.items()}
-
+            mode_data["global_heat"] = {str(k): int(v) for k, v in global_counts.items()}
             report["games"][mode] = mode_data
 
         self.stats_matrix = report
+        # Guardamos automáticamente al generar
+        self.save_intelligence()
         return report
 
     def save_intelligence(self, filename="loto_biometrics.json"):
-        """Guarda el análisis completo en un JSON para ser consumido por el Dashboard/Frontend"""
         if not self.stats_matrix:
-            self.generate_mechanical_matrix()
-            
+            return
         with open(filename, 'w', encoding='utf-8') as f:
             json.dump(self.stats_matrix, f, indent=2)
-        
-        print(f"[{datetime.now().strftime('%H:%M:%S')}] 💾 Inteligencia guardada en '{filename}' ({os.path.getsize(filename)/1024:.1f} KB)")
+        print(f"[{datetime.now().strftime('%H:%M:%S')}] 💾 Inteligencia guardada en '{filename}'")
 
     def get_quick_stats(self, game_mode, number):
         """Consulta rápida para verificar datos desde Python"""
         game_data = self.stats_matrix.get("games", {}).get(game_mode)
         if not game_data:
             return f"No hay datos para {game_mode}"
-        
-        total_hits = game_data.get("global_heat", {}).get(number, 0)
+        total_hits = game_data.get("global_heat", {}).get(str(number), 0)
         return f"El número {number} ha salido {total_hits} veces en {game_mode}."
 
-# ==========================================
-# EJECUCIÓN DEL ANÁLISIS
-# ==========================================
+    # ==============================================================================
+    # 🔮 NUEVA FUNCIÓN: MOTOR DE PREDICCIÓN BIOMÉTRICA
+    # ==============================================================================
+    def predict_numbers(self, game_mode="LOTO", n=6):
+        """
+        Genera una predicción utilizando Simulación Monte Carlo basada en pesos históricos.
+        Respeta la exclusión física: una vez que sale una bola, no puede volver a salir en la misma jugada.
+        """
+        # Asegurar datos
+        if not self.stats_matrix:
+            print("⚠️ Matriz vacía. Intentando generar...")
+            self.generate_mechanical_matrix()
+
+        game_data = self.stats_matrix.get("games", {}).get(game_mode)
+        
+        # Fallback de seguridad si el modo de juego no existe
+        if not game_data:
+            print(f"⚠️ MODO '{game_mode}' NO ENCONTRADO. Usando aleatorio puro.")
+            return sorted(random.sample(range(1, 42), n))
+
+        prediction = []
+        # Pool de números disponibles (1 al 41 para Loto Chile)
+        full_pool = set(range(1, 42)) 
+        
+        # Simular extracción bolilla a bolilla (Posición 1 a n)
+        for i in range(1, n + 1):
+            pos_key = str(i)
+            
+            # Obtener los pesos específicos de ESTA posición física
+            # (Ej: Qué suele salir en la primera bolilla)
+            pos_data = game_data['positions'].get(pos_key, {})
+            weights_map = pos_data.get('weights', {})
+            
+            # Preparar candidatos
+            candidates = []
+            probs = []
+            
+            # Números que NO han salido todavía en esta simulación
+            available_numbers = full_pool - set(prediction)
+            
+            for num in available_numbers:
+                num_str = str(num)
+                # Peso histórico (si nunca salió, le damos un peso ínfimo épsilon para que sea posible pero improbable)
+                weight = weights_map.get(num_str, 0.00001)
+                
+                candidates.append(num)
+                probs.append(weight)
+            
+            # Re-normalizar probabilidades (Deben sumar 1.0)
+            total_prob = sum(probs)
+            if total_prob <= 0:
+                normalized_probs = [1.0/len(candidates)] * len(candidates) # Uniforme si falla
+            else:
+                normalized_probs = [p / total_prob for p in probs]
+            
+            # Selección aleatoria ponderada (Weighted Random Choice)
+            picked_number = np.random.choice(candidates, p=normalized_probs)
+            prediction.append(int(picked_number))
+
+        # El resultado final siempre se ordena ascendente para el usuario
+        return sorted(prediction)
+
 if __name__ == "__main__":
-    # 1. Instanciar el forense
+    # Test rápido al ejecutar directamente
     forense = LotoForense()
+    print("\n--- TEST DE PREDICCIÓN ---")
+    pred = forense.predict_numbers("LOTO")
+    print(f"🔮 Predicción LOTO: {pred}")
     
-    # 2. Generar la matriz
-    matrix = forense.generate_mechanical_matrix()
-    
-    # 3. Guardar el archivo JSON para el dashboard
-    forense.save_intelligence("loto_biometrics.json")
-    
-    # 4. (Opcional) Verificación rápida en consola
-    print("\n--- Verificación Rápida ---")
-    print(forense.get_quick_stats("LOTO", 33))
-    print(forense.get_quick_stats("REVANCHA", 33))
-    if "JUBILAZO_1" in matrix["games"]:
-        print(forense.get_quick_stats("JUBILAZO_1", 33))
+    pred_revancha = forense.predict_numbers("REVANCHA")
+    print(f"🔮 Predicción REVANCHA: {pred_revancha}")
