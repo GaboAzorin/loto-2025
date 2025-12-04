@@ -181,6 +181,11 @@
             .charts-grid { grid-template-columns: 1fr; }
             .mech-grid-container { font-size: 0.6rem; gap: 2px; }
         }
+        .numero-match {
+            color: #2ea043;      /* Verde éxito */
+            font-weight: bold;
+            text-shadow: 0 0 5px rgba(46, 160, 67, 0.4); /* Pequeño brillo */
+        }
     </style>
 </head>
 <body>
@@ -275,7 +280,7 @@
 
     <div class="history-section">
         <div class="table-header">
-            <h3 style="color:white; font-size:1.1rem; font-weight:700;">Registro Detallado de Predicciones</h3>
+            <h3 style="color:white; font-size:1.1rem; font-weight:700;">Registro detallado de predicciones</h3>
         </div>
         <div class="table-scroll">
             <table id="audit-table">
@@ -310,9 +315,10 @@
         new Promise(resolve => Papa.parse('LOTO_JUGADAS.csv', { download: true, header: true, skipEmptyLines: true, complete: res => resolve(res.data) })),
         new Promise(resolve => Papa.parse('LOTO_HISTORIAL_MAESTRO.csv', { download: true, header: true, skipEmptyLines: true, complete: res => resolve(res.data) }))
     ]).then(([jugadasData, historialData]) => {
+        window.globalHistorial = historialData; // Guardamos globalmente para cruzar datos
         processUserStats(jugadasData);
         processGlobalStats(historialData);
-        renderMechanicalStats(historialData); // NUEVO: Renderizar matriz mecánica
+        renderMechanicalStats(historialData); 
     }).catch(err => {
         console.error("Error cargando CSVs:", err);
         document.getElementById('audit-body').innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--danger);">Error cargando bases de datos. Verifique que scraper_unificado.py se haya ejecutado.</td></tr>';
@@ -454,7 +460,7 @@
             },
             options: { 
                 responsive: true, 
-                maintainAspectRatio: false,
+                maintainAspectRatio: false, 
                 scales: { x: {display:false} } 
             }
         });
@@ -519,6 +525,25 @@
         return d;
     }
 
+    function formatearAciertosHTML(numerosJugadosStr, numerosGanadoresStr) {
+        // Limpiadores
+        const clean = (str) => String(str).replace(/[\[\]"]/g, '').split(',').map(n => parseInt(n.trim()));
+        const jugados = clean(numerosJugadosStr);
+        
+        // Si no hay ganadores, devolvemos formato limpio (separado por comas)
+        if (!numerosGanadoresStr) return jugados.join(', ');
+
+        const ganadores = clean(numerosGanadoresStr);
+
+        // Retornamos HTML con números separados por comas, coloreando los aciertos
+        return jugados.map(num => {
+            if (ganadores.includes(num)) {
+                return `<span class="numero-match">${num}</span>`;
+            }
+            return num;
+        }).join(', ');
+    }
+
     function renderTable(rows) {
         const tbody = document.getElementById('audit-body');
         tbody.innerHTML = rows.map(r => {
@@ -527,8 +552,18 @@
                 ? `<span class="badge badge-pending"><i data-lucide="clock" width="12"></i> PENDIENTE</span>` 
                 : `<span class="badge badge-success"><i data-lucide="check-circle" width="12"></i> FINALIZADO</span>`;
             
-            let nums = "Error";
-            try { nums = JSON.parse(r.numeros).join(', '); } catch(e) { nums = r.numeros; }
+            // LÓGICA DE COLOREADO
+            let winningStr = null;
+            if (window.globalHistorial) {
+                const draw = window.globalHistorial.find(h => h.sorteo == r.sorteo_objetivo);
+                if (draw) {
+                    // Reconstruimos string de ganadores
+                    winningStr = [draw.LOTO_n1, draw.LOTO_n2, draw.LOTO_n3, draw.LOTO_n4, draw.LOTO_n5, draw.LOTO_n6].join(',');
+                }
+            }
+
+            // Usamos la función auxiliar con los datos crudos de la fila
+            const numsDisplay = formatearAciertosHTML(r.numeros, winningStr);
 
             let metricsHtml = isPending ? '<span style="color:#555;">Esperando sorteo...</span>' : 
                 `<div style="display:flex; flex-direction:column; gap:2px;">
@@ -563,7 +598,7 @@
                     </td>
                     <td>${statusBadge}</td>
                     <td>
-                        <div style="font-family:'JetBrains Mono'; color:var(--gold); letter-spacing:1px;">${nums}</div>
+                        <div style="font-family:'JetBrains Mono'; color:var(--gold); letter-spacing:1px;">${numsDisplay}</div>
                         <div style="font-size:0.75rem; margin-top:4px; color:${r.jugado_realmente==='SI'?'#00f2ff':'#a0aec0'}">
                             ${r.jugado_realmente==='SI' ? '⚡ Jugada Real' : 'Simulación'}
                         </div>
