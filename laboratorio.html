@@ -35,7 +35,7 @@
         
         /* KPI Cards */
         .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px; }
-        .card { background: var(--card); border: 1px solid var(--border); padding: 15px; border-radius: 6px; }
+        .card { background: var(--card); border: 1px solid var(--border); padding: 15px; border-radius: 6px; margin-bottom: 30px; }
         .card h3 { margin: 0 0 10px 0; font-size: 0.9rem; color: #8b949e; }
         .card .value { font-size: 1.8rem; font-weight: bold; }
         
@@ -238,6 +238,27 @@
                 </table>
             </div>
         </div>
+
+        <div class="card">
+            <h3 style="margin-bottom:15px; color:#58a6ff;">📊 Resumen de Desempeño por Sorteo (Agregado)</h3>
+            <div class="table-scroll">
+                <table id="aggregate-table">
+                    <thead>
+                        <tr>
+                            <th>Sorteo</th>
+                            <th style="text-align:center;">Cant. Pred.</th>
+                            <th>Mejor Predicción</th>
+                            <th style="text-align:center;">Score Global</th>
+                            <th style="text-align:center;">Score Bio.</th>
+                            <th style="text-align:center;">Score Gauss.</th>
+                        </tr>
+                    </thead>
+                    <tbody id="aggregate-body">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+
     </div>
 
     <script>
@@ -245,7 +266,7 @@
         const MASTER_URL = 'LOTO_HISTORIAL_MAESTRO.csv';
         
         let GLOBAL_DATA = [];
-        let GLOBAL_MAESTRO = {};
+        let GLOBAL_MAESTRO = {}; // { "5356": { numbers: [1,2,3...], date: "2025-..." } }
         let CURRENT_CHART_MODE = 'hour';
 
         // Inicializar selector de horas
@@ -285,6 +306,7 @@
             const headers = lines[0].split(',');
             
             const idxSorteo = headers.indexOf('sorteo');
+            const idxFecha = headers.indexOf('fecha'); // Capturar fecha
             const idxN1 = headers.indexOf('LOTO_n1');
             const idxN2 = headers.indexOf('LOTO_n2');
             const idxN3 = headers.indexOf('LOTO_n3');
@@ -303,7 +325,11 @@
                     parseInt(row[idxN1]), parseInt(row[idxN2]), parseInt(row[idxN3]), 
                     parseInt(row[idxN4]), parseInt(row[idxN5]), parseInt(row[idxN6])
                 ];
-                GLOBAL_MAESTRO[sorteo] = nums;
+                // Guardar objeto con números y fecha
+                GLOBAL_MAESTRO[sorteo] = {
+                    numbers: nums,
+                    date: idxFecha !== -1 ? row[idxFecha] : 'Sin fecha'
+                };
             }
         }
 
@@ -331,6 +357,7 @@
 
             initDrawFilter();
             applyFilters();
+            renderAggregateTable(GLOBAL_DATA); // Renderizar nueva tabla
         }
 
         function initDrawFilter() {
@@ -451,7 +478,9 @@
                 const scoreDisplay = row.estado === 'AUDITADO' ? `<b>${row.score}%</b>` : '-';
                 
                 const numsClean = row.numeros.replace('[', '').replace(']', '').split(', ');
-                const winningNumbers = GLOBAL_MAESTRO[row.objetivo] || [];
+                // MODIFICADO: Acceso a objeto global actualizado
+                const winData = GLOBAL_MAESTRO[row.objetivo];
+                const winningNumbers = winData ? winData.numbers : [];
 
                 // --- LÓGICA DE PROXIMIDAD ---
                 const numsHTML = numsClean.map(n => {
@@ -515,6 +544,96 @@
                 tr.innerHTML = `<td colspan="6" style="text-align:center; color:#8b949e; font-style:italic;">... y ${data.length - 50} registros más ...</td>`;
                 tbody.appendChild(tr);
             }
+        }
+
+        // --- NUEVA FUNCIÓN: TABLA AGREGADA POR SORTEO ---
+        function renderAggregateTable(data) {
+            const tbody = document.getElementById('aggregate-body');
+            tbody.innerHTML = '';
+
+            // 1. Agrupar datos por sorteo
+            const groups = {};
+            data.forEach(d => {
+                if (!groups[d.objetivo]) {
+                    groups[d.objetivo] = {
+                        target: d.objetivo,
+                        count: 0,
+                        scores: [],
+                        bioScores: [],
+                        gaussScores: [],
+                        bestRow: null,
+                        maxScore: -1
+                    };
+                }
+                const g = groups[d.objetivo];
+                g.count++;
+                
+                // Solo sumar scores si ya está auditado
+                if (d.estado === 'AUDITADO') {
+                    g.scores.push(d.score);
+                    if (d.algoritmo.includes('biometrico')) g.bioScores.push(d.score);
+                    if (d.algoritmo.includes('gaussiano')) g.gaussScores.push(d.score);
+                    
+                    if (d.score > g.maxScore) {
+                        g.maxScore = d.score;
+                        g.bestRow = d;
+                    }
+                }
+            });
+
+            // 2. Convertir a array y ordenar descendente por sorteo
+            const sortedGroups = Object.values(groups).sort((a,b) => b.target - a.target);
+
+            // 3. Renderizar filas
+            sortedGroups.forEach(g => {
+                const tr = document.createElement('tr');
+                
+                // Cálculos de promedio
+                const avgTotal = g.scores.length ? (g.scores.reduce((a,b)=>a+b,0)/g.scores.length).toFixed(1) + '%' : '-';
+                const avgBio = g.bioScores.length ? (g.bioScores.reduce((a,b)=>a+b,0)/g.bioScores.length).toFixed(1) + '%' : '-';
+                const avgGauss = g.gaussScores.length ? (g.gaussScores.reduce((a,b)=>a+b,0)/g.gaussScores.length).toFixed(1) + '%' : '-';
+
+                // Formatear Mejor Predicción (Reutilizamos lógica de color)
+                let bestHtml = '-';
+                if (g.bestRow) {
+                    const numsClean = g.bestRow.numeros.replace('[', '').replace(']', '').split(', ');
+                    const winData = GLOBAL_MAESTRO[g.target];
+                    const winningNumbers = winData ? winData.numbers : [];
+                    
+                    // Colorear números
+                    bestHtml = numsClean.map(n => {
+                        const numInt = parseInt(n);
+                        if (winningNumbers.includes(numInt)) return `<span class="num-badge match-exact">${n}</span>`;
+                        // Proximidad simplificada para esta celda pequeña
+                        let minDiff = 999;
+                        winningNumbers.forEach(w => { let d=Math.abs(w-numInt); if(d<minDiff) minDiff=d; });
+                        
+                        if (minDiff===1) return `<span class="num-badge match-close-1">${n}</span>`;
+                        if (minDiff<=3) return `<span class="num-badge match-close-2">${n}</span>`;
+                        return `<span class="num-badge match-far">${n}</span>`;
+                    }).join('');
+                    
+                    // Agregar badge de algoritmo
+                    let badge = '';
+                    if(g.bestRow.algoritmo.includes('bio')) badge = '<span style="font-size:0.7em; margin-right:5px;">🔮</span>';
+                    else badge = '<span style="font-size:0.7em; margin-right:5px;">📐</span>';
+                    bestHtml = `<div>${badge}${bestHtml} <small>(${g.maxScore}%)</small></div>`;
+                }
+
+                // Tooltip Fecha
+                const masterEntry = GLOBAL_MAESTRO[g.target];
+                const dateTooltip = masterEntry ? `Fecha: ${masterEntry.date}` : 'Fecha desconocida';
+
+                tr.innerHTML = `
+                    <td><span class="draw-badge" title="${dateTooltip}">#${g.target}</span></td>
+                    <td style="text-align:center;">${g.count}</td>
+                    <td>${bestHtml}</td>
+                    <td style="text-align:center; font-weight:bold;">${avgTotal}</td>
+                    <td style="text-align:center; color:var(--bio-color);">${avgBio}</td>
+                    <td style="text-align:center; color:var(--gauss-color);">${avgGauss}</td>
+                `;
+                tbody.appendChild(tr);
+            });
         }
 
         function renderChart(labels, bioData, gaussData) {
