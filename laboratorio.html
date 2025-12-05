@@ -90,6 +90,14 @@
         /* Navegación */
         .nav-link { color: var(--text); text-decoration: none; border: 1px solid var(--border); padding: 5px 10px; border-radius: 4px; transition: background 0.2s; }
         .nav-link:hover { background: var(--border); }
+
+        /* Highlight de Aciertos */
+        .numero-match {
+            color: #2ea043;      /* Verde éxito */
+            font-weight: bold;
+            border: 1px solid #2ea043; /* Borde verde para destacar en el badge */
+            text-shadow: 0 0 5px rgba(46, 160, 67, 0.4);
+        }
     </style>
 </head>
 <body>
@@ -212,7 +220,10 @@
 
     <script>
         const CSV_URL = 'LOTO_SIMULACIONES.csv';
+        const MASTER_URL = 'LOTO_HISTORIAL_MAESTRO.csv'; // Nuevo: URL del maestro
+        
         let GLOBAL_DATA = []; // Almacenamiento global
+        let GLOBAL_MAESTRO = {}; // Almacenamiento rápido de sorteos ganadores
         let CURRENT_CHART_MODE = 'hour'; // 'hour', 'day', 'month'
 
         // Inicializar selector de horas
@@ -226,13 +237,54 @@
 
         async function loadData() {
             try {
-                const response = await fetch(CSV_URL);
-                const text = await response.text();
+                // Descargar ambos archivos en paralelo
+                const [simResponse, masterResponse] = await Promise.all([
+                    fetch(CSV_URL),
+                    fetch(MASTER_URL)
+                ]);
+
+                if (masterResponse.ok) {
+                    const masterText = await masterResponse.text();
+                    processMaster(masterText); // Procesar maestro primero
+                }
+
+                const text = await simResponse.text();
                 processCSV(text);
+                
             } catch (error) {
-                console.error("Error cargando CSV:", error);
+                console.error("Error cargando CSVs:", error);
                 document.getElementById('last-update').textContent = "Error de conexión";
                 document.getElementById('last-update').style.background = "var(--danger)";
+            }
+        }
+
+        // Función simple para parsear el Maestro y guardar ganadores
+        function processMaster(text) {
+            const lines = text.trim().split('\n');
+            const headers = lines[0].split(',');
+            
+            // Buscar índices de columnas dinámicamente
+            const idxSorteo = headers.indexOf('sorteo');
+            const idxN1 = headers.indexOf('LOTO_n1');
+            const idxN2 = headers.indexOf('LOTO_n2');
+            const idxN3 = headers.indexOf('LOTO_n3');
+            const idxN4 = headers.indexOf('LOTO_n4');
+            const idxN5 = headers.indexOf('LOTO_n5');
+            const idxN6 = headers.indexOf('LOTO_n6');
+
+            if (idxSorteo === -1 || idxN1 === -1) return;
+
+            // Llenar objeto global { "5356": [1, 2, 3...] }
+            for (let i = 1; i < lines.length; i++) {
+                const row = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/); // Split seguro
+                if (row.length < headers.length) continue;
+                
+                const sorteo = row[idxSorteo];
+                const nums = [
+                    parseInt(row[idxN1]), parseInt(row[idxN2]), parseInt(row[idxN3]), 
+                    parseInt(row[idxN4]), parseInt(row[idxN5]), parseInt(row[idxN6])
+                ];
+                GLOBAL_MAESTRO[sorteo] = nums;
             }
         }
 
@@ -397,8 +449,21 @@
                 const badgeClass = row.estado === 'AUDITADO' ? 'audited' : 'pending';
                 const scoreDisplay = row.estado === 'AUDITADO' ? `<b>${row.score}%</b>` : '-';
                 
+                // Obtener números limpios
                 const numsClean = row.numeros.replace('[', '').replace(']', '').split(', ');
-                const numsHTML = numsClean.map(n => `<span class="num-badge">${n}</span>`).join('');
+                
+                // Buscar si tenemos los ganadores para este sorteo
+                const winningNumbers = GLOBAL_MAESTRO[row.objetivo] || [];
+
+                // Generar HTML con coloreado
+                const numsHTML = numsClean.map(n => {
+                    const numInt = parseInt(n);
+                    if (winningNumbers.includes(numInt)) {
+                        return `<span class="num-badge numero-match">${n}</span>`; // Acierto
+                    }
+                    return `<span class="num-badge">${n}</span>`; // Normal
+                }).join('');
+
                 const fechaShort = row.fechaStr.split(' ')[0].slice(5) + " " + row.fechaStr.split(' ')[1].slice(0,5); 
 
                 let algoBadge = '<span class="algo-badge" style="color:#888; border:1px solid #444;">Desconocido</span>';
