@@ -389,7 +389,8 @@
             tbody.innerHTML = '';
             document.getElementById('filtered-count').textContent = `Mostrando ${data.length} registros`;
 
-            const displayData = data.slice(0, 500);
+            // Límite visual de seguridad
+            const displayData = data.slice(0, 50);
 
             displayData.forEach(row => {
                 const tr = document.createElement('tr');
@@ -415,9 +416,9 @@
                 tbody.appendChild(tr);
             });
             
-            if (data.length > 500) {
+            if (data.length > 50) {
                 const tr = document.createElement('tr');
-                tr.innerHTML = `<td colspan="6" style="text-align:center; color:#8b949e; font-style:italic;">... y ${data.length - 500} registros más ...</td>`;
+                tr.innerHTML = `<td colspan="6" style="text-align:center; color:#8b949e; font-style:italic;">... y ${data.length - 50} registros más ...</td>`;
                 tbody.appendChild(tr);
             }
         }
