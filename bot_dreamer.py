@@ -11,47 +11,70 @@ TZ_CHILE = pytz.timezone('America/Santiago')
 
 # Días de sorteo: Martes (1), Jueves (3), Domingo (6)
 DIAS_SORTEO = [1, 3, 6] 
-HORA_CIERRE_SORTEO = 21 # Asumimos que a las 21:00 se cierra la ventana de predicción para ese día
+HORA_CIERRE_SORTEO = 21 # Cierre a las 21:00
 
 def calcular_sorteo_real(df_maestro):
     """
-    Calcula el ID del próximo sorteo REAL basándose en la fecha actual 
-    y la última fecha registrada en la base de datos.
-    Salva el problema de que la DB esté desactualizada.
+    Calcula el ID del próximo sorteo REAL.
+    Versión Blindada v3.1: Usa Pandas para parsear fechas y maneja mejor los saltos.
     """
     ahora = datetime.now(TZ_CHILE)
     
-    # 1. Obtener datos del último sorteo conocido
     try:
-        ultimo_sorteo_row = df_maestro.iloc[-1]
-        ultimo_id = int(ultimo_sorteo_row['sorteo'])
-        fecha_str = ultimo_sorteo_row['fecha'] # Esperamos formato YYYY-MM-DD
-        ultima_fecha = datetime.strptime(fecha_str, '%Y-%m-%d').replace(tzinfo=TZ_CHILE)
+        # 1. Obtener datos del último sorteo con PANDAS (Más robusto que strptime)
+        ultimo_row = df_maestro.iloc[-1]
+        ultimo_id = int(ultimo_row['sorteo'])
+        
+        # Pandas detecta automáticamente si es YYYY-MM-DD o DD-MM-YYYY
+        fecha_dt = pd.to_datetime(ultimo_row['fecha'])
+        
+        # Convertir a datetime de Python y asignar zona horaria si no tiene
+        ultima_fecha = fecha_dt.to_pydatetime()
+        if ultima_fecha.tzinfo is None:
+            ultima_fecha = TZ_CHILE.localize(ultima_fecha)
+        else:
+            ultima_fecha = ultima_fecha.astimezone(TZ_CHILE)
+            
     except Exception as e:
-        print(f"⚠️ Error leyendo fechas del maestro ({e}). Usando fallback simple.")
-        return 0
+        print(f"⚠️ Error crítico leyendo fechas del maestro: {e}")
+        # FALLBACK MEJORADO: Si falla la lectura, asumimos basándonos solo en la hora actual
+        # Si son más de las 21:00, asumimos que el último del CSV ya pasó hoy
+        # (Esto es una medida desesperada, pero mejor que max+1 ciego)
+        max_id = int(df_maestro['sorteo'].max())
+        if ahora.hour >= 21 and ahora.weekday() in DIAS_SORTEO:
+             return max_id + 2 # Saltamos el de hoy
+        return max_id + 1
 
-    # 2. Viajar en el tiempo desde el último sorteo hasta hoy
+    # 2. Algoritmo de Viaje en el Tiempo
     simulacion_fecha = ultima_fecha
     sorteo_virtual_id = ultimo_id
-
-    while True:
-        # Avanzamos al día siguiente
+    
+    # Límite de seguridad para evitar bucles infinitos (ej: si la fecha del CSV está en el futuro)
+    dias_simulados = 0
+    while dias_simulados < 30: 
+        dias_simulados += 1
+        
+        # Avanzamos al día siguiente (o evaluamos el mismo día si la hora lo amerita, 
+        # pero para simplificar, la lógica de 'proximo' siempre busca hacia adelante)
         simulacion_fecha += timedelta(days=1)
         
-        # Si este día es día de sorteo (Martes, Jueves o Domingo)
+        # Ajustamos la fecha simulada a las 21:00 de ese día
+        cierre_sorteo = simulacion_fecha.replace(hour=HORA_CIERRE_SORTEO, minute=0, second=0, microsecond=0)
+        
         if simulacion_fecha.weekday() in DIAS_SORTEO:
             sorteo_virtual_id += 1
             
-            # Definimos el momento del cierre de ese sorteo virtual
-            cierre_sorteo = simulacion_fecha.replace(hour=HORA_CIERRE_SORTEO, minute=0, second=0, microsecond=0)
-            
             # CRITERIO DE VERDAD:
+            # Si "ahora" es ANTES del cierre de este sorteo virtual, 
+            # significa que este es el sorteo vigente que estamos esperando.
             if ahora < cierre_sorteo:
                 return sorteo_virtual_id
+    
+    # Si salimos del loop, algo raro pasó, devolvemos fallback seguro
+    return ultimo_id + 1
 
 def soñar():
-    print("💤 --- INICIANDO BOT SOÑADOR DUAL v3.0 (Time-Aware) ---")
+    print("💤 --- INICIANDO BOT SOÑADOR DUAL v3.1 (Robust Date) ---")
     
     # 1. Instanciar Forense
     try:
@@ -65,15 +88,14 @@ def soñar():
         if os.path.exists(FILE_MAESTRO):
             df_maestro = pd.read_csv(FILE_MAESTRO)
             proximo_sorteo = calcular_sorteo_real(df_maestro)
-            
-            if proximo_sorteo == 0:
-                proximo_sorteo = int(df_maestro['sorteo'].max()) + 1
         else:
             print("⚠️ No existe archivo maestro. Iniciando en 1.")
             proximo_sorteo = 1
     except Exception as e:
-        print(f"⚠️ Error calculando fechas: {e}. Default: 0")
-        proximo_sorteo = 0
+        print(f"❌ Error general en cálculo de fechas: {e}")
+        proximo_sorteo = 0 # Esto alertará en los logs
+
+    print(f"🎯 Sorteo Objetivo Calculado: {proximo_sorteo}")
 
     nuevas_filas = []
     ahora = datetime.now(TZ_CHILE)
@@ -82,7 +104,7 @@ def soñar():
     try:
         pred_bio = forense.predict_numbers("LOTO", n=6)
         nuevas_filas.append({
-            'id': int(ahora.timestamp()), # ID base
+            'id': int(ahora.timestamp()),
             'fecha_generacion': ahora.strftime('%Y-%m-%d %H:%M:%S'),
             'numeros': str(pred_bio),
             'sorteo_objetivo': proximo_sorteo,
@@ -92,7 +114,6 @@ def soñar():
             'hora_dia': ahora.hour,
             'algoritmo': 'forense_biometrico_v1'
         })
-        print(f"🔮 Biométrico generado: {pred_bio}")
     except Exception as e:
         print(f"❌ Error Biométrico: {e}")
 
@@ -100,7 +121,7 @@ def soñar():
     try:
         pred_gauss = forense.predict_gaussian(n=6)
         nuevas_filas.append({
-            'id': int(ahora.timestamp()) + 1, # ID base + 1 para diferenciar
+            'id': int(ahora.timestamp()) + 1,
             'fecha_generacion': ahora.strftime('%Y-%m-%d %H:%M:%S'),
             'numeros': str(pred_gauss),
             'sorteo_objetivo': proximo_sorteo,
@@ -108,9 +129,8 @@ def soñar():
             'aciertos': 0,
             'score_afinidad': 0.0,
             'hora_dia': ahora.hour,
-            'algoritmo': 'gaussiano_tactico_v1' # Nombre diferenciado
+            'algoritmo': 'gaussiano_tactico_v1'
         })
-        print(f"📐 Gaussiano generado: {pred_gauss}")
     except Exception as e:
         print(f"❌ Error Gaussiano: {e}")
     
