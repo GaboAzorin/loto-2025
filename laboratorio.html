@@ -91,7 +91,13 @@
         .nav-link { color: var(--text); text-decoration: none; border: 1px solid var(--border); padding: 5px 10px; border-radius: 4px; transition: background 0.2s; }
         .nav-link:hover { background: var(--border); }
 
-        /* --- MAPA DE CALOR DE PROXIMIDAD (NUEVO) --- */
+        /* Highlight de Aciertos */
+        .numero-match {
+            color: #2ea043;      /* Verde éxito */
+            font-weight: bold;
+            border: 1px solid #2ea043; /* Borde verde para destacar en el badge */
+            text-shadow: 0 0 5px rgba(46, 160, 67, 0.4);
+        }
         .match-exact { 
             color: #2ea043; font-weight: 900; 
             border: 1px solid #2ea043; 
@@ -107,6 +113,12 @@
         }
         .match-far {
             color: #444; /* Gris oscuro para apagar los lejanos */
+        }
+        
+        /* Badge de Sorteo con Tooltip */
+        .draw-badge {
+            cursor: help;
+            border-bottom: 1px dotted #8b949e;
         }
     </style>
 </head>
@@ -247,6 +259,7 @@
 
         async function loadData() {
             try {
+                // Descargar ambos archivos en paralelo
                 const [simResponse, masterResponse] = await Promise.all([
                     fetch(CSV_URL),
                     fetch(MASTER_URL)
@@ -476,10 +489,20 @@
                 if(row.algoritmo.includes('biometrico')) algoBadge = '<span class="algo-badge algo-bio">🔮 Biométrico</span>';
                 if(row.algoritmo.includes('gaussiano')) algoBadge = '<span class="algo-badge algo-gauss">📐 Gaussiano</span>';
 
+                // --- TOOLTIP EN SORTEO OBJETIVO ---
+                let drawTooltip = "";
+                let drawClass = "";
+                if (winningNumbers.length > 0) {
+                    drawTooltip = `Ganadores: ${winningNumbers.join(', ')}`;
+                    drawClass = "draw-badge";
+                } else {
+                    drawTooltip = "Esperando sorteo...";
+                }
+
                 tr.innerHTML = `
                     <td title="${row.fechaStr}">${fechaShort}</td>
                     <td>${algoBadge}</td>
-                    <td>${row.objetivo}</td>
+                    <td><span class="${drawClass}" title="${drawTooltip}">${row.objetivo}</span></td>
                     <td>${numsHTML}</td>
                     <td class="${badgeClass}">${row.estado}</td>
                     <td>${scoreDisplay}</td>
