@@ -120,6 +120,27 @@
             cursor: help;
             border-bottom: 1px dotted #8b949e;
         }
+        
+        /* Header Ordenable */
+        .sortable-header {
+            cursor: pointer;
+            user-select: none;
+            transition: color 0.2s;
+        }
+        .sortable-header:hover {
+            color: var(--accent);
+            background-color: rgba(255,255,255,0.05);
+        }
+        .sort-icon {
+            display: inline-block;
+            margin-left: 5px;
+            font-size: 0.8em;
+            opacity: 0.5;
+        }
+        .sort-active {
+            color: var(--accent);
+            opacity: 1;
+        }
     </style>
 </head>
 <body>
@@ -245,12 +266,12 @@
                 <table id="aggregate-table">
                     <thead>
                         <tr>
-                            <th>Sorteo</th>
-                            <th style="text-align:center;">Cant. Pred.</th>
+                            <th class="sortable-header" onclick="sortAggregate('target')">Sorteo <span id="sort-icon-target" class="sort-icon">▼</span></th>
+                            <th class="sortable-header" onclick="sortAggregate('count')" style="text-align:center;">Cant. Pred. <span id="sort-icon-count" class="sort-icon"></span></th>
                             <th>Mejor Predicción</th>
-                            <th style="text-align:center;">Score Global</th>
-                            <th style="text-align:center;">Score Bio.</th>
-                            <th style="text-align:center;">Score Gauss.</th>
+                            <th class="sortable-header" onclick="sortAggregate('avgTotal')" style="text-align:center;">Score Global <span id="sort-icon-avgTotal" class="sort-icon"></span></th>
+                            <th class="sortable-header" onclick="sortAggregate('avgBio')" style="text-align:center;">Score Bio. <span id="sort-icon-avgBio" class="sort-icon"></span></th>
+                            <th class="sortable-header" onclick="sortAggregate('avgGauss')" style="text-align:center;">Score Gauss. <span id="sort-icon-avgGauss" class="sort-icon"></span></th>
                         </tr>
                     </thead>
                     <tbody id="aggregate-body">
@@ -266,8 +287,13 @@
         const MASTER_URL = 'LOTO_HISTORIAL_MAESTRO.csv';
         
         let GLOBAL_DATA = [];
-        let GLOBAL_MAESTRO = {}; // { "5356": { numbers: [1,2,3...], date: "2025-..." } }
+        let GLOBAL_MAESTRO = {};
+        let AGGREGATE_DATA = []; // Nuevo: Almacena datos procesados para tabla 2
         let CURRENT_CHART_MODE = 'hour';
+        
+        // Estado de ordenamiento para tabla agregada
+        let SORT_COL = 'target'; // Por defecto Sorteo
+        let SORT_DIR = 'desc';   // Por defecto Descendente (Mayor a Menor)
 
         // Inicializar selector de horas
         const hourSelect = document.getElementById('f-hora');
@@ -280,7 +306,6 @@
 
         async function loadData() {
             try {
-                // Descargar ambos archivos en paralelo
                 const [simResponse, masterResponse] = await Promise.all([
                     fetch(CSV_URL),
                     fetch(MASTER_URL)
@@ -306,7 +331,7 @@
             const headers = lines[0].split(',');
             
             const idxSorteo = headers.indexOf('sorteo');
-            const idxFecha = headers.indexOf('fecha'); // Capturar fecha
+            const idxFecha = headers.indexOf('fecha');
             const idxN1 = headers.indexOf('LOTO_n1');
             const idxN2 = headers.indexOf('LOTO_n2');
             const idxN3 = headers.indexOf('LOTO_n3');
@@ -325,7 +350,6 @@
                     parseInt(row[idxN1]), parseInt(row[idxN2]), parseInt(row[idxN3]), 
                     parseInt(row[idxN4]), parseInt(row[idxN5]), parseInt(row[idxN6])
                 ];
-                // Guardar objeto con números y fecha
                 GLOBAL_MAESTRO[sorteo] = {
                     numbers: nums,
                     date: idxFecha !== -1 ? row[idxFecha] : 'Sin fecha'
@@ -357,7 +381,7 @@
 
             initDrawFilter();
             applyFilters();
-            renderAggregateTable(GLOBAL_DATA); // Renderizar nueva tabla
+            calculateAggregateData(GLOBAL_DATA); // Calculamos y luego renderizamos
         }
 
         function initDrawFilter() {
@@ -478,55 +502,35 @@
                 const scoreDisplay = row.estado === 'AUDITADO' ? `<b>${row.score}%</b>` : '-';
                 
                 const numsClean = row.numeros.replace('[', '').replace(']', '').split(', ');
-                // MODIFICADO: Acceso a objeto global actualizado
-                const winData = GLOBAL_MAESTRO[row.objetivo];
-                const winningNumbers = winData ? winData.numbers : [];
+                const winningNumbers = GLOBAL_MAESTRO[row.objetivo] ? GLOBAL_MAESTRO[row.objetivo].numbers : [];
 
-                // --- LÓGICA DE PROXIMIDAD ---
                 const numsHTML = numsClean.map(n => {
                     const numInt = parseInt(n);
-                    
                     if (winningNumbers.length === 0) return `<span class="num-badge">${n}</span>`;
 
-                    // 1. Acierto Exacto (Verde)
                     if (winningNumbers.includes(numInt)) {
                         return `<span class="num-badge match-exact" title="¡Acierto!">${n}</span>`;
                     }
 
-                    // 2. Proximidad
                     let minDiff = 999;
                     let closestWin = -1;
-                    
                     winningNumbers.forEach(w => {
                         const diff = Math.abs(w - numInt);
                         if(diff < minDiff) { minDiff = diff; closestWin = w; }
                     });
 
-                    if (minDiff === 1) { // Amarillo
-                        return `<span class="num-badge match-close-1" title="¡Casi! Era el ${closestWin}">${n}</span>`;
-                    } else if (minDiff <= 3) { // Azul
-                        return `<span class="num-badge match-close-2" title="Cerca del ${closestWin} (Dif: ${minDiff})">${n}</span>`;
-                    }
-                    
-                    // Gris (Lejos)
+                    if (minDiff === 1) return `<span class="num-badge match-close-1" title="¡Casi! Era el ${closestWin}">${n}</span>`;
+                    if (minDiff <= 3) return `<span class="num-badge match-close-2" title="Cerca del ${closestWin} (Dif: ${minDiff})">${n}</span>`;
                     return `<span class="num-badge match-far">${n}</span>`;
                 }).join('');
 
                 const fechaShort = row.fechaStr.split(' ')[0].slice(5) + " " + row.fechaStr.split(' ')[1].slice(0,5); 
-
                 let algoBadge = '<span class="algo-badge" style="color:#888; border:1px solid #444;">Desconocido</span>';
                 if(row.algoritmo.includes('biometrico')) algoBadge = '<span class="algo-badge algo-bio">🔮 Biométrico</span>';
                 if(row.algoritmo.includes('gaussiano')) algoBadge = '<span class="algo-badge algo-gauss">📐 Gaussiano</span>';
 
-                // --- TOOLTIP EN SORTEO OBJETIVO ---
-                let drawTooltip = "";
-                let drawClass = "";
-                if (winningNumbers.length > 0) {
-                    drawTooltip = `Ganadores: ${winningNumbers.join(', ')}`;
-                    drawClass = "draw-badge";
-                } else {
-                    drawTooltip = "Esperando sorteo...";
-                }
+                let drawTooltip = winningNumbers.length > 0 ? `Ganadores: ${winningNumbers.join(', ')}` : "Esperando sorteo...";
+                let drawClass = winningNumbers.length > 0 ? "draw-badge" : "";
 
                 tr.innerHTML = `
                     <td title="${row.fechaStr}">${fechaShort}</td>
@@ -546,29 +550,28 @@
             }
         }
 
-        // --- NUEVA FUNCIÓN: TABLA AGREGADA POR SORTEO ---
-        function renderAggregateTable(data) {
-            const tbody = document.getElementById('aggregate-body');
-            tbody.innerHTML = '';
-
-            // 1. Agrupar datos por sorteo
+        // --- LÓGICA DE TABLA AGREGADA CON ORDENAMIENTO ---
+        
+        function calculateAggregateData(data) {
             const groups = {};
             data.forEach(d => {
                 if (!groups[d.objetivo]) {
                     groups[d.objetivo] = {
-                        target: d.objetivo,
+                        target: parseInt(d.objetivo), // Guardar como número para ordenar bien
                         count: 0,
                         scores: [],
                         bioScores: [],
                         gaussScores: [],
                         bestRow: null,
-                        maxScore: -1
+                        maxScore: -1,
+                        avgTotal: 0, // Pre-calculados para facilitar sort
+                        avgBio: 0,
+                        avgGauss: 0
                     };
                 }
                 const g = groups[d.objetivo];
                 g.count++;
                 
-                // Solo sumar scores si ya está auditado
                 if (d.estado === 'AUDITADO') {
                     g.scores.push(d.score);
                     if (d.algoritmo.includes('biometrico')) g.bioScores.push(d.score);
@@ -581,46 +584,84 @@
                 }
             });
 
-            // 2. Convertir a array y ordenar descendente por sorteo
-            const sortedGroups = Object.values(groups).sort((a,b) => b.target - a.target);
+            // Calcular promedios finales para cada grupo
+            Object.values(groups).forEach(g => {
+                g.avgTotal = g.scores.length ? (g.scores.reduce((a,b)=>a+b,0)/g.scores.length) : -1;
+                g.avgBio = g.bioScores.length ? (g.bioScores.reduce((a,b)=>a+b,0)/g.bioScores.length) : -1;
+                g.avgGauss = g.gaussScores.length ? (g.gaussScores.reduce((a,b)=>a+b,0)/g.gaussScores.length) : -1;
+            });
 
-            // 3. Renderizar filas
-            sortedGroups.forEach(g => {
+            AGGREGATE_DATA = Object.values(groups);
+            applySort(); // Ordenar inicial y renderizar
+        }
+
+        function sortAggregate(col) {
+            // Toggle dirección si es la misma columna, sino reset a desc
+            if (SORT_COL === col) {
+                SORT_DIR = SORT_DIR === 'asc' ? 'desc' : 'asc';
+            } else {
+                SORT_COL = col;
+                SORT_DIR = 'desc';
+            }
+            applySort();
+        }
+
+        function applySort() {
+            // Ordenar datos
+            AGGREGATE_DATA.sort((a, b) => {
+                let valA = a[SORT_COL];
+                let valB = b[SORT_COL];
+                
+                if (SORT_DIR === 'asc') return valA - valB;
+                else return valB - valA;
+            });
+
+            // Actualizar iconos visuales
+            document.querySelectorAll('.sort-icon').forEach(el => {
+                el.textContent = '';
+                el.classList.remove('sort-active');
+            });
+            const activeIcon = document.getElementById(`sort-icon-${SORT_COL}`);
+            if(activeIcon) {
+                activeIcon.textContent = SORT_DIR === 'asc' ? '▲' : '▼';
+                activeIcon.classList.add('sort-active');
+            }
+
+            renderAggregateRows();
+        }
+
+        function renderAggregateRows() {
+            const tbody = document.getElementById('aggregate-body');
+            tbody.innerHTML = '';
+
+            AGGREGATE_DATA.forEach(g => {
                 const tr = document.createElement('tr');
                 
-                // Cálculos de promedio
-                const avgTotal = g.scores.length ? (g.scores.reduce((a,b)=>a+b,0)/g.scores.length).toFixed(1) + '%' : '-';
-                const avgBio = g.bioScores.length ? (g.bioScores.reduce((a,b)=>a+b,0)/g.bioScores.length).toFixed(1) + '%' : '-';
-                const avgGauss = g.gaussScores.length ? (g.gaussScores.reduce((a,b)=>a+b,0)/g.gaussScores.length).toFixed(1) + '%' : '-';
+                const avgTotalStr = g.avgTotal >= 0 ? g.avgTotal.toFixed(1) + '%' : '-';
+                const avgBioStr = g.avgBio >= 0 ? g.avgBio.toFixed(1) + '%' : '-';
+                const avgGaussStr = g.avgGauss >= 0 ? g.avgGauss.toFixed(1) + '%' : '-';
 
-                // Formatear Mejor Predicción (Reutilizamos lógica de color)
                 let bestHtml = '-';
                 if (g.bestRow) {
                     const numsClean = g.bestRow.numeros.replace('[', '').replace(']', '').split(', ');
-                    const winData = GLOBAL_MAESTRO[g.target];
-                    const winningNumbers = winData ? winData.numbers : [];
+                    // Usamos GLOBAL_MAESTRO que ya tiene los nums
+                    const winEntry = GLOBAL_MAESTRO[g.target];
+                    const winningNumbers = winEntry ? winEntry.numbers : [];
                     
-                    // Colorear números
                     bestHtml = numsClean.map(n => {
                         const numInt = parseInt(n);
                         if (winningNumbers.includes(numInt)) return `<span class="num-badge match-exact">${n}</span>`;
-                        // Proximidad simplificada para esta celda pequeña
                         let minDiff = 999;
                         winningNumbers.forEach(w => { let d=Math.abs(w-numInt); if(d<minDiff) minDiff=d; });
-                        
                         if (minDiff===1) return `<span class="num-badge match-close-1">${n}</span>`;
                         if (minDiff<=3) return `<span class="num-badge match-close-2">${n}</span>`;
                         return `<span class="num-badge match-far">${n}</span>`;
                     }).join('');
                     
-                    // Agregar badge de algoritmo
-                    let badge = '';
-                    if(g.bestRow.algoritmo.includes('bio')) badge = '<span style="font-size:0.7em; margin-right:5px;">🔮</span>';
-                    else badge = '<span style="font-size:0.7em; margin-right:5px;">📐</span>';
+                    let badge = g.bestRow.algoritmo.includes('bio') ? '<span style="font-size:0.7em; margin-right:5px;">🔮</span>' : '<span style="font-size:0.7em; margin-right:5px;">📐</span>';
                     bestHtml = `<div>${badge}${bestHtml} <small>(${g.maxScore}%)</small></div>`;
                 }
 
-                // Tooltip Fecha
                 const masterEntry = GLOBAL_MAESTRO[g.target];
                 const dateTooltip = masterEntry ? `Fecha: ${masterEntry.date}` : 'Fecha desconocida';
 
@@ -628,9 +669,9 @@
                     <td><span class="draw-badge" title="${dateTooltip}">#${g.target}</span></td>
                     <td style="text-align:center;">${g.count}</td>
                     <td>${bestHtml}</td>
-                    <td style="text-align:center; font-weight:bold;">${avgTotal}</td>
-                    <td style="text-align:center; color:var(--bio-color);">${avgBio}</td>
-                    <td style="text-align:center; color:var(--gauss-color);">${avgGauss}</td>
+                    <td style="text-align:center; font-weight:bold;">${avgTotalStr}</td>
+                    <td style="text-align:center; color:var(--bio-color);">${avgBioStr}</td>
+                    <td style="text-align:center; color:var(--gauss-color);">${avgGaussStr}</td>
                 `;
                 tbody.appendChild(tr);
             });
