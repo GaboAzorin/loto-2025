@@ -45,3 +45,5 @@ id,fecha_generacion,numeros,sorteo_objetivo,estado,aciertos,score_afinidad,hora_
 1764953901,2025-12-05 13:58:20,"[2, 12, 17, 20, 23, 38]",5357,PENDIENTE,0,0.0,13,gaussiano_tactico_v1
 1764955676,2025-12-05 14:27:56,"[3, 5, 13, 20, 38, 39]",5357,PENDIENTE,0,0.0,14,forense_biometrico_v1
 1764955677,2025-12-05 14:27:56,"[4, 9, 13, 28, 31, 32]",5357,PENDIENTE,0,0.0,14,gaussiano_tactico_v1
+1764956716,2025-12-05 14:45:16,"[4, 10, 30, 32, 33, 36]",5357,PENDIENTE,0,0.0,14,forense_biometrico_v1
+1764956717,2025-12-05 14:45:16,"[13, 19, 20, 22, 25, 36]",5357,PENDIENTE,0,0.0,14,gaussiano_tactico_v1
