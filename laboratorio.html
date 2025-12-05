@@ -77,7 +77,7 @@
         table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem; }
         th { text-align: left; color: #8b949e; border-bottom: 1px solid var(--border); padding: 10px; position: sticky; top: 0; background: var(--card); z-index: 10; }
         td { padding: 10px; border-bottom: 1px solid var(--border); }
-        .num-badge { background: #21262d; padding: 2px 6px; border-radius: 4px; margin-right: 2px; display: inline-block; }
+        .num-badge { background: #21262d; padding: 2px 6px; border-radius: 4px; margin-right: 2px; display: inline-block; cursor: help; }
         
         .pending { color: var(--warning); }
         .audited { color: var(--success); }
@@ -91,12 +91,22 @@
         .nav-link { color: var(--text); text-decoration: none; border: 1px solid var(--border); padding: 5px 10px; border-radius: 4px; transition: background 0.2s; }
         .nav-link:hover { background: var(--border); }
 
-        /* Highlight de Aciertos */
-        .numero-match {
-            color: #2ea043;      /* Verde éxito */
-            font-weight: bold;
-            border: 1px solid #2ea043; /* Borde verde para destacar en el badge */
-            text-shadow: 0 0 5px rgba(46, 160, 67, 0.4);
+        /* --- MAPA DE CALOR DE PROXIMIDAD (NUEVO) --- */
+        .match-exact { 
+            color: #2ea043; font-weight: 900; 
+            border: 1px solid #2ea043; 
+            box-shadow: 0 0 5px rgba(46, 160, 67, 0.4);
+        }
+        .match-close-1 { 
+            color: #f1e05a; font-weight: bold; /* Amarillo */
+            border: 1px solid rgba(241, 224, 90, 0.5);
+        }
+        .match-close-2 { 
+            color: #58a6ff; /* Azul */
+            border: 1px solid rgba(88, 166, 255, 0.3);
+        }
+        .match-far {
+            color: #444; /* Gris oscuro para apagar los lejanos */
         }
     </style>
 </head>
@@ -220,11 +230,11 @@
 
     <script>
         const CSV_URL = 'LOTO_SIMULACIONES.csv';
-        const MASTER_URL = 'LOTO_HISTORIAL_MAESTRO.csv'; // Nuevo: URL del maestro
+        const MASTER_URL = 'LOTO_HISTORIAL_MAESTRO.csv';
         
-        let GLOBAL_DATA = []; // Almacenamiento global
-        let GLOBAL_MAESTRO = {}; // Almacenamiento rápido de sorteos ganadores
-        let CURRENT_CHART_MODE = 'hour'; // 'hour', 'day', 'month'
+        let GLOBAL_DATA = [];
+        let GLOBAL_MAESTRO = {};
+        let CURRENT_CHART_MODE = 'hour';
 
         // Inicializar selector de horas
         const hourSelect = document.getElementById('f-hora');
@@ -237,7 +247,6 @@
 
         async function loadData() {
             try {
-                // Descargar ambos archivos en paralelo
                 const [simResponse, masterResponse] = await Promise.all([
                     fetch(CSV_URL),
                     fetch(MASTER_URL)
@@ -245,7 +254,7 @@
 
                 if (masterResponse.ok) {
                     const masterText = await masterResponse.text();
-                    processMaster(masterText); // Procesar maestro primero
+                    processMaster(masterText);
                 }
 
                 const text = await simResponse.text();
@@ -258,12 +267,10 @@
             }
         }
 
-        // Función simple para parsear el Maestro y guardar ganadores
         function processMaster(text) {
             const lines = text.trim().split('\n');
             const headers = lines[0].split(',');
             
-            // Buscar índices de columnas dinámicamente
             const idxSorteo = headers.indexOf('sorteo');
             const idxN1 = headers.indexOf('LOTO_n1');
             const idxN2 = headers.indexOf('LOTO_n2');
@@ -274,9 +281,8 @@
 
             if (idxSorteo === -1 || idxN1 === -1) return;
 
-            // Llenar objeto global { "5356": [1, 2, 3...] }
             for (let i = 1; i < lines.length; i++) {
-                const row = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/); // Split seguro
+                const row = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
                 if (row.length < headers.length) continue;
                 
                 const sorteo = row[idxSorteo];
@@ -311,7 +317,7 @@
             }).filter(item => item !== null).reverse();
 
             initDrawFilter();
-            applyFilters(); // Esto dispara updateDashboard y renderTable
+            applyFilters();
         }
 
         function initDrawFilter() {
@@ -326,70 +332,52 @@
             });
         }
 
-        // Función para cambiar vista del gráfico
         function switchChartView(mode) {
             CURRENT_CHART_MODE = mode;
-            applyFilters(); // Re-calcula todo con la vista nueva
+            applyFilters();
         }
 
         function updateDashboard(data) {
-            // 1. KPIs Generales
             document.getElementById('total-sims').textContent = data.length;
             document.getElementById('target-draw').textContent = "#" + (data[0]?.objetivo || 'N/A');
             document.getElementById('last-update').textContent = "Último pulso: " + (data[0]?.fechaStr.split(' ')[1] || 'N/A');
 
-            // 2. Filtrar Auditados para Gráficos
             const auditados = data.filter(d => d.estado === 'AUDITADO');
             
-            // Promedio Global
             const globalAvg = auditados.length > 0 
                 ? (auditados.reduce((a, b) => a + b.score, 0) / auditados.length).toFixed(1) 
                 : 0;
             document.getElementById('avg-score').textContent = globalAvg + "%";
 
-            // 3. Preparar Datos del Gráfico según Modo
-            let labels = [];
-            let bioScores = [];
-            let gaussScores = [];
-            let bestMomentLabel = "--";
-            let maxScoreFound = -1;
+            let labels = [], bioScores = [], gaussScores = [];
+            let bestMomentLabel = "--", maxScoreFound = -1;
 
             if (CURRENT_CHART_MODE === 'hour') {
                 labels = Array.from({length: 24}, (_, i) => `${i}:00`);
-                // Calcular para cada hora 0-23
                 for (let i = 0; i < 24; i++) {
                     const bioVal = calculateAvg(auditados, d => d.hora === i && d.algoritmo.includes('forense_biometrico'));
                     const gaussVal = calculateAvg(auditados, d => d.hora === i && d.algoritmo.includes('gaussiano'));
-                    bioScores.push(bioVal);
-                    gaussScores.push(gaussVal);
-                    
-                    // Check Best Moment (Promedio de ambos)
-                    let combined = (parseFloat(bioVal) + parseFloat(gaussVal)) / 2; // Simplificado
+                    bioScores.push(bioVal); gaussScores.push(gaussVal);
+                    let combined = (parseFloat(bioVal) + parseFloat(gaussVal)) / 2;
                     if(combined > maxScoreFound) { maxScoreFound = combined; bestMomentLabel = `${i}:00 hrs`; }
                 }
             } else if (CURRENT_CHART_MODE === 'day') {
                 const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
                 labels = days;
-                // Calcular para cada día 0-6
                 for (let i = 0; i < 7; i++) {
                     const bioVal = calculateAvg(auditados, d => d.dateObj.getDay() === i && d.algoritmo.includes('forense_biometrico'));
                     const gaussVal = calculateAvg(auditados, d => d.dateObj.getDay() === i && d.algoritmo.includes('gaussiano'));
-                    bioScores.push(bioVal);
-                    gaussScores.push(gaussVal);
-
+                    bioScores.push(bioVal); gaussScores.push(gaussVal);
                     let combined = (parseFloat(bioVal) + parseFloat(gaussVal)) / 2;
                     if(combined > maxScoreFound) { maxScoreFound = combined; bestMomentLabel = days[i]; }
                 }
             } else if (CURRENT_CHART_MODE === 'month') {
                 const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
                 labels = months;
-                // Calcular para cada mes 0-11
                 for (let i = 0; i < 12; i++) {
                     const bioVal = calculateAvg(auditados, d => d.dateObj.getMonth() === i && d.algoritmo.includes('forense_biometrico'));
                     const gaussVal = calculateAvg(auditados, d => d.dateObj.getMonth() === i && d.algoritmo.includes('gaussiano'));
-                    bioScores.push(bioVal);
-                    gaussScores.push(gaussVal);
-
+                    bioScores.push(bioVal); gaussScores.push(gaussVal);
                     let combined = (parseFloat(bioVal) + parseFloat(gaussVal)) / 2;
                     if(combined > maxScoreFound) { maxScoreFound = combined; bestMomentLabel = months[i]; }
                 }
@@ -441,7 +429,7 @@
             tbody.innerHTML = '';
             document.getElementById('filtered-count').textContent = `Mostrando ${data.length} registros`;
 
-            // Límite visual de seguridad
+            // Límite visual de seguridad (50)
             const displayData = data.slice(0, 50);
 
             displayData.forEach(row => {
@@ -449,19 +437,37 @@
                 const badgeClass = row.estado === 'AUDITADO' ? 'audited' : 'pending';
                 const scoreDisplay = row.estado === 'AUDITADO' ? `<b>${row.score}%</b>` : '-';
                 
-                // Obtener números limpios
                 const numsClean = row.numeros.replace('[', '').replace(']', '').split(', ');
-                
-                // Buscar si tenemos los ganadores para este sorteo
                 const winningNumbers = GLOBAL_MAESTRO[row.objetivo] || [];
 
-                // Generar HTML con coloreado
+                // --- LÓGICA DE PROXIMIDAD ---
                 const numsHTML = numsClean.map(n => {
                     const numInt = parseInt(n);
+                    
+                    if (winningNumbers.length === 0) return `<span class="num-badge">${n}</span>`;
+
+                    // 1. Acierto Exacto (Verde)
                     if (winningNumbers.includes(numInt)) {
-                        return `<span class="num-badge numero-match" title="Acierto en Sorteo #${row.objetivo}">${n}</span>`; // Acierto con tooltip
+                        return `<span class="num-badge match-exact" title="¡Acierto!">${n}</span>`;
                     }
-                    return `<span class="num-badge">${n}</span>`; // Normal
+
+                    // 2. Proximidad
+                    let minDiff = 999;
+                    let closestWin = -1;
+                    
+                    winningNumbers.forEach(w => {
+                        const diff = Math.abs(w - numInt);
+                        if(diff < minDiff) { minDiff = diff; closestWin = w; }
+                    });
+
+                    if (minDiff === 1) { // Amarillo
+                        return `<span class="num-badge match-close-1" title="¡Casi! Era el ${closestWin}">${n}</span>`;
+                    } else if (minDiff <= 3) { // Azul
+                        return `<span class="num-badge match-close-2" title="Cerca del ${closestWin} (Dif: ${minDiff})">${n}</span>`;
+                    }
+                    
+                    // Gris (Lejos)
+                    return `<span class="num-badge match-far">${n}</span>`;
                 }).join('');
 
                 const fechaShort = row.fechaStr.split(' ')[0].slice(5) + " " + row.fechaStr.split(' ')[1].slice(0,5); 
