@@ -17,6 +17,11 @@ jobs:
     - name: Checkout repo
       uses: actions/checkout@v3
 
+    # --- AGREGADO: Sincronizar antes de ejecutar ---
+    - name: Pull latest changes
+      run: git pull origin main
+    # -----------------------------------------------
+
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
@@ -33,8 +38,7 @@ jobs:
       run: |
         git config --global user.name 'LotoAI Bot'
         git config --global user.email 'bot@lotoai.com'
-        # Pull con rebase es más limpio para bots
-        git pull --rebase
+        # Git pull por seguridad otra vez (no daña)
         git add LOTO_SIMULACIONES.csv
         git commit -m "🤖 Nueva predicción generada por Bot Soñador" || exit 0
         git push

@@ -11,7 +11,7 @@ TZ_CHILE = pytz.timezone('America/Santiago')
 
 # Días de sorteo: Martes (1), Jueves (3), Domingo (6)
 DIAS_SORTEO = [1, 3, 6] 
-HORA_CIERRE_SORTEO = 21 # Cierre a las 21:00
+HORA_CIERRE_SORTEO = 21 # Asumimos que a las 21:00 se cierra la ventana de predicción para ese día
 
 def calcular_sorteo_real(df_maestro):
     """
@@ -19,6 +19,7 @@ def calcular_sorteo_real(df_maestro):
     Versión Blindada v3.1: Usa Pandas para parsear fechas y maneja mejor los saltos.
     """
     ahora = datetime.now(TZ_CHILE)
+    print(f"🕒 [DEBUG] Hora Bot (Chile): {ahora}") # DIAGNÓSTICO
     
     try:
         # 1. Obtener datos del último sorteo con PANDAS (Más robusto que strptime)
@@ -26,7 +27,8 @@ def calcular_sorteo_real(df_maestro):
         ultimo_id = int(ultimo_row['sorteo'])
         
         # Pandas detecta automáticamente si es YYYY-MM-DD o DD-MM-YYYY
-        fecha_dt = pd.to_datetime(ultimo_row['fecha'])
+        # FIX: Agregamos dayfirst=True para evitar que confunda 4 de Dic (04-12) con 12 de Abril
+        fecha_dt = pd.to_datetime(ultimo_row['fecha'], dayfirst=True)
         
         # Convertir a datetime de Python y asignar zona horaria si no tiene
         ultima_fecha = fecha_dt.to_pydatetime()
@@ -35,6 +37,8 @@ def calcular_sorteo_real(df_maestro):
         else:
             ultima_fecha = ultima_fecha.astimezone(TZ_CHILE)
             
+        print(f"📅 [DEBUG] Último sorteo leído: #{ultimo_id} fecha: {ultima_fecha}") # DIAGNÓSTICO
+
     except Exception as e:
         print(f"⚠️ Error crítico leyendo fechas del maestro: {e}")
         # FALLBACK MEJORADO: Si falla la lectura, asumimos basándonos solo en la hora actual
@@ -68,13 +72,16 @@ def calcular_sorteo_real(df_maestro):
             # Si "ahora" es ANTES del cierre de este sorteo virtual, 
             # significa que este es el sorteo vigente que estamos esperando.
             if ahora < cierre_sorteo:
+                print(f"✅ [TARGET] Objetivo fijado: #{sorteo_virtual_id} (Cierra: {cierre_sorteo})") # DIAGNÓSTICO
                 return sorteo_virtual_id
+            
+            print(f"⏭️ [SKIP] El sorteo #{sorteo_virtual_id} ya cerró. Buscando siguiente...") # DIAGNÓSTICO
     
     # Si salimos del loop, algo raro pasó, devolvemos fallback seguro
     return ultimo_id + 1
 
 def soñar():
-    print("💤 --- INICIANDO BOT SOÑADOR DUAL v3.1 (Robust Date) ---")
+    print("💤 --- INICIANDO BOT SOÑADOR DUAL v4.0 (Git-Safe) ---")
     
     # 1. Instanciar Forense
     try:
