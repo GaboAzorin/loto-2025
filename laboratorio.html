@@ -459,7 +459,7 @@
                 const numsHTML = numsClean.map(n => {
                     const numInt = parseInt(n);
                     if (winningNumbers.includes(numInt)) {
-                        return `<span class="num-badge numero-match">${n}</span>`; // Acierto
+                        return `<span class="num-badge numero-match" title="Acierto en Sorteo #${row.objetivo}">${n}</span>`; // Acierto con tooltip
                     }
                     return `<span class="num-badge">${n}</span>`; // Normal
                 }).join('');
