@@ -3,13 +3,14 @@ name: Juez Implacable (Auditoría)
 on:
   push:
     paths:
-      - 'LOTO_HISTORIAL_MAESTRO.csv' # Solo se activa si cambia este archivo
+      - 'LOTO_HISTORIAL_MAESTRO.csv' # Se activa automático si subes resultados
+  workflow_dispatch: # <--- ESTO HABILITA EL BOTÓN MANUAL
 
 jobs:
   judge:
     runs-on: ubuntu-latest
     permissions:
-      contents: write # IMPORTANTE: Permiso para escribir el resultado
+      contents: write # Permiso para actualizar el CSV
 
     steps:
     - name: Checkout repo
@@ -31,6 +32,7 @@ jobs:
       run: |
         git config --global user.name 'Juez LotoAI'
         git config --global user.email 'juez@lotoai.com'
+        git pull
         git add LOTO_SIMULACIONES.csv
-        git commit -m "⚖️ Auditoría completada tras actualización de resultados" || exit 0
+        git commit -m "⚖️ Auditoría completada (Recálculo)" || exit 0
         git push
