@@ -288,12 +288,12 @@
         
         let GLOBAL_DATA = [];
         let GLOBAL_MAESTRO = {};
-        let AGGREGATE_DATA = []; // Nuevo: Almacena datos procesados para tabla 2
+        let AGGREGATE_DATA = []; 
         let CURRENT_CHART_MODE = 'hour';
         
         // Estado de ordenamiento para tabla agregada
-        let SORT_COL = 'target'; // Por defecto Sorteo
-        let SORT_DIR = 'desc';   // Por defecto Descendente (Mayor a Menor)
+        let SORT_COL = 'target'; 
+        let SORT_DIR = 'desc';   
 
         // Inicializar selector de horas
         const hourSelect = document.getElementById('f-hora');
@@ -381,7 +381,7 @@
 
             initDrawFilter();
             applyFilters();
-            calculateAggregateData(GLOBAL_DATA); // Calculamos y luego renderizamos
+            calculateAggregateData(GLOBAL_DATA); 
         }
 
         function initDrawFilter() {
@@ -493,8 +493,16 @@
             tbody.innerHTML = '';
             document.getElementById('filtered-count').textContent = `Mostrando ${data.length} registros`;
 
-            // Límite visual de seguridad (50)
-            const displayData = data.slice(0, 50);
+            // --- CAMBIO CLAVE: Límite inteligente ---
+            // Si hay un filtro de Sorteo activo (que no sea ALL), mostramos todo.
+            // Si no, aplicamos el límite de 50 para no saturar.
+            const filterSorteo = document.getElementById('f-sorteo').value;
+            let displayData = data;
+            
+            if (filterSorteo === 'ALL') {
+                 displayData = data.slice(0, 50);
+            }
+            // ----------------------------------------
 
             displayData.forEach(row => {
                 const tr = document.createElement('tr');
@@ -525,9 +533,13 @@
                 }).join('');
 
                 const fechaShort = row.fechaStr.split(' ')[0].slice(5) + " " + row.fechaStr.split(' ')[1].slice(0,5); 
+
                 let algoBadge = '<span class="algo-badge" style="color:#888; border:1px solid #444;">Desconocido</span>';
                 if(row.algoritmo.includes('biometrico')) algoBadge = '<span class="algo-badge algo-bio">🔮 Biométrico</span>';
                 if(row.algoritmo.includes('gaussiano')) algoBadge = '<span class="algo-badge algo-gauss">📐 Gaussiano</span>';
+                // Añadimos badges para los nuevos modelos por si acaso
+                if(row.algoritmo.includes('delta')) algoBadge = '<span class="algo-badge" style="color:#20b2aa; border-color:rgba(32,178,170,0.3); background:rgba(32,178,170,0.1);">📈 Delta</span>';
+                if(row.algoritmo.includes('markov')) algoBadge = '<span class="algo-badge" style="color:#ff69b4; border-color:rgba(255,105,180,0.3); background:rgba(255,105,180,0.1);">🔗 Markov</span>';
 
                 let drawTooltip = winningNumbers.length > 0 ? `Ganadores: ${winningNumbers.join(', ')}` : "Esperando sorteo...";
                 let drawClass = winningNumbers.length > 0 ? "draw-badge" : "";
@@ -543,9 +555,10 @@
                 tbody.appendChild(tr);
             });
             
-            if (data.length > 50) {
+            // Mensaje de pie si hay datos ocultos
+            if (filterSorteo === 'ALL' && data.length > 50) {
                 const tr = document.createElement('tr');
-                tr.innerHTML = `<td colspan="6" style="text-align:center; color:#8b949e; font-style:italic;">... y ${data.length - 50} registros más ...</td>`;
+                tr.innerHTML = `<td colspan="6" style="text-align:center; color:#8b949e; font-style:italic;">... y ${data.length - 50} registros más (filtra por sorteo para ver todo) ...</td>`;
                 tbody.appendChild(tr);
             }
         }
@@ -557,14 +570,14 @@
             data.forEach(d => {
                 if (!groups[d.objetivo]) {
                     groups[d.objetivo] = {
-                        target: parseInt(d.objetivo), // Guardar como número para ordenar bien
+                        target: parseInt(d.objetivo), 
                         count: 0,
                         scores: [],
                         bioScores: [],
                         gaussScores: [],
                         bestRow: null,
                         maxScore: -1,
-                        avgTotal: 0, // Pre-calculados para facilitar sort
+                        avgTotal: 0, 
                         avgBio: 0,
                         avgGauss: 0
                     };
@@ -584,7 +597,6 @@
                 }
             });
 
-            // Calcular promedios finales para cada grupo
             Object.values(groups).forEach(g => {
                 g.avgTotal = g.scores.length ? (g.scores.reduce((a,b)=>a+b,0)/g.scores.length) : -1;
                 g.avgBio = g.bioScores.length ? (g.bioScores.reduce((a,b)=>a+b,0)/g.bioScores.length) : -1;
@@ -592,11 +604,10 @@
             });
 
             AGGREGATE_DATA = Object.values(groups);
-            applySort(); // Ordenar inicial y renderizar
+            applySort(); 
         }
 
         function sortAggregate(col) {
-            // Toggle dirección si es la misma columna, sino reset a desc
             if (SORT_COL === col) {
                 SORT_DIR = SORT_DIR === 'asc' ? 'desc' : 'asc';
             } else {
@@ -607,7 +618,6 @@
         }
 
         function applySort() {
-            // Ordenar datos
             AGGREGATE_DATA.sort((a, b) => {
                 let valA = a[SORT_COL];
                 let valB = b[SORT_COL];
@@ -616,7 +626,6 @@
                 else return valB - valA;
             });
 
-            // Actualizar iconos visuales
             document.querySelectorAll('.sort-icon').forEach(el => {
                 el.textContent = '';
                 el.classList.remove('sort-active');
@@ -644,7 +653,6 @@
                 let bestHtml = '-';
                 if (g.bestRow) {
                     const numsClean = g.bestRow.numeros.replace('[', '').replace(']', '').split(', ');
-                    // Usamos GLOBAL_MAESTRO que ya tiene los nums
                     const winEntry = GLOBAL_MAESTRO[g.target];
                     const winningNumbers = winEntry ? winEntry.numbers : [];
                     
