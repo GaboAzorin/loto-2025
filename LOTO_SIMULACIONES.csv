@@ -393,3 +393,7 @@ id,fecha_generacion,numeros,sorteo_objetivo,estado,aciertos,score_afinidad,hora_
 1765146134,2025-12-07 19:22:13,"[8, 21, 23, 27, 29, 36]",5357,PENDIENTE,0,0.0,19,gaussiano_tactico_v1
 1765146135,2025-12-07 19:22:13,"[2, 9, 20, 27, 31, 32]",5357,PENDIENTE,0,0.0,19,delta_tactico_v1
 1765146136,2025-12-07 19:22:13,"[4, 11, 22, 34, 40, 41]",5357,PENDIENTE,0,0.0,19,markov_chain_v1
+1765147342,2025-12-07 19:42:22,"[3, 12, 22, 24, 34, 40]",5357,PENDIENTE,0,0.0,19,forense_biometrico_v1
+1765147343,2025-12-07 19:42:22,"[5, 7, 11, 18, 22, 38]",5357,PENDIENTE,0,0.0,19,gaussiano_tactico_v1
+1765147344,2025-12-07 19:42:22,"[1, 5, 14, 19, 20, 21]",5357,PENDIENTE,0,0.0,19,delta_tactico_v1
+1765147345,2025-12-07 19:42:22,"[3, 5, 15, 30, 31, 35]",5357,PENDIENTE,0,0.0,19,markov_chain_v1
