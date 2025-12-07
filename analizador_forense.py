@@ -12,12 +12,15 @@ class LotoForense:
         self.df = None
         self.structure = {} 
         self.stats_matrix = {}
-        self.past_combinations = set() # NUEVO: Memoria de jugadas pasadas para el Gaussiano
+        self.past_combinations = set() # Memoria de jugadas pasadas para el Gaussiano
+        
+        # Cache para modelos avanzados
+        self.markov_matrix = {} 
+        self.delta_distribution = {}
         
         print(f"[{datetime.now().strftime('%H:%M:%S')}] 🔧 Inicializando LotoForense...")
         
         # 1. Intentar cargar biometría existente para ahorrar tiempo de cómputo
-        # Esto es útil si el script corre cada 30 min
         if os.path.exists("loto_biometrics.json"):
             try:
                 with open("loto_biometrics.json", "r", encoding='utf-8') as f:
@@ -26,33 +29,29 @@ class LotoForense:
             except:
                 print("⚠️ Error leyendo JSON, se recalculará desde cero.")
         
-        # Siempre cargamos datos para tener el historial disponible para el filtro Gaussiano
+        # Siempre cargamos datos para tener el historial disponible
         self.load_data()
         
         # 2. Si no hay matriz en caché, calcular
         if not self.stats_matrix:
-            self._detect_game_structure() # Asegurar que tenemos la estructura antes de calcular
+            self._detect_game_structure()
             self.generate_mechanical_matrix()
 
     def load_data(self):
         if not os.path.exists(self.csv_path):
-            # Si no existe el CSV, intentamos continuar sin datos (para modo predicción solo con JSON)
             print(f"⚠️ Advertencia: No se encontró {self.csv_path}. Se dependerá del JSON biométrico.")
             return
 
         self.df = pd.read_csv(self.csv_path)
         print(f"[{datetime.now().strftime('%H:%M:%S')}] 📂 Datos cargados: {len(self.df)} sorteos históricos.")
         
-        # --- NUEVO BLOQUE: Cargar historial de combinaciones para evitar repetirlas (Lógica Gaussiana) ---
+        # Cargar historial de combinaciones para evitar repetirlas (Lógica Gaussiana)
         try:
-            # Asumimos columnas LOTO_n1 a LOTO_n6 para verificar duplicados
             cols = [f'LOTO_n{i}' for i in range(1, 7)]
-            # Filtrar filas válidas donde existan estos datos
             if all(c in self.df.columns for c in cols):
                 valid_df = self.df.dropna(subset=cols)
                 for _, row in valid_df.iterrows():
                     try:
-                        # Creamos una tupla ordenada de los números ganadores pasados
                         nums = sorted([int(row[c]) for c in cols])
                         self.past_combinations.add(tuple(nums))
                     except:
@@ -60,16 +59,16 @@ class LotoForense:
                 print(f"[{datetime.now().strftime('%H:%M:%S')}] 📚 Historial Gaussiano: {len(self.past_combinations)} jugadas pasadas memorizadas.")
         except Exception as e:
             print(f"⚠️ Alerta menor: No se pudo cargar historial de combinaciones ({e})")
-        # ------------------------------------------------------------------------------------------------
+        
+        # Entrenar modelos avanzados (Delta y Markov) si hay datos
+        self._train_advanced_models()
 
         # Ejecutar detección de estructura si no se ha hecho
         if not self.structure:
             self._detect_game_structure()
 
     def _detect_game_structure(self):
-        """
-        Escanea dinámicamente todas las columnas para identificar modalidades de juego.
-        """
+        """Escanea dinámicamente todas las columnas para identificar modalidades de juego."""
         if self.df is None: return
 
         columns = self.df.columns.tolist()
@@ -97,13 +96,52 @@ class LotoForense:
 
         self.structure = game_map
 
+    def _train_advanced_models(self):
+        """Entrena las matrices para Delta y Markov en memoria"""
+        if self.df is None or self.df.empty: return
+        
+        print(f"[{datetime.now().strftime('%H:%M:%S')}] 🧠 Entrenando modelos avanzados (Delta & Markov)...")
+        cols = [f'LOTO_n{i}' for i in range(1, 7)]
+        
+        # --- 1. ENTRENAMIENTO DELTA ---
+        # Calculamos la diferencia entre la bola N y la bola N-1
+        self.delta_distribution = {i: [] for i in range(6)} # 0: n1-0, 1: n2-n1, etc.
+        
+        valid_rows = self.df.dropna(subset=cols)
+        for _, row in valid_rows.iterrows():
+            try:
+                nums = sorted([int(row[c]) for c in cols])
+                prev = 0
+                for i, n in enumerate(nums):
+                    delta = n - prev
+                    if delta > 0: self.delta_distribution[i].append(delta)
+                    prev = n
+            except: continue
+
+        # --- 2. ENTRENAMIENTO MARKOV ---
+        # Mapeamos: Números sorteo T -> Números sorteo T+1
+        self.markov_matrix = {n: [] for n in range(1, 42)}
+        
+        # Convertir a lista de listas para iterar rápido
+        history_lists = valid_rows[cols].values.tolist()
+        
+        for i in range(len(history_lists) - 1):
+            current_draw = history_lists[i]
+            next_draw = history_lists[i+1]
+            
+            # Para cada número del sorteo actual, registramos TODOS los números del siguiente
+            for num_in_current in current_draw:
+                try:
+                    n_curr = int(num_in_current)
+                    if 1 <= n_curr <= 41:
+                        self.markov_matrix[n_curr].extend([int(x) for x in next_draw])
+                except: continue
+
     def generate_mechanical_matrix(self):
-        """
-        Genera una matriz de probabilidades basada en la física de la extracción.
-        """
+        """Genera una matriz de probabilidades basada en la física de la extracción."""
         if self.df is None:
             self.load_data()
-            if self.df is None: return {} # No se puede generar sin datos
+            if self.df is None: return {} 
 
         print(f"[{datetime.now().strftime('%H:%M:%S')}] ⚙️  Calculando Matriz de Peso Mecánico...")
         
@@ -143,7 +181,7 @@ class LotoForense:
                 mode_data["positions"][str(pos_idx)] = {
                     "col_name": col_name,
                     "counts": freq_dict,
-                    "weights": prob_dict, # Usado para la predicción
+                    "weights": prob_dict, 
                     "most_frequent": int(vc.idxmax()) if not vc.empty else None
                 }
 
@@ -160,7 +198,6 @@ class LotoForense:
             report["games"][mode] = mode_data
 
         self.stats_matrix = report
-        # Guardamos automáticamente al generar
         self.save_intelligence()
         return report
 
@@ -180,128 +217,185 @@ class LotoForense:
         return f"El número {number} ha salido {total_hits} veces en {game_mode}."
 
     # ==============================================================================
-    # 🔮 MOTOR DE PREDICCIÓN BIOMÉTRICA (FÍSICA)
+    # 🔮 1. MOTOR DE PREDICCIÓN BIOMÉTRICA (FÍSICA)
     # ==============================================================================
     def predict_numbers(self, game_mode="LOTO", n=6):
-        """
-        Genera una predicción utilizando Simulación Monte Carlo basada en pesos históricos.
-        Respeta la exclusión física: una vez que sale una bola, no puede volver a salir en la misma jugada.
-        """
-        # Asegurar datos
+        """Genera predicción basada en pesos históricos por posición (Monte Carlo)."""
         if not self.stats_matrix:
             print("⚠️ Matriz vacía. Intentando generar...")
             self.generate_mechanical_matrix()
 
         game_data = self.stats_matrix.get("games", {}).get(game_mode)
-        
-        # Fallback de seguridad si el modo de juego no existe
         if not game_data:
-            print(f"⚠️ MODO '{game_mode}' NO ENCONTRADO. Usando aleatorio puro.")
             return sorted(random.sample(range(1, 42), n))
 
         prediction = []
-        # Pool de números disponibles (1 al 41 para Loto Chile)
         full_pool = set(range(1, 42)) 
         
-        # Simular extracción bolilla a bolilla (Posición 1 a n)
         for i in range(1, n + 1):
             pos_key = str(i)
-            
-            # Obtener los pesos específicos de ESTA posición física
-            # (Ej: Qué suele salir en la primera bolilla)
             pos_data = game_data['positions'].get(pos_key, {})
             weights_map = pos_data.get('weights', {})
             
-            # Preparar candidatos
             candidates = []
             probs = []
-            
-            # Números que NO han salido todavía en esta simulación
             available_numbers = full_pool - set(prediction)
             
             for num in available_numbers:
                 num_str = str(num)
-                # Peso histórico (si nunca salió, le damos un peso ínfimo épsilon para que sea posible pero improbable)
                 weight = weights_map.get(num_str, 0.00001)
-                
                 candidates.append(num)
                 probs.append(weight)
             
-            # Re-normalizar probabilidades (Deben sumar 1.0)
             total_prob = sum(probs)
             if total_prob <= 0:
-                normalized_probs = [1.0/len(candidates)] * len(candidates) # Uniforme si falla
+                normalized_probs = [1.0/len(candidates)] * len(candidates)
             else:
                 normalized_probs = [p / total_prob for p in probs]
             
-            # Selección aleatoria ponderada (Weighted Random Choice)
             picked_number = np.random.choice(candidates, p=normalized_probs)
             prediction.append(int(picked_number))
 
-        # El resultado final siempre se ordena ascendente para el usuario
         return sorted(prediction)
 
     # ==============================================================================
-    # 📐 NUEVO: MOTOR DE PREDICCIÓN GAUSSIANA (ESTADÍSTICA / 'BOTÓN AMARILLO')
+    # 📐 2. MOTOR DE PREDICCIÓN GAUSSIANA (ESTADÍSTICA)
     # ==============================================================================
     def predict_gaussian(self, n=6):
-        """
-        Replica la lógica del 'Generador Cuántico' (Botón Amarillo):
-        - Suma: 100-150
-        - Pares: 2-4
-        - No repetida en historia
-        - Consecutivos: Max 2 seguidos (ej: 1,2 OK; 1,2,3 NO)
-        """
+        """Genera predicción basada en filtros estadísticos estrictos."""
         attempts = 0
         max_attempts = 5000
         
         while attempts < max_attempts:
             attempts += 1
-            
-            # 1. Generar aleatorio base (sin reposición)
             nums = sorted(random.sample(range(1, 42), n))
             
-            # 2. Filtro de Suma (100 - 150)
             suma = sum(nums)
-            if suma < 100 or suma > 150:
-                continue
+            if suma < 100 or suma > 150: continue
             
-            # 3. Filtro de Paridad (2 a 4 pares)
             evens = len([x for x in nums if x % 2 == 0])
-            if evens < 2 or evens > 4:
-                continue
+            if evens < 2 or evens > 4: continue
             
-            # 4. Filtro Histórico (Inédita)
-            # Verifica si la tupla de números ya existe en el historial cargado
-            if tuple(nums) in self.past_combinations:
-                continue
+            if tuple(nums) in self.past_combinations: continue
             
-            # 5. Filtro Consecutivos (Max 1 pareja consecutiva)
-            # Ej: 1,2,3 -> Rechazado (2 saltos seguidos). 1,2,5,6 -> Aceptado.
             consecutivos = 0
             max_consecutivos = 0
             for i in range(len(nums)-1):
-                if nums[i+1] == nums[i] + 1:
-                    consecutivos += 1
-                else:
-                    consecutivos = 0
-                
-                if consecutivos > max_consecutivos:
-                    max_consecutivos = consecutivos
+                if nums[i+1] == nums[i] + 1: consecutivos += 1
+                else: consecutivos = 0
+                if consecutivos > max_consecutivos: max_consecutivos = consecutivos
             
-            if max_consecutivos >= 2: # Si hay 3 números seguidos (2 enlaces) o más
-                continue
+            if max_consecutivos >= 2: continue
                 
-            # Si pasa todos los filtros, es una jugada válida
             return nums
             
-        # Si falla demasiadas veces, devolvemos uno aleatorio para no romper el flujo
         print("⚠️ Advertencia: No se encontró combinación gaussiana perfecta. Devolviendo aleatorio.")
         return sorted(random.sample(range(1, 42), n))
+
+    # ==============================================================================
+    # 📈 3. MOTOR DELTA TÁCTICO (DIFERENCIAL)
+    # ==============================================================================
+    def predict_delta(self, n=6):
+        """
+        Predice basado en la distancia promedio entre números consecutivos.
+        Reconstruye la jugada sumando 'deltas' probables.
+        """
+        if not self.delta_distribution: self._train_advanced_models()
+        
+        for _ in range(100): # Intentos para encontrar secuencia válida
+            prediction = []
+            current_val = 0
+            
+            # Generar 6 deltas secuenciales basados en la historia de cada posición
+            for i in range(6):
+                # Obtener lista histórica de deltas para esta posición (i)
+                deltas = self.delta_distribution.get(i, [5]) # Default 5 si no hay data
+                if not deltas: deltas = [5]
+                
+                # Elegir un delta al azar de la historia real
+                chosen_delta = random.choice(deltas)
+                
+                next_val = current_val + chosen_delta
+                prediction.append(next_val)
+                current_val = next_val
+            
+            # Validaciones Delta
+            # 1. Rango válido (1-41)
+            if any(x > 41 for x in prediction) or any(x < 1 for x in prediction): continue
+            # 2. Sin repetidos (Delta lo garantiza si delta > 0, pero por seguridad)
+            if len(set(prediction)) != n: continue
+            
+            return sorted(prediction)
+        
+        # Fallback al Gaussiano si no encuentra delta válido
+        return self.predict_gaussian(n)
+
+    # ==============================================================================
+    # 🔗 4. MOTOR CADENAS DE MARKOV (TRANSICIONAL)
+    # ==============================================================================
+    def predict_markov(self, n=6):
+        """
+        Predice basado en la probabilidad de transición del ÚLTIMO sorteo conocido.
+        """
+        if not self.markov_matrix: self._train_advanced_models()
+        
+        # 1. Obtener el último sorteo real conocido para usar como "semilla"
+        try:
+            cols = [f'LOTO_n{i}' for i in range(1, 7)]
+            valid_df = self.df.dropna(subset=cols)
+            if valid_df.empty: return self.predict_gaussian(n)
+            
+            last_draw = valid_df.iloc[-1][cols].astype(int).tolist()
+        except:
+            return self.predict_gaussian(n)
+
+        # 2. Construir bolsa de probabilidades
+        # "Dado que salieron estos números, ¿qué suele salir después?"
+        pool_weights = {}
+        for num in last_draw:
+            next_candidates = self.markov_matrix.get(num, [])
+            for candidate in next_candidates:
+                pool_weights[candidate] = pool_weights.get(candidate, 0) + 1
+        
+        # Si no hay historia suficiente para estos números
+        if not pool_weights: return self.predict_gaussian(n)
+
+        # 3. Selección ponderada
+        candidates = list(pool_weights.keys())
+        weights = list(pool_weights.values())
+        
+        # Normalizar pesos
+        total_w = sum(weights)
+        norm_w = [w/total_w for w in weights]
+        
+        # Elegir N números sin reposición
+        # Si no hay suficientes candidatos (raro), rellenamos con aleatorios
+        if len(candidates) < n:
+            needed = n - len(candidates)
+            others = [x for x in range(1,42) if x not in candidates]
+            candidates.extend(random.sample(others, needed))
+            norm_w.extend([0] * needed) # Peso 0 para los rellenados
+            # Re-normalizar
+            total_w = sum(weights) # Recalcular base
+            if total_w > 0: norm_w = [w/total_w if i < len(weights) else 0 for i, w in enumerate(weights)] + [0]*needed
+            else: norm_w = [1/len(candidates)] * len(candidates)
+
+        # Selección final con numpy
+        try:
+            # Normalizar de nuevo por si acaso errores de flotante
+            norm_w = np.array(norm_w)
+            norm_w /= norm_w.sum()
+            
+            chosen = np.random.choice(candidates, size=n, replace=False, p=norm_w)
+            return sorted(chosen.tolist())
+        except:
+             return sorted(random.sample(range(1, 42), n))
 
 if __name__ == "__main__":
     # Test rápido
     forense = LotoForense()
-    print("\n--- TEST DE PREDICCIÓN ---")
+    print("\n--- TEST DE PREDICCIÓN MULTI-MODELO ---")
     print(f"🔮 Biométrico: {forense.predict_numbers('LOTO')}")
     print(f"📐 Gaussiano:  {forense.predict_gaussian()}")
+    print(f"📈 Delta:      {forense.predict_delta()}")
+    print(f"🔗 Markov:     {forense.predict_markov()}")

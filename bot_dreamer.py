@@ -81,7 +81,7 @@ def calcular_sorteo_real(df_maestro):
     return ultimo_id + 1
 
 def soñar():
-    print("💤 --- INICIANDO BOT SOÑADOR DUAL v4.0 (Git-Safe) ---")
+    print("💤 --- INICIANDO BOT SOÑADOR MULTI-MODELO v5.0 (Full Code) ---")
     
     # 1. Instanciar Forense
     try:
@@ -95,64 +95,69 @@ def soñar():
         if os.path.exists(FILE_MAESTRO):
             df_maestro = pd.read_csv(FILE_MAESTRO)
             proximo_sorteo = calcular_sorteo_real(df_maestro)
+            
+            if proximo_sorteo == 0:
+                # Fallback por si falla la lectura de fechas
+                proximo_sorteo = int(df_maestro['sorteo'].max()) + 1
         else:
             print("⚠️ No existe archivo maestro. Iniciando en 1.")
             proximo_sorteo = 1
     except Exception as e:
-        print(f"❌ Error general en cálculo de fechas: {e}")
+        print(f"⚠️ Error calculando fechas: {e}. Default: 0")
         proximo_sorteo = 0 # Esto alertará en los logs
 
     print(f"🎯 Sorteo Objetivo Calculado: {proximo_sorteo}")
 
     nuevas_filas = []
     ahora = datetime.now(TZ_CHILE)
+    base_id = int(ahora.timestamp())
 
-    # 3.A. Generar Predicción BIOMÉTRICA (Física)
-    try:
-        pred_bio = forense.predict_numbers("LOTO", n=6)
-        nuevas_filas.append({
-            'id': int(ahora.timestamp()),
-            'fecha_generacion': ahora.strftime('%Y-%m-%d %H:%M:%S'),
-            'numeros': str(pred_bio),
-            'sorteo_objetivo': proximo_sorteo,
-            'estado': 'PENDIENTE',
-            'aciertos': 0,
-            'score_afinidad': 0.0,
-            'hora_dia': ahora.hour,
-            'algoritmo': 'forense_biometrico_v1'
-        })
-    except Exception as e:
-        print(f"❌ Error Biométrico: {e}")
+    # --- DEFINICIÓN DE LOS 4 GLADIADORES ---
+    # Mapeo: Nombre en CSV -> Función lambda para ejecutarla
+    algoritmos = [
+        ('forense_biometrico_v1', lambda: forense.predict_numbers("LOTO", n=6)),
+        ('gaussiano_tactico_v1', lambda: forense.predict_gaussian(n=6)),
+        ('delta_tactico_v1', lambda: forense.predict_delta(n=6)),
+        ('markov_chain_v1', lambda: forense.predict_markov(n=6))
+    ]
 
-    # 3.B. Generar Predicción GAUSSIANA (Estadística)
-    try:
-        pred_gauss = forense.predict_gaussian(n=6)
-        nuevas_filas.append({
-            'id': int(ahora.timestamp()) + 1,
-            'fecha_generacion': ahora.strftime('%Y-%m-%d %H:%M:%S'),
-            'numeros': str(pred_gauss),
-            'sorteo_objetivo': proximo_sorteo,
-            'estado': 'PENDIENTE',
-            'aciertos': 0,
-            'score_afinidad': 0.0,
-            'hora_dia': ahora.hour,
-            'algoritmo': 'gaussiano_tactico_v1'
-        })
-    except Exception as e:
-        print(f"❌ Error Gaussiano: {e}")
+    # Ejecución en bucle de los 4 algoritmos
+    for idx, (nombre_algo, funcion_generadora) in enumerate(algoritmos):
+        try:
+            # Generar números usando la función correspondiente
+            numeros_predichos = funcion_generadora()
+            numeros_fmt = str(numeros_predichos)
+            
+            # Crear fila para el CSV
+            nuevas_filas.append({
+                'id': base_id + idx, # IDs únicos secuenciales (timestamp + 0, +1, +2, +3)
+                'fecha_generacion': ahora.strftime('%Y-%m-%d %H:%M:%S'),
+                'numeros': numeros_fmt,
+                'sorteo_objetivo': proximo_sorteo,
+                'estado': 'PENDIENTE',
+                'aciertos': 0,
+                'score_afinidad': 0.0,
+                'hora_dia': ahora.hour,
+                'algoritmo': nombre_algo
+            })
+            print(f"🤖 {nombre_algo}: {numeros_fmt}")
+            
+        except Exception as e:
+            print(f"❌ Error generando predicción para {nombre_algo}: {e}")
     
-    # 4. Guardar Todo
+    # 4. Guardar Todo en Bloque
     if nuevas_filas:
         try:
             if os.path.exists(FILE_SIMULACIONES):
                 df_sim = pd.read_csv(FILE_SIMULACIONES)
+                # Asegurar que no escribimos headers de nuevo
                 df_new = pd.DataFrame(nuevas_filas)
                 df_sim = pd.concat([df_sim, df_new], ignore_index=True)
             else:
                 df_sim = pd.DataFrame(nuevas_filas)
                 
             df_sim.to_csv(FILE_SIMULACIONES, index=False)
-            print(f"✨ ÉXITO: 2 predicciones guardadas para Sorteo {proximo_sorteo}")
+            print(f"✨ ÉXITO: {len(nuevas_filas)} predicciones guardadas para Sorteo {proximo_sorteo}")
             
         except Exception as e:
             print(f"❌ Error guardando CSV: {e}")
