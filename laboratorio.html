@@ -16,8 +16,10 @@
             --warning: #d29922;
             --danger: #f85149;
             --border: #30363d;
-            --bio-color: #58a6ff; /* Azul para Biométrico */
+            --bio-color: #58a6ff;   /* Azul para Biométrico */
             --gauss-color: #f1e05a; /* Amarillo para Gaussiano */
+            --delta-color: #20b2aa; /* Verde Agua para Delta */
+            --markov-color: #ff69b4; /* Rosa para Markov */
         }
         body {
             font-family: 'JetBrains Mono', monospace;
@@ -26,7 +28,7 @@
             margin: 0;
             padding: 20px;
         }
-        .container { max-width: 1200px; margin: 0 auto; }
+        .container { max-width: 1400px; margin: 0 auto; } /* Aumenté un poco el ancho para que quepan las columnas */
         
         /* Header */
         header { border-bottom: 1px solid var(--border); padding-bottom: 20px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
@@ -86,6 +88,8 @@
         .algo-badge { font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; border: 1px solid transparent; }
         .algo-bio { color: var(--bio-color); border-color: rgba(88, 166, 255, 0.3); background: rgba(88, 166, 255, 0.1); }
         .algo-gauss { color: var(--gauss-color); border-color: rgba(241, 224, 90, 0.3); background: rgba(241, 224, 90, 0.1); }
+        .algo-delta { color: var(--delta-color); border-color: rgba(32, 178, 170, 0.3); background: rgba(32, 178, 170, 0.1); }
+        .algo-markov { color: var(--markov-color); border-color: rgba(255, 105, 180, 0.3); background: rgba(255, 105, 180, 0.1); }
 
         /* Navegación */
         .nav-link { color: var(--text); text-decoration: none; border: 1px solid var(--border); padding: 5px 10px; border-radius: 4px; transition: background 0.2s; }
@@ -95,7 +99,7 @@
         .numero-match {
             color: #2ea043;      /* Verde éxito */
             font-weight: bold;
-            border: 1px solid #2ea043; /* Borde verde para destacar en el badge */
+            border: 1px solid #2ea043;
             text-shadow: 0 0 5px rgba(46, 160, 67, 0.4);
         }
         .match-exact { 
@@ -112,7 +116,7 @@
             border: 1px solid rgba(88, 166, 255, 0.3);
         }
         .match-far {
-            color: #444; /* Gris oscuro para apagar los lejanos */
+            color: #444; /* Gris oscuro */
         }
         
         /* Badge de Sorteo con Tooltip */
@@ -209,6 +213,8 @@
                         <option value="ALL">Todos</option>
                         <option value="forense_biometrico_v1">🔮 Biométrico (Físico)</option>
                         <option value="gaussiano_tactico_v1">📐 Gaussiano (Estadístico)</option>
+                        <option value="delta_tactico_v1">📈 Delta Táctico</option>
+                        <option value="markov_chain_v1">🔗 Cadenas de Markov</option>
                     </select>
                 </div>
                 <div class="filter-group">
@@ -237,7 +243,7 @@
                     <label>Hora (Bloque)</label>
                     <select id="f-hora" class="filter-select" onchange="applyFilters()">
                         <option value="ALL">Todas las Horas</option>
-                        </select>
+                    </select>
                 </div>
                 <button class="btn-reset" onclick="resetFilters()">Limpiar Filtros</button>
             </div>
@@ -269,9 +275,11 @@
                             <th class="sortable-header" onclick="sortAggregate('target')">Sorteo <span id="sort-icon-target" class="sort-icon">▼</span></th>
                             <th class="sortable-header" onclick="sortAggregate('count')" style="text-align:center;">Cant. Pred. <span id="sort-icon-count" class="sort-icon"></span></th>
                             <th>Mejor Predicción</th>
-                            <th class="sortable-header" onclick="sortAggregate('avgTotal')" style="text-align:center;">Score Global <span id="sort-icon-avgTotal" class="sort-icon"></span></th>
-                            <th class="sortable-header" onclick="sortAggregate('avgBio')" style="text-align:center;">Score Bio. <span id="sort-icon-avgBio" class="sort-icon"></span></th>
-                            <th class="sortable-header" onclick="sortAggregate('avgGauss')" style="text-align:center;">Score Gauss. <span id="sort-icon-avgGauss" class="sort-icon"></span></th>
+                            <th class="sortable-header" onclick="sortAggregate('avgTotal')" style="text-align:center;">Global <span id="sort-icon-avgTotal" class="sort-icon"></span></th>
+                            <th class="sortable-header" onclick="sortAggregate('avgBio')" style="text-align:center;">Bio <span id="sort-icon-avgBio" class="sort-icon"></span></th>
+                            <th class="sortable-header" onclick="sortAggregate('avgGauss')" style="text-align:center;">Gauss <span id="sort-icon-avgGauss" class="sort-icon"></span></th>
+                            <th class="sortable-header" onclick="sortAggregate('avgDelta')" style="text-align:center;">Delta <span id="sort-icon-avgDelta" class="sort-icon"></span></th>
+                            <th class="sortable-header" onclick="sortAggregate('avgMarkov')" style="text-align:center;">Markov <span id="sort-icon-avgMarkov" class="sort-icon"></span></th>
                         </tr>
                     </thead>
                     <tbody id="aggregate-body">
@@ -291,7 +299,7 @@
         let AGGREGATE_DATA = []; 
         let CURRENT_CHART_MODE = 'hour';
         
-        // Estado de ordenamiento para tabla agregada
+        // Estado de ordenamiento
         let SORT_COL = 'target'; 
         let SORT_DIR = 'desc';   
 
@@ -413,7 +421,7 @@
                 : 0;
             document.getElementById('avg-score').textContent = globalAvg + "%";
 
-            let labels = [], bioScores = [], gaussScores = [];
+            let labels = [], bioScores = [], gaussScores = [], deltaScores = [], markovScores = [];
             let bestMomentLabel = "--", maxScoreFound = -1;
 
             if (CURRENT_CHART_MODE === 'hour') {
@@ -421,8 +429,13 @@
                 for (let i = 0; i < 24; i++) {
                     const bioVal = calculateAvg(auditados, d => d.hora === i && d.algoritmo.includes('forense_biometrico'));
                     const gaussVal = calculateAvg(auditados, d => d.hora === i && d.algoritmo.includes('gaussiano'));
-                    bioScores.push(bioVal); gaussScores.push(gaussVal);
-                    let combined = (parseFloat(bioVal) + parseFloat(gaussVal)) / 2;
+                    const deltaVal = calculateAvg(auditados, d => d.hora === i && d.algoritmo.includes('delta'));
+                    const markovVal = calculateAvg(auditados, d => d.hora === i && d.algoritmo.includes('markov'));
+                    
+                    bioScores.push(bioVal); gaussScores.push(gaussVal); deltaScores.push(deltaVal); markovScores.push(markovVal);
+                    
+                    // Mejor momento simplificado
+                    let combined = Math.max(parseFloat(bioVal), parseFloat(gaussVal), parseFloat(deltaVal), parseFloat(markovVal));
                     if(combined > maxScoreFound) { maxScoreFound = combined; bestMomentLabel = `${i}:00 hrs`; }
                 }
             } else if (CURRENT_CHART_MODE === 'day') {
@@ -431,8 +444,11 @@
                 for (let i = 0; i < 7; i++) {
                     const bioVal = calculateAvg(auditados, d => d.dateObj.getDay() === i && d.algoritmo.includes('forense_biometrico'));
                     const gaussVal = calculateAvg(auditados, d => d.dateObj.getDay() === i && d.algoritmo.includes('gaussiano'));
-                    bioScores.push(bioVal); gaussScores.push(gaussVal);
-                    let combined = (parseFloat(bioVal) + parseFloat(gaussVal)) / 2;
+                    const deltaVal = calculateAvg(auditados, d => d.dateObj.getDay() === i && d.algoritmo.includes('delta'));
+                    const markovVal = calculateAvg(auditados, d => d.dateObj.getDay() === i && d.algoritmo.includes('markov'));
+
+                    bioScores.push(bioVal); gaussScores.push(gaussVal); deltaScores.push(deltaVal); markovScores.push(markovVal);
+                    let combined = Math.max(parseFloat(bioVal), parseFloat(gaussVal));
                     if(combined > maxScoreFound) { maxScoreFound = combined; bestMomentLabel = days[i]; }
                 }
             } else if (CURRENT_CHART_MODE === 'month') {
@@ -441,14 +457,17 @@
                 for (let i = 0; i < 12; i++) {
                     const bioVal = calculateAvg(auditados, d => d.dateObj.getMonth() === i && d.algoritmo.includes('forense_biometrico'));
                     const gaussVal = calculateAvg(auditados, d => d.dateObj.getMonth() === i && d.algoritmo.includes('gaussiano'));
-                    bioScores.push(bioVal); gaussScores.push(gaussVal);
-                    let combined = (parseFloat(bioVal) + parseFloat(gaussVal)) / 2;
+                    const deltaVal = calculateAvg(auditados, d => d.dateObj.getMonth() === i && d.algoritmo.includes('delta'));
+                    const markovVal = calculateAvg(auditados, d => d.dateObj.getMonth() === i && d.algoritmo.includes('markov'));
+
+                    bioScores.push(bioVal); gaussScores.push(gaussVal); deltaScores.push(deltaVal); markovScores.push(markovVal);
+                    let combined = Math.max(parseFloat(bioVal), parseFloat(gaussVal));
                     if(combined > maxScoreFound) { maxScoreFound = combined; bestMomentLabel = months[i]; }
                 }
             }
 
             document.getElementById('best-moment').textContent = maxScoreFound > 0 ? bestMomentLabel : "Calculando...";
-            renderChart(labels, bioScores, gaussScores);
+            renderChart(labels, bioScores, gaussScores, deltaScores, markovScores);
         }
 
         function calculateAvg(data, filterFn) {
@@ -493,16 +512,12 @@
             tbody.innerHTML = '';
             document.getElementById('filtered-count').textContent = `Mostrando ${data.length} registros`;
 
-            // --- CAMBIO CLAVE: Límite inteligente ---
-            // Si hay un filtro de Sorteo activo (que no sea ALL), mostramos todo.
-            // Si no, aplicamos el límite de 50 para no saturar.
+            // Límite inteligente: Si hay filtro de sorteo, mostrar TODO. Si no, solo 50.
             const filterSorteo = document.getElementById('f-sorteo').value;
             let displayData = data;
-            
             if (filterSorteo === 'ALL') {
                  displayData = data.slice(0, 50);
             }
-            // ----------------------------------------
 
             displayData.forEach(row => {
                 const tr = document.createElement('tr');
@@ -537,9 +552,8 @@
                 let algoBadge = '<span class="algo-badge" style="color:#888; border:1px solid #444;">Desconocido</span>';
                 if(row.algoritmo.includes('biometrico')) algoBadge = '<span class="algo-badge algo-bio">🔮 Biométrico</span>';
                 if(row.algoritmo.includes('gaussiano')) algoBadge = '<span class="algo-badge algo-gauss">📐 Gaussiano</span>';
-                // Añadimos badges para los nuevos modelos por si acaso
-                if(row.algoritmo.includes('delta')) algoBadge = '<span class="algo-badge" style="color:#20b2aa; border-color:rgba(32,178,170,0.3); background:rgba(32,178,170,0.1);">📈 Delta</span>';
-                if(row.algoritmo.includes('markov')) algoBadge = '<span class="algo-badge" style="color:#ff69b4; border-color:rgba(255,105,180,0.3); background:rgba(255,105,180,0.1);">🔗 Markov</span>';
+                if(row.algoritmo.includes('delta')) algoBadge = '<span class="algo-badge algo-delta">📈 Delta</span>';
+                if(row.algoritmo.includes('markov')) algoBadge = '<span class="algo-badge algo-markov">🔗 Markov</span>';
 
                 let drawTooltip = winningNumbers.length > 0 ? `Ganadores: ${winningNumbers.join(', ')}` : "Esperando sorteo...";
                 let drawClass = winningNumbers.length > 0 ? "draw-badge" : "";
@@ -555,16 +569,13 @@
                 tbody.appendChild(tr);
             });
             
-            // Mensaje de pie si hay datos ocultos
             if (filterSorteo === 'ALL' && data.length > 50) {
                 const tr = document.createElement('tr');
-                tr.innerHTML = `<td colspan="6" style="text-align:center; color:#8b949e; font-style:italic;">... y ${data.length - 50} registros más (filtra por sorteo para ver todo) ...</td>`;
+                tr.innerHTML = `<td colspan="6" style="text-align:center; color:#8b949e; font-style:italic;">... y ${data.length - 50} registros más ...</td>`;
                 tbody.appendChild(tr);
             }
         }
 
-        // --- LÓGICA DE TABLA AGREGADA CON ORDENAMIENTO ---
-        
         function calculateAggregateData(data) {
             const groups = {};
             data.forEach(d => {
@@ -575,11 +586,15 @@
                         scores: [],
                         bioScores: [],
                         gaussScores: [],
+                        deltaScores: [],
+                        markovScores: [],
                         bestRow: null,
                         maxScore: -1,
                         avgTotal: 0, 
                         avgBio: 0,
-                        avgGauss: 0
+                        avgGauss: 0,
+                        avgDelta: 0,
+                        avgMarkov: 0
                     };
                 }
                 const g = groups[d.objetivo];
@@ -589,6 +604,8 @@
                     g.scores.push(d.score);
                     if (d.algoritmo.includes('biometrico')) g.bioScores.push(d.score);
                     if (d.algoritmo.includes('gaussiano')) g.gaussScores.push(d.score);
+                    if (d.algoritmo.includes('delta')) g.deltaScores.push(d.score);
+                    if (d.algoritmo.includes('markov')) g.markovScores.push(d.score);
                     
                     if (d.score > g.maxScore) {
                         g.maxScore = d.score;
@@ -601,6 +618,8 @@
                 g.avgTotal = g.scores.length ? (g.scores.reduce((a,b)=>a+b,0)/g.scores.length) : -1;
                 g.avgBio = g.bioScores.length ? (g.bioScores.reduce((a,b)=>a+b,0)/g.bioScores.length) : -1;
                 g.avgGauss = g.gaussScores.length ? (g.gaussScores.reduce((a,b)=>a+b,0)/g.gaussScores.length) : -1;
+                g.avgDelta = g.deltaScores.length ? (g.deltaScores.reduce((a,b)=>a+b,0)/g.deltaScores.length) : -1;
+                g.avgMarkov = g.markovScores.length ? (g.markovScores.reduce((a,b)=>a+b,0)/g.markovScores.length) : -1;
             });
 
             AGGREGATE_DATA = Object.values(groups);
@@ -649,6 +668,8 @@
                 const avgTotalStr = g.avgTotal >= 0 ? g.avgTotal.toFixed(1) + '%' : '-';
                 const avgBioStr = g.avgBio >= 0 ? g.avgBio.toFixed(1) + '%' : '-';
                 const avgGaussStr = g.avgGauss >= 0 ? g.avgGauss.toFixed(1) + '%' : '-';
+                const avgDeltaStr = g.avgDelta >= 0 ? g.avgDelta.toFixed(1) + '%' : '-';
+                const avgMarkovStr = g.avgMarkov >= 0 ? g.avgMarkov.toFixed(1) + '%' : '-';
 
                 let bestHtml = '-';
                 if (g.bestRow) {
@@ -666,7 +687,12 @@
                         return `<span class="num-badge match-far">${n}</span>`;
                     }).join('');
                     
-                    let badge = g.bestRow.algoritmo.includes('bio') ? '<span style="font-size:0.7em; margin-right:5px;">🔮</span>' : '<span style="font-size:0.7em; margin-right:5px;">📐</span>';
+                    let badge = '';
+                    if(g.bestRow.algoritmo.includes('bio')) badge = '<span style="font-size:0.7em; margin-right:5px;">🔮</span>';
+                    else if(g.bestRow.algoritmo.includes('gauss')) badge = '<span style="font-size:0.7em; margin-right:5px;">📐</span>';
+                    else if(g.bestRow.algoritmo.includes('delta')) badge = '<span style="font-size:0.7em; margin-right:5px;">📈</span>';
+                    else if(g.bestRow.algoritmo.includes('markov')) badge = '<span style="font-size:0.7em; margin-right:5px;">🔗</span>';
+                    
                     bestHtml = `<div>${badge}${bestHtml} <small>(${g.maxScore}%)</small></div>`;
                 }
 
@@ -680,12 +706,14 @@
                     <td style="text-align:center; font-weight:bold;">${avgTotalStr}</td>
                     <td style="text-align:center; color:var(--bio-color);">${avgBioStr}</td>
                     <td style="text-align:center; color:var(--gauss-color);">${avgGaussStr}</td>
+                    <td style="text-align:center; color:var(--delta-color);">${avgDeltaStr}</td>
+                    <td style="text-align:center; color:var(--markov-color);">${avgMarkovStr}</td>
                 `;
                 tbody.appendChild(tr);
             });
         }
 
-        function renderChart(labels, bioData, gaussData) {
+        function renderChart(labels, bioData, gaussData, deltaData, markovData) {
             const ctx = document.getElementById('mainChart').getContext('2d');
             if (window.myChart) window.myChart.destroy();
             
@@ -695,22 +723,32 @@
                     labels: labels,
                     datasets: [
                         {
-                            label: 'Biométrico (Físico)',
+                            label: 'Biométrico',
                             data: bioData,
                             backgroundColor: 'rgba(88, 166, 255, 0.6)',
                             borderColor: '#58a6ff',
-                            borderWidth: 1,
-                            barPercentage: 0.7,
-                            categoryPercentage: 0.8
+                            borderWidth: 1
                         },
                         {
-                            label: 'Gaussiano (Estadístico)',
+                            label: 'Gaussiano',
                             data: gaussData,
                             backgroundColor: 'rgba(241, 224, 90, 0.6)',
                             borderColor: '#f1e05a',
-                            borderWidth: 1,
-                            barPercentage: 0.7,
-                            categoryPercentage: 0.8
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Delta',
+                            data: deltaData,
+                            backgroundColor: 'rgba(32, 178, 170, 0.6)',
+                            borderColor: '#20b2aa',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Markov',
+                            data: markovData,
+                            backgroundColor: 'rgba(255, 105, 180, 0.6)',
+                            borderColor: '#ff69b4',
+                            borderWidth: 1
                         }
                     ]
                 },
