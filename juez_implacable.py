@@ -11,40 +11,26 @@ def calcular_afinidad(prediccion, realidad):
     Calcula un puntaje PONDERADO (Híbrido).
     Prioriza los ACIERTOS EXACTOS sobre la cercanía matemática.
     """
-    # Asegurar listas y orden para cálculo vectorial
     pred_vec = np.array(sorted(prediccion))
     real_vec = np.array(sorted(realidad))
     
-    # 1. ACIERTOS (Lo más importante - Base sólida)
-    # Usamos conjuntos para ver coincidencias exactas sin importar orden
+    # 1. ACIERTOS (14 pts c/u)
     aciertos = len(set(prediccion) & set(realidad))
     
-    # 2. PROXIMIDAD (Factor secundario - Desempate)
-    # Diferencia absoluta promedio entre vectores ordenados
+    # 2. PROXIMIDAD (Bonus max 16 pts)
     diferencia_promedio = np.mean(np.abs(pred_vec - real_vec))
-    
-    # Score de distancia puro (0 a 100). 
-    # Si la diferencia promedio es > 20 números, esto da 0.
     score_distancia = max(0, 100 - (diferencia_promedio * 5))
-    
-    # 3. FÓRMULA MAESTRA
-    # - Cada acierto garantiza 14 puntos. (6 aciertos = 84 pts base)
-    # - El 16% restante se llena con la calidad de la proximidad (bonus)
-    # Lógica: 3 aciertos (42 pts) SIEMPRE ganarán a 0 aciertos muy cercanos (max 16 pts)
     
     puntaje_base = aciertos * 14
     bonus_proximidad = score_distancia * 0.16 
     
     score_final = puntaje_base + bonus_proximidad
     
-    # Si tuvo 6 aciertos, es el Jackpot (100 cerrado)
-    if aciertos == 6:
-        return 100.0
-        
+    if aciertos == 6: return 100.0
     return round(score_final, 2)
 
 def juzgar():
-    print("⚖️ La corte está en sesión (Criterio Ponderado)...")
+    print("⚖️ La corte está en sesión (Modo: Integridad Total)...")
     
     if not os.path.exists(FILE_SIMULACIONES):
         print("No hay simulaciones para juzgar.")
@@ -53,47 +39,59 @@ def juzgar():
     df_sim = pd.read_csv(FILE_SIMULACIONES)
     df_maestro = pd.read_csv(FILE_MAESTRO)
     
-    # Filtramos solo las pendientes
-    pendientes = df_sim[df_sim['estado'] == 'PENDIENTE']
+    # --- OPTIMIZACIÓN: Crear Mapa de Resultados en Memoria ---
+    # Convertimos el maestro a un Diccionario {sorteo: [n1, n2...]}
+    # Esto evita leer el DataFrame miles de veces dentro del bucle.
+    mapa_ganadores = {}
+    cols_reales = ['LOTO_n1', 'LOTO_n2', 'LOTO_n3', 'LOTO_n4', 'LOTO_n5', 'LOTO_n6']
+    
+    for _, row in df_maestro.iterrows():
+        try:
+            nums = sorted([int(row[c]) for c in cols_reales])
+            mapa_ganadores[int(row['sorteo'])] = nums
+        except:
+            continue
+    # -------------------------------------------------------
     
     cambios = 0
-    for index, row in pendientes.iterrows():
-        objetivo = row['sorteo_objetivo']
+    
+    # Recorremos TODAS las simulaciones para asegurar integridad
+    for index, row in df_sim.iterrows():
+        objetivo = int(row['sorteo_objetivo'])
         
-        # Buscamos si ese sorteo YA OCURRIÓ en el maestro
-        resultado_real = df_maestro[df_maestro['sorteo'] == objetivo]
-        
-        if not resultado_real.empty:
-            # Extraer números reales
-            cols_reales = ['LOTO_n1', 'LOTO_n2', 'LOTO_n3', 'LOTO_n4', 'LOTO_n5', 'LOTO_n6']
-            nums_real = sorted(resultado_real.iloc[0][cols_reales].values.tolist())
+        # Verificamos instantáneamente si tenemos el resultado en memoria
+        if objetivo in mapa_ganadores:
+            nums_real = mapa_ganadores[objetivo]
             
             try:
-                # Convertir string de lista a lista real
                 nums_pred = sorted(ast.literal_eval(row['numeros']))
             except:
-                print(f"⚠️ Error de formato en fila {index}")
-                continue
+                continue # Saltar errores de formato
             
-            # 1. Calcular Aciertos (Clásico)
+            # Calcular métricas nuevas
             aciertos = len(set(nums_real) & set(nums_pred))
-            
-            # 2. Calcular Afinidad (Nueva fórmula ponderada)
             afinidad = calcular_afinidad(nums_pred, nums_real)
             
-            # Actualizar DataFrame
-            df_sim.at[index, 'aciertos'] = aciertos
-            df_sim.at[index, 'score_afinidad'] = afinidad
-            df_sim.at[index, 'estado'] = 'AUDITADO'
-            
-            print(f"📝 Sorteo {objetivo} auditado. Aciertos: {aciertos} | Score: {afinidad}")
-            cambios += 1
+            # DETECCIÓN DE CAMBIOS INTELIGENTE
+            # Solo "tocamos" la fila si los valores son diferentes a los que ya tiene
+            # Esto evita reescribir el archivo si no es necesario
+            old_aciertos = int(row['aciertos']) if not pd.isna(row['aciertos']) else -1
+            old_score = float(row['score_afinidad']) if not pd.isna(row['score_afinidad']) else -1.0
+            old_estado = row['estado']
+
+            if aciertos != old_aciertos or abs(afinidad - old_score) > 0.01 or old_estado != 'AUDITADO':
+                df_sim.at[index, 'aciertos'] = aciertos
+                df_sim.at[index, 'score_afinidad'] = afinidad
+                df_sim.at[index, 'estado'] = 'AUDITADO'
+                
+                print(f"📝 Sorteo {objetivo} actualizado. Score: {old_score} -> {afinidad}")
+                cambios += 1
             
     if cambios > 0:
         df_sim.to_csv(FILE_SIMULACIONES, index=False)
-        print(f"✅ Se actualizaron {cambios} predicciones.")
+        print(f"✅ Se actualizaron {cambios} registros (Corrección/Auditoría).")
     else:
-        print("💤 No se encontraron predicciones pendientes para sorteos finalizados.")
+        print("💤 Todo sincronizado. No hubo cambios en los puntajes.")
 
 if __name__ == "__main__":
     juzgar()
