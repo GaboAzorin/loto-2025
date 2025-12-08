@@ -1,6 +1,7 @@
 import pandas as pd
 import os
 import pytz
+from collections import Counter
 from datetime import datetime, timedelta
 from analizador_forense import LotoForense
 
@@ -11,100 +12,69 @@ TZ_CHILE = pytz.timezone('America/Santiago')
 
 # Días de sorteo: Martes (1), Jueves (3), Domingo (6)
 DIAS_SORTEO = [1, 3, 6] 
-HORA_CIERRE_SORTEO = 21 # Asumimos que a las 21:00 se cierra la ventana de predicción para ese día
+HORA_CIERRE_SORTEO = 21 
 
 def calcular_sorteo_real(df_maestro):
-    """
-    Calcula el ID del próximo sorteo REAL.
-    Versión Blindada v3.1: Usa Pandas para parsear fechas y maneja mejor los saltos.
-    """
     ahora = datetime.now(TZ_CHILE)
-    print(f"🕒 [DEBUG] Hora Bot (Chile): {ahora}") # DIAGNÓSTICO
+    print(f"🕒 [DEBUG] Hora Bot (Chile): {ahora}") 
     
     try:
-        # 1. Obtener datos del último sorteo con PANDAS (Más robusto que strptime)
         ultimo_row = df_maestro.iloc[-1]
         ultimo_id = int(ultimo_row['sorteo'])
-        
-        # Pandas detecta automáticamente si es YYYY-MM-DD o DD-MM-YYYY
-        # FIX: Agregamos dayfirst=True para evitar que confunda 4 de Dic (04-12) con 12 de Abril
         fecha_dt = pd.to_datetime(ultimo_row['fecha'], dayfirst=True)
         
-        # Convertir a datetime de Python y asignar zona horaria si no tiene
         ultima_fecha = fecha_dt.to_pydatetime()
         if ultima_fecha.tzinfo is None:
             ultima_fecha = TZ_CHILE.localize(ultima_fecha)
         else:
             ultima_fecha = ultima_fecha.astimezone(TZ_CHILE)
             
-        print(f"📅 [DEBUG] Último sorteo leído: #{ultimo_id} fecha: {ultima_fecha}") # DIAGNÓSTICO
+        print(f"📅 [DEBUG] Último sorteo leído: #{ultimo_id} fecha: {ultima_fecha}") 
 
     except Exception as e:
         print(f"⚠️ Error crítico leyendo fechas del maestro: {e}")
-        # FALLBACK MEJORADO: Si falla la lectura, asumimos basándonos solo en la hora actual
-        # Si son más de las 21:00, asumimos que el último del CSV ya pasó hoy
-        # (Esto es una medida desesperada, pero mejor que max+1 ciego)
         max_id = int(df_maestro['sorteo'].max())
         if ahora.hour >= 21 and ahora.weekday() in DIAS_SORTEO:
-             return max_id + 2 # Saltamos el de hoy
+             return max_id + 2 
         return max_id + 1
 
-    # 2. Algoritmo de Viaje en el Tiempo
     simulacion_fecha = ultima_fecha
     sorteo_virtual_id = ultimo_id
     
-    # Límite de seguridad para evitar bucles infinitos (ej: si la fecha del CSV está en el futuro)
     dias_simulados = 0
     while dias_simulados < 30: 
         dias_simulados += 1
-        
-        # Avanzamos al día siguiente (o evaluamos el mismo día si la hora lo amerita, 
-        # pero para simplificar, la lógica de 'proximo' siempre busca hacia adelante)
         simulacion_fecha += timedelta(days=1)
-        
-        # Ajustamos la fecha simulada a las 21:00 de ese día
         cierre_sorteo = simulacion_fecha.replace(hour=HORA_CIERRE_SORTEO, minute=0, second=0, microsecond=0)
         
         if simulacion_fecha.weekday() in DIAS_SORTEO:
             sorteo_virtual_id += 1
-            
-            # CRITERIO DE VERDAD:
-            # Si "ahora" es ANTES del cierre de este sorteo virtual, 
-            # significa que este es el sorteo vigente que estamos esperando.
             if ahora < cierre_sorteo:
-                print(f"✅ [TARGET] Objetivo fijado: #{sorteo_virtual_id} (Cierra: {cierre_sorteo})") # DIAGNÓSTICO
+                print(f"✅ [TARGET] Objetivo fijado: #{sorteo_virtual_id} (Cierra: {cierre_sorteo})") 
                 return sorteo_virtual_id
-            
-            print(f"⏭️ [SKIP] El sorteo #{sorteo_virtual_id} ya cerró. Buscando siguiente...") # DIAGNÓSTICO
+            print(f"⏭️ [SKIP] El sorteo #{sorteo_virtual_id} ya cerró. Buscando siguiente...") 
     
-    # Si salimos del loop, algo raro pasó, devolvemos fallback seguro
     return ultimo_id + 1
 
 def soñar():
-    print("💤 --- INICIANDO BOT SOÑADOR MULTI-MODELO v5.0 (Full Code) ---")
+    print("💤 --- INICIANDO BOT SOÑADOR PENTA-MODELO (CONSENSO) v6.0 ---")
     
-    # 1. Instanciar Forense
     try:
         forense = LotoForense(FILE_MAESTRO)
     except Exception as e:
         print(f"❌ Error fatal iniciando forense: {e}")
         return
 
-    # 2. Calcular el Sorteo Objetivo REAL
     try:
         if os.path.exists(FILE_MAESTRO):
             df_maestro = pd.read_csv(FILE_MAESTRO)
             proximo_sorteo = calcular_sorteo_real(df_maestro)
-            
-            if proximo_sorteo == 0:
-                # Fallback por si falla la lectura de fechas
-                proximo_sorteo = int(df_maestro['sorteo'].max()) + 1
         else:
             print("⚠️ No existe archivo maestro. Iniciando en 1.")
             proximo_sorteo = 1
     except Exception as e:
-        print(f"⚠️ Error calculando fechas: {e}. Default: 0")
-        proximo_sorteo = 0 # Esto alertará en los logs
+        print(f"❌ Error general fechas: {e}")
+        proximo_sorteo = 0
 
     print(f"🎯 Sorteo Objetivo Calculado: {proximo_sorteo}")
 
@@ -113,24 +83,28 @@ def soñar():
     base_id = int(ahora.timestamp())
 
     # --- DEFINICIÓN DE LOS 4 GLADIADORES ---
-    # Mapeo: Nombre en CSV -> Función lambda para ejecutarla
+    # Usamos la versión calibrada del Gaussiano para mayor precisión
     algoritmos = [
         ('forense_biometrico_v1', lambda: forense.predict_numbers("LOTO", n=6)),
-        ('gaussiano_tactico_v1', lambda: forense.predict_gaussian(n=6)),
+        ('gaussiano_calibrado_v1', lambda: forense.predict_gaussian(n=6, use_calibration=True)),
         ('delta_tactico_v1', lambda: forense.predict_delta(n=6)),
         ('markov_chain_v1', lambda: forense.predict_markov(n=6))
     ]
 
-    # Ejecución en bucle de los 4 algoritmos
+    # Bolsa de votos para el Consenso
+    bolsa_de_votos = []
+
+    # Ejecución en bucle
     for idx, (nombre_algo, funcion_generadora) in enumerate(algoritmos):
         try:
-            # Generar números usando la función correspondiente
             numeros_predichos = funcion_generadora()
             numeros_fmt = str(numeros_predichos)
             
-            # Crear fila para el CSV
+            # Agregar votos a la bolsa
+            bolsa_de_votos.extend(numeros_predichos)
+            
             nuevas_filas.append({
-                'id': base_id + idx, # IDs únicos secuenciales (timestamp + 0, +1, +2, +3)
+                'id': base_id + idx, 
                 'fecha_generacion': ahora.strftime('%Y-%m-%d %H:%M:%S'),
                 'numeros': numeros_fmt,
                 'sorteo_objetivo': proximo_sorteo,
@@ -143,21 +117,57 @@ def soñar():
             print(f"🤖 {nombre_algo}: {numeros_fmt}")
             
         except Exception as e:
-            print(f"❌ Error generando predicción para {nombre_algo}: {e}")
+            print(f"❌ Error en {nombre_algo}: {e}")
     
-    # 4. Guardar Todo en Bloque
+    # --- GENERAR EL 5º GLADIADOR: CONSENSO ---
+    if bolsa_de_votos:
+        try:
+            # Contar frecuencia de cada número
+            conteo = Counter(bolsa_de_votos)
+            # Obtener los 6 más comunes.
+            # most_common devuelve [(numero, frecuencia), ...]
+            comunes = conteo.most_common(6)
+            numeros_consenso = sorted([num for num, freq in comunes])
+            
+            # Si faltan números (porque hubo poco consenso y no llegamos a 6 únicos),
+            # rellenamos con lo mejor del Biométrico (el más robusto físicamente)
+            if len(numeros_consenso) < 6:
+                faltantes = 6 - len(numeros_consenso)
+                extras = forense.predict_numbers("LOTO", n=6) # Generamos una nueva bio
+                for n in extras:
+                    if n not in numeros_consenso:
+                        numeros_consenso.append(n)
+                    if len(numeros_consenso) == 6: break
+                numeros_consenso.sort()
+
+            nuevas_filas.append({
+                'id': base_id + 99, # ID especial para distinguirlo
+                'fecha_generacion': ahora.strftime('%Y-%m-%d %H:%M:%S'),
+                'numeros': str(numeros_consenso),
+                'sorteo_objetivo': proximo_sorteo,
+                'estado': 'PENDIENTE',
+                'aciertos': 0,
+                'score_afinidad': 0.0,
+                'hora_dia': ahora.hour,
+                'algoritmo': 'consenso_v1' # Nombre del nuevo algoritmo
+            })
+            print(f"🤝 CONSENSO (Voto Popular): {numeros_consenso}")
+
+        except Exception as e:
+            print(f"❌ Error generando consenso: {e}")
+
+    # Guardar Todo
     if nuevas_filas:
         try:
             if os.path.exists(FILE_SIMULACIONES):
                 df_sim = pd.read_csv(FILE_SIMULACIONES)
-                # Asegurar que no escribimos headers de nuevo
                 df_new = pd.DataFrame(nuevas_filas)
                 df_sim = pd.concat([df_sim, df_new], ignore_index=True)
             else:
                 df_sim = pd.DataFrame(nuevas_filas)
                 
             df_sim.to_csv(FILE_SIMULACIONES, index=False)
-            print(f"✨ ÉXITO: {len(nuevas_filas)} predicciones guardadas para Sorteo {proximo_sorteo}")
+            print(f"✨ ÉXITO: {len(nuevas_filas)} predicciones guardadas.")
             
         except Exception as e:
             print(f"❌ Error guardando CSV: {e}")
