@@ -1,6 +1,7 @@
 import pandas as pd
 import os
 import pytz
+import ast
 from collections import Counter
 from datetime import datetime, timedelta
 from analizador_forense import LotoForense
@@ -68,7 +69,7 @@ def calcular_sorteo_real(df_maestro):
     return ultimo_id + 1
 
 def soñar():
-    print("💤 --- INICIANDO BOT SOÑADOR PENTA-MODELO (CONSENSO ROBUSTO) v6.1 ---")
+    print("💤 --- INICIANDO BOT SOÑADOR PENTA-MODELO (CARTA MAESTRA) v7.0 ---")
     
     try:
         forense = LotoForense(FILE_MAESTRO)
@@ -101,7 +102,7 @@ def soñar():
         ('markov_chain_v1', lambda: forense.predict_markov(n=6))
     ]
 
-    # 1. GENERACIÓN INDIVIDUAL (4 Filas)
+    # 1. GENERACIÓN INDIVIDUAL (4 Filas Estándar)
     for idx, (nombre_algo, funcion_generadora) in enumerate(algoritmos):
         try:
             numeros_predichos = funcion_generadora()
@@ -124,25 +125,22 @@ def soñar():
             print(f"❌ Error en {nombre_algo}: {e}")
     
     # 2. GENERACIÓN DE CONSENSO ROBUSTO (40 Simulaciones Internas)
+    # Se ejecuta SIEMPRE para mantener el pulso cada 15 min
     print("🗳️  Iniciando votación masiva (10 rondas por algoritmo)...")
     super_bolsa_votos = []
     
     try:
-        # Hacemos 10 pasadas por cada uno de los 4 algoritmos
         for _, funcion_generadora in algoritmos:
             for _ in range(10):
                 try:
-                    # Generamos predicción interna (no se guarda en CSV, solo suma votos)
                     voto = funcion_generadora()
                     super_bolsa_votos.extend(voto)
                 except: pass
         
-        # Contar frecuencia de cada número en la super bolsa (Total ~240 números)
         conteo = Counter(super_bolsa_votos)
         comunes = conteo.most_common(6)
         numeros_consenso = sorted([num for num, freq in comunes])
         
-        # Relleno de seguridad si no hay suficientes números (muy raro con 40 rondas)
         if len(numeros_consenso) < 6:
             faltantes = 6 - len(numeros_consenso)
             extras = forense.predict_numbers("LOTO", n=6)
@@ -163,12 +161,64 @@ def soñar():
             'hora_dia': ahora.hour,
             'algoritmo': 'consenso_v1'
         })
-        print(f"🤝 CONSENSO ROBUSTO (40 rondas): {numeros_consenso}")
+        print(f"🤝 CONSENSO ROBUSTO: {numeros_consenso}")
 
     except Exception as e:
         print(f"❌ Error generando consenso: {e}")
 
-    # 3. Guardar Todo
+    # 3. PROTOCOLO CARTA MAESTRA (PREMIUM)
+    # Solo se ejecuta los días de sorteo entre las 20:00 y 21:00
+    if ahora.weekday() in DIAS_SORTEO and ahora.hour == 20:
+        print("🌟 [GOLDEN HOUR] INICIANDO CÁLCULO DE CARTA MAESTRA PREMIUM...")
+        try:
+            if os.path.exists(FILE_SIMULACIONES):
+                df_hist = pd.read_csv(FILE_SIMULACIONES)
+                
+                # Filtrar SOLO las predicciones hechas para este sorteo específico
+                df_target = df_hist[df_hist['sorteo_objetivo'] == proximo_sorteo]
+                
+                if not df_target.empty:
+                    bolsa_historica = []
+                    # Recolectar números de TODAS las filas (incluidas las que acabamos de generar pero no guardado aún, 
+                    # aunque para simplificar leemos lo guardado y sumamos lo nuevo en memoria si quisiéramos, 
+                    # pero leer el CSV es más seguro para obtener el "bulk" histórico)
+                    
+                    for nums_str in df_target['numeros']:
+                        try:
+                            n_list = ast.literal_eval(nums_str)
+                            bolsa_historica.extend(n_list)
+                        except: pass
+                    
+                    # Sumar también los de la sesión actual para tener la info más fresca
+                    bolsa_historica.extend(super_bolsa_votos) 
+                    
+                    if bolsa_historica:
+                        conteo_master = Counter(bolsa_historica)
+                        comunes_master = conteo_master.most_common(6)
+                        nums_master = sorted([num for num, freq in comunes_master])
+                        
+                        # Relleno de seguridad
+                        while len(nums_master) < 6:
+                            extra = forense.predict_numbers("LOTO", n=1)[0]
+                            if extra not in nums_master: nums_master.append(extra)
+                        nums_master.sort()
+
+                        nuevas_filas.append({
+                            'id': base_id + 777, # ID Jackpot
+                            'fecha_generacion': ahora.strftime('%Y-%m-%d %H:%M:%S'),
+                            'numeros': str(nums_master),
+                            'sorteo_objetivo': proximo_sorteo,
+                            'estado': 'PENDIENTE',
+                            'aciertos': 0,
+                            'score_afinidad': 0.0,
+                            'hora_dia': ahora.hour,
+                            'algoritmo': 'MASTER_PREMIUM_v1'
+                        })
+                        print(f"🏆 CARTA MAESTRA GENERADA: {nums_master}")
+        except Exception as e:
+            print(f"❌ Error en Carta Maestra: {e}")
+
+    # 4. Guardar Todo
     if nuevas_filas:
         try:
             if os.path.exists(FILE_SIMULACIONES):
