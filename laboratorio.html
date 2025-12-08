@@ -20,6 +20,7 @@
             --gauss-color: #f1e05a; /* Amarillo para Gaussiano */
             --delta-color: #20b2aa; /* Verde Agua para Delta */
             --markov-color: #ff69b4; /* Rosa para Markov */
+            --consenso-color: #ffffff; /* Blanco para Consenso */
         }
         body {
             font-family: 'JetBrains Mono', monospace;
@@ -28,7 +29,7 @@
             margin: 0;
             padding: 20px;
         }
-        .container { max-width: 1400px; margin: 0 auto; } /* Aumenté un poco el ancho para que quepan las columnas */
+        .container { max-width: 1400px; margin: 0 auto; }
         
         /* Header */
         header { border-bottom: 1px solid var(--border); padding-bottom: 20px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
@@ -90,6 +91,7 @@
         .algo-gauss { color: var(--gauss-color); border-color: rgba(241, 224, 90, 0.3); background: rgba(241, 224, 90, 0.1); }
         .algo-delta { color: var(--delta-color); border-color: rgba(32, 178, 170, 0.3); background: rgba(32, 178, 170, 0.1); }
         .algo-markov { color: var(--markov-color); border-color: rgba(255, 105, 180, 0.3); background: rgba(255, 105, 180, 0.1); }
+        .algo-consenso { color: var(--consenso-color); border-color: rgba(255, 255, 255, 0.3); background: rgba(255, 255, 255, 0.1); font-weight: bold; }
 
         /* Navegación */
         .nav-link { color: var(--text); text-decoration: none; border: 1px solid var(--border); padding: 5px 10px; border-radius: 4px; transition: background 0.2s; }
@@ -215,6 +217,7 @@
                         <option value="gaussiano_tactico_v1">📐 Gaussiano (Estadístico)</option>
                         <option value="delta_tactico_v1">📈 Delta Táctico</option>
                         <option value="markov_chain_v1">🔗 Cadenas de Markov</option>
+                        <option value="consenso_v1">🤝 Consenso (Voto Popular)</option>
                     </select>
                 </div>
                 <div class="filter-group">
@@ -280,6 +283,7 @@
                             <th class="sortable-header" onclick="sortAggregate('avgGauss')" style="text-align:center;">Gauss <span id="sort-icon-avgGauss" class="sort-icon"></span></th>
                             <th class="sortable-header" onclick="sortAggregate('avgDelta')" style="text-align:center;">Delta <span id="sort-icon-avgDelta" class="sort-icon"></span></th>
                             <th class="sortable-header" onclick="sortAggregate('avgMarkov')" style="text-align:center;">Markov <span id="sort-icon-avgMarkov" class="sort-icon"></span></th>
+                            <th class="sortable-header" onclick="sortAggregate('avgConsenso')" style="text-align:center;">Consenso <span id="sort-icon-avgConsenso" class="sort-icon"></span></th>
                         </tr>
                     </thead>
                     <tbody id="aggregate-body">
@@ -421,7 +425,7 @@
                 : 0;
             document.getElementById('avg-score').textContent = globalAvg + "%";
 
-            let labels = [], bioScores = [], gaussScores = [], deltaScores = [], markovScores = [];
+            let labels = [], bioScores = [], gaussScores = [], deltaScores = [], markovScores = [], consensoScores = [];
             let bestMomentLabel = "--", maxScoreFound = -1;
 
             if (CURRENT_CHART_MODE === 'hour') {
@@ -431,11 +435,11 @@
                     const gaussVal = calculateAvg(auditados, d => d.hora === i && d.algoritmo.includes('gaussiano'));
                     const deltaVal = calculateAvg(auditados, d => d.hora === i && d.algoritmo.includes('delta'));
                     const markovVal = calculateAvg(auditados, d => d.hora === i && d.algoritmo.includes('markov'));
+                    const consensoVal = calculateAvg(auditados, d => d.hora === i && d.algoritmo.includes('consenso'));
                     
-                    bioScores.push(bioVal); gaussScores.push(gaussVal); deltaScores.push(deltaVal); markovScores.push(markovVal);
+                    bioScores.push(bioVal); gaussScores.push(gaussVal); deltaScores.push(deltaVal); markovScores.push(markovVal); consensoScores.push(consensoVal);
                     
-                    // Mejor momento simplificado
-                    let combined = Math.max(parseFloat(bioVal), parseFloat(gaussVal), parseFloat(deltaVal), parseFloat(markovVal));
+                    let combined = Math.max(parseFloat(bioVal), parseFloat(gaussVal), parseFloat(deltaVal), parseFloat(markovVal), parseFloat(consensoVal));
                     if(combined > maxScoreFound) { maxScoreFound = combined; bestMomentLabel = `${i}:00 hrs`; }
                 }
             } else if (CURRENT_CHART_MODE === 'day') {
@@ -446,9 +450,10 @@
                     const gaussVal = calculateAvg(auditados, d => d.dateObj.getDay() === i && d.algoritmo.includes('gaussiano'));
                     const deltaVal = calculateAvg(auditados, d => d.dateObj.getDay() === i && d.algoritmo.includes('delta'));
                     const markovVal = calculateAvg(auditados, d => d.dateObj.getDay() === i && d.algoritmo.includes('markov'));
+                    const consensoVal = calculateAvg(auditados, d => d.dateObj.getDay() === i && d.algoritmo.includes('consenso'));
 
-                    bioScores.push(bioVal); gaussScores.push(gaussVal); deltaScores.push(deltaVal); markovScores.push(markovVal);
-                    let combined = Math.max(parseFloat(bioVal), parseFloat(gaussVal));
+                    bioScores.push(bioVal); gaussScores.push(gaussVal); deltaScores.push(deltaVal); markovScores.push(markovVal); consensoScores.push(consensoVal);
+                    let combined = Math.max(parseFloat(bioVal), parseFloat(gaussVal), parseFloat(consensoVal));
                     if(combined > maxScoreFound) { maxScoreFound = combined; bestMomentLabel = days[i]; }
                 }
             } else if (CURRENT_CHART_MODE === 'month') {
@@ -459,15 +464,16 @@
                     const gaussVal = calculateAvg(auditados, d => d.dateObj.getMonth() === i && d.algoritmo.includes('gaussiano'));
                     const deltaVal = calculateAvg(auditados, d => d.dateObj.getMonth() === i && d.algoritmo.includes('delta'));
                     const markovVal = calculateAvg(auditados, d => d.dateObj.getMonth() === i && d.algoritmo.includes('markov'));
+                    const consensoVal = calculateAvg(auditados, d => d.dateObj.getMonth() === i && d.algoritmo.includes('consenso'));
 
-                    bioScores.push(bioVal); gaussScores.push(gaussVal); deltaScores.push(deltaVal); markovScores.push(markovVal);
-                    let combined = Math.max(parseFloat(bioVal), parseFloat(gaussVal));
+                    bioScores.push(bioVal); gaussScores.push(gaussVal); deltaScores.push(deltaVal); markovScores.push(markovVal); consensoScores.push(consensoVal);
+                    let combined = Math.max(parseFloat(bioVal), parseFloat(gaussVal), parseFloat(consensoVal));
                     if(combined > maxScoreFound) { maxScoreFound = combined; bestMomentLabel = months[i]; }
                 }
             }
 
             document.getElementById('best-moment').textContent = maxScoreFound > 0 ? bestMomentLabel : "Calculando...";
-            renderChart(labels, bioScores, gaussScores, deltaScores, markovScores);
+            renderChart(labels, bioScores, gaussScores, deltaScores, markovScores, consensoScores);
         }
 
         function calculateAvg(data, filterFn) {
@@ -512,7 +518,6 @@
             tbody.innerHTML = '';
             document.getElementById('filtered-count').textContent = `Mostrando ${data.length} registros`;
 
-            // Límite inteligente: Si hay filtro de sorteo, mostrar TODO. Si no, solo 50.
             const filterSorteo = document.getElementById('f-sorteo').value;
             let displayData = data;
             if (filterSorteo === 'ALL') {
@@ -554,6 +559,7 @@
                 if(row.algoritmo.includes('gaussiano')) algoBadge = '<span class="algo-badge algo-gauss">📐 Gaussiano</span>';
                 if(row.algoritmo.includes('delta')) algoBadge = '<span class="algo-badge algo-delta">📈 Delta</span>';
                 if(row.algoritmo.includes('markov')) algoBadge = '<span class="algo-badge algo-markov">🔗 Markov</span>';
+                if(row.algoritmo.includes('consenso')) algoBadge = '<span class="algo-badge algo-consenso">🤝 Consenso</span>';
 
                 let drawTooltip = winningNumbers.length > 0 ? `Ganadores: ${winningNumbers.join(', ')}` : "Esperando sorteo...";
                 let drawClass = winningNumbers.length > 0 ? "draw-badge" : "";
@@ -588,13 +594,15 @@
                         gaussScores: [],
                         deltaScores: [],
                         markovScores: [],
+                        consensoScores: [],
                         bestRow: null,
                         maxScore: -1,
                         avgTotal: 0, 
                         avgBio: 0,
                         avgGauss: 0,
                         avgDelta: 0,
-                        avgMarkov: 0
+                        avgMarkov: 0,
+                        avgConsenso: 0
                     };
                 }
                 const g = groups[d.objetivo];
@@ -606,6 +614,7 @@
                     if (d.algoritmo.includes('gaussiano')) g.gaussScores.push(d.score);
                     if (d.algoritmo.includes('delta')) g.deltaScores.push(d.score);
                     if (d.algoritmo.includes('markov')) g.markovScores.push(d.score);
+                    if (d.algoritmo.includes('consenso')) g.consensoScores.push(d.score);
                     
                     if (d.score > g.maxScore) {
                         g.maxScore = d.score;
@@ -620,6 +629,7 @@
                 g.avgGauss = g.gaussScores.length ? (g.gaussScores.reduce((a,b)=>a+b,0)/g.gaussScores.length) : -1;
                 g.avgDelta = g.deltaScores.length ? (g.deltaScores.reduce((a,b)=>a+b,0)/g.deltaScores.length) : -1;
                 g.avgMarkov = g.markovScores.length ? (g.markovScores.reduce((a,b)=>a+b,0)/g.markovScores.length) : -1;
+                g.avgConsenso = g.consensoScores.length ? (g.consensoScores.reduce((a,b)=>a+b,0)/g.consensoScores.length) : -1;
             });
 
             AGGREGATE_DATA = Object.values(groups);
@@ -670,6 +680,7 @@
                 const avgGaussStr = g.avgGauss >= 0 ? g.avgGauss.toFixed(1) + '%' : '-';
                 const avgDeltaStr = g.avgDelta >= 0 ? g.avgDelta.toFixed(1) + '%' : '-';
                 const avgMarkovStr = g.avgMarkov >= 0 ? g.avgMarkov.toFixed(1) + '%' : '-';
+                const avgConsensoStr = g.avgConsenso >= 0 ? g.avgConsenso.toFixed(1) + '%' : '-';
 
                 let bestHtml = '-';
                 if (g.bestRow) {
@@ -692,6 +703,7 @@
                     else if(g.bestRow.algoritmo.includes('gauss')) badge = '<span style="font-size:0.7em; margin-right:5px;">📐</span>';
                     else if(g.bestRow.algoritmo.includes('delta')) badge = '<span style="font-size:0.7em; margin-right:5px;">📈</span>';
                     else if(g.bestRow.algoritmo.includes('markov')) badge = '<span style="font-size:0.7em; margin-right:5px;">🔗</span>';
+                    else if(g.bestRow.algoritmo.includes('consenso')) badge = '<span style="font-size:0.7em; margin-right:5px;">🤝</span>';
                     
                     bestHtml = `<div>${badge}${bestHtml} <small>(${g.maxScore}%)</small></div>`;
                 }
@@ -708,12 +720,13 @@
                     <td style="text-align:center; color:var(--gauss-color);">${avgGaussStr}</td>
                     <td style="text-align:center; color:var(--delta-color);">${avgDeltaStr}</td>
                     <td style="text-align:center; color:var(--markov-color);">${avgMarkovStr}</td>
+                    <td style="text-align:center; color:var(--consenso-color); font-weight:bold;">${avgConsensoStr}</td>
                 `;
                 tbody.appendChild(tr);
             });
         }
 
-        function renderChart(labels, bioData, gaussData, deltaData, markovData) {
+        function renderChart(labels, bioData, gaussData, deltaData, markovData, consensoData) {
             const ctx = document.getElementById('mainChart').getContext('2d');
             if (window.myChart) window.myChart.destroy();
             
@@ -749,6 +762,15 @@
                             backgroundColor: 'rgba(255, 105, 180, 0.6)',
                             borderColor: '#ff69b4',
                             borderWidth: 1
+                        },
+                        {
+                            label: 'Consenso',
+                            data: consensoData,
+                            backgroundColor: 'rgba(255, 255, 255, 0.6)',
+                            borderColor: '#ffffff',
+                            borderWidth: 1,
+                            type: 'line', /* Linea destacada para consenso */
+                            tension: 0.4
                         }
                     ]
                 },
