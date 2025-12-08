@@ -15,14 +15,22 @@ DIAS_SORTEO = [1, 3, 6]
 HORA_CIERRE_SORTEO = 21 
 
 def calcular_sorteo_real(df_maestro):
+    """
+    Calcula el ID del próximo sorteo REAL.
+    Versión Blindada v3.1: Usa Pandas para parsear fechas y maneja mejor los saltos.
+    """
     ahora = datetime.now(TZ_CHILE)
     print(f"🕒 [DEBUG] Hora Bot (Chile): {ahora}") 
     
     try:
+        # 1. Obtener datos del último sorteo con PANDAS
         ultimo_row = df_maestro.iloc[-1]
         ultimo_id = int(ultimo_row['sorteo'])
+        
+        # Pandas detecta automáticamente si es YYYY-MM-DD o DD-MM-YYYY
         fecha_dt = pd.to_datetime(ultimo_row['fecha'], dayfirst=True)
         
+        # Convertir a datetime de Python y asignar zona horaria
         ultima_fecha = fecha_dt.to_pydatetime()
         if ultima_fecha.tzinfo is None:
             ultima_fecha = TZ_CHILE.localize(ultima_fecha)
@@ -33,11 +41,13 @@ def calcular_sorteo_real(df_maestro):
 
     except Exception as e:
         print(f"⚠️ Error crítico leyendo fechas del maestro: {e}")
+        # FALLBACK
         max_id = int(df_maestro['sorteo'].max())
         if ahora.hour >= 21 and ahora.weekday() in DIAS_SORTEO:
              return max_id + 2 
         return max_id + 1
 
+    # 2. Algoritmo de Viaje en el Tiempo
     simulacion_fecha = ultima_fecha
     sorteo_virtual_id = ultimo_id
     
@@ -45,6 +55,7 @@ def calcular_sorteo_real(df_maestro):
     while dias_simulados < 30: 
         dias_simulados += 1
         simulacion_fecha += timedelta(days=1)
+        
         cierre_sorteo = simulacion_fecha.replace(hour=HORA_CIERRE_SORTEO, minute=0, second=0, microsecond=0)
         
         if simulacion_fecha.weekday() in DIAS_SORTEO:
@@ -57,7 +68,7 @@ def calcular_sorteo_real(df_maestro):
     return ultimo_id + 1
 
 def soñar():
-    print("💤 --- INICIANDO BOT SOÑADOR PENTA-MODELO (CONSENSO) v6.0 ---")
+    print("💤 --- INICIANDO BOT SOÑADOR PENTA-MODELO (CONSENSO ROBUSTO) v6.1 ---")
     
     try:
         forense = LotoForense(FILE_MAESTRO)
@@ -83,25 +94,18 @@ def soñar():
     base_id = int(ahora.timestamp())
 
     # --- DEFINICIÓN DE LOS 4 GLADIADORES ---
-    # Usamos la versión calibrada del Gaussiano para mayor precisión
     algoritmos = [
         ('forense_biometrico_v1', lambda: forense.predict_numbers("LOTO", n=6)),
-        ('gaussiano_calibrado_v1', lambda: forense.predict_gaussian(n=6, use_calibration=True)),
+        ('gaussiano_tactico_v1', lambda: forense.predict_gaussian(n=6)),
         ('delta_tactico_v1', lambda: forense.predict_delta(n=6)),
         ('markov_chain_v1', lambda: forense.predict_markov(n=6))
     ]
 
-    # Bolsa de votos para el Consenso
-    bolsa_de_votos = []
-
-    # Ejecución en bucle
+    # 1. GENERACIÓN INDIVIDUAL (4 Filas)
     for idx, (nombre_algo, funcion_generadora) in enumerate(algoritmos):
         try:
             numeros_predichos = funcion_generadora()
             numeros_fmt = str(numeros_predichos)
-            
-            # Agregar votos a la bolsa
-            bolsa_de_votos.extend(numeros_predichos)
             
             nuevas_filas.append({
                 'id': base_id + idx, 
@@ -119,44 +123,52 @@ def soñar():
         except Exception as e:
             print(f"❌ Error en {nombre_algo}: {e}")
     
-    # --- GENERAR EL 5º GLADIADOR: CONSENSO ---
-    if bolsa_de_votos:
-        try:
-            # Contar frecuencia de cada número
-            conteo = Counter(bolsa_de_votos)
-            # Obtener los 6 más comunes.
-            # most_common devuelve [(numero, frecuencia), ...]
-            comunes = conteo.most_common(6)
-            numeros_consenso = sorted([num for num, freq in comunes])
-            
-            # Si faltan números (porque hubo poco consenso y no llegamos a 6 únicos),
-            # rellenamos con lo mejor del Biométrico (el más robusto físicamente)
-            if len(numeros_consenso) < 6:
-                faltantes = 6 - len(numeros_consenso)
-                extras = forense.predict_numbers("LOTO", n=6) # Generamos una nueva bio
-                for n in extras:
-                    if n not in numeros_consenso:
-                        numeros_consenso.append(n)
-                    if len(numeros_consenso) == 6: break
-                numeros_consenso.sort()
+    # 2. GENERACIÓN DE CONSENSO ROBUSTO (40 Simulaciones Internas)
+    print("🗳️  Iniciando votación masiva (10 rondas por algoritmo)...")
+    super_bolsa_votos = []
+    
+    try:
+        # Hacemos 10 pasadas por cada uno de los 4 algoritmos
+        for _, funcion_generadora in algoritmos:
+            for _ in range(10):
+                try:
+                    # Generamos predicción interna (no se guarda en CSV, solo suma votos)
+                    voto = funcion_generadora()
+                    super_bolsa_votos.extend(voto)
+                except: pass
+        
+        # Contar frecuencia de cada número en la super bolsa (Total ~240 números)
+        conteo = Counter(super_bolsa_votos)
+        comunes = conteo.most_common(6)
+        numeros_consenso = sorted([num for num, freq in comunes])
+        
+        # Relleno de seguridad si no hay suficientes números (muy raro con 40 rondas)
+        if len(numeros_consenso) < 6:
+            faltantes = 6 - len(numeros_consenso)
+            extras = forense.predict_numbers("LOTO", n=6)
+            for n in extras:
+                if n not in numeros_consenso:
+                    numeros_consenso.append(n)
+                if len(numeros_consenso) == 6: break
+            numeros_consenso.sort()
 
-            nuevas_filas.append({
-                'id': base_id + 99, # ID especial para distinguirlo
-                'fecha_generacion': ahora.strftime('%Y-%m-%d %H:%M:%S'),
-                'numeros': str(numeros_consenso),
-                'sorteo_objetivo': proximo_sorteo,
-                'estado': 'PENDIENTE',
-                'aciertos': 0,
-                'score_afinidad': 0.0,
-                'hora_dia': ahora.hour,
-                'algoritmo': 'consenso_v1' # Nombre del nuevo algoritmo
-            })
-            print(f"🤝 CONSENSO (Voto Popular): {numeros_consenso}")
+        nuevas_filas.append({
+            'id': base_id + 99, 
+            'fecha_generacion': ahora.strftime('%Y-%m-%d %H:%M:%S'),
+            'numeros': str(numeros_consenso),
+            'sorteo_objetivo': proximo_sorteo,
+            'estado': 'PENDIENTE',
+            'aciertos': 0,
+            'score_afinidad': 0.0,
+            'hora_dia': ahora.hour,
+            'algoritmo': 'consenso_v1'
+        })
+        print(f"🤝 CONSENSO ROBUSTO (40 rondas): {numeros_consenso}")
 
-        except Exception as e:
-            print(f"❌ Error generando consenso: {e}")
+    except Exception as e:
+        print(f"❌ Error generando consenso: {e}")
 
-    # Guardar Todo
+    # 3. Guardar Todo
     if nuevas_filas:
         try:
             if os.path.exists(FILE_SIMULACIONES):
