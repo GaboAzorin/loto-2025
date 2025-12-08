@@ -277,6 +277,7 @@
                         <tr>
                             <th class="sortable-header" onclick="sortAggregate('target')">Sorteo <span id="sort-icon-target" class="sort-icon">▼</span></th>
                             <th class="sortable-header" onclick="sortAggregate('count')" style="text-align:center;">Cant. Pred. <span id="sort-icon-count" class="sort-icon"></span></th>
+                            <th style="min-width:200px;">Sorteo Real (Aciertos Globales)</th>
                             <th>Mejor Predicción</th>
                             <th class="sortable-header" onclick="sortAggregate('avgTotal')" style="text-align:center;">Global <span id="sort-icon-avgTotal" class="sort-icon"></span></th>
                             <th class="sortable-header" onclick="sortAggregate('avgBio')" style="text-align:center;">Bio <span id="sort-icon-avgBio" class="sort-icon"></span></th>
@@ -303,7 +304,7 @@
         let AGGREGATE_DATA = []; 
         let CURRENT_CHART_MODE = 'hour';
         
-        // Estado de ordenamiento para tabla agregada
+        // Estado de ordenamiento
         let SORT_COL = 'target'; 
         let SORT_DIR = 'desc';   
 
@@ -648,11 +649,16 @@
                         avgGauss: 0,
                         avgDelta: 0,
                         avgMarkov: 0,
-                        avgConsenso: 0
+                        avgConsenso: 0,
+                        all_numbers: [] // Store all predicted numbers here to count later
                     };
                 }
                 const g = groups[d.objetivo];
                 g.count++;
+                
+                // Parse numbers and add to list for frequency analysis
+                const nums = d.numeros.replace('[', '').replace(']', '').split(', ');
+                g.all_numbers.push(...nums);
                 
                 if (d.estado === 'AUDITADO') {
                     g.scores.push(d.score);
@@ -754,13 +760,32 @@
                     bestHtml = `<div>${badge}${bestHtml} <small>(${g.maxScore}%)</small></div>`;
                 }
 
+                // --- NUEVO: COLUMNA DE ACIERTOS GLOBALES ---
+                // Calcular frecuencias
+                const counts = {};
+                g.all_numbers.forEach(n => { counts[n] = (counts[n] || 0) + 1; });
+
+                const winEntry = GLOBAL_MAESTRO[g.target];
+                const winningNumbers = winEntry ? winEntry.numbers : [];
+                
+                let realDrawHtml = '-';
+                if (winningNumbers.length > 0) {
+                    realDrawHtml = winningNumbers.map(n => {
+                        const count = counts[n] || 0;
+                        return `<div style="display:inline-block; margin:1px; padding:2px 4px; background:rgba(46,160,67,0.15); border:1px solid #2ea043; border-radius:4px; font-size:0.8em;">
+                                    <b>${n}</b> <span style="color:#aaa; font-size:0.8em;">(${count})</span>
+                                </div>`;
+                    }).join(' ');
+                }
+                // ------------------------------------------
+
                 const masterEntry = GLOBAL_MAESTRO[g.target];
                 const dateTooltip = masterEntry ? `Fecha: ${masterEntry.date}` : 'Fecha desconocida';
 
                 tr.innerHTML = `
                     <td><span class="draw-badge" title="${dateTooltip}">#${g.target}</span></td>
                     <td style="text-align:center;">${g.count}</td>
-                    <td>${bestHtml}</td>
+                    <td>${realDrawHtml}</td> <td>${bestHtml}</td>
                     <td style="text-align:center; font-weight:bold;">${avgTotalStr}</td>
                     <td style="text-align:center; color:var(--bio-color);">${avgBioStr}</td>
                     <td style="text-align:center; color:var(--gauss-color);">${avgGaussStr}</td>
