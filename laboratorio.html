@@ -246,7 +246,7 @@
                     <label>Hora (Bloque)</label>
                     <select id="f-hora" class="filter-select" onchange="applyFilters()">
                         <option value="ALL">Todas las Horas</option>
-                    </select>
+                        </select>
                 </div>
                 <button class="btn-reset" onclick="resetFilters()">Limpiar Filtros</button>
             </div>
@@ -255,12 +255,12 @@
                 <table id="logs-table">
                     <thead>
                         <tr>
-                            <th>Fecha/Hora</th>
-                            <th>Algoritmo</th>
-                            <th>Sorteo Obj.</th>
+                            <th class="sortable-header" onclick="sortLogs('date')">Fecha/Hora <span id="log-sort-date" class="sort-icon">▼</span></th>
+                            <th class="sortable-header" onclick="sortLogs('algo')">Algoritmo <span id="log-sort-algo" class="sort-icon"></span></th>
+                            <th class="sortable-header" onclick="sortLogs('target')">Sorteo Obj. <span id="log-sort-target" class="sort-icon"></span></th>
                             <th>Predicción</th>
-                            <th>Estado</th>
-                            <th>Score</th>
+                            <th class="sortable-header" onclick="sortLogs('status')">Estado <span id="log-sort-status" class="sort-icon"></span></th>
+                            <th class="sortable-header" onclick="sortLogs('score')">Score <span id="log-sort-score" class="sort-icon"></span></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -303,9 +303,13 @@
         let AGGREGATE_DATA = []; 
         let CURRENT_CHART_MODE = 'hour';
         
-        // Estado de ordenamiento
+        // Estado de ordenamiento para tabla agregada
         let SORT_COL = 'target'; 
         let SORT_DIR = 'desc';   
+
+        // Estado de ordenamiento para tabla logs (NUEVO)
+        let LOGS_SORT_COL = 'date';
+        let LOGS_SORT_DIR = 'desc';
 
         // Inicializar selector de horas
         const hourSelect = document.getElementById('f-hora');
@@ -500,6 +504,34 @@
                 return match;
             });
 
+            // LOGICA ORDENAMIENTO LOGS
+            filtered.sort((a, b) => {
+                let valA, valB;
+                switch(LOGS_SORT_COL) {
+                    case 'date': valA = a.id; valB = b.id; break;
+                    case 'algo': valA = a.algoritmo; valB = b.algoritmo; break;
+                    case 'target': valA = parseInt(a.objetivo); valB = parseInt(b.objetivo); break;
+                    case 'status': valA = a.estado; valB = b.estado; break;
+                    case 'score': valA = a.score; valB = b.score; break;
+                    default: valA = a.id; valB = b.id;
+                }
+                
+                if (valA < valB) return LOGS_SORT_DIR === 'asc' ? -1 : 1;
+                if (valA > valB) return LOGS_SORT_DIR === 'asc' ? 1 : -1;
+                return 0;
+            });
+
+            // Actualizar iconos logs
+            document.querySelectorAll('[id^="log-sort-"]').forEach(el => {
+                el.textContent = '';
+                el.classList.remove('sort-active');
+            });
+            const activeIcon = document.getElementById(`log-sort-${LOGS_SORT_COL}`);
+            if(activeIcon) {
+                activeIcon.textContent = LOGS_SORT_DIR === 'asc' ? '▲' : '▼';
+                activeIcon.classList.add('sort-active');
+            }
+
             updateDashboard(filtered); 
             renderTable(filtered);
         }
@@ -513,11 +545,23 @@
             applyFilters();
         }
 
+        // Función para cambiar orden de logs
+        function sortLogs(col) {
+            if (LOGS_SORT_COL === col) {
+                LOGS_SORT_DIR = LOGS_SORT_DIR === 'asc' ? 'desc' : 'asc';
+            } else {
+                LOGS_SORT_COL = col;
+                LOGS_SORT_DIR = 'desc'; // Default desc para nueva columna
+            }
+            applyFilters(); // Re-aplica filtros y orden
+        }
+
         function renderTable(data) {
             const tbody = document.querySelector('#logs-table tbody');
             tbody.innerHTML = '';
             document.getElementById('filtered-count').textContent = `Mostrando ${data.length} registros`;
 
+            // Límite inteligente: Si hay filtro de sorteo, mostrar TODO. Si no, solo 50.
             const filterSorteo = document.getElementById('f-sorteo').value;
             let displayData = data;
             if (filterSorteo === 'ALL') {
@@ -582,6 +626,8 @@
             }
         }
 
+        // --- LÓGICA DE TABLA AGREGADA CON ORDENAMIENTO ---
+        
         function calculateAggregateData(data) {
             const groups = {};
             data.forEach(d => {
