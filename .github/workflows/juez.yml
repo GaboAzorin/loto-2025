@@ -33,6 +33,6 @@ jobs:
         git config --global user.name 'Juez LotoAI'
         git config --global user.email 'juez@lotoai.com'
         git pull
-        git add LOTO_SIMULACIONES.csv
+        git add data/LOTO_SIMULACIONES.csv
         git commit -m "⚖️ Auditoría completada (Recálculo)" || exit 0
         git push

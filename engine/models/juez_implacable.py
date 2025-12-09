@@ -5,7 +5,7 @@ import os
 
 # --- CONFIGURACIÓN DE RUTAS ROBÚSTA ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_DIR = os.path.join(BASE_DIR, '..', 'data')
+DATA_DIR = os.path.join(BASE_DIR, '..', '..', 'data')
 
 FILE_SIMULACIONES = os.path.join(DATA_DIR, "LOTO_SIMULACIONES.csv")
 FILE_MAESTRO = os.path.join(DATA_DIR, "LOTO_HISTORIAL_MAESTRO.csv")

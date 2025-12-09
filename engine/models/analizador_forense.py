@@ -12,7 +12,7 @@ class LotoForense:
         # 1. Detectamos dónde está ESTE archivo (analizador_forense.py)
         base_dir = os.path.dirname(os.path.abspath(__file__))
         # 2. Asumimos que la carpeta 'data' está un nivel arriba, hermana de 'engine'
-        self.data_dir = os.path.join(base_dir, '..', 'data')
+        self.data_dir = os.path.join(base_dir, '..', '..', 'data')
         
         # 3. Definimos rutas absolutas
         if csv_path is None:
