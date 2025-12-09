@@ -3,8 +3,8 @@ import ast
 import numpy as np
 import os
 
-FILE_SIMULACIONES = "data/LOTO_SIMULACIONES.csv"
-FILE_MAESTRO = "data/LOTO_HISTORIAL_MAESTRO.csv"
+FILE_SIMULACIONES = "../../data/LOTO_SIMULACIONES.csv"
+FILE_MAESTRO = "../../data/LOTO_HISTORIAL_MAESTRO.csv"
 
 def calcular_afinidad(prediccion, realidad):
     """
