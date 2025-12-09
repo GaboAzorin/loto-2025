@@ -16,8 +16,11 @@ except ImportError:
     exit()
 
 # --- CONFIGURACIÓN ---
-CSV_FILENAME = "../../data/LOTO_HISTORIAL_MAESTRO.csv"
-PREDICTIONS_CSV = "../../data/LOTO_JUGADAS.csv"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR = os.path.join(BASE_DIR, '..', '..', 'data')
+os.makedirs(DATA_DIR, exist_ok=True)
+CSV_FILENAME = os.path.join(DATA_DIR, "LOTO_HISTORIAL_MAESTRO.csv")
+PREDICTIONS_CSV = os.path.join(DATA_DIR, "LOTO_JUGADAS.csv")
 
 # ⚠️ TU ENLACE DE GOOGLE SHEETS ⚠️
 GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQnOXW1U2VkJdNw6DplTvNGb5R3Fc6yNPKuewnBqh9w9C01m9ht2N8dNi3C4oqvIyL6An-coGf0TjhR/pub?output=csv"
