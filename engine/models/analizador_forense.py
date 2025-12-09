@@ -7,7 +7,7 @@ import random
 from datetime import datetime
 
 class LotoForense:
-    def __init__(self, csv_path="LOTO_HISTORIAL_MAESTRO.csv"):
+    def __init__(self, csv_path="data/LOTO_HISTORIAL_MAESTRO.csv"):
         self.csv_path = csv_path
         self.df = None
         self.structure = {} 

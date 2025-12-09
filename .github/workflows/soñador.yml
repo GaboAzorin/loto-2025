@@ -32,7 +32,7 @@ jobs:
         pip install pandas numpy pytz
 
     - name: Run Bot Dreamer
-      run: python bot_dreamer.py
+      run: python engine/models/bot_dreamer.py
 
     - name: Commit and Push
       run: |

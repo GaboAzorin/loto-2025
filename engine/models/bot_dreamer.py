@@ -7,8 +7,8 @@ from datetime import datetime, timedelta
 from analizador_forense import LotoForense
 
 # --- CONFIGURACIÓN ---
-FILE_SIMULACIONES = "LOTO_SIMULACIONES.csv"
-FILE_MAESTRO = "LOTO_HISTORIAL_MAESTRO.csv"
+FILE_SIMULACIONES = "data/LOTO_SIMULACIONES.csv"
+FILE_MAESTRO = "data/LOTO_HISTORIAL_MAESTRO.csv"
 TZ_CHILE = pytz.timezone('America/Santiago')
 
 # Días de sorteo: Martes (1), Jueves (3), Domingo (6)

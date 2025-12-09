@@ -312,8 +312,8 @@
 
     // CARGA DE DATOS EN PARALELO
     Promise.all([
-        new Promise(resolve => Papa.parse('LOTO_JUGADAS.csv', { download: true, header: true, skipEmptyLines: true, complete: res => resolve(res.data) })),
-        new Promise(resolve => Papa.parse('LOTO_HISTORIAL_MAESTRO.csv', { download: true, header: true, skipEmptyLines: true, complete: res => resolve(res.data) }))
+        new Promise(resolve => Papa.parse('../data/LOTO_JUGADAS.csv', { download: true, header: true, skipEmptyLines: true, complete: res => resolve(res.data) })),
+        new Promise(resolve => Papa.parse('../data/LOTO_HISTORIAL_MAESTRO.csv', { download: true, header: true, skipEmptyLines: true, complete: res => resolve(res.data) }))
     ]).then(([jugadasData, historialData]) => {
         window.globalHistorial = historialData; // Guardamos globalmente para cruzar datos
         processUserStats(jugadasData);
