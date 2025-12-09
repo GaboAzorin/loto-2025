@@ -7,8 +7,22 @@ import random
 from datetime import datetime
 
 class LotoForense:
-    def __init__(self, csv_path="../../data/LOTO_HISTORIAL_MAESTRO.csv"):
-        self.csv_path = csv_path
+    def __init__(self, csv_path=None):
+        # --- CONFIGURACIÓN DE RUTAS ROBUSTA ---
+        # 1. Detectamos dónde está ESTE archivo (analizador_forense.py)
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        # 2. Asumimos que la carpeta 'data' está un nivel arriba, hermana de 'engine'
+        self.data_dir = os.path.join(base_dir, '..', 'data')
+        
+        # 3. Definimos rutas absolutas
+        if csv_path is None:
+            self.csv_path = os.path.join(self.data_dir, "LOTO_HISTORIAL_MAESTRO.csv")
+        else:
+            self.csv_path = csv_path
+
+        # El JSON de caché también va a la carpeta data para mantener orden
+        self.biometrics_file = os.path.join(self.data_dir, "loto_biometrics.json")
+
         self.df = None
         self.structure = {} 
         self.stats_matrix = {}
@@ -19,11 +33,12 @@ class LotoForense:
         self.delta_distribution = {}
         
         print(f"[{datetime.now().strftime('%H:%M:%S')}] 🔧 Inicializando LotoForense...")
+        print(f"   📂 Ruta CSV: {self.csv_path}")
         
         # 1. Intentar cargar biometría existente para ahorrar tiempo de cómputo
-        if os.path.exists("loto_biometrics.json"):
+        if os.path.exists(self.biometrics_file):
             try:
-                with open("loto_biometrics.json", "r", encoding='utf-8') as f:
+                with open(self.biometrics_file, "r", encoding='utf-8') as f:
                     self.stats_matrix = json.load(f)
                 print(f"[{datetime.now().strftime('%H:%M:%S')}] 🧠 Biometría cargada desde JSON (Caché).")
             except:
@@ -39,7 +54,8 @@ class LotoForense:
 
     def load_data(self):
         if not os.path.exists(self.csv_path):
-            print(f"⚠️ Advertencia: No se encontró {self.csv_path}. Se dependerá del JSON biométrico.")
+            print(f"⚠️ Advertencia CRÍTICA: No se encontró {self.csv_path}.")
+            print(f"   Asegúrate de que el archivo esté en la carpeta 'data/'.")
             return
 
         self.df = pd.read_csv(self.csv_path)
@@ -201,12 +217,19 @@ class LotoForense:
         self.save_intelligence()
         return report
 
-    def save_intelligence(self, filename="loto_biometrics.json"):
+    def save_intelligence(self, filename=None):
+        # Usamos la ruta calculada si no se pasa nombre
+        target_file = filename if filename else self.biometrics_file
+        
         if not self.stats_matrix:
             return
-        with open(filename, 'w', encoding='utf-8') as f:
-            json.dump(self.stats_matrix, f, indent=2)
-        print(f"[{datetime.now().strftime('%H:%M:%S')}] 💾 Inteligencia guardada en '{filename}'")
+        
+        try:
+            with open(target_file, 'w', encoding='utf-8') as f:
+                json.dump(self.stats_matrix, f, indent=2)
+            print(f"[{datetime.now().strftime('%H:%M:%S')}] 💾 Inteligencia guardada en '{target_file}'")
+        except Exception as e:
+            print(f"❌ Error guardando JSON: {e}")
 
     def get_quick_stats(self, game_mode, number):
         """Consulta rápida para verificar datos desde Python"""

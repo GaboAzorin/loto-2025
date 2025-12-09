@@ -3,8 +3,12 @@ import ast
 import numpy as np
 import os
 
-FILE_SIMULACIONES = "../../data/LOTO_SIMULACIONES.csv"
-FILE_MAESTRO = "../../data/LOTO_HISTORIAL_MAESTRO.csv"
+# --- CONFIGURACIÓN DE RUTAS ROBÚSTA ---
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR = os.path.join(BASE_DIR, '..', 'data')
+
+FILE_SIMULACIONES = os.path.join(DATA_DIR, "LOTO_SIMULACIONES.csv")
+FILE_MAESTRO = os.path.join(DATA_DIR, "LOTO_HISTORIAL_MAESTRO.csv")
 
 def calcular_afinidad(prediccion, realidad):
     """

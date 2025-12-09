@@ -4,11 +4,20 @@ import pytz
 import ast
 from collections import Counter
 from datetime import datetime, timedelta
-from analizador_forense import LotoForense
+# Nota: Asegúrate de que la importación de analizador_forense funcione. 
+# Si están en la misma carpeta engine/, esto está bien:
+from analizador_forense import LotoForense 
 
-# --- CONFIGURACIÓN ---
-FILE_SIMULACIONES = "../../data/LOTO_SIMULACIONES.csv"
-FILE_MAESTRO = "../../data/LOTO_HISTORIAL_MAESTRO.csv"
+# --- CONFIGURACIÓN DE RUTAS ROBÚSTA ---
+# 1. Obtenemos la ruta de ESTE archivo (bot_dreamer.py)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+# 2. Asumimos que data/ está al mismo nivel que la carpeta engine/ (es decir, subimos un nivel)
+DATA_DIR = os.path.join(BASE_DIR, '..', 'data')
+
+# 3. Construimos las rutas finales
+FILE_SIMULACIONES = os.path.join(DATA_DIR, "LOTO_SIMULACIONES.csv")
+FILE_MAESTRO = os.path.join(DATA_DIR, "LOTO_HISTORIAL_MAESTRO.csv")
+
 TZ_CHILE = pytz.timezone('America/Santiago')
 
 # Días de sorteo: Martes (1), Jueves (3), Domingo (6)
