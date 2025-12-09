@@ -12,7 +12,7 @@ from analizador_forense import LotoForense
 # 1. Obtenemos la ruta de ESTE archivo (bot_dreamer.py)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # 2. Asumimos que data/ está al mismo nivel que la carpeta engine/ (es decir, subimos un nivel)
-DATA_DIR = os.path.join(BASE_DIR, '..', 'data')
+DATA_DIR = os.path.join(BASE_DIR, '..', '..', 'data')
 
 # 3. Construimos las rutas finales
 FILE_SIMULACIONES = os.path.join(DATA_DIR, "LOTO_SIMULACIONES.csv")
