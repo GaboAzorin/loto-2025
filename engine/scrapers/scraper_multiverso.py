@@ -14,7 +14,7 @@ GAME_CONFIG = [
     {
         "name": "LOTO 3",
         "id": "2181",
-        "csv": "LOTO3_MAESTRO.csv",
+        "csv": "../../data/LOTO3_MAESTRO.csv",
         "start_draw": 12991, # Tu dato clave
         "parser": parse_loto3,
         "cols": [
@@ -30,7 +30,7 @@ GAME_CONFIG = [
     {
         "name": "LOTO 4",
         "id": "5270",
-        "csv": "LOTO4_MAESTRO.csv",
+        "csv": "../../data/LOTO4_MAESTRO.csv",
         "start_draw": 4230, # Tu dato clave
         "parser": parse_loto4,
         "cols": [
@@ -45,7 +45,7 @@ GAME_CONFIG = [
     {
         "name": "RACHA",
         "id": "5272",
-        "csv": "RACHA_MAESTRO.csv",
+        "csv": "../../data/RACHA_MAESTRO.csv",
         "start_draw": 2963, # Tu dato clave
         "parser": parse_racha,
         "cols": [
