@@ -6,16 +6,27 @@ from datetime import datetime
 from playwright.async_api import async_playwright
 
 # Importamos los parsers del archivo vecino
-from loto_parsers_mix import parse_loto3, parse_loto4, parse_racha
+try:
+    from loto_parsers_mix import parse_loto3, parse_loto4, parse_racha
+except ImportError:
+    # Parche por si se ejecuta desde otro contexto
+    import sys
+    sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+    from loto_parsers_mix import parse_loto3, parse_loto4, parse_racha
+
+# --- CONFIGURACIÓN DE RUTAS ROBUSTA (EL ARREGLO) ---
+# 1. Dónde estoy: engine/scrapers/
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+# 2. Dónde voy: Subir dos niveles (engine -> root) y entrar a data
+DATA_DIR = os.path.join(BASE_DIR, '..', '..', 'data')
 
 # --- CONFIGURACIÓN MAESTRA DEL MULTIVERSO ---
-# Aquí definimos las reglas de cada universo
 GAME_CONFIG = [
     {
         "name": "LOTO 3",
         "id": "2181",
-        "csv": "../../data/LOTO3_MAESTRO.csv",
-        "start_draw": 12991, # Tu dato clave
+        "csv": os.path.join(DATA_DIR, "LOTO3_MAESTRO.csv"), # <--- CORREGIDO
+        "start_draw": 12991, 
         "parser": parse_loto3,
         "cols": [
             "sorteo", "fecha", "dia_semana", "hora", "momento", "combinacion",
@@ -30,8 +41,8 @@ GAME_CONFIG = [
     {
         "name": "LOTO 4",
         "id": "5270",
-        "csv": "../../data/LOTO4_MAESTRO.csv",
-        "start_draw": 4230, # Tu dato clave
+        "csv": os.path.join(DATA_DIR, "LOTO4_MAESTRO.csv"), # <--- CORREGIDO
+        "start_draw": 4230, 
         "parser": parse_loto4,
         "cols": [
             "sorteo", "fecha", "dia_semana", "hora",
@@ -44,9 +55,9 @@ GAME_CONFIG = [
     },
     {
         "name": "RACHA",
-        "id": "5272",
-        "csv": "../../data/RACHA_MAESTRO.csv",
-        "start_draw": 2963, # Tu dato clave
+        "id": "5272", # ID de Polla confirmado para Racha
+        "csv": os.path.join(DATA_DIR, "RACHA_MAESTRO.csv"), # <--- CORREGIDO
+        "start_draw": 2963, 
         "parser": parse_racha,
         "cols": [
             "sorteo", "fecha", "dia_semana", "hora",
