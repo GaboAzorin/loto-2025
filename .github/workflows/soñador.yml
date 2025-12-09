@@ -39,6 +39,6 @@ jobs:
         git config --global user.name 'LotoAI Bot'
         git config --global user.email 'bot@lotoai.com'
         # Git pull por seguridad otra vez (no daña)
-        git add LOTO_SIMULACIONES.csv
+        git add data/LOTO_SIMULACIONES.csv
         git commit -m "🤖 Nueva predicción generada por Bot Soñador" || exit 0
         git push
