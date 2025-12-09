@@ -5,9 +5,9 @@ from playwright.async_api import async_playwright
 
 # --- OBJETIVOS DE LA MISIÓN ---
 TARGETS = [
-    {"name": "RACHA",  "gameId": "5272", "drawId": 10222},
-    {"name": "LOTO3",  "gameId": "2181", "drawId": 23880},
-    {"name": "LOTO4",  "gameId": "5270", "drawId": 11489}
+    {"name": "RACHA",  "gameId": "5272", "drawId": 2963},
+    {"name": "LOTO3",  "gameId": "2181", "drawId": 12991},
+    {"name": "LOTO4",  "gameId": "5270", "drawId": 4230}
 ]
 
 BASE_URL = "https://www.polla.cl/es/view/resultados"
