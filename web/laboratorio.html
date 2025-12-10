@@ -433,62 +433,85 @@
                 : 0;
             document.getElementById('avg-score').textContent = globalAvg + "%";
 
-            let labels = [], bioScores = [], gaussScores = [], deltaScores = [], markovScores = [], consensoScores = [];
+            let labels = [];
+            // Arrays para Scores
+            let bioScores = [], gaussScores = [], deltaScores = [], markovScores = [], consensoScores = [];
+            // Arrays para Counts (Nuevo)
+            let bioCounts = [], gaussCounts = [], deltaCounts = [], markovCounts = [], consensoCounts = [];
+
             let bestMomentLabel = "--", maxScoreFound = -1;
 
             if (CURRENT_CHART_MODE === 'hour') {
                 labels = Array.from({length: 24}, (_, i) => `${i}:00`);
                 for (let i = 0; i < 24; i++) {
-                    const bioVal = calculateAvg(auditados, d => d.hora === i && d.algoritmo.includes('forense_biometrico'));
-                    const gaussVal = calculateAvg(auditados, d => d.hora === i && d.algoritmo.includes('gaussiano'));
-                    const deltaVal = calculateAvg(auditados, d => d.hora === i && d.algoritmo.includes('delta'));
-                    const markovVal = calculateAvg(auditados, d => d.hora === i && d.algoritmo.includes('markov'));
-                    const consensoVal = calculateAvg(auditados, d => d.hora === i && d.algoritmo.includes('consenso'));
+                    const bioStat = calculateStats(auditados, d => d.hora === i && d.algoritmo.includes('forense_biometrico'));
+                    const gaussStat = calculateStats(auditados, d => d.hora === i && d.algoritmo.includes('gaussiano'));
+                    const deltaStat = calculateStats(auditados, d => d.hora === i && d.algoritmo.includes('delta'));
+                    const markovStat = calculateStats(auditados, d => d.hora === i && d.algoritmo.includes('markov'));
+                    const consensoStat = calculateStats(auditados, d => d.hora === i && d.algoritmo.includes('consenso'));
                     
-                    bioScores.push(bioVal); gaussScores.push(gaussVal); deltaScores.push(deltaVal); markovScores.push(markovVal); consensoScores.push(consensoVal);
+                    bioScores.push(bioStat.avg); bioCounts.push(bioStat.count);
+                    gaussScores.push(gaussStat.avg); gaussCounts.push(gaussStat.count);
+                    deltaScores.push(deltaStat.avg); deltaCounts.push(deltaStat.count);
+                    markovScores.push(markovStat.avg); markovCounts.push(markovStat.count);
+                    consensoScores.push(consensoStat.avg); consensoCounts.push(consensoStat.count);
                     
-                    let combined = Math.max(parseFloat(bioVal), parseFloat(gaussVal), parseFloat(deltaVal), parseFloat(markovVal), parseFloat(consensoVal));
+                    let combined = Math.max(parseFloat(bioStat.avg), parseFloat(gaussStat.avg), parseFloat(deltaStat.avg), parseFloat(markovStat.avg), parseFloat(consensoStat.avg));
                     if(combined > maxScoreFound) { maxScoreFound = combined; bestMomentLabel = `${i}:00 hrs`; }
                 }
             } else if (CURRENT_CHART_MODE === 'day') {
                 const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
                 labels = days;
                 for (let i = 0; i < 7; i++) {
-                    const bioVal = calculateAvg(auditados, d => d.dateObj.getDay() === i && d.algoritmo.includes('forense_biometrico'));
-                    const gaussVal = calculateAvg(auditados, d => d.dateObj.getDay() === i && d.algoritmo.includes('gaussiano'));
-                    const deltaVal = calculateAvg(auditados, d => d.dateObj.getDay() === i && d.algoritmo.includes('delta'));
-                    const markovVal = calculateAvg(auditados, d => d.dateObj.getDay() === i && d.algoritmo.includes('markov'));
-                    const consensoVal = calculateAvg(auditados, d => d.dateObj.getDay() === i && d.algoritmo.includes('consenso'));
+                    const bioStat = calculateStats(auditados, d => d.dateObj.getDay() === i && d.algoritmo.includes('forense_biometrico'));
+                    const gaussStat = calculateStats(auditados, d => d.dateObj.getDay() === i && d.algoritmo.includes('gaussiano'));
+                    const deltaStat = calculateStats(auditados, d => d.dateObj.getDay() === i && d.algoritmo.includes('delta'));
+                    const markovStat = calculateStats(auditados, d => d.dateObj.getDay() === i && d.algoritmo.includes('markov'));
+                    const consensoStat = calculateStats(auditados, d => d.dateObj.getDay() === i && d.algoritmo.includes('consenso'));
 
-                    bioScores.push(bioVal); gaussScores.push(gaussVal); deltaScores.push(deltaVal); markovScores.push(markovVal); consensoScores.push(consensoVal);
-                    let combined = Math.max(parseFloat(bioVal), parseFloat(gaussVal), parseFloat(consensoVal));
+                    bioScores.push(bioStat.avg); bioCounts.push(bioStat.count);
+                    gaussScores.push(gaussStat.avg); gaussCounts.push(gaussStat.count);
+                    deltaScores.push(deltaStat.avg); deltaCounts.push(deltaStat.count);
+                    markovScores.push(markovStat.avg); markovCounts.push(markovStat.count);
+                    consensoScores.push(consensoStat.avg); consensoCounts.push(consensoStat.count);
+
+                    let combined = Math.max(parseFloat(bioStat.avg), parseFloat(gaussStat.avg), parseFloat(consensoStat.avg));
                     if(combined > maxScoreFound) { maxScoreFound = combined; bestMomentLabel = days[i]; }
                 }
             } else if (CURRENT_CHART_MODE === 'month') {
                 const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
                 labels = months;
                 for (let i = 0; i < 12; i++) {
-                    const bioVal = calculateAvg(auditados, d => d.dateObj.getMonth() === i && d.algoritmo.includes('forense_biometrico'));
-                    const gaussVal = calculateAvg(auditados, d => d.dateObj.getMonth() === i && d.algoritmo.includes('gaussiano'));
-                    const deltaVal = calculateAvg(auditados, d => d.dateObj.getMonth() === i && d.algoritmo.includes('delta'));
-                    const markovVal = calculateAvg(auditados, d => d.dateObj.getMonth() === i && d.algoritmo.includes('markov'));
-                    const consensoVal = calculateAvg(auditados, d => d.dateObj.getMonth() === i && d.algoritmo.includes('consenso'));
+                    const bioStat = calculateStats(auditados, d => d.dateObj.getMonth() === i && d.algoritmo.includes('forense_biometrico'));
+                    const gaussStat = calculateStats(auditados, d => d.dateObj.getMonth() === i && d.algoritmo.includes('gaussiano'));
+                    const deltaStat = calculateStats(auditados, d => d.dateObj.getMonth() === i && d.algoritmo.includes('delta'));
+                    const markovStat = calculateStats(auditados, d => d.dateObj.getMonth() === i && d.algoritmo.includes('markov'));
+                    const consensoStat = calculateStats(auditados, d => d.dateObj.getMonth() === i && d.algoritmo.includes('consenso'));
 
-                    bioScores.push(bioVal); gaussScores.push(gaussVal); deltaScores.push(deltaVal); markovScores.push(markovVal); consensoScores.push(consensoVal);
-                    let combined = Math.max(parseFloat(bioVal), parseFloat(gaussVal), parseFloat(consensoVal));
+                    bioScores.push(bioStat.avg); bioCounts.push(bioStat.count);
+                    gaussScores.push(gaussStat.avg); gaussCounts.push(gaussStat.count);
+                    deltaScores.push(deltaStat.avg); deltaCounts.push(deltaStat.count);
+                    markovScores.push(markovStat.avg); markovCounts.push(markovStat.count);
+                    consensoScores.push(consensoStat.avg); consensoCounts.push(consensoStat.count);
+
+                    let combined = Math.max(parseFloat(bioStat.avg), parseFloat(gaussStat.avg), parseFloat(consensoStat.avg));
                     if(combined > maxScoreFound) { maxScoreFound = combined; bestMomentLabel = months[i]; }
                 }
             }
 
             document.getElementById('best-moment').textContent = maxScoreFound > 0 ? bestMomentLabel : "Calculando...";
-            renderChart(labels, bioScores, gaussScores, deltaScores, markovScores, consensoScores);
+            renderChart(labels, bioScores, gaussScores, deltaScores, markovScores, consensoScores, bioCounts, gaussCounts, deltaCounts, markovCounts, consensoCounts);
         }
 
-        function calculateAvg(data, filterFn) {
+        // Modificado para devolver objeto {avg, count}
+        function calculateStats(data, filterFn) {
             const subset = data.filter(filterFn);
-            if (subset.length === 0) return 0;
+            if (subset.length === 0) return { avg: 0, count: 0 };
             const sum = subset.reduce((acc, curr) => acc + curr.score, 0);
-            return (sum / subset.length).toFixed(1);
+            return {
+                avg: (sum / subset.length).toFixed(1),
+                count: subset.length
+            };
         }
 
         function applyFilters() {
@@ -802,7 +825,7 @@
             });
         }
 
-        function renderChart(labels, bioData, gaussData, deltaData, markovData, consensoData) {
+        function renderChart(labels, bioData, gaussData, deltaData, markovData, consensoData, bioCounts, gaussCounts, deltaCounts, markovCounts, consensoCounts) {
             const ctx = document.getElementById('mainChart').getContext('2d');
             if (window.myChart) window.myChart.destroy();
             
@@ -814,6 +837,7 @@
                         {
                             label: 'Biométrico',
                             data: bioData,
+                            counts: bioCounts,
                             backgroundColor: 'rgba(88, 166, 255, 0.6)',
                             borderColor: '#58a6ff',
                             borderWidth: 1
@@ -821,6 +845,7 @@
                         {
                             label: 'Gaussiano',
                             data: gaussData,
+                            counts: gaussCounts,
                             backgroundColor: 'rgba(241, 224, 90, 0.6)',
                             borderColor: '#f1e05a',
                             borderWidth: 1
@@ -828,6 +853,7 @@
                         {
                             label: 'Delta',
                             data: deltaData,
+                            counts: deltaCounts,
                             backgroundColor: 'rgba(32, 178, 170, 0.6)',
                             borderColor: '#20b2aa',
                             borderWidth: 1
@@ -835,6 +861,7 @@
                         {
                             label: 'Markov',
                             data: markovData,
+                            counts: markovCounts,
                             backgroundColor: 'rgba(255, 105, 180, 0.6)',
                             borderColor: '#ff69b4',
                             borderWidth: 1
@@ -842,6 +869,7 @@
                         {
                             label: 'Consenso',
                             data: consensoData,
+                            counts: consensoCounts,
                             backgroundColor: 'rgba(255, 255, 255, 0.6)',
                             borderColor: '#ffffff',
                             borderWidth: 1,
@@ -859,7 +887,27 @@
                     },
                     plugins: {
                         legend: { labels: { color: '#c9d1d9' } },
-                        tooltip: { mode: 'index', intersect: false }
+                        tooltip: { 
+                            mode: 'index', 
+                            intersect: false,
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += context.parsed.y + '%';
+                                    }
+                                    // Agregamos la cantidad de simulaciones
+                                    const count = context.dataset.counts[context.dataIndex];
+                                    if (count !== undefined) {
+                                        label += ` (${count} sims)`;
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
                     }
                 }
             });
