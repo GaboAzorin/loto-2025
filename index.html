@@ -809,7 +809,7 @@
     async function loadForensicBrain() {
         try {
             // Busca el archivo generado por el nuevo script Python
-            const response = await fetch('loto_biometrics.json?nocache=' + new Date().getTime());
+            const response = await fetch('data/loto_biometrics.json?nocache=' + new Date().getTime());
             
             if (!response.ok) throw new Error("Archivo de inteligencia no encontrado");
             
