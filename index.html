@@ -674,7 +674,30 @@
             let isVacante = winners === 0;
 
             if (isVacante) {
-                const pozoCol = `${cat.key}_POZO_REAL` in row ? `${cat.key}_POZO_REAL` : (`${cat.key}_ACUMULADO` in row ? `${cat.key}_ACUMULADO` : null);
+                // LÓGICA CORREGIDA: Prioridad al POZO ACUMULADO (Garantizado) sobre el REAL (Ventas)
+                let pozoCol = null;
+
+                // 1. Definimos las posibles columnas donde se esconde el "Acumulado", en orden de prioridad
+                const candidates = [
+                    `${cat.key}_POZO_ACUMULADO`,  // Estándar (Loto, Revancha, Desquite)
+                    `${cat.key}_ACUMULADO`,       // A veces usado en Ahora Sí Que Sí
+                    // Parche específico para Recargado (cuya key es RECARGADO_6_ACIERTOS pero su pozo suele ser RECARGADO_POZO_ACUMULADO)
+                    cat.key.includes('RECARGADO') ? 'RECARGADO_POZO_ACUMULADO' : null
+                ];
+
+                // 2. Buscamos la primera columna que exista en el CSV
+                for (const col of candidates) {
+                    if (col && col in row) {
+                        pozoCol = col;
+                        break; 
+                    }
+                }
+
+                // 3. Fallback: Solo si no hay acumulado, mostramos el Real (mejor que $0)
+                if (!pozoCol && `${cat.key}_POZO_REAL` in row) {
+                    pozoCol = `${cat.key}_POZO_REAL`;
+                }
+
                 if (pozoCol) displayAmount = parseInt(row[pozoCol]) || 0;
             }
 
