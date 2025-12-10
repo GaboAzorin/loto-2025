@@ -193,7 +193,7 @@
 <div class="container">
     <header>
         <div class="brand">LOTO<span>AI</span> /// AUDITORÍA FORENSE</div>
-        <a href="../index.html" class="back-btn"><i data-lucide="arrow-left"></i> Volver al Generador</a>
+        <a href="../index.html" class="back-btn"><i data-lucide="arrow-left"></i> Volver al inicio</a>
         <div style="float: right; margin-top: 10px;">
             <a href="laboratorio.html" style="text-decoration: none; color: #c9d1d9; border: 1px solid #30363d; padding: 5px 10px; border-radius: 4px; margin-right: 10px;">
                 🔬 Ir al Laboratorio
@@ -224,11 +224,11 @@
         </div>
     </div>
 
-    <h3 class="section-title">Análisis de Desempeño (Mis Jugadas)</h3>
+    <h3 class="section-title">Análisis de desempeño (mis jugadas)</h3>
     <div class="charts-grid">
         <div class="chart-card">
             <div class="chart-header">
-                <div class="chart-title"><i data-lucide="bar-chart-2" style="color:var(--neon-cyan)"></i> Distribución de Aciertos</div>
+                <div class="chart-title"><i data-lucide="bar-chart-2" style="color:var(--neon-cyan)"></i> Distribución de aciertos</div>
             </div>
             <div class="chart-container">
                 <canvas id="hitsChart"></canvas>
@@ -236,46 +236,12 @@
         </div>
         <div class="chart-card">
             <div class="chart-header">
-                <div class="chart-title"><i data-lucide="activity" style="color:var(--gold)"></i> Calibración del Algoritmo (Error)</div>
+                <div class="chart-title"><i data-lucide="activity" style="color:var(--gold)"></i> Calibración del algoritmo (error)</div>
             </div>
             <div class="chart-container">
                 <canvas id="proxChart"></canvas>
             </div>
         </div>
-    </div>
-
-    <h3 class="section-title">Análisis del Entorno (Histórico Loto)</h3>
-    <div class="charts-grid">
-        <div class="chart-card">
-            <div class="chart-header">
-                <div class="chart-title"><i data-lucide="thermometer" style="color:#ff3b5c"></i> Frecuencia General</div>
-            </div>
-            <div class="chart-container">
-                <canvas id="freqChart"></canvas>
-            </div>
-        </div>
-        <div class="chart-card">
-            <div class="chart-header">
-                <div class="chart-title"><i data-lucide="scale" style="color:#a0aec0"></i> Tendencia de Paridad (Últimos 30)</div>
-            </div>
-            <div class="chart-container">
-                <canvas id="globalParityChart"></canvas>
-            </div>
-        </div>
-    </div>
-
-    <h3 class="section-title">Huella Mecánica (Orden de Salida)</h3>
-    <div class="mech-dashboard">
-        <div style="display:flex; justify-content:space-between; align-items:end; margin-bottom:10px; border-bottom:1px solid var(--border); padding-bottom:10px;">
-            <div style="font-size:0.9rem; color:var(--text-muted);">
-                <i data-lucide="cpu" style="display:inline; width:16px;"></i> 
-                Muestra qué números prefieren salir en qué posición (Bola 1 a Bola 6). <br>
-                <span style="color:var(--neon-cyan)">Azul Brillante</span> = Alta probabilidad mecánica.
-            </div>
-        </div>
-        
-        <div id="mechanical-matrix" class="mech-grid-container">
-            </div>
     </div>
 
     <div class="history-section">
@@ -288,9 +254,9 @@
                     <tr>
                         <th>ID / Fecha</th>
                         <th>Estado</th>
-                        <th>Predicción vs Realidad</th>
+                        <th>Predicción vs realidad</th>
                         <th>Métricas (Aciertos | Desv)</th>
-                        <th>Análisis Estructural</th>
+                        <th>Análisis estructural</th>
                     </tr>
                 </thead>
                 <tbody id="audit-body">
@@ -298,6 +264,40 @@
                 </tbody>
             </table>
         </div>
+    </div>
+
+    <h3 class="section-title">Análisis del entorno (histórico Loto)</h3>
+    <div class="charts-grid">
+        <div class="chart-card">
+            <div class="chart-header">
+                <div class="chart-title"><i data-lucide="thermometer" style="color:#ff3b5c"></i> Frecuencia general</div>
+            </div>
+            <div class="chart-container">
+                <canvas id="freqChart"></canvas>
+            </div>
+        </div>
+        <div class="chart-card">
+            <div class="chart-header">
+                <div class="chart-title"><i data-lucide="scale" style="color:#a0aec0"></i> Tendencia de paridad (Últimos 30)</div>
+            </div>
+            <div class="chart-container">
+                <canvas id="globalParityChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <h3 class="section-title">Huella mecánica (orden de salida)</h3>
+    <div class="mech-dashboard">
+        <div style="display:flex; justify-content:space-between; align-items:end; margin-bottom:10px; border-bottom:1px solid var(--border); padding-bottom:10px;">
+            <div style="font-size:0.9rem; color:var(--text-muted);">
+                <i data-lucide="cpu" style="display:inline; width:16px;"></i> 
+                Muestra qué números prefieren salir en qué posición (Bola 1 a Bola 6). <br>
+                <span style="color:var(--neon-cyan)">Azul brillante</span> = Alta probabilidad mecánica.
+            </div>
+        </div>
+        
+        <div id="mechanical-matrix" class="mech-grid-container">
+            </div>
     </div>
 
 </div>
