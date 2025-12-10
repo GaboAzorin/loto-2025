@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🔬 Laboratorio LotoAI - Monitor de Bots</title>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
@@ -80,7 +81,7 @@
         .table-scroll { overflow-x: auto; max-height: 500px; overflow-y: auto; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem; }
         th { text-align: left; color: #8b949e; border-bottom: 1px solid var(--border); padding: 10px; position: sticky; top: 0; background: var(--card); z-index: 10; }
-        td { padding: 10px; border-bottom: 1px solid var(--border); }
+        td { padding: 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
         .num-badge { background: #21262d; padding: 2px 6px; border-radius: 4px; margin-right: 2px; display: inline-block; cursor: help; }
         
         .pending { color: var(--warning); }
@@ -148,6 +149,33 @@
         .sort-active {
             color: var(--accent);
             opacity: 1;
+        }
+
+        /* --- BOTÓN DE JUGADA (NUEVO) --- */
+        .btn-action {
+            background: rgba(0, 255, 65, 0.1);
+            color: #00ff41;
+            border: 1px solid rgba(0, 255, 65, 0.3);
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s;
+        }
+        .btn-action:hover {
+            background: rgba(0, 255, 65, 0.2);
+            box-shadow: 0 0 10px rgba(0, 255, 65, 0.2);
+        }
+        .btn-disabled {
+            background: rgba(255, 255, 255, 0.05);
+            color: #666;
+            border: 1px solid #444;
+            cursor: not-allowed;
+            pointer-events: none;
         }
     </style>
 </head>
@@ -264,7 +292,7 @@
                             <th>Predicción</th>
                             <th class="sortable-header" onclick="sortLogs('status')">Estado <span id="log-sort-status" class="sort-icon"></span></th>
                             <th class="sortable-header" onclick="sortLogs('score')">Score <span id="log-sort-score" class="sort-icon"></span></th>
-                        </tr>
+                            <th>Acción</th> </tr>
                     </thead>
                     <tbody>
                         </tbody>
@@ -583,6 +611,57 @@
             applyFilters(); // Re-aplica filtros y orden
         }
 
+        // --- FUNCION PARA GUARDAR JUGADA (COPIADA Y ADAPTADA DE INDEX) ---
+        async function savePlay(btnElement, numbersStr) {
+            // Convertimos la cadena de texto "[1, 2, 3...]" a un array real
+            let numbers;
+            try {
+                numbers = JSON.parse(numbersStr);
+            } catch (e) {
+                console.error("Error parseando números:", e);
+                return;
+            }
+
+            // Estado de carga visual
+            const originalContent = btnElement.innerHTML;
+            btnElement.innerHTML = '...';
+            btnElement.disabled = true;
+
+            const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwBZd2vTrvxVdTjJnLoK2vMCR90qJqyH3ZfSDkNK4_n0aFYe3jCoeIZ3R58XNQBM1xQ3A/exec";
+
+            try {
+                await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ numeros: numbers, jugado: "SI" })
+                });
+
+                // Éxito: Cambiamos a estado final gris
+                btnElement.innerHTML = '<i data-lucide="check" width="14"></i> Jugada';
+                btnElement.classList.add('btn-disabled');
+                
+                // --- PERSISTENCIA LOCAL (Para que no se borre al recargar) ---
+                // Guardamos en LocalStorage usando una clave única (simId es único)
+                // Usamos un atributo data-id que añadiremos al botón
+                const simId = btnElement.getAttribute('data-id');
+                if (simId) {
+                    localStorage.setItem(`played_${simId}`, 'true');
+                }
+                
+                lucide.createIcons(); // Refrescar iconos por si acaso
+
+            } catch (error) {
+                console.error(error);
+                btnElement.innerHTML = '<i data-lucide="x" width="14"></i> Error';
+                btnElement.disabled = false; // Permitir reintentar
+                setTimeout(() => {
+                    btnElement.innerHTML = originalContent;
+                    lucide.createIcons();
+                }, 2000);
+            }
+        }
+
         function renderTable(data) {
             const tbody = document.querySelector('#logs-table tbody');
             tbody.innerHTML = '';
@@ -636,6 +715,19 @@
                 let drawTooltip = winningNumbers.length > 0 ? `Ganadores: ${winningNumbers.join(', ')}` : "Esperando sorteo...";
                 let drawClass = winningNumbers.length > 0 ? "draw-badge" : "";
 
+                // --- LÓGICA DEL BOTÓN DE ACCIÓN ---
+                // Verificamos si ya fue jugado (localmente)
+                const isPlayedLocal = localStorage.getItem(`played_${row.id}`) === 'true';
+                
+                let actionBtn;
+                if (isPlayedLocal) {
+                    actionBtn = `<button class="btn-action btn-disabled" disabled><i data-lucide="check" width="14"></i> Jugada</button>`;
+                } else {
+                    // Escapamos las comillas en row.numeros por si acaso, aunque viene limpio
+                    // Pasamos 'this' para que la función manipule el botón
+                    actionBtn = `<button class="btn-action" data-id="${row.id}" onclick="savePlay(this, '${row.numeros}')"><i data-lucide="ticket" width="14"></i> Jugar</button>`;
+                }
+
                 tr.innerHTML = `
                     <td title="${row.fechaStr}">${fechaShort}</td>
                     <td>${algoBadge}</td>
@@ -643,15 +735,18 @@
                     <td>${numsHTML}</td>
                     <td class="${badgeClass}">${row.estado}</td>
                     <td>${scoreDisplay}</td>
+                    <td>${actionBtn}</td>
                 `;
                 tbody.appendChild(tr);
             });
             
             if (filterSorteo === 'ALL' && data.length > 50) {
                 const tr = document.createElement('tr');
-                tr.innerHTML = `<td colspan="6" style="text-align:center; color:#8b949e; font-style:italic;">... y ${data.length - 50} registros más ...</td>`;
+                tr.innerHTML = `<td colspan="7" style="text-align:center; color:#8b949e; font-style:italic;">... y ${data.length - 50} registros más ...</td>`;
                 tbody.appendChild(tr);
             }
+            
+            lucide.createIcons(); // Refrescar iconos nuevos
         }
 
         // --- LÓGICA DE TABLA AGREGADA CON ORDENAMIENTO ---
