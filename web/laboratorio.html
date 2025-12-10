@@ -31,7 +31,7 @@
             margin: 0;
             padding: 20px;
         }
-        .container { max-width: 1400px; margin: 0 auto; }
+        .container { max-width: 1600px; margin: 0 auto; } /* Aumenté el ancho para que quepan las nuevas columnas */
         
         /* Header */
         header { border-bottom: 1px solid var(--border); padding-bottom: 20px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
@@ -79,9 +79,9 @@
 
         /* Tabla */
         .table-scroll { overflow-x: auto; max-height: 500px; overflow-y: auto; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem; }
-        th { text-align: left; color: #8b949e; border-bottom: 1px solid var(--border); padding: 10px; position: sticky; top: 0; background: var(--card); z-index: 10; }
-        td { padding: 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.8rem; } /* Fuente más pequeña para que quepa todo */
+        th { text-align: left; color: #8b949e; border-bottom: 1px solid var(--border); padding: 10px; position: sticky; top: 0; background: var(--card); z-index: 10; white-space: nowrap; }
+        td { padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
         .num-badge { background: #21262d; padding: 2px 6px; border-radius: 4px; margin-right: 2px; display: inline-block; cursor: help; }
         
         .pending { color: var(--warning); }
@@ -151,7 +151,7 @@
             opacity: 1;
         }
 
-        /* --- BOTÓN DE JUGADA (NUEVO) --- */
+        /* --- BOTÓN DE JUGADA --- */
         .btn-action {
             background: rgba(0, 255, 65, 0.1);
             color: #00ff41;
@@ -177,6 +177,13 @@
             cursor: not-allowed;
             pointer-events: none;
         }
+
+        /* Estilos para columnas de aciertos */
+        .hit-col-6 { color: #ff00ff; font-weight: bold; background: rgba(255, 0, 255, 0.1); }
+        .hit-col-5 { color: #ffd700; font-weight: bold; background: rgba(255, 215, 0, 0.1); }
+        .hit-col-4 { color: #00f2ff; font-weight: bold; background: rgba(0, 242, 255, 0.1); }
+        .hit-col-3 { color: #2ea043; }
+        .hit-col-low { color: #8b949e; }
     </style>
 </head>
 <body>
@@ -292,7 +299,8 @@
                             <th>Predicción</th>
                             <th class="sortable-header" onclick="sortLogs('status')">Estado <span id="log-sort-status" class="sort-icon"></span></th>
                             <th class="sortable-header" onclick="sortLogs('score')">Score <span id="log-sort-score" class="sort-icon"></span></th>
-                            <th>Acción</th> </tr>
+                            <th>Acción</th>
+                        </tr>
                     </thead>
                     <tbody>
                         </tbody>
@@ -316,6 +324,13 @@
                             <th class="sortable-header" onclick="sortAggregate('avgDelta')" style="text-align:center;">Delta <span id="sort-icon-avgDelta" class="sort-icon"></span></th>
                             <th class="sortable-header" onclick="sortAggregate('avgMarkov')" style="text-align:center;">Markov <span id="sort-icon-avgMarkov" class="sort-icon"></span></th>
                             <th class="sortable-header" onclick="sortAggregate('avgConsenso')" style="text-align:center;">Consenso <span id="sort-icon-avgConsenso" class="sort-icon"></span></th>
+                            
+                            <th class="sortable-header" onclick="sortAggregate('cnt6')" style="text-align:center; color:#ff00ff;">6A <span id="sort-icon-cnt6" class="sort-icon"></span></th>
+                            <th class="sortable-header" onclick="sortAggregate('cnt5')" style="text-align:center; color:#ffd700;">5A <span id="sort-icon-cnt5" class="sort-icon"></span></th>
+                            <th class="sortable-header" onclick="sortAggregate('cnt4')" style="text-align:center; color:#00f2ff;">4A <span id="sort-icon-cnt4" class="sort-icon"></span></th>
+                            <th class="sortable-header" onclick="sortAggregate('cnt3')" style="text-align:center; color:#2ea043;">3A <span id="sort-icon-cnt3" class="sort-icon"></span></th>
+                            <th class="sortable-header" onclick="sortAggregate('cnt2')" style="text-align:center;">2A <span id="sort-icon-cnt2" class="sort-icon"></span></th>
+                            <th class="sortable-header" onclick="sortAggregate('cnt1')" style="text-align:center;">1A <span id="sort-icon-cnt1" class="sort-icon"></span></th>
                         </tr>
                     </thead>
                     <tbody id="aggregate-body">
@@ -330,6 +345,16 @@
         const CSV_URL = '../data/LOTO_SIMULACIONES.csv';
         const MASTER_URL = '../data/LOTO_HISTORIAL_MAESTRO.csv';
         
+        // PROBABILIDADES MATEMÁTICAS LOTO 41 NÚMEROS (Para comparar vs Azar)
+        const LOTO_PROBS = {
+            6: 0.000000222,
+            5: 0.0000467,
+            4: 0.001985,
+            3: 0.02911,
+            2: 0.17467,
+            1: 0.43319
+        };
+
         let GLOBAL_DATA = [];
         let GLOBAL_MAESTRO = {};
         let AGGREGATE_DATA = []; 
@@ -339,7 +364,7 @@
         let SORT_COL = 'target'; 
         let SORT_DIR = 'desc';   
 
-        // Estado de ordenamiento para tabla logs (NUEVO)
+        // Estado de ordenamiento para tabla logs
         let LOGS_SORT_COL = 'date';
         let LOGS_SORT_DIR = 'desc';
 
@@ -462,9 +487,7 @@
             document.getElementById('avg-score').textContent = globalAvg + "%";
 
             let labels = [];
-            // Arrays para Scores
             let bioScores = [], gaussScores = [], deltaScores = [], markovScores = [], consensoScores = [];
-            // Arrays para Counts (Nuevo)
             let bioCounts = [], gaussCounts = [], deltaCounts = [], markovCounts = [], consensoCounts = [];
 
             let bestMomentLabel = "--", maxScoreFound = -1;
@@ -531,7 +554,6 @@
             renderChart(labels, bioScores, gaussScores, deltaScores, markovScores, consensoScores, bioCounts, gaussCounts, deltaCounts, markovCounts, consensoCounts);
         }
 
-        // Modificado para devolver objeto {avg, count}
         function calculateStats(data, filterFn) {
             const subset = data.filter(filterFn);
             if (subset.length === 0) return { avg: 0, count: 0 };
@@ -600,20 +622,17 @@
             applyFilters();
         }
 
-        // Función para cambiar orden de logs
         function sortLogs(col) {
             if (LOGS_SORT_COL === col) {
                 LOGS_SORT_DIR = LOGS_SORT_DIR === 'asc' ? 'desc' : 'asc';
             } else {
                 LOGS_SORT_COL = col;
-                LOGS_SORT_DIR = 'desc'; // Default desc para nueva columna
+                LOGS_SORT_DIR = 'desc'; 
             }
-            applyFilters(); // Re-aplica filtros y orden
+            applyFilters(); 
         }
 
-        // --- FUNCION PARA GUARDAR JUGADA (COPIADA Y ADAPTADA DE INDEX) ---
         async function savePlay(btnElement, numbersStr) {
-            // Convertimos la cadena de texto "[1, 2, 3...]" a un array real
             let numbers;
             try {
                 numbers = JSON.parse(numbersStr);
@@ -622,7 +641,6 @@
                 return;
             }
 
-            // Estado de carga visual
             const originalContent = btnElement.innerHTML;
             btnElement.innerHTML = '...';
             btnElement.disabled = true;
@@ -637,24 +655,20 @@
                     body: JSON.stringify({ numeros: numbers, jugado: "SI" })
                 });
 
-                // Éxito: Cambiamos a estado final gris
                 btnElement.innerHTML = '<i data-lucide="check" width="14"></i> Jugada';
                 btnElement.classList.add('btn-disabled');
                 
-                // --- PERSISTENCIA LOCAL (Para que no se borre al recargar) ---
-                // Guardamos en LocalStorage usando una clave única (simId es único)
-                // Usamos un atributo data-id que añadiremos al botón
                 const simId = btnElement.getAttribute('data-id');
                 if (simId) {
                     localStorage.setItem(`played_${simId}`, 'true');
                 }
                 
-                lucide.createIcons(); // Refrescar iconos por si acaso
+                lucide.createIcons(); 
 
             } catch (error) {
                 console.error(error);
                 btnElement.innerHTML = '<i data-lucide="x" width="14"></i> Error';
-                btnElement.disabled = false; // Permitir reintentar
+                btnElement.disabled = false; 
                 setTimeout(() => {
                     btnElement.innerHTML = originalContent;
                     lucide.createIcons();
@@ -667,7 +681,6 @@
             tbody.innerHTML = '';
             document.getElementById('filtered-count').textContent = `Mostrando ${data.length} registros`;
 
-            // Límite inteligente: Si hay filtro de sorteo, mostrar TODO. Si no, solo 50.
             const filterSorteo = document.getElementById('f-sorteo').value;
             let displayData = data;
             if (filterSorteo === 'ALL') {
@@ -715,16 +728,12 @@
                 let drawTooltip = winningNumbers.length > 0 ? `Ganadores: ${winningNumbers.join(', ')}` : "Esperando sorteo...";
                 let drawClass = winningNumbers.length > 0 ? "draw-badge" : "";
 
-                // --- LÓGICA DEL BOTÓN DE ACCIÓN ---
-                // Verificamos si ya fue jugado (localmente)
                 const isPlayedLocal = localStorage.getItem(`played_${row.id}`) === 'true';
                 
                 let actionBtn;
                 if (isPlayedLocal) {
                     actionBtn = `<button class="btn-action btn-disabled" disabled><i data-lucide="check" width="14"></i> Jugada</button>`;
                 } else {
-                    // Escapamos las comillas en row.numeros por si acaso, aunque viene limpio
-                    // Pasamos 'this' para que la función manipule el botón
                     actionBtn = `<button class="btn-action" data-id="${row.id}" onclick="savePlay(this, '${row.numeros}')"><i data-lucide="ticket" width="14"></i> Jugar</button>`;
                 }
 
@@ -746,7 +755,7 @@
                 tbody.appendChild(tr);
             }
             
-            lucide.createIcons(); // Refrescar iconos nuevos
+            lucide.createIcons(); 
         }
 
         // --- LÓGICA DE TABLA AGREGADA CON ORDENAMIENTO ---
@@ -772,13 +781,14 @@
                         avgDelta: 0,
                         avgMarkov: 0,
                         avgConsenso: 0,
-                        all_numbers: [] // Store all predicted numbers here to count later
+                        all_numbers: [],
+                        // NUEVO: CONTADORES POR CANTIDAD DE ACIERTOS
+                        cnt6: 0, cnt5: 0, cnt4: 0, cnt3: 0, cnt2: 0, cnt1: 0
                     };
                 }
                 const g = groups[d.objetivo];
                 g.count++;
                 
-                // Parse numbers and add to list for frequency analysis
                 const nums = d.numeros.replace('[', '').replace(']', '').split(', ');
                 g.all_numbers.push(...nums);
                 
@@ -794,6 +804,14 @@
                         g.maxScore = d.score;
                         g.bestRow = d;
                     }
+
+                    // Contar aciertos exactos para las nuevas columnas
+                    if (d.aciertos === 6) g.cnt6++;
+                    else if (d.aciertos === 5) g.cnt5++;
+                    else if (d.aciertos === 4) g.cnt4++;
+                    else if (d.aciertos === 3) g.cnt3++;
+                    else if (d.aciertos === 2) g.cnt2++;
+                    else if (d.aciertos === 1) g.cnt1++;
                 }
             });
 
@@ -883,8 +901,7 @@
                     bestHtml = `<div>${badge}${bestHtml} <small>(${g.maxScore}%)</small></div>`;
                 }
 
-                // --- NUEVO: COLUMNA DE ACIERTOS GLOBALES ---
-                // Calcular frecuencias
+                // --- COLUMNA DE ACIERTOS GLOBALES (Números reales) ---
                 const counts = {};
                 g.all_numbers.forEach(n => { counts[n] = (counts[n] || 0) + 1; });
 
@@ -900,10 +917,16 @@
                                 </div>`;
                     }).join(' ');
                 }
-                // ------------------------------------------
 
                 const masterEntry = GLOBAL_MAESTRO[g.target];
                 const dateTooltip = masterEntry ? `Fecha: ${masterEntry.date}` : 'Fecha desconocida';
+
+                // Cálculo de Expectativa vs Realidad para las columnas
+                // Formato: Actual (Esperado)
+                const getStatCell = (hits, actualCount) => {
+                    const expected = (g.count * LOTO_PROBS[hits]).toFixed(1);
+                    return `${actualCount} <span style="font-size:0.8em; opacity:0.6;">(${expected})</span>`;
+                };
 
                 tr.innerHTML = `
                     <td><span class="draw-badge" title="${dateTooltip}">#${g.target}</span></td>
@@ -915,6 +938,13 @@
                     <td style="text-align:center; color:var(--delta-color);">${avgDeltaStr}</td>
                     <td style="text-align:center; color:var(--markov-color);">${avgMarkovStr}</td>
                     <td style="text-align:center; color:var(--consenso-color); font-weight:bold;">${avgConsensoStr}</td>
+                    
+                    <td class="hit-col-6" style="text-align:center;">${getStatCell(6, g.cnt6)}</td>
+                    <td class="hit-col-5" style="text-align:center;">${getStatCell(5, g.cnt5)}</td>
+                    <td class="hit-col-4" style="text-align:center;">${getStatCell(4, g.cnt4)}</td>
+                    <td class="hit-col-3" style="text-align:center;">${getStatCell(3, g.cnt3)}</td>
+                    <td class="hit-col-low" style="text-align:center;">${getStatCell(2, g.cnt2)}</td>
+                    <td class="hit-col-low" style="text-align:center;">${getStatCell(1, g.cnt1)}</td>
                 `;
                 tbody.appendChild(tr);
             });
