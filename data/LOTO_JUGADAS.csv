@@ -5,3 +5,4 @@ id,fecha_generacion,numeros,jugado_realmente,estado,sorteo_objetivo,aciertos,del
 1764727417,30/10/2025 9:08:22,"[1, 13, 14, 28, 30, 35]",SI,FINALIZADO,5341,0,-4,5.0,Pred:3P - Real:3P,4,4,P:34 / R:21,P:1 / R:1,P:1 / R:1
 1764727418,29/11/2025 17:32:01,"[6, 8, 22, 27, 29, 41]",SI,FINALIZADO,5354,0,28,7.7,Pred:3P - Real:3P,0,4,P:35 / R:28,P:0 / R:3,P:2 / R:2
 1764727419,1/12/2025 23:14:05,"[11, 12, 22, 25, 32, 38]",SI,FINALIZADO,5355,1,-6,3.0,Pred:4P - Real:2P,4,2,P:27 / R:34,P:1 / R:0,P:1 / R:3
+1765374110,9/12/2025 20:26:49,"[5, 10, 13, 16, 19, 21]",SI,FINALIZADO,5358,0,-25,5.8,Pred:2P - Real:3P,3,3,P:16 / R:29,P:0 / R:0,P:3 / R:3
