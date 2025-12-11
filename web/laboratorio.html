@@ -645,7 +645,7 @@
             });
         }
 
-        // --- GRÁFICOS RESTAURADOS & ROBUSTOS ---
+// --- GRÁFICOS CON TOOLTIP UNIFICADO (MODO INDEX) ---
         function updateDashboardCharts(data) {
             const ctx = document.getElementById('mainChart').getContext('2d');
             if(window.myChart) window.myChart.destroy();
@@ -662,7 +662,7 @@
                 labels.forEach((_, i) => buckets[i] = {});
                 auditados.forEach(d => {
                     let h = d.hora;
-                    if (isNaN(h)) h = d.dateObj.getHours(); // Fallback
+                    if (isNaN(h)) h = d.dateObj.getHours(); 
                     if (buckets[h]) {
                         gameConfig.algos.forEach(a => {
                             if(d.algoritmo.includes(a.key)) {
@@ -715,9 +715,11 @@
                     label: a.label,
                     data: dataPoints,
                     borderColor: a.color,
-                    backgroundColor: hexToRgba(a.color, 0.5), // FIX DE COLOR
+                    backgroundColor: hexToRgba(a.color, 0.5),
                     borderWidth: a.label === 'Consenso' ? 2 : 1,
                     tension: 0.4,
+                    pointRadius: 3, // Puntos un poco más visibles para el hover
+                    pointHoverRadius: 5,
                     counts: labels.map((_, i) => buckets[i] && buckets[i][a.key] ? buckets[i][a.key].length : 0)
                 };
             });
@@ -734,18 +736,36 @@
                 type: 'line',
                 data: { labels: labels, datasets: datasets },
                 options: {
-                    responsive: true, maintainAspectRatio: false,
-                    scales: { y: { beginAtZero: true, max: 100, grid: { color: '#30363d' } }, x: { grid: { display: false } } },
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    // --- AQUÍ ESTÁ EL CAMBIO MÁGICO ---
+                    interaction: {
+                        mode: 'index',     // Agrupa por índice del eje X (Columna)
+                        intersect: false,  // No requiere tocar la línea exacta
+                    },
+                    // ----------------------------------
+                    scales: { 
+                        y: { beginAtZero: true, max: 100, grid: { color: '#30363d' } }, 
+                        x: { grid: { display: false } } 
+                    },
                     plugins: { 
                         legend: { labels: { color: '#c9d1d9' } },
                         tooltip: {
+                            backgroundColor: 'rgba(22, 27, 34, 0.9)', // Fondo oscuro estilo GitHub
+                            titleColor: '#fff',
+                            bodyColor: '#c9d1d9',
+                            borderColor: '#30363d',
+                            borderWidth: 1,
+                            padding: 10,
                             callbacks: {
                                 label: function(context) {
                                     let label = context.dataset.label || '';
                                     if (label) label += ': ';
                                     if (context.parsed.y !== null) label += context.parsed.y + '%';
+                                    
                                     const count = context.dataset.counts[context.dataIndex];
-                                    if (count) label += ` (${count} sims)`;
+                                    // Solo mostrar conteo si hay datos reales (>0 sims) para no ensuciar
+                                    if (count > 0) label += ` (${count} sims)`;
                                     return label;
                                 }
                             }
@@ -754,7 +774,7 @@
                 }
             });
         }
-
+        
         // --- UTILIDADES ---
         function resetFilters() {
             document.getElementById('f-sorteo').value = 'ALL';
