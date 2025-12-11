@@ -18,7 +18,7 @@
             --danger: #f85149;
             --border: #30363d;
             
-            /* Colores de Algoritmos (Restaurados) */
+            /* Colores de Algoritmos */
             --bio-color: #58a6ff;   
             --gauss-color: #f1e05a; 
             --delta-color: #20b2aa; 
@@ -27,14 +27,14 @@
             --premium-color: #ffd700; 
         }
         body { font-family: 'JetBrains Mono', monospace; background-color: var(--bg); color: var(--text); margin: 0; padding: 20px; }
-        .container { max-width: 1800px; margin: 0 auto; } /* Más ancho para ver toda la data */
+        .container { max-width: 1800px; margin: 0 auto; }
         
         /* Header */
         header { border-bottom: 1px solid var(--border); padding-bottom: 20px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
         h1 { margin: 0; font-size: 1.5rem; color: var(--accent); display: flex; align-items: center; gap: 10px; }
         .status-badge { background: var(--success); color: white; padding: 5px 10px; border-radius: 4px; font-size: 0.8rem; }
         
-        /* Pestañas Multiverso (Corregidas) */
+        /* Pestañas Multiverso */
         .universe-tabs { display: flex; gap: 5px; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 0; }
         .tab-btn {
             background: var(--card); border: 1px solid var(--border); color: var(--text-muted);
@@ -80,12 +80,12 @@
         .pending { color: var(--warning); }
         .audited { color: var(--success); }
         
-        /* Badges de Algoritmo (Recuperados) */
+        /* Badges de Algoritmo */
         .algo-badge { font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; border: 1px solid transparent; white-space: nowrap; }
         .algo-bio { color: var(--bio-color); border-color: rgba(88, 166, 255, 0.3); background: rgba(88, 166, 255, 0.1); }
         .algo-gauss { color: var(--gauss-color); border-color: rgba(241, 224, 90, 0.3); background: rgba(241, 224, 90, 0.1); }
         .algo-delta { color: var(--delta-color); border-color: rgba(32, 178, 170, 0.3); background: rgba(32, 178, 170, 0.1); }
-        .algo-markov { color: var(--markov-color); border-color: rgba(255, 105, 180, 0.3); background: rgba(255, 105, 180, 0.1); } /* Rosado recuperado */
+        .algo-markov { color: var(--markov-color); border-color: rgba(255, 105, 180, 0.3); background: rgba(255, 105, 180, 0.1); }
         .algo-consenso { color: var(--consenso-color); border-color: rgba(255, 255, 255, 0.3); background: rgba(255, 255, 255, 0.1); font-weight: bold; }
         
         .nav-link { color: var(--text); text-decoration: none; border: 1px solid var(--border); padding: 5px 10px; border-radius: 4px; transition: background 0.2s; }
@@ -112,12 +112,11 @@
         .btn-action:hover { background: rgba(0, 255, 65, 0.2); box-shadow: 0 0 10px rgba(0, 255, 65, 0.2); }
         .btn-disabled { background: rgba(255, 255, 255, 0.05); color: #666; border: 1px solid #444; cursor: not-allowed; pointer-events: none; }
 
-        /* Estilos de Columnas de Aciertos (Restaurados) */
-        .hit-col-6 { color: #ff00ff; font-weight: bold; background: rgba(255, 0, 255, 0.1); padding: 2px 5px; border-radius: 4px; }
-        .hit-col-5 { color: #ffd700; font-weight: bold; background: rgba(255, 215, 0, 0.1); padding: 2px 5px; border-radius: 4px; }
-        .hit-col-4 { color: #00f2ff; font-weight: bold; background: rgba(0, 242, 255, 0.1); padding: 2px 5px; border-radius: 4px; }
-        .hit-col-3 { color: #2ea043; padding: 2px 5px; }
-        .hit-col-low { color: #8b949e; opacity: 0.6; }
+        /* Estilos de Columnas de Aciertos */
+        .hit-col-high { color: #ff00ff; font-weight: bold; background: rgba(255, 0, 255, 0.1); padding: 2px 5px; border-radius: 4px; }
+        .hit-col-mid { color: #00f2ff; font-weight: bold; background: rgba(0, 242, 255, 0.1); padding: 2px 5px; border-radius: 4px; }
+        .hit-col-low { color: #2ea043; padding: 2px 5px; }
+        .hit-col-dim { color: #8b949e; opacity: 0.6; }
     </style>
 </head>
 <body>
@@ -237,27 +236,7 @@
             <h3 style="margin-bottom:15px; color:#58a6ff;">📊 Resumen de Desempeño por Sorteo (Agregado)</h3>
             <div class="table-scroll">
                 <table id="aggregate-table">
-                    <thead>
-                        <tr>
-                            <th class="sortable-header" onclick="sortAggregate('target')">Sorteo</th>
-                            <th class="sortable-header" onclick="sortAggregate('count')" style="text-align:center;">Cant.</th>
-                            <th style="min-width:200px;">Sorteo Real (Aciertos Globales)</th>
-                            <th>Mejor Predicción</th>
-                            <th class="sortable-header" onclick="sortAggregate('avgTotal')" style="text-align:center;">Global</th>
-                            <th style="text-align:center; color:var(--bio-color);">Bio</th>
-                            <th style="text-align:center; color:var(--gauss-color);">Gauss</th>
-                            <th style="text-align:center; color:var(--delta-color);">Delta</th>
-                            <th style="text-align:center; color:var(--markov-color);">Markov</th>
-                            <th style="text-align:center; color:var(--consenso-color);">Consenso</th>
-                            
-                            <th style="text-align:center; color:#ff00ff;">6A</th>
-                            <th style="text-align:center; color:#ffd700;">5A</th>
-                            <th style="text-align:center; color:#00f2ff;">4A</th>
-                            <th style="text-align:center; color:#2ea043;">3A</th>
-                            <th style="text-align:center;">2A</th>
-                            <th style="text-align:center;">1A</th>
-                        </tr>
-                    </thead>
+                    <thead id="agg-head"></thead>
                     <tbody id="aggregate-body"></tbody>
                 </table>
             </div>
@@ -265,7 +244,7 @@
     </div>
 
     <script>
-        // CONFIGURACIÓN MULTIVERSO
+        // CONFIGURACIÓN MULTIVERSO (Datos + Estructura Visual)
         const DATA_SOURCES = {
             'SIMS': '../data/LOTO_SIMULACIONES.csv',
             'LOTO': '../data/LOTO_HISTORIAL_MAESTRO.csv',
@@ -274,10 +253,44 @@
             'RACHA': '../data/RACHA_MAESTRO.csv'
         };
 
-        // Estado Global
+        // Reglas de visualización por juego (Tu solicitud específica)
+        const UNIVERSE_CONFIG = {
+            'LOTO': {
+                algos: [
+                    {key: 'forense', label: 'Bio', color: 'var(--bio-color)'},
+                    {key: 'gauss', label: 'Gauss', color: 'var(--gauss-color)'},
+                    {key: 'delta', label: 'Delta', color: 'var(--delta-color)'},
+                    {key: 'markov', label: 'Markov', color: 'var(--markov-color)'},
+                    {key: 'consenso', label: 'Consenso', color: 'var(--consenso-color)'}
+                ],
+                hits: [6, 5, 4, 3, 2, 1]
+            },
+            'LOTO3': {
+                algos: [
+                    {key: 'forense', label: 'Bio', color: 'var(--bio-color)'},
+                    {key: 'consenso', label: 'Consenso', color: 'var(--consenso-color)'}
+                ],
+                hits: [3, 2, 1] // Solo hasta 3 aciertos
+            },
+            'LOTO4': {
+                algos: [
+                    {key: 'forense', label: 'Bio', color: 'var(--bio-color)'},
+                    {key: 'consenso', label: 'Consenso', color: 'var(--consenso-color)'}
+                ],
+                hits: [4, 3, 2, 1]
+            },
+            'RACHA': {
+                algos: [
+                    {key: 'forense', label: 'Bio', color: 'var(--bio-color)'},
+                    {key: 'consenso', label: 'Consenso', color: 'var(--consenso-color)'}
+                ],
+                hits: [10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0] // Racha completa
+            }
+        };
+
         let RAW_SIMULATIONS = [];
         let MASTERS = {}; 
-        let MASTERS_DATES = {}; // Diccionario para fechas { 'LOTO': { '1234': '2023-01-01' } }
+        let MASTERS_DATES = {}; 
         let CURRENT_UNIVERSE = 'LOTO';
         let CURRENT_CHART_MODE = 'hour';
         
@@ -286,7 +299,6 @@
         let LOGS_SORT_COL = 'date';
         let LOGS_SORT_DIR = 'desc';
 
-        // Inicializar hora
         const hSel = document.getElementById('f-hora');
         for(let i=0; i<24; i++) {
             let opt = document.createElement('option'); opt.value = i; opt.textContent = i.toString().padStart(2,'0')+":00"; hSel.appendChild(opt);
@@ -391,10 +403,8 @@
 
         function switchUniverse(gameId) {
             CURRENT_UNIVERSE = gameId;
-            // Lógica de Tabs Corregida
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.classList.remove('active');
-                // Comparación estricta usando data-game
                 if(btn.getAttribute('data-game') === gameId) {
                     btn.classList.add('active');
                 }
@@ -424,10 +434,10 @@
             updateSorteoSelector(data);
             renderTable(data);
             
-            // Aquí recuperamos tu lógica antigua de Aggregate Data
+            // Renderizado Agregado Dinámico
             calculateAndRenderAggregate(data);
             
-            // Aquí recuperamos tu lógica de Gráficos (Stats)
+            // Gráficos
             updateDashboardCharts(data);
         }
 
@@ -473,7 +483,7 @@
                 if(row.algoritmo.includes('forense')) algoClass += ' algo-bio';
                 else if(row.algoritmo.includes('gauss')) algoClass += ' algo-gauss';
                 else if(row.algoritmo.includes('delta')) algoClass += ' algo-delta';
-                else if(row.algoritmo.includes('markov')) algoClass += ' algo-markov'; // Color rosado
+                else if(row.algoritmo.includes('markov')) algoClass += ' algo-markov'; 
                 else if(row.algoritmo.includes('consenso')) algoClass += ' algo-consenso';
                 
                 const realNums = MASTERS[CURRENT_UNIVERSE] ? MASTERS[CURRENT_UNIVERSE][row.objetivo] : [];
@@ -504,8 +514,41 @@
             lucide.createIcons();
         }
 
-        // --- RENDERIZADO TABLA AGREGADA (RESTAURADA) ---
+        // --- RENDERIZADO TABLA AGREGADA DINÁMICA ---
         function calculateAndRenderAggregate(data) {
+            // 1. Obtener Configuración del Juego Actual
+            const gameConfig = UNIVERSE_CONFIG[CURRENT_UNIVERSE] || UNIVERSE_CONFIG['LOTO'];
+            
+            // 2. Construir el Header Dinámicamente
+            const thead = document.getElementById('agg-head');
+            let headerHTML = `
+                <tr>
+                    <th class="sortable-header" onclick="sortAggregate('target')">Sorteo</th>
+                    <th class="sortable-header" onclick="sortAggregate('count')" style="text-align:center;">Cant.</th>
+                    <th style="min-width:200px;">Sorteo Real (Aciertos Globales)</th>
+                    <th>Mejor Predicción</th>
+                    <th class="sortable-header" onclick="sortAggregate('avgTotal')" style="text-align:center;">Global</th>
+            `;
+            
+            // Columnas de Algoritmos
+            gameConfig.algos.forEach(algo => {
+                headerHTML += `<th style="text-align:center; color:${algo.color};">${algo.label}</th>`;
+            });
+            
+            // Columnas de Aciertos
+            gameConfig.hits.forEach(hits => {
+                let color = '#8b949e'; // Default low
+                if(hits >= 6) color = '#ff00ff'; // High
+                else if(hits >= 4) color = '#00f2ff'; // Mid
+                else if(hits === 3 && CURRENT_UNIVERSE === 'LOTO3') color = '#ff00ff'; // Jackpot Loto3
+                
+                headerHTML += `<th style="text-align:center; color:${color};">${hits}A</th>`;
+            });
+            
+            headerHTML += `</tr>`;
+            thead.innerHTML = headerHTML;
+
+            // 3. Procesar Datos
             const groups = {};
             data.forEach(d => {
                 if (!groups[d.objetivo]) {
@@ -513,53 +556,51 @@
                         target: parseInt(d.objetivo), 
                         count: 0,
                         scores: [],
-                        // Arrays por algoritmo para calcular promedios
-                        bioScores: [], gaussScores: [], deltaScores: [], markovScores: [], consensoScores: [],
+                        algoScores: {}, // { 'forense': [], 'gauss': [] ... }
                         bestRow: null,
                         maxScore: -1,
-                        all_numbers: [], // Para frecuencia real
-                        hits: {6:0, 5:0, 4:0, 3:0, 2:0, 1:0}
+                        all_numbers: [], 
+                        hitsCount: {} // { 6: 0, 5: 0 ... }
                     };
+                    // Inicializar contadores a 0
+                    gameConfig.algos.forEach(a => groups[d.objetivo].algoScores[a.key] = []);
+                    gameConfig.hits.forEach(h => groups[d.objetivo].hitsCount[h] = 0);
                 }
+                
                 const g = groups[d.objetivo];
                 g.count++;
                 
-                // Recolectar números para frecuencia
                 const nums = d.numeros.replace('[', '').replace(']', '').split(',').map(n=>parseInt(n.trim()));
                 g.all_numbers.push(...nums);
                 
                 if (d.estado === 'AUDITADO') {
                     g.scores.push(d.score);
                     
-                    if (d.algoritmo.includes('forense')) g.bioScores.push(d.score);
-                    if (d.algoritmo.includes('gauss')) g.gaussScores.push(d.score);
-                    if (d.algoritmo.includes('delta')) g.deltaScores.push(d.score);
-                    if (d.algoritmo.includes('markov')) g.markovScores.push(d.score);
-                    if (d.algoritmo.includes('consenso')) g.consensoScores.push(d.score);
+                    // Asignar score al bucket del algoritmo correcto
+                    gameConfig.algos.forEach(a => {
+                        if(d.algoritmo.includes(a.key)) g.algoScores[a.key].push(d.score);
+                    });
                     
-                    // Lógica de mejor predicción
                     if (d.score > g.maxScore) {
                         g.maxScore = d.score;
                         g.bestRow = d;
                     }
 
-                    if (d.aciertos && g.hits[d.aciertos] !== undefined) g.hits[d.aciertos]++;
+                    if (d.aciertos !== undefined && g.hitsCount[d.aciertos] !== undefined) {
+                        g.hitsCount[d.aciertos]++;
+                    }
                 }
             });
 
-            // Ordenar
             const rows = Object.values(groups).sort((a, b) => b.target - a.target);
-
             const tbody = document.getElementById('aggregate-body');
             tbody.innerHTML = '';
 
             rows.forEach(g => {
                 const tr = document.createElement('tr');
                 
-                // 1. Tooltip Fecha
                 const dateStr = MASTERS_DATES[CURRENT_UNIVERSE] ? MASTERS_DATES[CURRENT_UNIVERSE][g.target] : 'N/A';
                 
-                // 2. Frecuencia en números reales
                 const realNums = MASTERS[CURRENT_UNIVERSE] ? MASTERS[CURRENT_UNIVERSE][g.target] : [];
                 const counts = {};
                 g.all_numbers.forEach(n => { counts[n] = (counts[n] || 0) + 1; });
@@ -574,7 +615,6 @@
                     }).join(' ');
                 }
 
-                // 3. Mejor Predicción
                 let bestHtml = '-';
                 if (g.bestRow) {
                     const bNums = g.bestRow.numeros.replace('[','').replace(']','').split(',').map(n=>parseInt(n.trim()));
@@ -583,9 +623,8 @@
                         return `<span class="num-badge match-far">${n}</span>`;
                     }).join('');
                     
-                    let badge = '';
-                    if(g.bestRow.algoritmo.includes('forense')) badge = '🔮';
-                    else if(g.bestRow.algoritmo.includes('gauss')) badge = '📐';
+                    let badge = '🔮'; // Default
+                    if(g.bestRow.algoritmo.includes('gauss')) badge = '📐';
                     else if(g.bestRow.algoritmo.includes('delta')) badge = '📈';
                     else if(g.bestRow.algoritmo.includes('markov')) badge = '🔗';
                     else if(g.bestRow.algoritmo.includes('consenso')) badge = '🤝';
@@ -593,29 +632,34 @@
                     bestHtml = `<div><span style="margin-right:5px;">${badge}</span>${bHtml} <small>(${g.maxScore}%)</small></div>`;
                 }
 
-                // 4. Promedios por Algoritmo
                 const avg = arr => arr.length ? (arr.reduce((a,b)=>a+b,0)/arr.length).toFixed(0)+'%' : '-';
                 
-                tr.innerHTML = `
+                // Construcción de Fila
+                let rowHTML = `
                     <td><span class="draw-badge" title="Fecha: ${dateStr}">#${g.target}</span></td>
                     <td style="text-align:center;">${g.count}</td>
                     <td>${realHtml}</td>
                     <td>${bestHtml}</td>
                     <td style="text-align:center;"><b>${avg(g.scores)}</b></td>
-                    
-                    <td style="text-align:center; color:var(--bio-color);">${avg(g.bioScores)}</td>
-                    <td style="text-align:center; color:var(--gauss-color);">${avg(g.gaussScores)}</td>
-                    <td style="text-align:center; color:var(--delta-color);">${avg(g.deltaScores)}</td>
-                    <td style="text-align:center; color:var(--markov-color);">${avg(g.markovScores)}</td>
-                    <td style="text-align:center; color:var(--consenso-color); font-weight:bold;">${avg(g.consensoScores)}</td>
-                    
-                    <td style="text-align:center;"><span class="hit-col-6">${g.hits[6]}</span></td>
-                    <td style="text-align:center;"><span class="hit-col-5">${g.hits[5]}</span></td>
-                    <td style="text-align:center;"><span class="hit-col-4">${g.hits[4]}</span></td>
-                    <td style="text-align:center;"><span class="hit-col-3">${g.hits[3]}</span></td>
-                    <td style="text-align:center;"><span class="hit-col-low">${g.hits[2]}</span></td>
-                    <td style="text-align:center;"><span class="hit-col-low">${g.hits[1]}</span></td>
                 `;
+                
+                // Celdas Dinámicas de Algoritmos
+                gameConfig.algos.forEach(a => {
+                    rowHTML += `<td style="text-align:center; color:${a.color};">${avg(g.algoScores[a.key])}</td>`;
+                });
+                
+                // Celdas Dinámicas de Aciertos
+                gameConfig.hits.forEach(h => {
+                    let styleClass = 'hit-col-low';
+                    if(h >= 6) styleClass = 'hit-col-high';
+                    else if(h >= 4) styleClass = 'hit-col-mid';
+                    
+                    let val = g.hitsCount[h];
+                    let valDisplay = val > 0 ? `<span class="${styleClass}">${val}</span>` : `<span class="hit-col-dim">-</span>`;
+                    rowHTML += `<td style="text-align:center;">${valDisplay}</td>`;
+                });
+
+                tr.innerHTML = rowHTML;
                 tbody.appendChild(tr);
             });
         }
@@ -626,57 +670,59 @@
             if(window.myChart) window.myChart.destroy();
             
             const auditados = data.filter(d => d.estado === 'AUDITADO');
-            let labels = [], bio = [], gauss = [], delta = [], markov = [], consenso = [];
+            let labels = [];
             
-            // Función auxiliar
+            // Configurar datasets dinámicos según el juego
+            const gameConfig = UNIVERSE_CONFIG[CURRENT_UNIVERSE] || UNIVERSE_CONFIG['LOTO'];
+            let datasets = gameConfig.algos.map(a => ({
+                label: a.label,
+                data: [],
+                borderColor: a.color,
+                backgroundColor: a.color.replace(')', ', 0.5)').replace('rgb', 'rgba'), // Truco CSS simple
+                borderWidth: 1,
+                tension: 0.4
+            }));
+
             const getAvg = (subset) => subset.length ? (subset.reduce((a,b)=>a+b.score,0)/subset.length).toFixed(1) : 0;
 
             if (CURRENT_CHART_MODE === 'hour') {
                 labels = Array.from({length: 24}, (_, i) => `${i}:00`);
                 labels.forEach((_, i) => {
-                    bio.push(getAvg(auditados.filter(d => d.hora === i && d.algoritmo.includes('forense'))));
-                    gauss.push(getAvg(auditados.filter(d => d.hora === i && d.algoritmo.includes('gauss'))));
-                    delta.push(getAvg(auditados.filter(d => d.hora === i && d.algoritmo.includes('delta'))));
-                    markov.push(getAvg(auditados.filter(d => d.hora === i && d.algoritmo.includes('markov'))));
-                    consenso.push(getAvg(auditados.filter(d => d.hora === i && d.algoritmo.includes('consenso'))));
+                    datasets.forEach(ds => {
+                        // Buscar el key en gameConfig que coincida con este dataset label
+                        const algoKey = gameConfig.algos.find(x => x.label === ds.label).key;
+                        ds.data.push(getAvg(auditados.filter(d => d.hora === i && d.algoritmo.includes(algoKey))));
+                    });
                 });
             } else if (CURRENT_CHART_MODE === 'day') {
                 labels = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
                 labels.forEach((_, i) => {
-                    bio.push(getAvg(auditados.filter(d => d.dateObj.getDay() === i && d.algoritmo.includes('forense'))));
-                    gauss.push(getAvg(auditados.filter(d => d.dateObj.getDay() === i && d.algoritmo.includes('gauss'))));
-                    delta.push(getAvg(auditados.filter(d => d.dateObj.getDay() === i && d.algoritmo.includes('delta'))));
-                    markov.push(getAvg(auditados.filter(d => d.dateObj.getDay() === i && d.algoritmo.includes('markov'))));
-                    consenso.push(getAvg(auditados.filter(d => d.dateObj.getDay() === i && d.algoritmo.includes('consenso'))));
+                    datasets.forEach(ds => {
+                        const algoKey = gameConfig.algos.find(x => x.label === ds.label).key;
+                        ds.data.push(getAvg(auditados.filter(d => d.dateObj.getDay() === i && d.algoritmo.includes(algoKey))));
+                    });
                 });
             } else if (CURRENT_CHART_MODE === 'month') {
                 labels = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
                 labels.forEach((_, i) => {
-                    bio.push(getAvg(auditados.filter(d => d.dateObj.getMonth() === i && d.algoritmo.includes('forense'))));
-                    gauss.push(getAvg(auditados.filter(d => d.dateObj.getMonth() === i && d.algoritmo.includes('gauss'))));
-                    delta.push(getAvg(auditados.filter(d => d.dateObj.getMonth() === i && d.algoritmo.includes('delta'))));
-                    markov.push(getAvg(auditados.filter(d => d.dateObj.getMonth() === i && d.algoritmo.includes('markov'))));
-                    consenso.push(getAvg(auditados.filter(d => d.dateObj.getMonth() === i && d.algoritmo.includes('consenso'))));
+                    datasets.forEach(ds => {
+                        const algoKey = gameConfig.algos.find(x => x.label === ds.label).key;
+                        ds.data.push(getAvg(auditados.filter(d => d.dateObj.getMonth() === i && d.algoritmo.includes(algoKey))));
+                    });
                 });
             }
 
-            // Calculamos mejor momento (simple)
+            // Calculamos mejor momento (basado en Consenso si existe, o el primero)
             let maxVal = 0, bestLbl = '--';
-            consenso.forEach((v, i) => { if(parseFloat(v) > maxVal) { maxVal = parseFloat(v); bestLbl = labels[i]; } });
+            const mainDS = datasets.find(d => d.label === 'Consenso') || datasets[0];
+            if(mainDS) {
+                mainDS.data.forEach((v, i) => { if(parseFloat(v) > maxVal) { maxVal = parseFloat(v); bestLbl = labels[i]; } });
+            }
             document.getElementById('best-moment').textContent = bestLbl;
 
             window.myChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [
-                        { label: 'Bio', data: bio, backgroundColor: 'rgba(88, 166, 255, 0.6)', borderColor: '#58a6ff', borderWidth: 1 },
-                        { label: 'Gauss', data: gauss, backgroundColor: 'rgba(241, 224, 90, 0.6)', borderColor: '#f1e05a', borderWidth: 1 },
-                        { label: 'Delta', data: delta, backgroundColor: 'rgba(32, 178, 170, 0.6)', borderColor: '#20b2aa', borderWidth: 1 },
-                        { label: 'Markov', data: markov, backgroundColor: 'rgba(255, 105, 180, 0.6)', borderColor: '#ff69b4', borderWidth: 1 },
-                        { label: 'Consenso', data: consenso, type: 'line', borderColor: '#ffffff', borderWidth: 2, tension: 0.4 }
-                    ]
-                },
+                type: 'line', // Line por defecto es más limpio para multiseries
+                data: { labels: labels, datasets: datasets },
                 options: {
                     responsive: true, maintainAspectRatio: false,
                     scales: { y: { beginAtZero: true, max: 100, grid: { color: '#30363d' } }, x: { grid: { display: false } } },
@@ -697,7 +743,6 @@
             applyFilters();
         }
         function sortAggregate(col) {
-            // Implementación simplificada
             SORT_COL = col;
             SORT_DIR = SORT_DIR === 'asc' ? 'desc' : 'asc';
             applyFilters();
