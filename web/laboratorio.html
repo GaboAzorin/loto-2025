@@ -213,7 +213,7 @@
 
         .chart-container { 
             position: relative; 
-            height: 400px; 
+            height: 350px; 
             width: 100%; 
         }
 
@@ -384,6 +384,7 @@
         .sortable-header { cursor: pointer; user-select: none; transition: color 0.2s; }
         .sortable-header:hover { color: var(--accent); background-color: rgba(255,255,255,0.05); }
         .sort-icon { display: inline-block; margin-left: 5px; font-size: 0.8em; opacity: 0.5; }
+        .sort-active { color: var(--accent); opacity: 1; }
 
         /* BOTONES DE ACCIÓN */
         .btn-action {
@@ -500,7 +501,7 @@
                 <table class="audit-table">
                     <thead>
                         <tr>
-                            <th>Simulación ID</th>
+                            <th>Fecha / Hora</th>
                             <th>Algoritmo</th>
                             <th>Números Jugados</th>
                             <th>Aciertos</th>
@@ -880,7 +881,10 @@
             RAW_PLAYS = lines.slice(1).map(line => {
                 const p = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
                 if(p.length < 4) return null;
-                if(p[3] !== 'SI') return null; // Solo jugadas marcadas como SI jugadas
+                
+                // Solo nos interesan las que dicen "SI" en jugado
+                if(p[3] !== 'SI') return null;
+
                 return {
                     numeros: p[2].replace(/"/g, ''),
                     objetivo: p[5], // Sorteo objetivo
@@ -1044,13 +1048,22 @@
                     
                     if (res.amount > 0) {
                         hypoWin += res.amount;
+                        
                         // --- AGREGAR A TABLA DE AUDITORÍA ---
+                        // Formateo de números con colores (Verde=Acierto, Dorado=Comodín)
+                        const numsFormatted = myNums.map(n => {
+                            let style = "";
+                            if (winningNums.includes(n)) style = "color:var(--success); font-weight:bold;";
+                            if (n === comodin) style = "color:var(--gold); font-weight:bold; text-shadow:0 0 5px rgba(255,215,0,0.5);";
+                            return `<span style="${style}">${n}</span>`;
+                        }).join(", ");
+
                         const tr = document.createElement('tr');
                         tr.className = 'audit-row-win';
                         tr.innerHTML = `
-                            <td>${s.id}</td>
+                            <td>${s.fechaStr}</td>
                             <td><span class="algo-badge" style="color:var(--text); border:1px solid var(--border);">${s.algoritmo.split('_')[0]}</span></td>
-                            <td style="font-family:monospace;">${s.numeros}</td>
+                            <td style="font-family:monospace; font-size:0.9em;">[ ${numsFormatted} ]</td>
                             <td style="text-align:center; font-weight:bold;">${s.aciertos}</td>
                             <td>${res.category}</td>
                             <td><small>${res.formula}</small></td>
@@ -1132,7 +1145,6 @@
                 return true;
             });
         }
-
         function updateSorteoSelector(data) {
             const currentVal = document.getElementById('f-sorteo').value;
             const unique = [...new Set(data.map(d => d.objetivo))];
@@ -1144,7 +1156,6 @@
             });
             if (unique.includes(currentVal)) sel.value = currentVal;
         }
-
         function updateKPIs(data) {
             document.getElementById('total-sims').textContent = data.length;
             document.getElementById('target-draw').textContent = data.length ? "#" + data[0].objetivo : "--";
@@ -1153,7 +1164,6 @@
             const avg = auditados.length ? (auditados.reduce((a,b)=>a+b.score,0)/auditados.length).toFixed(1) : 0;
             document.getElementById('avg-score').textContent = avg + "%";
         }
-
         function renderTable(data) {
             data.sort((a,b) => {
                 let valA = a[LOGS_SORT_COL], valB = b[LOGS_SORT_COL];
@@ -1196,7 +1206,6 @@
             });
             lucide.createIcons();
         }
-
         function calculateAndRenderAggregate(data) {
             const gameConfig = UNIVERSE_CONFIG[CURRENT_UNIVERSE] || UNIVERSE_CONFIG['LOTO'];
             const thead = document.getElementById('agg-head');
@@ -1266,7 +1275,6 @@
                 tbody.appendChild(tr);
             });
         }
-
         function updateDashboardCharts(data) {
             const ctx = document.getElementById('mainChart').getContext('2d');
             if(window.myChart) window.myChart.destroy();
