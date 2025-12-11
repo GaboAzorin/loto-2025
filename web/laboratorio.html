@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🔬 Laboratorio LotoAI - Multiverso</title>
+    <title>🔬 Laboratorio LotoAI - Multiverso Pro</title>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -17,33 +17,36 @@
             --warning: #d29922;
             --danger: #f85149;
             --border: #30363d;
-            --bio-color: #58a6ff;
-            --gauss-color: #f1e05a;
-            --delta-color: #20b2aa;
-            --markov-color: #ff69b4;
-            --consenso-color: #ffffff;
-            --premium-color: #ffd700;
+            
+            /* Colores de Algoritmos (Restaurados) */
+            --bio-color: #58a6ff;   
+            --gauss-color: #f1e05a; 
+            --delta-color: #20b2aa; 
+            --markov-color: #ff69b4; 
+            --consenso-color: #ffffff; 
+            --premium-color: #ffd700; 
         }
         body { font-family: 'JetBrains Mono', monospace; background-color: var(--bg); color: var(--text); margin: 0; padding: 20px; }
-        .container { max-width: 1600px; margin: 0 auto; }
+        .container { max-width: 1800px; margin: 0 auto; } /* Más ancho para ver toda la data */
         
         /* Header */
         header { border-bottom: 1px solid var(--border); padding-bottom: 20px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
         h1 { margin: 0; font-size: 1.5rem; color: var(--accent); display: flex; align-items: center; gap: 10px; }
         .status-badge { background: var(--success); color: white; padding: 5px 10px; border-radius: 4px; font-size: 0.8rem; }
         
-        /* --- NUEVO: SISTEMA DE PESTAÑAS MULTIVERSO --- */
-        .universe-tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+        /* Pestañas Multiverso (Corregidas) */
+        .universe-tabs { display: flex; gap: 5px; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 0; }
         .tab-btn {
             background: var(--card); border: 1px solid var(--border); color: var(--text-muted);
-            padding: 10px 20px; border-radius: 6px 6px 0 0; cursor: pointer;
-            font-family: inherit; font-weight: bold; transition: all 0.2s; position: relative; top: 1px;
+            padding: 12px 25px; border-radius: 8px 8px 0 0; cursor: pointer;
+            font-family: inherit; font-weight: bold; transition: all 0.2s; position: relative; bottom: -1px;
+            opacity: 0.6;
         }
-        .tab-btn:hover { background: #21262d; }
+        .tab-btn:hover { background: #21262d; opacity: 1; }
         .tab-btn.active {
-            background: var(--bg); border-bottom: 1px solid var(--bg); color: var(--accent); border-top: 2px solid var(--accent);
+            background: var(--bg); border-bottom: 1px solid var(--bg); color: var(--accent); 
+            border-top: 3px solid var(--accent); opacity: 1;
         }
-        /* --------------------------------------------- */
 
         /* KPI Cards */
         .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px; }
@@ -68,7 +71,7 @@
         .btn-reset:hover { background: #444; }
 
         /* Tabla */
-        .table-scroll { overflow-x: auto; max-height: 500px; overflow-y: auto; }
+        .table-scroll { overflow-x: auto; max-height: 600px; overflow-y: auto; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.8rem; }
         th { text-align: left; color: #8b949e; border-bottom: 1px solid var(--border); padding: 10px; position: sticky; top: 0; background: var(--card); z-index: 10; white-space: nowrap; }
         td { padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
@@ -77,15 +80,14 @@
         .pending { color: var(--warning); }
         .audited { color: var(--success); }
         
-        /* Badges de Algoritmo */
-        .algo-badge { font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; border: 1px solid transparent; }
+        /* Badges de Algoritmo (Recuperados) */
+        .algo-badge { font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; border: 1px solid transparent; white-space: nowrap; }
         .algo-bio { color: var(--bio-color); border-color: rgba(88, 166, 255, 0.3); background: rgba(88, 166, 255, 0.1); }
         .algo-gauss { color: var(--gauss-color); border-color: rgba(241, 224, 90, 0.3); background: rgba(241, 224, 90, 0.1); }
         .algo-delta { color: var(--delta-color); border-color: rgba(32, 178, 170, 0.3); background: rgba(32, 178, 170, 0.1); }
-        .algo-markov { color: var(--markov-color); border-color: rgba(255, 105, 180, 0.3); background: rgba(255, 105, 180, 0.1); }
+        .algo-markov { color: var(--markov-color); border-color: rgba(255, 105, 180, 0.3); background: rgba(255, 105, 180, 0.1); } /* Rosado recuperado */
         .algo-consenso { color: var(--consenso-color); border-color: rgba(255, 255, 255, 0.3); background: rgba(255, 255, 255, 0.1); font-weight: bold; }
-        .algo-premium { color: var(--premium-color); border-color: rgba(255, 215, 0, 0.5); background: rgba(255, 215, 0, 0.1); font-weight: 900; box-shadow: 0 0 8px rgba(255, 215, 0, 0.2); }
-
+        
         .nav-link { color: var(--text); text-decoration: none; border: 1px solid var(--border); padding: 5px 10px; border-radius: 4px; transition: background 0.2s; }
         .nav-link:hover { background: var(--border); }
 
@@ -110,11 +112,12 @@
         .btn-action:hover { background: rgba(0, 255, 65, 0.2); box-shadow: 0 0 10px rgba(0, 255, 65, 0.2); }
         .btn-disabled { background: rgba(255, 255, 255, 0.05); color: #666; border: 1px solid #444; cursor: not-allowed; pointer-events: none; }
 
-        .hit-col-6 { color: #ff00ff; font-weight: bold; background: rgba(255, 0, 255, 0.1); }
-        .hit-col-5 { color: #ffd700; font-weight: bold; background: rgba(255, 215, 0, 0.1); }
-        .hit-col-4 { color: #00f2ff; font-weight: bold; background: rgba(0, 242, 255, 0.1); }
-        .hit-col-3 { color: #2ea043; }
-        .hit-col-low { color: #8b949e; }
+        /* Estilos de Columnas de Aciertos (Restaurados) */
+        .hit-col-6 { color: #ff00ff; font-weight: bold; background: rgba(255, 0, 255, 0.1); padding: 2px 5px; border-radius: 4px; }
+        .hit-col-5 { color: #ffd700; font-weight: bold; background: rgba(255, 215, 0, 0.1); padding: 2px 5px; border-radius: 4px; }
+        .hit-col-4 { color: #00f2ff; font-weight: bold; background: rgba(0, 242, 255, 0.1); padding: 2px 5px; border-radius: 4px; }
+        .hit-col-3 { color: #2ea043; padding: 2px 5px; }
+        .hit-col-low { color: #8b949e; opacity: 0.6; }
     </style>
 </head>
 <body>
@@ -132,10 +135,10 @@
         </header>
 
         <div class="universe-tabs">
-            <button class="tab-btn active" onclick="switchUniverse('LOTO')">LOTO CLÁSICO</button>
-            <button class="tab-btn" onclick="switchUniverse('LOTO3')">LOTO 3</button>
-            <button class="tab-btn" onclick="switchUniverse('LOTO4')">LOTO 4</button>
-            <button class="tab-btn" onclick="switchUniverse('RACHA')">RACHA</button>
+            <button class="tab-btn active" data-game="LOTO" onclick="switchUniverse('LOTO')">LOTO CLÁSICO</button>
+            <button class="tab-btn" data-game="LOTO3" onclick="switchUniverse('LOTO3')">LOTO 3</button>
+            <button class="tab-btn" data-game="LOTO4" onclick="switchUniverse('LOTO4')">LOTO 4</button>
+            <button class="tab-btn" data-game="RACHA" onclick="switchUniverse('RACHA')">RACHA</button>
         </div>
 
         <div class="kpi-grid">
@@ -231,16 +234,28 @@
         </div>
 
         <div class="card">
-            <h3 style="margin-bottom:15px; color:#58a6ff;">📊 Resumen Agregado (Aciertos Reales)</h3>
+            <h3 style="margin-bottom:15px; color:#58a6ff;">📊 Resumen de Desempeño por Sorteo (Agregado)</h3>
             <div class="table-scroll">
                 <table id="aggregate-table">
                     <thead>
                         <tr>
                             <th class="sortable-header" onclick="sortAggregate('target')">Sorteo</th>
-                            <th class="sortable-header" onclick="sortAggregate('count')">N° Preds</th>
-                            <th>Ganadores Reales</th>
-                            <th class="sortable-header" onclick="sortAggregate('avgTotal')">Score Global</th>
-                            <th>Aciertos (Exactos)</th>
+                            <th class="sortable-header" onclick="sortAggregate('count')" style="text-align:center;">Cant.</th>
+                            <th style="min-width:200px;">Sorteo Real (Aciertos Globales)</th>
+                            <th>Mejor Predicción</th>
+                            <th class="sortable-header" onclick="sortAggregate('avgTotal')" style="text-align:center;">Global</th>
+                            <th style="text-align:center; color:var(--bio-color);">Bio</th>
+                            <th style="text-align:center; color:var(--gauss-color);">Gauss</th>
+                            <th style="text-align:center; color:var(--delta-color);">Delta</th>
+                            <th style="text-align:center; color:var(--markov-color);">Markov</th>
+                            <th style="text-align:center; color:var(--consenso-color);">Consenso</th>
+                            
+                            <th style="text-align:center; color:#ff00ff;">6A</th>
+                            <th style="text-align:center; color:#ffd700;">5A</th>
+                            <th style="text-align:center; color:#00f2ff;">4A</th>
+                            <th style="text-align:center; color:#2ea043;">3A</th>
+                            <th style="text-align:center;">2A</th>
+                            <th style="text-align:center;">1A</th>
                         </tr>
                     </thead>
                     <tbody id="aggregate-body"></tbody>
@@ -261,7 +276,8 @@
 
         // Estado Global
         let RAW_SIMULATIONS = [];
-        let MASTERS = {}; // { 'LOTO': {...}, 'LOTO3': {...} }
+        let MASTERS = {}; 
+        let MASTERS_DATES = {}; // Diccionario para fechas { 'LOTO': { '1234': '2023-01-01' } }
         let CURRENT_UNIVERSE = 'LOTO';
         let CURRENT_CHART_MODE = 'hour';
         
@@ -273,31 +289,27 @@
         // Inicializar hora
         const hSel = document.getElementById('f-hora');
         for(let i=0; i<24; i++) {
-            let opt = document.createElement('option'); opt.value = i; opt.textContent = i+":00"; hSel.appendChild(opt);
+            let opt = document.createElement('option'); opt.value = i; opt.textContent = i.toString().padStart(2,'0')+":00"; hSel.appendChild(opt);
         }
 
-        // --- CARGA DE DATOS MULTIVERSO ---
         async function loadAllData() {
             try {
-                // 1. Cargar todas las fuentes en paralelo
                 const promises = Object.entries(DATA_SOURCES).map(([key, url]) => 
-                    fetch(url).then(res => res.ok ? res.text() : null).then(text => ({key, text}))
+                    fetch(url + '?t=' + Date.now()).then(res => res.ok ? res.text() : null).then(text => ({key, text}))
                 );
                 
                 const results = await Promise.all(promises);
                 
-                // 2. Procesar
                 results.forEach(({key, text}) => {
                     if (!text) return;
                     if (key === 'SIMS') processSimulations(text);
                     else processMaster(key, text);
                 });
 
-                // 3. Render inicial
                 applyFilters();
                 
             } catch (e) {
-                console.error("Error crítico cargando datos:", e);
+                console.error("Error cargando datos:", e);
                 document.getElementById('last-update').textContent = "Error de Datos";
                 document.getElementById('last-update').style.background = "var(--danger)";
             }
@@ -308,7 +320,6 @@
             if (lines.length < 2) return;
             const headers = lines[0].split(',');
             
-            // Detectar columnas de números según el juego
             let numCols = [];
             if (gameKey === 'LOTO') numCols = ['LOTO_n1','LOTO_n2','LOTO_n3','LOTO_n4','LOTO_n5','LOTO_n6'];
             else if (gameKey === 'LOTO3') numCols = ['n1','n2','n3'];
@@ -316,36 +327,33 @@
             else if (gameKey === 'RACHA') numCols = ['n1','n2','n3','n4','n5','n6','n7','n8','n9','n10'];
 
             const idxSorteo = headers.indexOf('sorteo');
+            const idxFecha = headers.indexOf('fecha');
             const idxs = numCols.map(c => headers.indexOf(c));
 
             if (idxSorteo === -1) return;
 
             const map = {};
+            const dateMap = {};
             for (let i = 1; i < lines.length; i++) {
-                const row = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/); // Regex split CSV seguro
+                const row = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
                 const sorteo = row[idxSorteo];
                 if (!sorteo) continue;
                 
                 const nums = idxs.map(idx => idx !== -1 ? parseInt(row[idx]) : null).filter(n => n !== null);
                 map[sorteo] = nums;
+                if(idxFecha !== -1) dateMap[sorteo] = row[idxFecha].split(' ')[0];
             }
             MASTERS[gameKey] = map;
+            MASTERS_DATES[gameKey] = dateMap;
         }
 
         function processSimulations(text) {
             const lines = text.trim().split('\n');
             const headers = lines[0].split(',');
-            // Mapeo simple de índice
             
             RAW_SIMULATIONS = lines.slice(1).map(line => {
                 const parts = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
                 if (parts.length < 5) return null;
-                
-                // Detección flexible de columnas basada en si existe 'juego'
-                // Formato nuevo: id, fecha, juego, numeros, objetivo...
-                // Formato viejo: id, fecha, numeros, objetivo...
-                
-                let isNewFormat = parts.length > 9; // El nuevo tiene columna juego
                 
                 let obj = {};
                 try {
@@ -354,8 +362,6 @@
                     obj.dateObj = new Date(parts[1].replace(' ', 'T'));
                     
                     if (headers.includes('juego')) {
-                        // Leer columna juego si existe en cabecera, o inferir posición
-                        // Asumimos posición 2 si es formato nuevo
                         obj.juego = parts[2]; 
                         obj.numeros = parts[3];
                         obj.objetivo = parts[4];
@@ -365,7 +371,6 @@
                         obj.hora = parseInt(parts[8] || 0);
                         obj.algoritmo = parts[9] || 'unknown';
                     } else {
-                        // Retrocompatibilidad
                         obj.juego = 'LOTO';
                         obj.numeros = parts[2];
                         obj.objetivo = parts[3];
@@ -376,7 +381,6 @@
                         obj.algoritmo = parts[8] || 'unknown';
                     }
                     
-                    // Limpieza
                     obj.numeros = obj.numeros.replace(/"/g, '');
                     obj.algoritmo = obj.algoritmo.replace(/\r/g, '');
                     
@@ -385,23 +389,21 @@
             }).filter(x => x !== null).reverse();
         }
 
-        // --- INTERACCIÓN ---
         function switchUniverse(gameId) {
             CURRENT_UNIVERSE = gameId;
-            // Actualizar clases botones
+            // Lógica de Tabs Corregida
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.classList.remove('active');
-                if(btn.textContent.includes(gameId) || (gameId==='LOTO' && btn.textContent.includes('CLÁSICO'))) 
+                // Comparación estricta usando data-game
+                if(btn.getAttribute('data-game') === gameId) {
                     btn.classList.add('active');
+                }
             });
-            resetFilters(); // Reiniciar filtros al cambiar universo
+            resetFilters(); 
         }
 
         function getFilteredData() {
-            // 1. Filtrar por Universo
             let data = RAW_SIMULATIONS.filter(d => d.juego === CURRENT_UNIVERSE);
-            
-            // 2. Filtros de UI
             const fSorteo = document.getElementById('f-sorteo').value;
             const fAlgo = document.getElementById('f-algo').value;
             const fDia = document.getElementById('f-dia').value;
@@ -421,8 +423,12 @@
             updateKPIs(data);
             updateSorteoSelector(data);
             renderTable(data);
-            renderAggregate(data);
-            updateChart(data);
+            
+            // Aquí recuperamos tu lógica antigua de Aggregate Data
+            calculateAndRenderAggregate(data);
+            
+            // Aquí recuperamos tu lógica de Gráficos (Stats)
+            updateDashboardCharts(data);
         }
 
         function updateSorteoSelector(data) {
@@ -447,9 +453,8 @@
             document.getElementById('avg-score').textContent = avg + "%";
         }
 
-        // --- RENDERIZADO DE TABLAS ---
+        // --- RENDERIZADO TABLA DE LOGS ---
         function renderTable(data) {
-            // Ordenar
             data.sort((a,b) => {
                 let valA = a[LOGS_SORT_COL], valB = b[LOGS_SORT_COL];
                 if (LOGS_SORT_COL === 'date') { valA = a.id; valB = b.id; }
@@ -461,18 +466,16 @@
             tbody.innerHTML = '';
             document.getElementById('filtered-count').textContent = `Mostrando ${Math.min(data.length, 50)} de ${data.length}`;
 
-            // Paginación visual simple
             data.slice(0, 50).forEach(row => {
                 const tr = document.createElement('tr');
                 
-                // Badges
                 let algoClass = 'algo-badge';
                 if(row.algoritmo.includes('forense')) algoClass += ' algo-bio';
                 else if(row.algoritmo.includes('gauss')) algoClass += ' algo-gauss';
                 else if(row.algoritmo.includes('delta')) algoClass += ' algo-delta';
+                else if(row.algoritmo.includes('markov')) algoClass += ' algo-markov'; // Color rosado
                 else if(row.algoritmo.includes('consenso')) algoClass += ' algo-consenso';
                 
-                // Highlight números
                 const realNums = MASTERS[CURRENT_UNIVERSE] ? MASTERS[CURRENT_UNIVERSE][row.objetivo] : [];
                 const myNums = row.numeros.replace('[','').replace(']','').split(',').map(n=>parseInt(n.trim()));
                 
@@ -481,7 +484,6 @@
                     return `<span class="num-badge match-far">${n}</span>`;
                 }).join('');
 
-                // Botón jugar
                 const playedKey = `played_${row.id}`;
                 const isPlayed = localStorage.getItem(playedKey);
                 const btnHtml = isPlayed 
@@ -502,97 +504,183 @@
             lucide.createIcons();
         }
 
-        function renderAggregate(data) {
+        // --- RENDERIZADO TABLA AGREGADA (RESTAURADA) ---
+        function calculateAndRenderAggregate(data) {
             const groups = {};
             data.forEach(d => {
-                if(!groups[d.objetivo]) groups[d.objetivo] = { 
-                    target: parseInt(d.objetivo), count: 0, scores: [], hits: {6:0, 5:0, 4:0, 3:0, 2:0, 1:0} 
-                };
-                groups[d.objetivo].count++;
-                if(d.estado === 'AUDITADO') {
-                    groups[d.objetivo].scores.push(d.score);
-                    if(d.aciertos && groups[d.objetivo].hits[d.aciertos] !== undefined) groups[d.objetivo].hits[d.aciertos]++;
+                if (!groups[d.objetivo]) {
+                    groups[d.objetivo] = {
+                        target: parseInt(d.objetivo), 
+                        count: 0,
+                        scores: [],
+                        // Arrays por algoritmo para calcular promedios
+                        bioScores: [], gaussScores: [], deltaScores: [], markovScores: [], consensoScores: [],
+                        bestRow: null,
+                        maxScore: -1,
+                        all_numbers: [], // Para frecuencia real
+                        hits: {6:0, 5:0, 4:0, 3:0, 2:0, 1:0}
+                    };
+                }
+                const g = groups[d.objetivo];
+                g.count++;
+                
+                // Recolectar números para frecuencia
+                const nums = d.numeros.replace('[', '').replace(']', '').split(',').map(n=>parseInt(n.trim()));
+                g.all_numbers.push(...nums);
+                
+                if (d.estado === 'AUDITADO') {
+                    g.scores.push(d.score);
+                    
+                    if (d.algoritmo.includes('forense')) g.bioScores.push(d.score);
+                    if (d.algoritmo.includes('gauss')) g.gaussScores.push(d.score);
+                    if (d.algoritmo.includes('delta')) g.deltaScores.push(d.score);
+                    if (d.algoritmo.includes('markov')) g.markovScores.push(d.score);
+                    if (d.algoritmo.includes('consenso')) g.consensoScores.push(d.score);
+                    
+                    // Lógica de mejor predicción
+                    if (d.score > g.maxScore) {
+                        g.maxScore = d.score;
+                        g.bestRow = d;
+                    }
+
+                    if (d.aciertos && g.hits[d.aciertos] !== undefined) g.hits[d.aciertos]++;
                 }
             });
 
-            const rows = Object.values(groups).map(g => ({
-                ...g,
-                avgTotal: g.scores.length ? (g.scores.reduce((a,b)=>a+b,0)/g.scores.length) : 0
-            })).sort((a,b) => b.target - a.target); // Default sort desc
+            // Ordenar
+            const rows = Object.values(groups).sort((a, b) => b.target - a.target);
 
             const tbody = document.getElementById('aggregate-body');
             tbody.innerHTML = '';
-            
+
             rows.forEach(g => {
                 const tr = document.createElement('tr');
-                const realNums = MASTERS[CURRENT_UNIVERSE] ? MASTERS[CURRENT_UNIVERSE][g.target] : [];
-                const realStr = realNums ? realNums.join(', ') : '-';
                 
-                // Generar columnas de aciertos dinámicas según el juego
-                let hitCols = '';
-                if (CURRENT_UNIVERSE === 'LOTO3') {
-                    hitCols = `<span class="hit-col-3">${g.hits[3]} (3A)</span> <span class="hit-col-low">${g.hits[1]+g.hits[2]} (1-2A)</span>`;
-                } else if (CURRENT_UNIVERSE === 'RACHA') {
-                    // Racha interesa 10 o 0 (aprox)
-                    // Mostramos solo conteo de altos aciertos para simplificar
-                    hitCols = `<span class="hit-col-6">${g.hits[6]||0}</span> ...`; // Simplificado para no romper tabla
-                } else {
-                    hitCols = `
-                        <span class="hit-col-6">${g.hits[6]}</span>
-                        <span class="hit-col-5">${g.hits[5]}</span>
-                        <span class="hit-col-4">${g.hits[4]}</span>
-                        <span class="hit-col-3">${g.hits[3]}</span>
-                    `;
+                // 1. Tooltip Fecha
+                const dateStr = MASTERS_DATES[CURRENT_UNIVERSE] ? MASTERS_DATES[CURRENT_UNIVERSE][g.target] : 'N/A';
+                
+                // 2. Frecuencia en números reales
+                const realNums = MASTERS[CURRENT_UNIVERSE] ? MASTERS[CURRENT_UNIVERSE][g.target] : [];
+                const counts = {};
+                g.all_numbers.forEach(n => { counts[n] = (counts[n] || 0) + 1; });
+                
+                let realHtml = '-';
+                if (realNums && realNums.length > 0) {
+                    realHtml = realNums.map(n => {
+                        const count = counts[n] || 0;
+                        return `<div style="display:inline-block; margin:1px; padding:2px 4px; background:rgba(46,160,67,0.15); border:1px solid #2ea043; border-radius:4px; font-size:0.8em;">
+                                    <b>${n}</b> <span style="color:#aaa; font-size:0.8em;">(${count})</span>
+                                </div>`;
+                    }).join(' ');
                 }
 
+                // 3. Mejor Predicción
+                let bestHtml = '-';
+                if (g.bestRow) {
+                    const bNums = g.bestRow.numeros.replace('[','').replace(']','').split(',').map(n=>parseInt(n.trim()));
+                    const bHtml = bNums.map(n => {
+                        if(realNums.includes(n)) return `<span class="num-badge match-exact">${n}</span>`;
+                        return `<span class="num-badge match-far">${n}</span>`;
+                    }).join('');
+                    
+                    let badge = '';
+                    if(g.bestRow.algoritmo.includes('forense')) badge = '🔮';
+                    else if(g.bestRow.algoritmo.includes('gauss')) badge = '📐';
+                    else if(g.bestRow.algoritmo.includes('delta')) badge = '📈';
+                    else if(g.bestRow.algoritmo.includes('markov')) badge = '🔗';
+                    else if(g.bestRow.algoritmo.includes('consenso')) badge = '🤝';
+                    
+                    bestHtml = `<div><span style="margin-right:5px;">${badge}</span>${bHtml} <small>(${g.maxScore}%)</small></div>`;
+                }
+
+                // 4. Promedios por Algoritmo
+                const avg = arr => arr.length ? (arr.reduce((a,b)=>a+b,0)/arr.length).toFixed(0)+'%' : '-';
+                
                 tr.innerHTML = `
-                    <td>#${g.target}</td>
+                    <td><span class="draw-badge" title="Fecha: ${dateStr}">#${g.target}</span></td>
                     <td style="text-align:center;">${g.count}</td>
-                    <td><small>${realStr}</small></td>
-                    <td style="text-align:center;"><b>${g.avgTotal.toFixed(1)}%</b></td>
-                    <td style="display:flex; gap:10px; justify-content:center;">${hitCols}</td>
+                    <td>${realHtml}</td>
+                    <td>${bestHtml}</td>
+                    <td style="text-align:center;"><b>${avg(g.scores)}</b></td>
+                    
+                    <td style="text-align:center; color:var(--bio-color);">${avg(g.bioScores)}</td>
+                    <td style="text-align:center; color:var(--gauss-color);">${avg(g.gaussScores)}</td>
+                    <td style="text-align:center; color:var(--delta-color);">${avg(g.deltaScores)}</td>
+                    <td style="text-align:center; color:var(--markov-color);">${avg(g.markovScores)}</td>
+                    <td style="text-align:center; color:var(--consenso-color); font-weight:bold;">${avg(g.consensoScores)}</td>
+                    
+                    <td style="text-align:center;"><span class="hit-col-6">${g.hits[6]}</span></td>
+                    <td style="text-align:center;"><span class="hit-col-5">${g.hits[5]}</span></td>
+                    <td style="text-align:center;"><span class="hit-col-4">${g.hits[4]}</span></td>
+                    <td style="text-align:center;"><span class="hit-col-3">${g.hits[3]}</span></td>
+                    <td style="text-align:center;"><span class="hit-col-low">${g.hits[2]}</span></td>
+                    <td style="text-align:center;"><span class="hit-col-low">${g.hits[1]}</span></td>
                 `;
                 tbody.appendChild(tr);
             });
         }
 
-        // --- GRÁFICO (Chart.js) ---
-        function updateChart(data) {
+        // --- GRÁFICOS RESTAURADOS ---
+        function updateDashboardCharts(data) {
             const ctx = document.getElementById('mainChart').getContext('2d');
             if(window.myChart) window.myChart.destroy();
             
-            // Agrupar datos por la vista seleccionada (Hora/Dia)
-            // Lógica simplificada para demostración: Agrupar solo por Algoritmo Global
-            // Un gráfico de barras comparando rendimiento promedio de algoritmos en este set
+            const auditados = data.filter(d => d.estado === 'AUDITADO');
+            let labels = [], bio = [], gauss = [], delta = [], markov = [], consenso = [];
             
-            const algos = {};
-            data.filter(d=>d.estado==='AUDITADO').forEach(d => {
-                const base = d.algoritmo.split('_')[0];
-                if(!algos[base]) algos[base] = {sum:0, count:0};
-                algos[base].sum += d.score;
-                algos[base].count++;
-            });
+            // Función auxiliar
+            const getAvg = (subset) => subset.length ? (subset.reduce((a,b)=>a+b.score,0)/subset.length).toFixed(1) : 0;
 
-            const labels = Object.keys(algos);
-            const values = labels.map(k => (algos[k].sum / algos[k].count).toFixed(1));
+            if (CURRENT_CHART_MODE === 'hour') {
+                labels = Array.from({length: 24}, (_, i) => `${i}:00`);
+                labels.forEach((_, i) => {
+                    bio.push(getAvg(auditados.filter(d => d.hora === i && d.algoritmo.includes('forense'))));
+                    gauss.push(getAvg(auditados.filter(d => d.hora === i && d.algoritmo.includes('gauss'))));
+                    delta.push(getAvg(auditados.filter(d => d.hora === i && d.algoritmo.includes('delta'))));
+                    markov.push(getAvg(auditados.filter(d => d.hora === i && d.algoritmo.includes('markov'))));
+                    consenso.push(getAvg(auditados.filter(d => d.hora === i && d.algoritmo.includes('consenso'))));
+                });
+            } else if (CURRENT_CHART_MODE === 'day') {
+                labels = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+                labels.forEach((_, i) => {
+                    bio.push(getAvg(auditados.filter(d => d.dateObj.getDay() === i && d.algoritmo.includes('forense'))));
+                    gauss.push(getAvg(auditados.filter(d => d.dateObj.getDay() === i && d.algoritmo.includes('gauss'))));
+                    delta.push(getAvg(auditados.filter(d => d.dateObj.getDay() === i && d.algoritmo.includes('delta'))));
+                    markov.push(getAvg(auditados.filter(d => d.dateObj.getDay() === i && d.algoritmo.includes('markov'))));
+                    consenso.push(getAvg(auditados.filter(d => d.dateObj.getDay() === i && d.algoritmo.includes('consenso'))));
+                });
+            } else if (CURRENT_CHART_MODE === 'month') {
+                labels = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+                labels.forEach((_, i) => {
+                    bio.push(getAvg(auditados.filter(d => d.dateObj.getMonth() === i && d.algoritmo.includes('forense'))));
+                    gauss.push(getAvg(auditados.filter(d => d.dateObj.getMonth() === i && d.algoritmo.includes('gauss'))));
+                    delta.push(getAvg(auditados.filter(d => d.dateObj.getMonth() === i && d.algoritmo.includes('delta'))));
+                    markov.push(getAvg(auditados.filter(d => d.dateObj.getMonth() === i && d.algoritmo.includes('markov'))));
+                    consenso.push(getAvg(auditados.filter(d => d.dateObj.getMonth() === i && d.algoritmo.includes('consenso'))));
+                });
+            }
+
+            // Calculamos mejor momento (simple)
+            let maxVal = 0, bestLbl = '--';
+            consenso.forEach((v, i) => { if(parseFloat(v) > maxVal) { maxVal = parseFloat(v); bestLbl = labels[i]; } });
+            document.getElementById('best-moment').textContent = bestLbl;
 
             window.myChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: labels,
-                    datasets: [{
-                        label: 'Afinidad Promedio (%)',
-                        data: values,
-                        backgroundColor: ['rgba(88, 166, 255, 0.5)', 'rgba(241, 224, 90, 0.5)', 'rgba(32, 178, 170, 0.5)', 'rgba(255, 105, 180, 0.5)'],
-                        borderColor: ['#58a6ff', '#f1e05a', '#20b2aa', '#ff69b4'],
-                        borderWidth: 1
-                    }]
+                    datasets: [
+                        { label: 'Bio', data: bio, backgroundColor: 'rgba(88, 166, 255, 0.6)', borderColor: '#58a6ff', borderWidth: 1 },
+                        { label: 'Gauss', data: gauss, backgroundColor: 'rgba(241, 224, 90, 0.6)', borderColor: '#f1e05a', borderWidth: 1 },
+                        { label: 'Delta', data: delta, backgroundColor: 'rgba(32, 178, 170, 0.6)', borderColor: '#20b2aa', borderWidth: 1 },
+                        { label: 'Markov', data: markov, backgroundColor: 'rgba(255, 105, 180, 0.6)', borderColor: '#ff69b4', borderWidth: 1 },
+                        { label: 'Consenso', data: consenso, type: 'line', borderColor: '#ffffff', borderWidth: 2, tension: 0.4 }
+                    ]
                 },
                 options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: { y: { beginAtZero: true, max: 100, grid: { color: '#30363d' } } },
-                    plugins: { legend: { display: false } }
+                    responsive: true, maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true, max: 100, grid: { color: '#30363d' } }, x: { grid: { display: false } } },
+                    plugins: { legend: { labels: { color: '#c9d1d9' } } }
                 }
             });
         }
@@ -608,52 +696,39 @@
             LOGS_SORT_DIR = LOGS_SORT_DIR === 'asc' ? 'desc' : 'asc';
             applyFilters();
         }
-        function sortAggregate(col) { /* Implementar lógica similar si se requiere */ }
+        function sortAggregate(col) {
+            // Implementación simplificada
+            SORT_COL = col;
+            SORT_DIR = SORT_DIR === 'asc' ? 'desc' : 'asc';
+            applyFilters();
+        }
         function switchChartView(mode) { CURRENT_CHART_MODE = mode; applyFilters(); }
 
         async function savePlay(btn, numsStr, id) {
-            // Restaurar estado visual
             const originalContent = btn.innerHTML;
             btn.innerHTML = '...';
             btn.disabled = true;
-
-            // Tu URL original detectada en tus archivos subidos
             const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwBZd2vTrvxVdTjJnLoK2vMCR90qJqyH3ZfSDkNK4_n0aFYe3jCoeIZ3R58XNQBM1xQ3A/exec";
-
             try {
-                // Parsear números si vienen como texto
                 let numbers = JSON.parse(numsStr);
-
-                // Envío real a la nube
                 await fetch(GOOGLE_SCRIPT_URL, {
-                    method: 'POST',
-                    mode: 'no-cors', // Importante para Google Scripts
-                    headers: { 'Content-Type': 'application/json' },
+                    method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ numeros: numbers, jugado: "SI" })
                 });
-
-                // Marcar visualmente y en memoria local
                 localStorage.setItem(`played_${id}`, 'true');
                 btn.innerHTML = '<i data-lucide="check" width="12"></i> Listo';
                 btn.classList.add('btn-disabled');
                 lucide.createIcons();
-
             } catch (error) {
                 console.error("Error guardando jugada:", error);
                 btn.innerHTML = '<i data-lucide="x" width="12"></i> Error';
                 btn.disabled = false;
-                
-                // Restaurar botón después de un momento
-                setTimeout(() => {
-                    btn.innerHTML = originalContent;
-                    lucide.createIcons();
-                }, 3000);
+                setTimeout(() => { btn.innerHTML = originalContent; lucide.createIcons(); }, 3000);
             }
         }
 
         // Iniciar
         loadAllData();
-
     </script>
 </body>
 </html>
