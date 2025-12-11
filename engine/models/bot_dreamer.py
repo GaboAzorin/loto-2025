@@ -2,9 +2,9 @@ import pandas as pd
 import os
 import pytz
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 
-# Importamos el cerebro polimórfico
+# Importamos el cerebro
 from analizador_forense import LotoForense 
 
 # --- CONFIGURACIÓN ---
@@ -14,46 +14,100 @@ FILE_SIMULACIONES = os.path.join(DATA_DIR, "LOTO_SIMULACIONES.csv")
 
 TZ_CHILE = pytz.timezone('America/Santiago')
 
-# Días de sorteo principales (Martes=1, Jueves=3, Domingo=6)
-DIAS_SORTEO_LOTO = [1, 3, 6] 
-HORA_CIERRE = 21 
-
-# Configuración del Multiverso
-MULTIVERSO_CONFIG = {
-    "LOTO":   {"csv": "LOTO_HISTORIAL_MAESTRO.csv", "algos_extra": True, "dias": DIAS_SORTEO_LOTO},
-    "LOTO3":  {"csv": "LOTO3_MAESTRO.csv",          "algos_extra": False, "dias": [0,1,2,3,4,5,6]}, 
-    "LOTO4":  {"csv": "LOTO4_MAESTRO.csv",          "algos_extra": False, "dias": [0,1,2,3,4,5,6]}, 
-    "RACHA":  {"csv": "RACHA_MAESTRO.csv",          "algos_extra": False, "dias": [0,1,2,3,4,5,6]}  
+# --- DEFINICIÓN DE HORARIOS ESTRICTOS (REGLAS DE NEGOCIO) ---
+# Días: 0=Lun, 1=Mar, 2=Mié, 3=Jue, 4=Vie, 5=Sáb, 6=Dom
+HORARIOS = {
+    "LOTO":   {"dias": [1, 3, 6],       "horas": [21]},
+    "LOTO3":  {"dias": [0,1,2,3,4,5,6], "horas": [14, 18, 21]},
+    "LOTO4":  {"dias": [0,1,2,3,4,5,6], "horas": [14, 21]},
+    "RACHA":  {"dias": [0,1,2,3,4,5,6], "horas": [15, 22]}
 }
 
-def calcular_sorteo_objetivo(csv_name, dias_juego):
-    """Calcula el ID del próximo sorteo evitando los ya cerrados."""
+# Configuración de Archivos y Algoritmos
+MULTIVERSO_CONFIG = {
+    "LOTO":   {"csv": "LOTO_HISTORIAL_MAESTRO.csv", "algos_extra": True},
+    "LOTO3":  {"csv": "LOTO3_MAESTRO.csv",          "algos_extra": False}, 
+    "LOTO4":  {"csv": "LOTO4_MAESTRO.csv",          "algos_extra": False}, 
+    "RACHA":  {"csv": "RACHA_MAESTRO.csv",          "algos_extra": False}  
+}
+
+def calcular_proximo_sorteo_real(game_id, csv_name):
+    """
+    Algoritmo Crononauta:
+    1. Lee el último sorteo conocido del CSV (Ancla temporal).
+    2. Simula el paso del tiempo sorteo a sorteo según las reglas horarias.
+    3. Se detiene cuando encuentra el PRIMER sorteo que ocurre en el futuro respecto a 'ahora'.
+    """
     path = os.path.join(DATA_DIR, csv_name)
     ahora = datetime.now(TZ_CHILE)
     
-    ultimo_id = 0
-    if os.path.exists(path):
-        try:
-            df = pd.read_csv(path)
-            if not df.empty: ultimo_id = int(df['sorteo'].max())
-        except: pass
-    
-    if ultimo_id == 0: return 1
-
-    # Si es día de sorteo y ya pasó la hora, el "próximo" no es mañana, es el subsiguiente
-    # (Asumiendo que el scraper aún no baja el de hoy)
-    es_dia_sorteo = ahora.weekday() in dias_juego
-    paso_hora = ahora.hour >= HORA_CIERRE
-    
-    if es_dia_sorteo and paso_hora:
-        return ultimo_id + 2
+    # 1. Obtener Ancla (Último dato real)
+    try:
+        if not os.path.exists(path): raise Exception("No CSV")
+        df = pd.read_csv(path)
+        if df.empty: raise Exception("CSV Vacío")
         
-    return ultimo_id + 1
+        last_row = df.iloc[-1]
+        last_id = int(last_row['sorteo'])
+        
+        # Parseo robusto de fecha
+        fecha_str = str(last_row['fecha']).replace('T', ' ').split('.')[0]
+        try:
+            # Intentar formato ISO primero
+            last_date_naive = datetime.strptime(fecha_str, "%Y-%m-%d %H:%M:%S")
+        except:
+            # Fallback dd-mm-yyyy
+            last_date_naive = datetime.strptime(fecha_str, "%d-%m-%Y %H:%M:%S")
+            
+        # Localizar a Chile
+        cursor_tiempo = TZ_CHILE.localize(last_date_naive)
+        cursor_id = last_id
+        
+        # print(f"   ⚓ Ancla encontrada: #{cursor_id} en {cursor_tiempo}")
+
+    except:
+        # Si no hay datos, asumimos sorteo #1 y empezamos a buscar desde ayer
+        print(f"   ⚠️ Sin historial para {game_id}. Iniciando desde cero.")
+        cursor_tiempo = ahora - timedelta(days=1)
+        cursor_id = 0
+
+    # 2. Simulación hacia el Futuro (Bridging the Gap)
+    reglas = HORARIOS[game_id]
+    
+    # Límite de seguridad para evitar bucles infinitos (ej. 30 días)
+    safety_break = 0
+    
+    while cursor_tiempo <= ahora and safety_break < 1000:
+        safety_break += 1
+        
+        # Buscar el siguiente slot válido desde el cursor actual
+        # Avanzamos minuto a minuto NO, eso es lento. Avanzamos por slots.
+        
+        encontrado_siguiente = False
+        # Revisamos el día actual y el siguiente
+        for dias_extra in [0, 1, 2, 3]: # Miramos hasta 3 días adelante
+            check_date = cursor_tiempo.date() + timedelta(days=dias_extra)
+            dia_semana = check_date.weekday()
+            
+            if dia_semana not in reglas['dias']: continue
+            
+            for hora in sorted(reglas['horas']):
+                # Crear timestamp del slot candidato
+                candidato = TZ_CHILE.localize(datetime(check_date.year, check_date.month, check_date.day, hora, 0, 0))
+                
+                # Si este candidato es ESTRICTAMENTE posterior al cursor actual
+                if candidato > cursor_tiempo:
+                    cursor_tiempo = candidato
+                    cursor_id += 1
+                    encontrado_siguiente = True
+                    break # Salimos al while principal para verificar si ya pasamos 'ahora'
+            
+            if encontrado_siguiente: break
+    
+    return cursor_id
 
 def obtener_pesos_inteligentes():
-    """Feedback Loop: Ajusta el peso del voto según aciertos pasados."""
     pesos = {'forense': 1.0, 'gaussiano': 1.0, 'delta': 1.0, 'markov': 1.0}
-    
     if os.path.exists(FILE_SIMULACIONES):
         try:
             df = pd.read_csv(FILE_SIMULACIONES)
@@ -63,13 +117,12 @@ def obtener_pesos_inteligentes():
                 for algo_name, score in ranking.items():
                     key = algo_name.split('_')[0]
                     if key in pesos:
-                        # Normalización: 50% score = peso 1.0. 
                         pesos[key] = max(0.2, score / 50.0)
         except: pass
     return pesos
 
 def soñar():
-    print("💤 --- INICIANDO BOT SOÑADOR MULTIVERSO (LITE) ---")
+    print("💤 --- INICIANDO BOT SOÑADOR MULTIVERSO v10.0 (CRONONAUTA) ---")
     
     ahora = datetime.now(TZ_CHILE)
     dia_semana = ahora.weekday()
@@ -80,17 +133,20 @@ def soñar():
     pesos_voto = obtener_pesos_inteligentes()
     
     for game_id, config in MULTIVERSO_CONFIG.items():
-        print(f"🌌 Procesando Universo: {game_id}")
+        print(f"🌌 Universo: {game_id}")
         
+        # 1. Calcular Objetivo Inteligente
+        objetivo = calcular_proximo_sorteo_real(game_id, config['csv'])
+        print(f"   🎯 Objetivo Crononauta: #{objetivo}")
+
+        # 2. Instanciar Cerebro
         try:
             forense = LotoForense(game_id=game_id, target_day=dia_semana)
         except Exception as e:
             print(f"❌ Error forense {game_id}: {e}")
             continue
 
-        objetivo = calcular_sorteo_objetivo(config['csv'], config['dias'])
-
-        # --- DEFINICIÓN DE ALGORITMOS ---
+        # 3. Definir Algoritmos
         mis_algoritmos = [('forense_biometrico', forense.predict_weighted)]
         if config['algos_extra']:
             mis_algoritmos.extend([
@@ -99,12 +155,12 @@ def soñar():
                 ('markov_chain',      forense.predict_markov)
             ])
 
-        # --- EJECUCIÓN ---
+        # 4. Ejecución
         bolsa_pesos_consenso = {} 
 
         for i, (nombre, funcion) in enumerate(mis_algoritmos):
             try:
-                # 1. Generación Unitaria
+                # Generación Unitaria
                 pred = funcion()
                 
                 nuevas_filas.append({
@@ -118,9 +174,9 @@ def soñar():
                     'hora_dia': hora_actual,
                     'algoritmo': f"{nombre}_v1"
                 })
-                print(f"   🤖 {nombre}: {pred}")
+                # print(f"   🤖 {nombre}: {pred}") # Log reducido
 
-                # 2. Aporte al Consenso (5 rondas internas)
+                # Simulación Interna para Consenso
                 peso = pesos_voto.get(nombre.split('_')[0], 1.0)
                 for _ in range(5):
                     sim = funcion()
@@ -130,11 +186,15 @@ def soñar():
             except Exception as e:
                 print(f"   ⚠️ Error en {nombre}: {e}")
 
-        # --- GENERAR CONSENSO MERITOCRÁTICO ---
+        # 5. Generar Consenso
         try:
             n_bolas = forense.rules['n']
             ranking = sorted(bolsa_pesos_consenso, key=bolsa_pesos_consenso.get, reverse=True)
             top_consenso = sorted(ranking[:n_bolas])
+            
+            # Ordenar números para estética (excepto si el juego requiere orden estricto, pero aquí asumimos ascendente para visualización)
+            if game_id != "LOTO3": # Loto 3 puede ser 9-2-5, no necesariamente 2-5-9, pero para CSV mejor ordenado
+                 top_consenso.sort()
             
             nuevas_filas.append({
                 'id': base_id + 999 + (len(nuevas_filas)*10),
@@ -150,7 +210,7 @@ def soñar():
             print(f"   🤝 CONSENSO: {top_consenso}")
         except: pass
 
-    # Guardado Final
+    # Guardado
     if nuevas_filas:
         guardar(nuevas_filas)
 
