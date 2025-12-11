@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🔬 Laboratorio LotoAI - Multiverso Pro</title>
+    <title>🔬 Laboratorio LotoAI - Financial Master Pro</title>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -16,15 +16,16 @@
             --success: #2ea043;
             --warning: #d29922;
             --danger: #f85149;
+            --money: #00ff41; 
+            --loss: #ff3b5c;
             --border: #30363d;
             
-            /* Colores (Usados en Badges y Texto) */
+            /* Colores de Algoritmos */
             --bio-color: #58a6ff;   
             --gauss-color: #f1e05a; 
             --delta-color: #20b2aa; 
             --markov-color: #ff69b4; 
             --consenso-color: #ffffff; 
-            --premium-color: #ffd700; 
         }
         body { font-family: 'JetBrains Mono', monospace; background-color: var(--bg); color: var(--text); margin: 0; padding: 20px; }
         .container { max-width: 1800px; margin: 0 auto; }
@@ -34,7 +35,7 @@
         h1 { margin: 0; font-size: 1.5rem; color: var(--accent); display: flex; align-items: center; gap: 10px; }
         .status-badge { background: var(--success); color: white; padding: 5px 10px; border-radius: 4px; font-size: 0.8rem; }
         
-        /* Pestañas Multiverso */
+        /* Pestañas */
         .universe-tabs { display: flex; gap: 5px; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 0; }
         .tab-btn {
             background: var(--card); border: 1px solid var(--border); color: var(--text-muted);
@@ -50,11 +51,17 @@
 
         /* KPI Cards */
         .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px; }
-        .card { background: var(--card); border: 1px solid var(--border); padding: 15px; border-radius: 6px; margin-bottom: 30px; }
-        .card h3 { margin: 0 0 10px 0; font-size: 0.9rem; color: #8b949e; }
-        .card .value { font-size: 1.8rem; font-weight: bold; }
+        .card { background: var(--card); border: 1px solid var(--border); padding: 15px; border-radius: 6px; position: relative; overflow: hidden; }
+        .card h3 { margin: 0 0 10px 0; font-size: 0.8rem; color: #8b949e; text-transform: uppercase; letter-spacing: 1px; }
+        .card .value { font-size: 1.6rem; font-weight: bold; }
         
-        /* Gráficos */
+        /* Tarjetas Financieras */
+        .card.money-card { border: 1px solid var(--money); background: rgba(0, 255, 65, 0.05); }
+        .card.money-card .value { color: var(--money); text-shadow: 0 0 10px rgba(0, 255, 65, 0.3); }
+        .card.real-money { border: 1px solid var(--warning); background: rgba(210, 153, 34, 0.05); }
+        .card.real-money .value { color: var(--warning); }
+
+        /* Gráficos y Tablas */
         .chart-wrapper { background: var(--card); border: 1px solid var(--border); padding: 20px; border-radius: 6px; margin-bottom: 30px; }
         .chart-header-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .chart-container { position: relative; height: 350px; width: 100%; }
@@ -92,17 +99,13 @@
         .nav-link:hover { background: var(--border); }
 
         /* Highlight de Aciertos */
-        .numero-match { color: #2ea043; font-weight: bold; border: 1px solid #2ea043; text-shadow: 0 0 5px rgba(46, 160, 67, 0.4); }
         .match-exact { color: #2ea043; font-weight: 900; border: 1px solid #2ea043; box-shadow: 0 0 5px rgba(46, 160, 67, 0.4); }
-        .match-close-1 { color: #f1e05a; font-weight: bold; border: 1px solid rgba(241, 224, 90, 0.5); }
-        .match-close-2 { color: #58a6ff; border: 1px solid rgba(88, 166, 255, 0.3); }
         .match-far { color: #444; }
         .draw-badge { cursor: help; border-bottom: 1px dotted #8b949e; }
         
         .sortable-header { cursor: pointer; user-select: none; transition: color 0.2s; }
         .sortable-header:hover { color: var(--accent); background-color: rgba(255,255,255,0.05); }
         .sort-icon { display: inline-block; margin-left: 5px; font-size: 0.8em; opacity: 0.5; }
-        .sort-active { color: var(--accent); opacity: 1; }
 
         .btn-action {
             background: rgba(0, 255, 65, 0.1); color: #00ff41; border: 1px solid rgba(0, 255, 65, 0.3);
@@ -112,7 +115,6 @@
         .btn-action:hover { background: rgba(0, 255, 65, 0.2); box-shadow: 0 0 10px rgba(0, 255, 65, 0.2); }
         .btn-disabled { background: rgba(255, 255, 255, 0.05); color: #666; border: 1px solid #444; cursor: not-allowed; pointer-events: none; }
 
-        /* Estilos de Columnas de Aciertos */
         .hit-col-high { color: #ff00ff; font-weight: bold; background: rgba(255, 0, 255, 0.1); padding: 2px 5px; border-radius: 4px; }
         .hit-col-mid { color: #00f2ff; font-weight: bold; background: rgba(0, 242, 255, 0.1); padding: 2px 5px; border-radius: 4px; }
         .hit-col-low { color: #2ea043; padding: 2px 5px; }
@@ -140,13 +142,13 @@
             <button class="tab-btn" data-game="RACHA" onclick="switchUniverse('RACHA')">RACHA</button>
         </div>
 
-        <div class="kpi-grid">
+        <div class="kpi-grid" id="kpi-container">
             <div class="card">
                 <h3>Total simulaciones</h3>
                 <div class="value" id="total-sims">0</div>
             </div>
             <div class="card">
-                <h3>Sorteo objetivo actual</h3>
+                <h3>Sorteo objetivo</h3>
                 <div class="value" id="target-draw" style="color: var(--warning)">...</div>
             </div>
             <div class="card">
@@ -156,6 +158,25 @@
             <div class="card">
                 <h3>Precisión promedio</h3>
                 <div class="value" id="avg-score">0%</div>
+            </div>
+        </div>
+
+        <div class="kpi-grid" id="financial-kpi-container" style="display:none; border-top:1px solid var(--border); padding-top:20px;">
+            <div class="card money-card">
+                <h3>Inversión Hipotética</h3>
+                <div class="value" id="hypo-invest">$0</div>
+            </div>
+            <div class="card money-card">
+                <h3>Ganancia Hipotética</h3>
+                <div class="value" id="hypo-win">$0</div>
+            </div>
+            <div class="card real-money">
+                <h3>Inversión Real</h3>
+                <div class="value" id="real-invest">$0</div>
+            </div>
+            <div class="card real-money">
+                <h3>Ganancia Real</h3>
+                <div class="value" id="real-win">$0</div>
             </div>
         </div>
 
@@ -244,66 +265,61 @@
     </div>
 
     <script>
-        // CONFIGURACIÓN MULTIVERSO (CORREGIDO CON CÓDIGOS HEX PARA EL GRÁFICO)
+        // CONFIGURACIÓN DE DATOS
         const DATA_SOURCES = {
             'SIMS': '../data/LOTO_SIMULACIONES.csv',
+            'JUGADAS': '../data/LOTO_JUGADAS.csv',
             'LOTO': '../data/LOTO_HISTORIAL_MAESTRO.csv',
             'LOTO3': '../data/LOTO3_MAESTRO.csv',
             'LOTO4': '../data/LOTO4_MAESTRO.csv',
             'RACHA': '../data/RACHA_MAESTRO.csv'
         };
 
+        // Reglas de Juego: Costos y Visualización
         const UNIVERSE_CONFIG = {
             'LOTO': {
                 algos: [
-                    {key: 'forense', label: 'Bio', color: '#58a6ff'},   // Hex en lugar de var()
+                    {key: 'forense', label: 'Bio', color: '#58a6ff'},
                     {key: 'gauss', label: 'Gauss', color: '#f1e05a'},
                     {key: 'delta', label: 'Delta', color: '#20b2aa'},
                     {key: 'markov', label: 'Markov', color: '#ff69b4'},
                     {key: 'consenso', label: 'Consenso', color: '#ffffff'}
                 ],
-                hits: [6, 5, 4, 3, 2, 1]
+                hits: [6, 5, 4, 3, 2, 1],
+                cost: 1000 // Valor Loto Clásico
             },
             'LOTO3': {
-                algos: [
-                    {key: 'forense', label: 'Bio', color: '#58a6ff'},
-                    {key: 'consenso', label: 'Consenso', color: '#ffffff'}
-                ],
-                hits: [3, 2, 1]
+                algos: [ {key: 'forense', label: 'Bio', color: '#58a6ff'}, {key: 'consenso', label: 'Consenso', color: '#ffffff'} ],
+                hits: [3, 2, 1],
+                cost: 500 // Apuesta estándar Exacta
             },
             'LOTO4': {
-                algos: [
-                    {key: 'forense', label: 'Bio', color: '#58a6ff'},
-                    {key: 'consenso', label: 'Consenso', color: '#ffffff'}
-                ],
-                hits: [4, 3, 2, 1]
+                algos: [ {key: 'forense', label: 'Bio', color: '#58a6ff'}, {key: 'consenso', label: 'Consenso', color: '#ffffff'} ],
+                hits: [4, 3, 2, 1],
+                cost: 500 
             },
             'RACHA': {
-                algos: [
-                    {key: 'forense', label: 'Bio', color: '#58a6ff'},
-                    {key: 'consenso', label: 'Consenso', color: '#ffffff'}
-                ],
-                hits: [10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0]
+                algos: [ {key: 'forense', label: 'Bio', color: '#58a6ff'}, {key: 'consenso', label: 'Consenso', color: '#ffffff'} ],
+                hits: [10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0],
+                cost: 500 // Apuesta combinada (ambas puntas)
             }
         };
 
         let RAW_SIMULATIONS = [];
+        let RAW_PLAYS = [];
         let MASTERS = {}; 
         let MASTERS_DATES = {}; 
+        let MASTERS_PRIZES = {}; // Premios dinámicos
+        let MASTERS_COMODIN = {}; // Vital para Loto
+        
         let CURRENT_UNIVERSE = 'LOTO';
         let CURRENT_CHART_MODE = 'hour';
         
-        let SORT_COL = 'target'; 
-        let SORT_DIR = 'desc';   
-        let LOGS_SORT_COL = 'date';
-        let LOGS_SORT_DIR = 'desc';
-
         const hSel = document.getElementById('f-hora');
         for(let i=0; i<24; i++) {
             let opt = document.createElement('option'); opt.value = i; opt.textContent = i.toString().padStart(2,'0')+":00"; hSel.appendChild(opt);
         }
 
-        // Helper para convertir Hex a RGBA (para el fondo de los gráficos)
         function hexToRgba(hex, alpha) {
             const r = parseInt(hex.slice(1, 3), 16);
             const g = parseInt(hex.slice(3, 5), 16);
@@ -322,15 +338,14 @@
                 results.forEach(({key, text}) => {
                     if (!text) return;
                     if (key === 'SIMS') processSimulations(text);
+                    else if (key === 'JUGADAS') processPlays(text);
                     else processMaster(key, text);
                 });
 
                 applyFilters();
                 
             } catch (e) {
-                console.error("Error cargando datos:", e);
-                document.getElementById('last-update').textContent = "Error de Datos";
-                document.getElementById('last-update').style.background = "var(--danger)";
+                console.error(e);
             }
         }
 
@@ -339,11 +354,31 @@
             if (lines.length < 2) return;
             const headers = lines[0].split(',');
             
-            let numCols = [];
-            if (gameKey === 'LOTO') numCols = ['LOTO_n1','LOTO_n2','LOTO_n3','LOTO_n4','LOTO_n5','LOTO_n6'];
-            else if (gameKey === 'LOTO3') numCols = ['n1','n2','n3'];
-            else if (gameKey === 'LOTO4') numCols = ['n1','n2','n3','n4'];
-            else if (gameKey === 'RACHA') numCols = ['n1','n2','n3','n4','n5','n6','n7','n8','n9','n10'];
+            let numCols = [], prizeCols = {};
+            let comodinCol = -1;
+
+            if (gameKey === 'LOTO') {
+                numCols = ['LOTO_n1','LOTO_n2','LOTO_n3','LOTO_n4','LOTO_n5','LOTO_n6'];
+                comodinCol = headers.indexOf('LOTO_comodin');
+                // Mapeo Premios LOTO
+                prizeCols = {
+                    'LOTO': 'LOTO_MONTO',
+                    'SQUINA': 'SUPER_QUINA_5_ACIERTOS_COMODIN_MONTO',
+                    'QUINA': 'QUINA_5_ACIERTOS_MONTO',
+                    'SCUATERNA': 'SUPER_CUATERNA_4_ACIERTOS_COMODIN_MONTO',
+                    'CUATERNA': 'CUATERNA_4_ACIERTOS_MONTO',
+                    'STERNA': 'SUPER_TERNA_3_ACIERTOS_COMODIN_MONTO',
+                    'TERNA': 'TERNA_3_ACIERTOS_MONTO',
+                    'SDUPLA': 'SUPER_DUPLA_2_ACIERTOS_COMODIN_MONTO',
+                    'POZO_REAL': 'LOTO_POZO_REAL' // Fallback si nadie gana
+                };
+            }
+            else if (gameKey === 'LOTO3') { numCols = ['n1','n2','n3']; }
+            else if (gameKey === 'LOTO4') {
+                numCols = ['n1','n2','n3','n4'];
+                prizeCols = { '4P': '4_PUNTOS_MONTO', '3P': '3_PUNTOS_MONTO', '2P': '2_PUNTOS_MONTO' };
+            }
+            else if (gameKey === 'RACHA') { numCols = ['n1','n2','n3','n4','n5','n6','n7','n8','n9','n10']; }
 
             const idxSorteo = headers.indexOf('sorteo');
             const idxFecha = headers.indexOf('fecha');
@@ -353,6 +388,9 @@
 
             const map = {};
             const dateMap = {};
+            const prizeMap = {};
+            const comodinMap = {};
+
             for (let i = 1; i < lines.length; i++) {
                 const row = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
                 const sorteo = row[idxSorteo];
@@ -361,84 +399,212 @@
                 const nums = idxs.map(idx => idx !== -1 ? parseInt(row[idx]) : null).filter(n => n !== null);
                 map[sorteo] = nums;
                 if(idxFecha !== -1) dateMap[sorteo] = row[idxFecha].split(' ')[0];
+                if(comodinCol !== -1) comodinMap[sorteo] = parseInt(row[comodinCol]);
+
+                // Extraer premios dinámicos
+                if (gameKey === 'LOTO' || gameKey === 'LOTO4') {
+                    prizeMap[sorteo] = {};
+                    for (let [key, colName] of Object.entries(prizeCols)) {
+                        let idxP = headers.indexOf(colName);
+                        if (idxP === -1) idxP = headers.findIndex(h => h.includes(colName.split('_')[0]) && h.includes('MONTO'));
+                        if (idxP !== -1) prizeMap[sorteo][key] = parseFloat(row[idxP]) || 0;
+                        // Extraer Pozo Real si existe (para fallback de Loto)
+                        if (key === 'POZO_REAL') {
+                             let idxReal = headers.indexOf('LOTO_POZO_REAL');
+                             if(idxReal !== -1) prizeMap[sorteo]['POZO_REAL'] = parseFloat(row[idxReal]) || 0;
+                        }
+                    }
+                }
             }
             MASTERS[gameKey] = map;
             MASTERS_DATES[gameKey] = dateMap;
+            MASTERS_PRIZES[gameKey] = prizeMap;
+            MASTERS_COMODIN[gameKey] = comodinMap;
         }
 
         function processSimulations(text) {
             const lines = text.trim().split('\n');
             const headers = lines[0].split(',');
-            
             RAW_SIMULATIONS = lines.slice(1).map(line => {
                 const parts = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
-                if (parts.length < 5) return null;
-                
-                let obj = {};
+                if(parts.length < 5) return null;
                 try {
-                    obj.id = parts[0];
-                    obj.fechaStr = parts[1];
-                    let dtRaw = parts[1].replace(' ', 'T');
-                    obj.dateObj = new Date(dtRaw);
-                    if(isNaN(obj.dateObj)) obj.dateObj = new Date();
-
-                    if (headers.includes('juego')) {
-                        obj.juego = parts[2]; 
-                        obj.numeros = parts[3];
-                        obj.objetivo = parts[4];
-                        obj.estado = parts[5];
-                        obj.aciertos = parseInt(parts[6] || 0);
-                        obj.score = parseFloat(parts[7] || 0);
-                        obj.hora = parseInt(parts[8]); 
-                        obj.algoritmo = parts[9] || 'unknown';
-                    } else {
-                        obj.juego = 'LOTO';
-                        obj.numeros = parts[2];
-                        obj.objetivo = parts[3];
-                        obj.estado = parts[4];
-                        obj.aciertos = parseInt(parts[5] || 0);
-                        obj.score = parseFloat(parts[6] || 0);
-                        obj.hora = parseInt(parts[7]); 
-                        obj.algoritmo = parts[8] || 'unknown';
-                    }
-                    
-                    if(isNaN(obj.hora)) {
-                        obj.hora = obj.dateObj.getHours();
-                    }
-
-                    obj.numeros = obj.numeros.replace(/"/g, '');
-                    obj.algoritmo = obj.algoritmo.replace(/\r/g, '');
-                    
+                    let obj = {
+                        id: parts[0],
+                        fechaStr: parts[1],
+                        dateObj: new Date(parts[1].replace(' ', 'T')),
+                        numeros: parts[headers.includes('juego')?3:2].replace(/"/g, ''),
+                        objetivo: parts[headers.includes('juego')?4:3],
+                        estado: parts[headers.includes('juego')?5:4],
+                        aciertos: parseInt(parts[headers.includes('juego')?6:5] || 0),
+                        score: parseFloat(parts[headers.includes('juego')?7:6] || 0),
+                        algoritmo: parts[headers.includes('juego')?9:8] || 'unknown',
+                        juego: headers.includes('juego') ? parts[2] : 'LOTO'
+                    };
+                    let hIdx = headers.includes('juego') ? 8 : 7;
+                    obj.hora = parseInt(parts[hIdx]);
+                    if(isNaN(obj.hora)) obj.hora = obj.dateObj.getHours();
                     return obj;
                 } catch(e) { return null; }
-            }).filter(x => x !== null).reverse();
+            }).filter(x=>x).reverse();
         }
 
+        function processPlays(text) {
+            const lines = text.trim().split('\n');
+            RAW_PLAYS = lines.slice(1).map(line => {
+                const p = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+                if(p.length < 4) return null;
+                if(p[3] !== 'SI') return null;
+                return {
+                    numeros: p[2].replace(/"/g, ''),
+                    objetivo: p[5],
+                    juego: p[6] || 'LOTO'
+                };
+            }).filter(x=>x);
+        }
+
+        // --- CEREBRO FINANCIERO (Lógica Robusta) ---
+        function calculateWinningsDetailed(game, myNums, winNums, comodin, drawId) {
+            if (!myNums || !winNums) return 0;
+
+            // --- LOTO 3 ---
+            if (game === 'LOTO3') {
+                let total = 0;
+                const mySorted = [...myNums].sort();
+                const winSorted = [...winNums].sort();
+                
+                // 1. EXACTA: Orden y Valor perfectos (Paga 400x)
+                if (JSON.stringify(myNums) === JSON.stringify(winNums)) {
+                    total += 500 * 400; 
+                }
+                
+                // 2. TRIO PAR: Dos números iguales y uno distinto (Paga 130x)
+                // Primero verificamos si son los mismos números
+                if (JSON.stringify(mySorted) === JSON.stringify(winSorted)) {
+                    const unique = new Set(myNums);
+                    if (unique.size === 2) total += 500 * 130;
+                }
+
+                // 3. TRIO AZAR: Tres números distintos, cualquier orden (Paga 65x)
+                if (JSON.stringify(mySorted) === JSON.stringify(winSorted)) {
+                    const unique = new Set(myNums);
+                    if (unique.size === 3) total += 500 * 65;
+                }
+                
+                // 4. PAR: Coinciden primeros 2 o últimos 2 (Paga 20x)
+                // Primeros 2
+                if (myNums[0] === winNums[0] && myNums[1] === winNums[1]) total += 500 * 20;
+                // Últimos 2
+                else if (myNums[1] === winNums[1] && myNums[2] === winNums[2]) total += 500 * 20;
+
+                // 5. TERMINACIÓN: Último dígito (Paga 4x)
+                if (myNums[2] === winNums[2]) total += 500 * 4;
+                
+                return total;
+            }
+
+            // --- LOTO (Con Comodín y Pozos) ---
+            if (game === 'LOTO') {
+                const hits = myNums.filter(n => winNums.includes(n)).length;
+                const hasComodin = comodin && myNums.includes(comodin);
+                const prizes = MASTERS_PRIZES['LOTO'][drawId] || {};
+
+                // Jerarquía de Premios (Se paga el mayor)
+                if (hits === 6) {
+                    let jackpot = prizes['LOTO'] || 0;
+                    if (jackpot === 0) jackpot = prizes['POZO_REAL'] || 0; 
+                    return jackpot;
+                }
+                if (hits === 5 && hasComodin) return prizes['SQUINA'] || 0;
+                if (hits === 5) return prizes['QUINA'] || 0;
+                if (hits === 4 && hasComodin) return prizes['SCUATERNA'] || 0;
+                if (hits === 4) return prizes['CUATERNA'] || 0;
+                if (hits === 3 && hasComodin) return prizes['STERNA'] || 0;
+                if (hits === 3) return prizes['TERNA'] || 0;
+                if (hits === 2 && hasComodin) return prizes['SDUPLA'] || 0;
+                return 0;
+            }
+
+            // --- RACHA (Espejo + Tabla Fija) ---
+            if (game === 'RACHA') {
+                const winSet = new Set(winNums);
+                const hits = myNums.filter(n => winSet.has(n)).length;
+                
+                if (hits === 10 || hits === 0) return 6000000;
+                if (hits === 9 || hits === 1) return 30000;
+                if (hits === 8 || hits === 2) return 1500;
+                if (hits === 7 || hits === 3) return 500;
+                return 0;
+            }
+
+            // --- LOTO 4 (Tabla Variable) ---
+            if (game === 'LOTO4') {
+                const hits = myNums.filter(n => winNums.includes(n)).length;
+                const prizes = MASTERS_PRIZES['LOTO4'][drawId] || {};
+                if (hits === 4) return prizes['4P'] || 0;
+                if (hits === 3) return prizes['3P'] || 0;
+                if (hits === 2) return prizes['2P'] || 0;
+                return 0;
+            }
+
+            return 0;
+        }
+
+        function calculateFinance(filteredSims, targetDraw) {
+            const container = document.getElementById('financial-kpi-container');
+            const config = UNIVERSE_CONFIG[CURRENT_UNIVERSE];
+            
+            if (targetDraw === 'ALL' || !config) {
+                container.style.display = 'none'; return;
+            }
+            container.style.display = 'grid';
+
+            // 1. Inversión Hipotética
+            const hypoCount = filteredSims.length;
+            const hypoInvest = hypoCount * config.cost;
+
+            // 2. Ganancia Hipotética
+            let hypoWin = 0;
+            const winningNums = MASTERS[CURRENT_UNIVERSE][targetDraw];
+            const comodin = MASTERS_COMODIN[CURRENT_UNIVERSE] ? MASTERS_COMODIN[CURRENT_UNIVERSE][targetDraw] : null;
+
+            if (winningNums) {
+                filteredSims.forEach(s => {
+                    const myNums = JSON.parse(s.numeros);
+                    hypoWin += calculateWinningsDetailed(CURRENT_UNIVERSE, myNums, winningNums, comodin, targetDraw);
+                });
+            }
+
+            // 3. Realidad
+            const realPlays = RAW_PLAYS.filter(p => p.juego === CURRENT_UNIVERSE && p.objetivo === targetDraw);
+            const realInvest = realPlays.length * config.cost;
+            let realWin = 0;
+            
+            if (winningNums) {
+                realPlays.forEach(play => {
+                    const myNums = JSON.parse(play.numeros);
+                    realWin += calculateWinningsDetailed(CURRENT_UNIVERSE, myNums, winningNums, comodin, targetDraw);
+                });
+            }
+
+            const fmt = (n) => "$" + n.toLocaleString('es-CL');
+            document.getElementById('hypo-invest').textContent = fmt(hypoInvest);
+            document.getElementById('hypo-win').textContent = fmt(hypoWin);
+            document.getElementById('real-invest').textContent = fmt(realInvest);
+            document.getElementById('real-win').textContent = fmt(realWin);
+            
+            document.getElementById('hypo-win').style.color = hypoWin >= hypoInvest ? 'var(--money)' : 'var(--loss)';
+            document.getElementById('real-win').style.color = realWin >= realInvest ? 'var(--warning)' : 'var(--loss)';
+        }
+
+        // --- UI FUNCTIONS ---
         function switchUniverse(gameId) {
             CURRENT_UNIVERSE = gameId;
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.classList.remove('active');
-                if(btn.getAttribute('data-game') === gameId) {
-                    btn.classList.add('active');
-                }
+                if(btn.getAttribute('data-game') === gameId) btn.classList.add('active');
             });
             resetFilters(); 
-        }
-
-        function getFilteredData() {
-            let data = RAW_SIMULATIONS.filter(d => d.juego === CURRENT_UNIVERSE);
-            const fSorteo = document.getElementById('f-sorteo').value;
-            const fAlgo = document.getElementById('f-algo').value;
-            const fDia = document.getElementById('f-dia').value;
-            const fHora = document.getElementById('f-hora').value;
-
-            return data.filter(d => {
-                if (fSorteo !== 'ALL' && d.objetivo !== fSorteo) return false;
-                if (fAlgo !== 'ALL' && !d.algoritmo.includes(fAlgo)) return false;
-                if (fDia !== 'ALL' && d.dateObj.getDay().toString() !== fDia) return false;
-                if (fHora !== 'ALL' && d.hora.toString() !== fHora) return false;
-                return true;
-            });
         }
 
         function applyFilters() {
@@ -448,8 +614,25 @@
             renderTable(data);
             calculateAndRenderAggregate(data);
             updateDashboardCharts(data);
+            
+            const selectedDraw = document.getElementById('f-sorteo').value;
+            calculateFinance(data, selectedDraw);
         }
 
+        function getFilteredData() {
+            let data = RAW_SIMULATIONS.filter(d => d.juego === CURRENT_UNIVERSE);
+            const fSorteo = document.getElementById('f-sorteo').value;
+            const fAlgo = document.getElementById('f-algo').value;
+            const fDia = document.getElementById('f-dia').value;
+            const fHora = document.getElementById('f-hora').value;
+            return data.filter(d => {
+                if (fSorteo !== 'ALL' && d.objetivo !== fSorteo) return false;
+                if (fAlgo !== 'ALL' && !d.algoritmo.includes(fAlgo)) return false;
+                if (fDia !== 'ALL' && d.dateObj.getDay().toString() !== fDia) return false;
+                if (fHora !== 'ALL' && d.hora.toString() !== fHora) return false;
+                return true;
+            });
+        }
         function updateSorteoSelector(data) {
             const currentVal = document.getElementById('f-sorteo').value;
             const unique = [...new Set(data.map(d => d.objetivo))];
@@ -461,18 +644,14 @@
             });
             if (unique.includes(currentVal)) sel.value = currentVal;
         }
-
         function updateKPIs(data) {
             document.getElementById('total-sims').textContent = data.length;
             document.getElementById('target-draw').textContent = data.length ? "#" + data[0].objetivo : "--";
             document.getElementById('last-update').textContent = data.length ? data[0].fechaStr.split(' ')[1] : "--";
-            
             const auditados = data.filter(d => d.estado === 'AUDITADO');
             const avg = auditados.length ? (auditados.reduce((a,b)=>a+b.score,0)/auditados.length).toFixed(1) : 0;
             document.getElementById('avg-score').textContent = avg + "%";
         }
-
-        // --- RENDERIZADO TABLA DE LOGS ---
         function renderTable(data) {
             data.sort((a,b) => {
                 let valA = a[LOGS_SORT_COL], valB = b[LOGS_SORT_COL];
@@ -480,35 +659,28 @@
                 if (LOGS_SORT_COL === 'target') { valA = parseInt(a.objetivo); valB = parseInt(b.objetivo); }
                 return LOGS_SORT_DIR === 'asc' ? (valA > valB ? 1 : -1) : (valA < valB ? 1 : -1);
             });
-
             const tbody = document.querySelector('#logs-table tbody');
             tbody.innerHTML = '';
             document.getElementById('filtered-count').textContent = `Mostrando ${Math.min(data.length, 50)} de ${data.length}`;
-
             data.slice(0, 50).forEach(row => {
                 const tr = document.createElement('tr');
-                
                 let algoClass = 'algo-badge';
                 if(row.algoritmo.includes('forense')) algoClass += ' algo-bio';
                 else if(row.algoritmo.includes('gauss')) algoClass += ' algo-gauss';
                 else if(row.algoritmo.includes('delta')) algoClass += ' algo-delta';
                 else if(row.algoritmo.includes('markov')) algoClass += ' algo-markov'; 
                 else if(row.algoritmo.includes('consenso')) algoClass += ' algo-consenso';
-                
                 const realNums = MASTERS[CURRENT_UNIVERSE] ? MASTERS[CURRENT_UNIVERSE][row.objetivo] : [];
                 const myNums = row.numeros.replace('[','').replace(']','').split(',').map(n=>parseInt(n.trim()));
-                
                 let numsHtml = myNums.map(n => {
                     if (realNums && realNums.includes(n)) return `<span class="num-badge match-exact">${n}</span>`;
                     return `<span class="num-badge match-far">${n}</span>`;
                 }).join('');
-
                 const playedKey = `played_${row.id}`;
                 const isPlayed = localStorage.getItem(playedKey);
                 const btnHtml = isPlayed 
                     ? `<button class="btn-action btn-disabled"><i data-lucide="check" width="12"></i> Jugado</button>`
                     : `<button class="btn-action" onclick="savePlay(this, '${row.numeros}', '${row.id}')"><i data-lucide="ticket" width="12"></i> Jugar</button>`;
-
                 tr.innerHTML = `
                     <td>${row.fechaStr.slice(5, 16)}</td>
                     <td><span class="${algoClass}">${row.algoritmo.split('_')[0]}</span></td>
@@ -522,45 +694,22 @@
             });
             lucide.createIcons();
         }
-
-        // --- RENDERIZADO TABLA AGREGADA ---
         function calculateAndRenderAggregate(data) {
             const gameConfig = UNIVERSE_CONFIG[CURRENT_UNIVERSE] || UNIVERSE_CONFIG['LOTO'];
             const thead = document.getElementById('agg-head');
-            let headerHTML = `
-                <tr>
-                    <th class="sortable-header" onclick="sortAggregate('target')">Sorteo</th>
-                    <th class="sortable-header" onclick="sortAggregate('count')" style="text-align:center;">Cant.</th>
-                    <th style="min-width:200px;">Sorteo Real (Aciertos Globales)</th>
-                    <th>Mejor Predicción</th>
-                    <th class="sortable-header" onclick="sortAggregate('avgTotal')" style="text-align:center;">Global</th>
-            `;
-            gameConfig.algos.forEach(algo => {
-                headerHTML += `<th style="text-align:center; color:${algo.color};">${algo.label}</th>`;
-            });
+            let headerHTML = `<tr><th class="sortable-header" onclick="sortAggregate('target')">Sorteo</th><th class="sortable-header" onclick="sortAggregate('count')" style="text-align:center;">Cant.</th><th style="min-width:200px;">Sorteo Real (Aciertos Globales)</th><th>Mejor Predicción</th><th class="sortable-header" onclick="sortAggregate('avgTotal')" style="text-align:center;">Global</th>`;
+            gameConfig.algos.forEach(algo => { headerHTML += `<th style="text-align:center; color:${algo.color};">${algo.label}</th>`; });
             gameConfig.hits.forEach(hits => {
                 let color = '#8b949e'; 
-                if(hits >= 6) color = '#ff00ff'; 
-                else if(hits >= 4) color = '#00f2ff'; 
-                else if(hits === 3 && CURRENT_UNIVERSE === 'LOTO3') color = '#ff00ff'; 
+                if(hits >= 6) color = '#ff00ff'; else if(hits >= 4) color = '#00f2ff'; else if(hits === 3 && CURRENT_UNIVERSE === 'LOTO3') color = '#ff00ff'; 
                 headerHTML += `<th style="text-align:center; color:${color};">${hits}A</th>`;
             });
             headerHTML += `</tr>`;
             thead.innerHTML = headerHTML;
-
             const groups = {};
             data.forEach(d => {
                 if (!groups[d.objetivo]) {
-                    groups[d.objetivo] = {
-                        target: parseInt(d.objetivo), 
-                        count: 0,
-                        scores: [],
-                        algoScores: {}, 
-                        bestRow: null,
-                        maxScore: -1,
-                        all_numbers: [], 
-                        hitsCount: {} 
-                    };
+                    groups[d.objetivo] = { target: parseInt(d.objetivo), count: 0, scores: [], algoScores: {}, bestRow: null, maxScore: -1, all_numbers: [], hitsCount: {} };
                     gameConfig.algos.forEach(a => groups[d.objetivo].algoScores[a.key] = []);
                     gameConfig.hits.forEach(h => groups[d.objetivo].hitsCount[h] = 0);
                 }
@@ -568,43 +717,29 @@
                 g.count++;
                 const nums = d.numeros.replace('[', '').replace(']', '').split(',').map(n=>parseInt(n.trim()));
                 g.all_numbers.push(...nums);
-                
                 if (d.estado === 'AUDITADO') {
                     g.scores.push(d.score);
-                    gameConfig.algos.forEach(a => {
-                        if(d.algoritmo.includes(a.key)) g.algoScores[a.key].push(d.score);
-                    });
-                    if (d.score > g.maxScore) {
-                        g.maxScore = d.score;
-                        g.bestRow = d;
-                    }
-                    if (d.aciertos !== undefined && g.hitsCount[d.aciertos] !== undefined) {
-                        g.hitsCount[d.aciertos]++;
-                    }
+                    gameConfig.algos.forEach(a => { if(d.algoritmo.includes(a.key)) g.algoScores[a.key].push(d.score); });
+                    if (d.score > g.maxScore) { g.maxScore = d.score; g.bestRow = d; }
+                    if (d.aciertos !== undefined && g.hitsCount[d.aciertos] !== undefined) { g.hitsCount[d.aciertos]++; }
                 }
             });
-
             const rows = Object.values(groups).sort((a, b) => b.target - a.target);
             const tbody = document.getElementById('aggregate-body');
             tbody.innerHTML = '';
-
             rows.forEach(g => {
                 const tr = document.createElement('tr');
                 const dateStr = MASTERS_DATES[CURRENT_UNIVERSE] ? MASTERS_DATES[CURRENT_UNIVERSE][g.target] : 'N/A';
                 const realNums = MASTERS[CURRENT_UNIVERSE] ? MASTERS[CURRENT_UNIVERSE][g.target] : [];
                 const counts = {};
                 g.all_numbers.forEach(n => { counts[n] = (counts[n] || 0) + 1; });
-                
                 let realHtml = '-';
                 if (realNums && realNums.length > 0) {
                     realHtml = realNums.map(n => {
                         const count = counts[n] || 0;
-                        return `<div style="display:inline-block; margin:1px; padding:2px 4px; background:rgba(46,160,67,0.15); border:1px solid #2ea043; border-radius:4px; font-size:0.8em;">
-                                    <b>${n}</b> <span style="color:#aaa; font-size:0.8em;">(${count})</span>
-                                </div>`;
+                        return `<div style="display:inline-block; margin:1px; padding:2px 4px; background:rgba(46,160,67,0.15); border:1px solid #2ea043; border-radius:4px; font-size:0.8em;"><b>${n}</b> <span style="color:#aaa; font-size:0.8em;">(${count})</span></div>`;
                     }).join(' ');
                 }
-
                 let bestHtml = '-';
                 if (g.bestRow) {
                     const bNums = g.bestRow.numeros.replace('[','').replace(']','').split(',').map(n=>parseInt(n.trim()));
@@ -613,210 +748,50 @@
                         return `<span class="num-badge match-far">${n}</span>`;
                     }).join('');
                     let badge = '🔮'; 
-                    if(g.bestRow.algoritmo.includes('gauss')) badge = '📐';
-                    else if(g.bestRow.algoritmo.includes('delta')) badge = '📈';
-                    else if(g.bestRow.algoritmo.includes('markov')) badge = '🔗';
-                    else if(g.bestRow.algoritmo.includes('consenso')) badge = '🤝';
+                    if(g.bestRow.algoritmo.includes('gauss')) badge = '📐'; else if(g.bestRow.algoritmo.includes('delta')) badge = '📈'; else if(g.bestRow.algoritmo.includes('markov')) badge = '🔗'; else if(g.bestRow.algoritmo.includes('consenso')) badge = '🤝';
                     bestHtml = `<div><span style="margin-right:5px;">${badge}</span>${bHtml} <small>(${g.maxScore}%)</small></div>`;
                 }
-
                 const avg = arr => arr.length ? (arr.reduce((a,b)=>a+b,0)/arr.length).toFixed(0)+'%' : '-';
-                
-                let rowHTML = `
-                    <td><span class="draw-badge" title="Fecha: ${dateStr}">#${g.target}</span></td>
-                    <td style="text-align:center;">${g.count}</td>
-                    <td>${realHtml}</td>
-                    <td>${bestHtml}</td>
-                    <td style="text-align:center;"><b>${avg(g.scores)}</b></td>
-                `;
-                gameConfig.algos.forEach(a => {
-                    rowHTML += `<td style="text-align:center; color:${a.color};">${avg(g.algoScores[a.key])}</td>`;
-                });
+                let rowHTML = `<td><span class="draw-badge" title="Fecha: ${dateStr}">#${g.target}</span></td><td style="text-align:center;">${g.count}</td><td>${realHtml}</td><td>${bestHtml}</td><td style="text-align:center;"><b>${avg(g.scores)}</b></td>`;
+                gameConfig.algos.forEach(a => { rowHTML += `<td style="text-align:center; color:${a.color};">${avg(g.algoScores[a.key])}</td>`; });
                 gameConfig.hits.forEach(h => {
-                    let styleClass = 'hit-col-low';
-                    if(h >= 6) styleClass = 'hit-col-high';
-                    else if(h >= 4) styleClass = 'hit-col-mid';
-                    let val = g.hitsCount[h];
-                    let valDisplay = val > 0 ? `<span class="${styleClass}">${val}</span>` : `<span class="hit-col-dim">-</span>`;
+                    let styleClass = 'hit-col-low'; if(h >= 6) styleClass = 'hit-col-high'; else if(h >= 4) styleClass = 'hit-col-mid';
+                    let val = g.hitsCount[h]; let valDisplay = val > 0 ? `<span class="${styleClass}">${val}</span>` : `<span class="hit-col-dim">-</span>`;
                     rowHTML += `<td style="text-align:center;">${valDisplay}</td>`;
                 });
                 tr.innerHTML = rowHTML;
                 tbody.appendChild(tr);
             });
         }
-
-// --- GRÁFICOS CON TOOLTIP ORDENADO (RANKING) ---
         function updateDashboardCharts(data) {
             const ctx = document.getElementById('mainChart').getContext('2d');
             if(window.myChart) window.myChart.destroy();
-            
             const auditados = data.filter(d => d.estado === 'AUDITADO');
             const gameConfig = UNIVERSE_CONFIG[CURRENT_UNIVERSE] || UNIVERSE_CONFIG['LOTO'];
-            
-            // Labels (Eje X)
-            let labels = [];
-            let buckets = {}; 
-
+            let labels = []; let buckets = {}; 
             if (CURRENT_CHART_MODE === 'hour') {
-                labels = Array.from({length: 24}, (_, i) => `${i}:00`);
-                labels.forEach((_, i) => buckets[i] = {});
-                auditados.forEach(d => {
-                    let h = d.hora;
-                    if (isNaN(h)) h = d.dateObj.getHours(); 
-                    if (buckets[h]) {
-                        gameConfig.algos.forEach(a => {
-                            if(d.algoritmo.includes(a.key)) {
-                                if(!buckets[h][a.key]) buckets[h][a.key] = [];
-                                buckets[h][a.key].push(d.score);
-                            }
-                        });
-                    }
-                });
+                labels = Array.from({length: 24}, (_, i) => `${i}:00`); labels.forEach((_, i) => buckets[i] = {});
+                auditados.forEach(d => { let h = d.hora; if (isNaN(h)) h = d.dateObj.getHours(); if (buckets[h]) { gameConfig.algos.forEach(a => { if(d.algoritmo.includes(a.key)) { if(!buckets[h][a.key]) buckets[h][a.key] = []; buckets[h][a.key].push(d.score); } }); } });
             } else if (CURRENT_CHART_MODE === 'day') {
-                labels = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
-                labels.forEach((_, i) => buckets[i] = {});
-                auditados.forEach(d => {
-                    let day = d.dateObj.getDay();
-                    if (buckets[day]) {
-                        gameConfig.algos.forEach(a => {
-                            if(d.algoritmo.includes(a.key)) {
-                                if(!buckets[day][a.key]) buckets[day][a.key] = [];
-                                buckets[day][a.key].push(d.score);
-                            }
-                        });
-                    }
-                });
+                labels = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb']; labels.forEach((_, i) => buckets[i] = {});
+                auditados.forEach(d => { let day = d.dateObj.getDay(); if (buckets[day]) { gameConfig.algos.forEach(a => { if(d.algoritmo.includes(a.key)) { if(!buckets[day][a.key]) buckets[day][a.key] = []; buckets[day][a.key].push(d.score); } }); } });
             } else if (CURRENT_CHART_MODE === 'month') {
-                labels = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-                labels.forEach((_, i) => buckets[i] = {});
-                auditados.forEach(d => {
-                    let m = d.dateObj.getMonth();
-                    if (buckets[m]) {
-                        gameConfig.algos.forEach(a => {
-                            if(d.algoritmo.includes(a.key)) {
-                                if(!buckets[m][a.key]) buckets[m][a.key] = [];
-                                buckets[m][a.key].push(d.score);
-                            }
-                        });
-                    }
-                });
+                labels = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']; labels.forEach((_, i) => buckets[i] = {});
+                auditados.forEach(d => { let m = d.dateObj.getMonth(); if (buckets[m]) { gameConfig.algos.forEach(a => { if(d.algoritmo.includes(a.key)) { if(!buckets[m][a.key]) buckets[m][a.key] = []; buckets[m][a.key].push(d.score); } }); } });
             }
-
-            // Construir Datasets
             let datasets = gameConfig.algos.map(a => {
-                let dataPoints = labels.map((_, i) => {
-                    let scores = buckets[i] ? buckets[i][a.key] : [];
-                    return scores && scores.length 
-                        ? (scores.reduce((sum, val) => sum + val, 0) / scores.length).toFixed(1) 
-                        : 0; // Se mantiene 0 para huecos, pero no afecta visualmente mucho
-                });
-
-                return {
-                    label: a.label,
-                    data: dataPoints,
-                    borderColor: a.color,
-                    backgroundColor: hexToRgba(a.color, 0.5),
-                    borderWidth: a.label === 'Consenso' ? 2 : 1,
-                    tension: 0.4,
-                    pointRadius: 3,
-                    pointHoverRadius: 5,
-                    counts: labels.map((_, i) => buckets[i] && buckets[i][a.key] ? buckets[i][a.key].length : 0)
-                };
+                let dataPoints = labels.map((_, i) => { let scores = buckets[i] ? buckets[i][a.key] : []; return scores && scores.length ? (scores.reduce((sum, val) => sum + val, 0) / scores.length).toFixed(1) : 0; });
+                return { label: a.label, data: dataPoints, borderColor: a.color, backgroundColor: hexToRgba(a.color, 0.5), borderWidth: a.label === 'Consenso' ? 2 : 1, tension: 0.4, pointRadius: 3, pointHoverRadius: 5, counts: labels.map((_, i) => buckets[i] && buckets[i][a.key] ? buckets[i][a.key].length : 0) };
             });
-
-            // Mejor Momento
-            let maxVal = 0, bestLbl = '--';
-            const consensusDS = datasets.find(d => d.label === 'Consenso') || datasets[0];
-            if(consensusDS) {
-                consensusDS.data.forEach((v, i) => { if(parseFloat(v) > maxVal) { maxVal = parseFloat(v); bestLbl = labels[i]; } });
-            }
+            let maxVal = 0, bestLbl = '--'; const consensusDS = datasets.find(d => d.label === 'Consenso') || datasets[0]; if(consensusDS) { consensusDS.data.forEach((v, i) => { if(parseFloat(v) > maxVal) { maxVal = parseFloat(v); bestLbl = labels[i]; } }); }
             document.getElementById('best-moment').textContent = bestLbl;
-
-            window.myChart = new Chart(ctx, {
-                type: 'line',
-                data: { labels: labels, datasets: datasets },
-                options: {
-                    responsive: true, 
-                    maintainAspectRatio: false,
-                    interaction: {
-                        mode: 'index',
-                        intersect: false,
-                    },
-                    scales: { 
-                        y: { beginAtZero: true, max: 100, grid: { color: '#30363d' } }, 
-                        x: { grid: { display: false } } 
-                    },
-                    plugins: { 
-                        legend: { labels: { color: '#c9d1d9' } },
-                        tooltip: {
-                            // --- AQUÍ ESTÁ EL CAMBIO DE ORDENAMIENTO ---
-                            itemSort: function(a, b) {
-                                return b.parsed.y - a.parsed.y; // Orden DESC (Mayor a Menor)
-                            },
-                            // -------------------------------------------
-                            backgroundColor: 'rgba(22, 27, 34, 0.95)',
-                            titleColor: '#fff',
-                            bodyColor: '#c9d1d9',
-                            borderColor: '#30363d',
-                            borderWidth: 1,
-                            padding: 10,
-                            callbacks: {
-                                label: function(context) {
-                                    let label = context.dataset.label || '';
-                                    if (label) label += ': ';
-                                    if (context.parsed.y !== null) label += context.parsed.y + '%';
-                                    
-                                    const count = context.dataset.counts[context.dataIndex];
-                                    if (count > 0) label += ` (${count} sims)`;
-                                    return label;
-                                }
-                            }
-                        }
-                    }
-                }
-            });
+            window.myChart = new Chart(ctx, { type: 'line', data: { labels: labels, datasets: datasets }, options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false, }, scales: { y: { beginAtZero: true, max: 100, grid: { color: '#30363d' } }, x: { grid: { display: false } } }, plugins: { legend: { labels: { color: '#c9d1d9' } }, tooltip: { itemSort: function(a, b) { return b.parsed.y - a.parsed.y; }, backgroundColor: 'rgba(22, 27, 34, 0.95)', titleColor: '#fff', bodyColor: '#c9d1d9', borderColor: '#30363d', borderWidth: 1, padding: 10, callbacks: { label: function(context) { let label = context.dataset.label || ''; if (label) label += ': '; if (context.parsed.y !== null) label += context.parsed.y + '%'; const count = context.dataset.counts[context.dataIndex]; if (count > 0) label += ` (${count} sims)`; return label; } } } } } });
         }
-
-        // --- UTILIDADES ---
-        function resetFilters() {
-            document.getElementById('f-sorteo').value = 'ALL';
-            document.getElementById('f-algo').value = 'ALL';
-            applyFilters();
-        }
-        function sortLogs(col) {
-            LOGS_SORT_COL = col;
-            LOGS_SORT_DIR = LOGS_SORT_DIR === 'asc' ? 'desc' : 'asc';
-            applyFilters();
-        }
-        function sortAggregate(col) {
-            SORT_COL = col;
-            SORT_DIR = SORT_DIR === 'asc' ? 'desc' : 'asc';
-            applyFilters();
-        }
+        function resetFilters() { document.getElementById('f-sorteo').value = 'ALL'; document.getElementById('f-algo').value = 'ALL'; applyFilters(); }
+        function sortLogs(col) { LOGS_SORT_COL = col; LOGS_SORT_DIR = LOGS_SORT_DIR === 'asc' ? 'desc' : 'asc'; applyFilters(); }
+        function sortAggregate(col) { SORT_COL = col; SORT_DIR = SORT_DIR === 'asc' ? 'desc' : 'asc'; applyFilters(); }
         function switchChartView(mode) { CURRENT_CHART_MODE = mode; applyFilters(); }
-
-        async function savePlay(btn, numsStr, id) {
-            const originalContent = btn.innerHTML;
-            btn.innerHTML = '...';
-            btn.disabled = true;
-            const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwBZd2vTrvxVdTjJnLoK2vMCR90qJqyH3ZfSDkNK4_n0aFYe3jCoeIZ3R58XNQBM1xQ3A/exec";
-            try {
-                let numbers = JSON.parse(numsStr);
-                await fetch(GOOGLE_SCRIPT_URL, {
-                    method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ numeros: numbers, jugado: "SI" })
-                });
-                localStorage.setItem(`played_${id}`, 'true');
-                btn.innerHTML = '<i data-lucide="check" width="12"></i> Listo';
-                btn.classList.add('btn-disabled');
-                lucide.createIcons();
-            } catch (error) {
-                console.error("Error guardando jugada:", error);
-                btn.innerHTML = '<i data-lucide="x" width="12"></i> Error';
-                btn.disabled = false;
-                setTimeout(() => { btn.innerHTML = originalContent; lucide.createIcons(); }, 3000);
-            }
-        }
+        async function savePlay(btn, numsStr, id) { const originalContent = btn.innerHTML; btn.innerHTML = '...'; btn.disabled = true; const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwBZd2vTrvxVdTjJnLoK2vMCR90qJqyH3ZfSDkNK4_n0aFYe3jCoeIZ3R58XNQBM1xQ3A/exec"; try { let numbers = JSON.parse(numsStr); await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ numeros: numbers, jugado: "SI" }) }); localStorage.setItem(`played_${id}`, 'true'); btn.innerHTML = '<i data-lucide="check" width="12"></i> Listo'; btn.classList.add('btn-disabled'); lucide.createIcons(); } catch (error) { console.error("Error guardando jugada:", error); btn.innerHTML = '<i data-lucide="x" width="12"></i> Error'; btn.disabled = false; setTimeout(() => { btn.innerHTML = originalContent; lucide.createIcons(); }, 3000); } }
 
         // Iniciar
         loadAllData();
