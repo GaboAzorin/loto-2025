@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🔬 Laboratorio LotoAI - Financial Master</title>
+    <title>🔬 Laboratorio LotoAI - Financial Master Pro</title>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -16,19 +16,17 @@
             --success: #2ea043;
             --warning: #d29922;
             --danger: #f85149;
-            --border: #30363d;
-            
-            /* Nuevos Colores Financieros */
             --money: #00ff41; 
             --loss: #ff3b5c;
+            --border: #30363d;
             
-            /* Colores (Usados en Badges y Texto) */
+            /* Colores de Algoritmos (Preservados) */
             --bio-color: #58a6ff;   
             --gauss-color: #f1e05a; 
             --delta-color: #20b2aa; 
             --markov-color: #ff69b4; 
             --consenso-color: #ffffff; 
-            --premium-color: #ffd700; 
+            --premium-color: #ffd700;
         }
         body { font-family: 'JetBrains Mono', monospace; background-color: var(--bg); color: var(--text); margin: 0; padding: 20px; }
         .container { max-width: 1800px; margin: 0 auto; }
@@ -54,20 +52,16 @@
 
         /* KPI Cards */
         .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px; }
-        .card { background: var(--card); border: 1px solid var(--border); padding: 15px; border-radius: 6px; margin-bottom: 30px; position: relative; overflow: hidden; }
-        .card h3 { margin: 0 0 10px 0; font-size: 0.9rem; color: #8b949e; text-transform: uppercase; letter-spacing: 1px; }
-        .card .value { font-size: 1.8rem; font-weight: bold; }
+        .card { background: var(--card); border: 1px solid var(--border); padding: 15px; border-radius: 6px; position: relative; overflow: hidden; }
+        .card h3 { margin: 0 0 10px 0; font-size: 0.8rem; color: #8b949e; text-transform: uppercase; letter-spacing: 1px; }
+        .card .value { font-size: 1.6rem; font-weight: bold; }
         
-        /* --- NUEVOS ESTILOS PARA TARJETAS FINANCIERAS --- */
+        /* Tarjetas Financieras (NUEVAS) */
         .card.money-card { border: 1px solid var(--money); background: rgba(0, 255, 65, 0.05); }
         .card.money-card .value { color: var(--money); text-shadow: 0 0 10px rgba(0, 255, 65, 0.3); }
-        .card.money-card h3 { color: #8fbc8f; }
-        
         .card.real-money { border: 1px solid var(--warning); background: rgba(210, 153, 34, 0.05); }
         .card.real-money .value { color: var(--warning); }
-        .card.real-money h3 { color: #cc9933; }
-        /* -------------------------------------------------- */
-        
+
         /* Gráficos */
         .chart-wrapper { background: var(--card); border: 1px solid var(--border); padding: 20px; border-radius: 6px; margin-bottom: 30px; }
         .chart-header-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
@@ -276,8 +270,7 @@
     </div>
 
     <script>
-        // --- CONFIGURACIÓN DE FUENTES DE DATOS ---
-        // Se agrega JUGADAS para el cálculo financiero real
+        // CONFIGURACIÓN DE DATOS
         const DATA_SOURCES = {
             'SIMS': '../data/LOTO_SIMULACIONES.csv',
             'JUGADAS': '../data/LOTO_JUGADAS.csv',
@@ -287,8 +280,7 @@
             'RACHA': '../data/RACHA_MAESTRO.csv'
         };
 
-        // --- CONFIGURACIÓN DEL MULTIVERSO VISUAL & REGLAS DE NEGOCIO ---
-        // Aquí definimos colores, qué algoritmos mostrar y reglas de costo
+        // Reglas de Juego: Costos y Visualización
         const UNIVERSE_CONFIG = {
             'LOTO': {
                 algos: [
@@ -307,7 +299,7 @@
                     {key: 'consenso', label: 'Consenso', color: '#ffffff'}
                 ],
                 hits: [3, 2, 1],
-                cost: 500 // Apuesta Estándar
+                cost: 500 // Apuesta estándar Exacta
             },
             'LOTO4': {
                 algos: [
@@ -323,17 +315,18 @@
                     {key: 'consenso', label: 'Consenso', color: '#ffffff'}
                 ],
                 hits: [10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0],
-                cost: 500 // Apuesta combinada
+                cost: 500 // Apuesta combinada (ambas puntas)
             }
         };
 
         let RAW_SIMULATIONS = [];
-        let RAW_PLAYS = []; // Almacén de jugadas reales
+        let RAW_PLAYS = [];
         let MASTERS = {}; 
         let MASTERS_DATES = {}; 
         
         // Almacenes de Inteligencia Financiera
         let MASTERS_PRIZES = {}; 
+        let MASTERS_WINNERS = {}; // NUEVO: Para Prorrateo
         let MASTERS_COMODIN = {}; // Vital para Loto
         
         let CURRENT_UNIVERSE = 'LOTO';
@@ -384,7 +377,7 @@
         }
 
         // --- PROCESADOR MAESTRO EXPLÍCITO ---
-        // Extrae números, fechas, comodines y premios de los CSVs históricos
+        // Extrae números, fechas, comodines, premios y GANADORES de los CSVs históricos
         function processMaster(gameKey, text) {
             const lines = text.trim().split('\n');
             if (lines.length < 2) return;
@@ -404,8 +397,10 @@
             // Comodín para Loto
             const idxComodin = headers.indexOf('LOTO_comodin');
 
-            // Índices de Premios (Explícitos para robustez)
+            // Índices de Premios y Ganadores (Explícitos para robustez)
             let prizeIndices = {};
+            let winnerIndices = {}; // NUEVO MAPEO PARA GANADORES
+
             if (gameKey === 'LOTO') {
                 prizeIndices = {
                     'LOTO': headers.indexOf('LOTO_MONTO'),
@@ -418,12 +413,27 @@
                     'SDUPLA': headers.indexOf('SUPER_DUPLA_2_ACIERTOS_COMODIN_MONTO'),
                     'POZO_REAL': headers.indexOf('LOTO_POZO_REAL') // Fallback si LOTO_MONTO es 0
                 };
+                winnerIndices = {
+                    'LOTO': headers.indexOf('LOTO_GANADORES'),
+                    'SQUINA': headers.indexOf('SUPER_QUINA_5_ACIERTOS_COMODIN_GANADORES'),
+                    'QUINA': headers.indexOf('QUINA_5_ACIERTOS_GANADORES'),
+                    'SCUATERNA': headers.indexOf('SUPER_CUATERNA_4_ACIERTOS_COMODIN_GANADORES'),
+                    'CUATERNA': headers.indexOf('CUATERNA_4_ACIERTOS_GANADORES'),
+                    'STERNA': headers.indexOf('SUPER_TERNA_3_ACIERTOS_COMODIN_GANADORES'),
+                    'TERNA': headers.indexOf('TERNA_3_ACIERTOS_GANADORES'),
+                    'SDUPLA': headers.indexOf('SUPER_DUPLA_2_ACIERTOS_COMODIN_GANADORES')
+                };
             }
             if (gameKey === 'LOTO4') {
                 prizeIndices = {
                     '4P': headers.indexOf('4_PUNTOS_MONTO'),
                     '3P': headers.indexOf('3_PUNTOS_MONTO'),
                     '2P': headers.indexOf('2_PUNTOS_MONTO')
+                };
+                winnerIndices = {
+                    '4P': headers.indexOf('4_PUNTOS_GANADORES'),
+                    '3P': headers.indexOf('3_PUNTOS_GANADORES'),
+                    '2P': headers.indexOf('2_PUNTOS_GANADORES')
                 };
             }
 
@@ -432,6 +442,7 @@
             const map = {};
             const dateMap = {};
             const prizeMap = {};
+            const winnerMap = {};
             const comodinMap = {};
 
             for (let i = 1; i < lines.length; i++) {
@@ -449,9 +460,12 @@
                 // Comodín
                 if(idxComodin !== -1) comodinMap[sorteo] = parseInt(row[idxComodin]);
 
-                // Premios
-                if (Object.keys(prizeIndices).length > 0) {
+                // Premios y Ganadores (Lógica explícita)
+                if (gameKey === 'LOTO' || gameKey === 'LOTO4') {
                     prizeMap[sorteo] = {};
+                    winnerMap[sorteo] = {};
+                    
+                    // Cargar Montos
                     for (const [key, idx] of Object.entries(prizeIndices)) {
                         if (idx !== -1) {
                             let val = parseFloat(row[idx]);
@@ -460,11 +474,22 @@
                             prizeMap[sorteo][key] = 0;
                         }
                     }
+                    
+                    // Cargar Ganadores (Para prorrateo)
+                    for (const [key, idx] of Object.entries(winnerIndices)) {
+                        if (idx !== -1) {
+                            let val = parseInt(row[idx]);
+                            winnerMap[sorteo][key] = isNaN(val) ? 0 : val;
+                        } else {
+                            winnerMap[sorteo][key] = 0;
+                        }
+                    }
                 }
             }
             MASTERS[gameKey] = map;
             MASTERS_DATES[gameKey] = dateMap;
             MASTERS_PRIZES[gameKey] = prizeMap;
+            MASTERS_WINNERS[gameKey] = winnerMap; // Guardamos ganadores
             MASTERS_COMODIN[gameKey] = comodinMap;
         }
 
@@ -480,8 +505,10 @@
                 try {
                     obj.id = parts[0];
                     obj.fechaStr = parts[1];
-                    obj.dateObj = new Date(parts[1].replace(' ', 'T'));
-                    
+                    let dtRaw = parts[1].replace(' ', 'T');
+                    obj.dateObj = new Date(dtRaw);
+                    if(isNaN(obj.dateObj)) obj.dateObj = new Date();
+
                     if (headers.includes('juego')) {
                         obj.juego = parts[2]; 
                         obj.numeros = parts[3];
@@ -535,7 +562,7 @@
         }
 
         // =================================================================
-        // 💰 MOTOR FINANCIERO AVANZADO (CÁLCULO DE PREMIOS)
+        // 💰 MOTOR FINANCIERO AVANZADO (CÁLCULO DE PREMIOS CON PRORRATEO)
         // =================================================================
         function calculateWinningsDetailed(game, myNums, winNums, comodin, drawId) {
             if (!myNums || !winNums) return 0;
@@ -575,26 +602,35 @@
                 return total;
             }
 
-            // --- LOTO CLÁSICO (Con Comodín y Pozos) ---
+            // --- LOTO CLÁSICO (Con Prorrateo de Pozo) ---
             if (game === 'LOTO') {
                 const hits = myNums.filter(n => winNums.includes(n)).length;
                 const hasComodin = comodin && myNums.includes(comodin);
                 const prizes = MASTERS_PRIZES['LOTO'][drawId] || {};
+                const winners = MASTERS_WINNERS['LOTO'][drawId] || {};
+
+                // Helper para calcular premio individual (Pozo / Ganadores)
+                // Si ganadores es 0, asumimos que nos llevamos el pozo completo (Fantasía)
+                const getPerPerson = (catKey) => {
+                    const totalAmount = prizes[catKey] || 0;
+                    const count = winners[catKey] || 0;
+                    if (count > 0) return totalAmount / count; // Prorrateo real
+                    return totalAmount; // Me lo llevo yo solo
+                };
 
                 // Se paga SOLO el premio de mayor jerarquía alcanzado
                 if (hits === 6) {
                     let jackpot = prizes['LOTO'] || 0;
-                    // Si nadie ganó (0), usamos el Pozo Real para la fantasía
                     if (jackpot === 0) jackpot = prizes['POZO_REAL'] || 0; 
-                    return jackpot;
+                    return jackpot; 
                 }
-                if (hits === 5 && hasComodin) return prizes['SQUINA'] || 0;
-                if (hits === 5) return prizes['QUINA'] || 0;
-                if (hits === 4 && hasComodin) return prizes['SCUATERNA'] || 0;
-                if (hits === 4) return prizes['CUATERNA'] || 0;
-                if (hits === 3 && hasComodin) return prizes['STERNA'] || 0;
-                if (hits === 3) return prizes['TERNA'] || 0;
-                if (hits === 2 && hasComodin) return prizes['SDUPLA'] || 0;
+                if (hits === 5 && hasComodin) return getPerPerson('SQUINA');
+                if (hits === 5) return getPerPerson('QUINA');
+                if (hits === 4 && hasComodin) return getPerPerson('SCUATERNA');
+                if (hits === 4) return getPerPerson('CUATERNA');
+                if (hits === 3 && hasComodin) return getPerPerson('STERNA');
+                if (hits === 3) return getPerPerson('TERNA');
+                if (hits === 2 && hasComodin) return getPerPerson('SDUPLA');
                 
                 return 0;
             }
@@ -612,14 +648,22 @@
                 return 0;
             }
 
-            // --- LOTO 4 (Lectura Directa de CSV) ---
+            // --- LOTO 4 (Lectura Directa de CSV con Prorrateo) ---
             if (game === 'LOTO4') {
                 const hits = myNums.filter(n => winNums.includes(n)).length;
                 const prizes = MASTERS_PRIZES['LOTO4'][drawId] || {};
+                const winners = MASTERS_WINNERS['LOTO4'][drawId] || {};
+
+                const getPerPerson = (catKey) => {
+                    const totalAmount = prizes[catKey] || 0;
+                    const count = winners[catKey] || 0;
+                    if (count > 0) return totalAmount / count;
+                    return totalAmount;
+                };
                 
-                if (hits === 4) return prizes['4P'] || 0;
-                if (hits === 3) return prizes['3P'] || 0;
-                if (hits === 2) return prizes['2P'] || 0;
+                if (hits === 4) return getPerPerson('4P');
+                if (hits === 3) return getPerPerson('3P');
+                if (hits === 2) return getPerPerson('2P');
                 return 0;
             }
 
@@ -668,8 +712,8 @@
                 });
             }
 
-            // Renderizar valores
-            const fmt = (n) => "$" + n.toLocaleString('es-CL');
+            // Renderizar valores (Sin decimales para CLP)
+            const fmt = (n) => "$" + n.toLocaleString('es-CL', {maximumFractionDigits: 0});
             document.getElementById('hypo-invest').textContent = fmt(hypoInvest);
             document.getElementById('hypo-win').textContent = fmt(hypoWin);
             document.getElementById('real-invest').textContent = fmt(realInvest);
