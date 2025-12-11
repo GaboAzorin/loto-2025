@@ -653,11 +653,11 @@
         // Estado Global de la Aplicación
         let RAW_SIMULATIONS = [];
         let RAW_PLAYS = [];
-        let MASTERS = {};           // { 'LOTO': { '5358': [1,2,3...] } }
-        let MASTERS_DATES = {};     // { 'LOTO': { '5358': '2025-12-09' } }
-        let MASTERS_PRIZES = {};    // { 'LOTO': { '5358': { 'QUINA': 5000000... } } }
-        let MASTERS_WINNERS = {};   // { 'LOTO': { '5358': { 'QUINA': 5... } } }  <-- VITAL PARA PRORRATEO
-        let MASTERS_COMODIN = {};   // { 'LOTO': { '5358': 7 } }
+        let MASTERS = {}; 
+        let MASTERS_DATES = {}; 
+        let MASTERS_PRIZES = {}; 
+        let MASTERS_WINNERS = {}; 
+        let MASTERS_COMODIN = {}; 
         
         let CURRENT_UNIVERSE = 'LOTO';
         let CURRENT_CHART_MODE = 'hour';
@@ -898,7 +898,6 @@
         // =========================================================
         
         // Función Nuclear: Calcula cuánto ganó UNA sola jugada
-        // Retorna: { amount: 1500, category: 'Súper Dupla', formula: '$4.5M / 3000 ganadores' }
         function calculateWinningsDetailed(game, myNums, winNums, comodin, drawId) {
             if (!myNums || !winNums) return { amount: 0, category: '', formula: '' };
 
@@ -1041,6 +1040,9 @@
             const winningNums = MASTERS[CURRENT_UNIVERSE][targetDraw];
             const comodin = MASTERS_COMODIN[CURRENT_UNIVERSE] ? MASTERS_COMODIN[CURRENT_UNIVERSE][targetDraw] : null;
 
+            // --- 2. CAMBIO SOLICITADO: ACUMULADOR PARA ORDENAR ---
+            let winningRows = [];
+
             if (winningNums) {
                 filteredSims.forEach(s => {
                     const myNums = JSON.parse(s.numeros);
@@ -1048,31 +1050,46 @@
                     
                     if (res.amount > 0) {
                         hypoWin += res.amount;
-                        
-                        // --- AGREGAR A TABLA DE AUDITORÍA ---
-                        // Formateo de números con colores (Verde=Acierto, Dorado=Comodín)
-                        const numsFormatted = myNums.map(n => {
-                            let style = "";
-                            if (winningNums.includes(n)) style = "color:var(--success); font-weight:bold;";
-                            if (n === comodin) style = "color:var(--gold); font-weight:bold; text-shadow:0 0 5px rgba(255,215,0,0.5);";
-                            return `<span style="${style}">${n}</span>`;
-                        }).join(", ");
-
-                        const tr = document.createElement('tr');
-                        tr.className = 'audit-row-win';
-                        tr.innerHTML = `
-                            <td>${s.fechaStr}</td>
-                            <td><span class="algo-badge" style="color:var(--text); border:1px solid var(--border);">${s.algoritmo.split('_')[0]}</span></td>
-                            <td style="font-family:monospace; font-size:0.9em;">[ ${numsFormatted} ]</td>
-                            <td style="text-align:center; font-weight:bold;">${s.aciertos}</td>
-                            <td>${res.category}</td>
-                            <td><small>${res.formula}</small></td>
-                            <td class="audit-money">$${res.amount.toLocaleString('es-CL')}</td>
-                        `;
-                        auditBody.appendChild(tr);
+                        // Guardamos la fila en memoria para ordenar después
+                        winningRows.push({ s, res, myNums });
                     }
                 });
             }
+
+            // --- 3. CAMBIO SOLICITADO: ORDENAR (Monto Desc > Fecha Desc) ---
+            winningRows.sort((a, b) => {
+                if (b.res.amount !== a.res.amount) return b.res.amount - a.res.amount; // 1. Monto Mayor primero
+                // Comparar Fechas (Como Strings ISO funcionan lexicográficamente si están bien formadas, o usamos Date obj)
+                // Usamos id que es timestamp en este sistema, o dateObj
+                return b.s.dateObj - a.s.dateObj; // 2. Más reciente primero
+            });
+
+            // --- 4. RENDERIZAR FILAS ORDENADAS ---
+            winningRows.forEach(row => {
+                const s = row.s;
+                const res = row.res;
+                const myNums = row.myNums;
+
+                // --- 2. CAMBIO SOLICITADO: PINTAR ACIERTOS Y COMODÍN ---
+                const numsFormatted = myNums.map(n => {
+                    let style = "";
+                    if (winningNums.includes(n)) style = "color:var(--success); font-weight:bold;";
+                    if (n === comodin) style = "color:var(--gold); font-weight:bold; text-shadow:0 0 5px rgba(255,215,0,0.5);";
+                    return `<span style="${style}">${n}</span>`;
+                }).join(", ");
+
+                const tr = document.createElement('tr');
+                tr.className = 'audit-row-win';
+                tr.innerHTML = `
+                    <td>${s.fechaStr}</td> <td><span class="algo-badge" style="color:var(--text); border:1px solid var(--border);">${s.algoritmo.split('_')[0]}</span></td>
+                    <td style="font-family:monospace; font-size:0.9em;">[ ${numsFormatted} ]</td>
+                    <td style="text-align:center; font-weight:bold;">${s.aciertos}</td>
+                    <td>${res.category}</td>
+                    <td><small>${res.formula}</small></td>
+                    <td class="audit-money">$${res.amount.toLocaleString('es-CL')}</td>
+                `;
+                auditBody.appendChild(tr);
+            });
 
             // 3. Realidad
             const realPlays = RAW_PLAYS.filter(p => p.juego === CURRENT_UNIVERSE && p.objetivo === targetDraw);
