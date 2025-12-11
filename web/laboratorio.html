@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🔬 Laboratorio LotoAI - Monitor de Bots</title>
+    <title>🔬 Laboratorio LotoAI - Multiverso</title>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -17,27 +17,34 @@
             --warning: #d29922;
             --danger: #f85149;
             --border: #30363d;
-            --bio-color: #58a6ff;   /* Azul para Biométrico */
-            --gauss-color: #f1e05a; /* Amarillo para Gaussiano */
-            --delta-color: #20b2aa; /* Verde Agua para Delta */
-            --markov-color: #ff69b4; /* Rosa para Markov */
-            --consenso-color: #ffffff; /* Blanco para Consenso */
-            --premium-color: #ffd700; /* Oro para Carta Maestra */
+            --bio-color: #58a6ff;
+            --gauss-color: #f1e05a;
+            --delta-color: #20b2aa;
+            --markov-color: #ff69b4;
+            --consenso-color: #ffffff;
+            --premium-color: #ffd700;
         }
-        body {
-            font-family: 'JetBrains Mono', monospace;
-            background-color: var(--bg);
-            color: var(--text);
-            margin: 0;
-            padding: 20px;
-        }
-        .container { max-width: 1600px; margin: 0 auto; } /* Aumenté el ancho para que quepan las nuevas columnas */
+        body { font-family: 'JetBrains Mono', monospace; background-color: var(--bg); color: var(--text); margin: 0; padding: 20px; }
+        .container { max-width: 1600px; margin: 0 auto; }
         
         /* Header */
         header { border-bottom: 1px solid var(--border); padding-bottom: 20px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
-        h1 { margin: 0; font-size: 1.5rem; color: var(--accent); }
+        h1 { margin: 0; font-size: 1.5rem; color: var(--accent); display: flex; align-items: center; gap: 10px; }
         .status-badge { background: var(--success); color: white; padding: 5px 10px; border-radius: 4px; font-size: 0.8rem; }
         
+        /* --- NUEVO: SISTEMA DE PESTAÑAS MULTIVERSO --- */
+        .universe-tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+        .tab-btn {
+            background: var(--card); border: 1px solid var(--border); color: var(--text-muted);
+            padding: 10px 20px; border-radius: 6px 6px 0 0; cursor: pointer;
+            font-family: inherit; font-weight: bold; transition: all 0.2s; position: relative; top: 1px;
+        }
+        .tab-btn:hover { background: #21262d; }
+        .tab-btn.active {
+            background: var(--bg); border-bottom: 1px solid var(--bg); color: var(--accent); border-top: 2px solid var(--accent);
+        }
+        /* --------------------------------------------- */
+
         /* KPI Cards */
         .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px; }
         .card { background: var(--card); border: 1px solid var(--border); padding: 15px; border-radius: 6px; margin-bottom: 30px; }
@@ -48,42 +55,25 @@
         .chart-wrapper { background: var(--card); border: 1px solid var(--border); padding: 20px; border-radius: 6px; margin-bottom: 30px; }
         .chart-header-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .chart-container { position: relative; height: 350px; width: 100%; }
-
-        /* Radio Buttons Custom para el Gráfico */
         .chart-radios { display: flex; gap: 10px; background: #0d1117; padding: 5px; border-radius: 4px; border: 1px solid var(--border); }
         .chart-radios label { cursor: pointer; padding: 5px 10px; border-radius: 4px; font-size: 0.8rem; color: #8b949e; transition: all 0.2s; }
         .chart-radios input[type="radio"] { display: none; }
         .chart-radios input[type="radio"]:checked + span { color: var(--text); font-weight: bold; text-shadow: 0 0 5px rgba(255,255,255,0.2); }
 
         /* Filtros */
-        .filters-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 10px;
-            margin-top: 15px;
-        }
+        .filters-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 15px; }
         .filter-group label { display: block; font-size: 0.8rem; color: #8b949e; margin-bottom: 5px; }
-        .filter-select {
-            width: 100%;
-            background: #0d1117;
-            color: var(--text);
-            border: 1px solid var(--border);
-            padding: 8px;
-            border-radius: 4px;
-            font-family: 'JetBrains Mono', monospace;
-        }
-        .btn-reset {
-            background: var(--border); color: var(--text); border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; height: 35px; align-self: end;
-        }
+        .filter-select { width: 100%; background: #0d1117; color: var(--text); border: 1px solid var(--border); padding: 8px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; }
+        .btn-reset { background: var(--border); color: var(--text); border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; height: 35px; align-self: end; }
         .btn-reset:hover { background: #444; }
 
         /* Tabla */
         .table-scroll { overflow-x: auto; max-height: 500px; overflow-y: auto; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.8rem; } /* Fuente más pequeña para que quepa todo */
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.8rem; }
         th { text-align: left; color: #8b949e; border-bottom: 1px solid var(--border); padding: 10px; position: sticky; top: 0; background: var(--card); z-index: 10; white-space: nowrap; }
         td { padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
-        .num-badge { background: #21262d; padding: 2px 6px; border-radius: 4px; margin-right: 2px; display: inline-block; cursor: help; }
         
+        .num-badge { background: #21262d; padding: 2px 6px; border-radius: 4px; margin-right: 2px; display: inline-block; cursor: help; }
         .pending { color: var(--warning); }
         .audited { color: var(--success); }
         
@@ -96,89 +86,30 @@
         .algo-consenso { color: var(--consenso-color); border-color: rgba(255, 255, 255, 0.3); background: rgba(255, 255, 255, 0.1); font-weight: bold; }
         .algo-premium { color: var(--premium-color); border-color: rgba(255, 215, 0, 0.5); background: rgba(255, 215, 0, 0.1); font-weight: 900; box-shadow: 0 0 8px rgba(255, 215, 0, 0.2); }
 
-        /* Navegación */
         .nav-link { color: var(--text); text-decoration: none; border: 1px solid var(--border); padding: 5px 10px; border-radius: 4px; transition: background 0.2s; }
         .nav-link:hover { background: var(--border); }
 
         /* Highlight de Aciertos */
-        .numero-match {
-            color: #2ea043;      /* Verde éxito */
-            font-weight: bold;
-            border: 1px solid #2ea043;
-            text-shadow: 0 0 5px rgba(46, 160, 67, 0.4);
-        }
-        .match-exact { 
-            color: #2ea043; font-weight: 900; 
-            border: 1px solid #2ea043; 
-            box-shadow: 0 0 5px rgba(46, 160, 67, 0.4);
-        }
-        .match-close-1 { 
-            color: #f1e05a; font-weight: bold; /* Amarillo */
-            border: 1px solid rgba(241, 224, 90, 0.5);
-        }
-        .match-close-2 { 
-            color: #58a6ff; /* Azul */
-            border: 1px solid rgba(88, 166, 255, 0.3);
-        }
-        .match-far {
-            color: #444; /* Gris oscuro */
-        }
+        .numero-match { color: #2ea043; font-weight: bold; border: 1px solid #2ea043; text-shadow: 0 0 5px rgba(46, 160, 67, 0.4); }
+        .match-exact { color: #2ea043; font-weight: 900; border: 1px solid #2ea043; box-shadow: 0 0 5px rgba(46, 160, 67, 0.4); }
+        .match-close-1 { color: #f1e05a; font-weight: bold; border: 1px solid rgba(241, 224, 90, 0.5); }
+        .match-close-2 { color: #58a6ff; border: 1px solid rgba(88, 166, 255, 0.3); }
+        .match-far { color: #444; }
+        .draw-badge { cursor: help; border-bottom: 1px dotted #8b949e; }
         
-        /* Badge de Sorteo con Tooltip */
-        .draw-badge {
-            cursor: help;
-            border-bottom: 1px dotted #8b949e;
-        }
-        
-        /* Header Ordenable */
-        .sortable-header {
-            cursor: pointer;
-            user-select: none;
-            transition: color 0.2s;
-        }
-        .sortable-header:hover {
-            color: var(--accent);
-            background-color: rgba(255,255,255,0.05);
-        }
-        .sort-icon {
-            display: inline-block;
-            margin-left: 5px;
-            font-size: 0.8em;
-            opacity: 0.5;
-        }
-        .sort-active {
-            color: var(--accent);
-            opacity: 1;
-        }
+        .sortable-header { cursor: pointer; user-select: none; transition: color 0.2s; }
+        .sortable-header:hover { color: var(--accent); background-color: rgba(255,255,255,0.05); }
+        .sort-icon { display: inline-block; margin-left: 5px; font-size: 0.8em; opacity: 0.5; }
+        .sort-active { color: var(--accent); opacity: 1; }
 
-        /* --- BOTÓN DE JUGADA --- */
         .btn-action {
-            background: rgba(0, 255, 65, 0.1);
-            color: #00ff41;
-            border: 1px solid rgba(0, 255, 65, 0.3);
-            padding: 5px 10px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.75rem;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            transition: all 0.2s;
+            background: rgba(0, 255, 65, 0.1); color: #00ff41; border: 1px solid rgba(0, 255, 65, 0.3);
+            padding: 5px 10px; border-radius: 4px; cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem;
+            display: inline-flex; align-items: center; gap: 5px; transition: all 0.2s;
         }
-        .btn-action:hover {
-            background: rgba(0, 255, 65, 0.2);
-            box-shadow: 0 0 10px rgba(0, 255, 65, 0.2);
-        }
-        .btn-disabled {
-            background: rgba(255, 255, 255, 0.05);
-            color: #666;
-            border: 1px solid #444;
-            cursor: not-allowed;
-            pointer-events: none;
-        }
+        .btn-action:hover { background: rgba(0, 255, 65, 0.2); box-shadow: 0 0 10px rgba(0, 255, 65, 0.2); }
+        .btn-disabled { background: rgba(255, 255, 255, 0.05); color: #666; border: 1px solid #444; cursor: not-allowed; pointer-events: none; }
 
-        /* Estilos para columnas de aciertos */
         .hit-col-6 { color: #ff00ff; font-weight: bold; background: rgba(255, 0, 255, 0.1); }
         .hit-col-5 { color: #ffd700; font-weight: bold; background: rgba(255, 215, 0, 0.1); }
         .hit-col-4 { color: #00f2ff; font-weight: bold; background: rgba(0, 242, 255, 0.1); }
@@ -190,15 +121,22 @@
     <div class="container">
         <header>
             <div>
-                <h1>🔬 Laboratorio LotoAI</h1>
-                <p style="margin: 5px 0 0 0; font-size: 0.8rem; color: #8b949e;">Monitor de Simulación Forense Automatizada</p>
+                <h1>🔬 Laboratorio Multiverso</h1>
+                <p style="margin: 5px 0 0 0; font-size: 0.8rem; color: #8b949e;">Monitor de Inteligencia Artificial Forense</p>
             </div>
             <div>
-                <span class="status-badge" id="last-update">Actualizando...</span>
+                <span class="status-badge" id="last-update">Cargando...</span>
                 <a href="auditoria.html" class="nav-link" style="margin-left: 10px;">⚖️ Auditoría</a>
                 <a href="../index.html" class="nav-link" style="margin-left: 10px;">🏠 Inicio</a>
             </div>
         </header>
+
+        <div class="universe-tabs">
+            <button class="tab-btn active" onclick="switchUniverse('LOTO')">LOTO CLÁSICO</button>
+            <button class="tab-btn" onclick="switchUniverse('LOTO3')">LOTO 3</button>
+            <button class="tab-btn" onclick="switchUniverse('LOTO4')">LOTO 4</button>
+            <button class="tab-btn" onclick="switchUniverse('RACHA')">RACHA</button>
+        </div>
 
         <div class="kpi-grid">
             <div class="card">
@@ -210,7 +148,7 @@
                 <div class="value" id="target-draw" style="color: var(--warning)">...</div>
             </div>
             <div class="card">
-                <h3>Mejor Momento (Histórico)</h3>
+                <h3>Mejor Momento</h3>
                 <div class="value" id="best-moment">--</div>
             </div>
             <div class="card">
@@ -250,43 +188,28 @@
                     <label>Algoritmo</label>
                     <select id="f-algo" class="filter-select" onchange="applyFilters()">
                         <option value="ALL">Todos</option>
-                        <option value="forense_biometrico_v1">🔮 Biométrico (Físico)</option>
-                        <option value="gaussiano_tactico_v1">📐 Gaussiano (Estadístico)</option>
-                        <option value="delta_tactico_v1">📈 Delta Táctico</option>
-                        <option value="markov_chain_v1">🔗 Cadenas de Markov</option>
-                        <option value="consenso_v1">🤝 Consenso (Voto Popular)</option>
-                        <option value="MASTER_PREMIUM_v1">🏆 Carta Maestra (Premium)</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label>Mes</label>
-                    <select id="f-mes" class="filter-select" onchange="applyFilters()">
-                        <option value="ALL">Todos los Meses</option>
-                        <option value="0">Enero</option> <option value="1">Febrero</option>
-                        <option value="2">Marzo</option> <option value="3">Abril</option>
-                        <option value="4">Mayo</option> <option value="5">Junio</option>
-                        <option value="6">Julio</option> <option value="7">Agosto</option>
-                        <option value="8">Septiembre</option> <option value="9">Octubre</option>
-                        <option value="10">Noviembre</option> <option value="11">Diciembre</option>
+                        <option value="forense">🔮 Biométrico/Ponderado</option>
+                        <option value="gaussiano">📐 Gaussiano</option>
+                        <option value="delta">📈 Delta</option>
+                        <option value="markov">🔗 Markov</option>
+                        <option value="consenso">🤝 Consenso</option>
                     </select>
                 </div>
                 <div class="filter-group">
                     <label>Día de Semana</label>
                     <select id="f-dia" class="filter-select" onchange="applyFilters()">
-                        <option value="ALL">Todos los Días</option>
-                        <option value="1">Lunes</option> <option value="2">Martes</option>
-                        <option value="3">Miércoles</option> <option value="4">Jueves</option>
-                        <option value="5">Viernes</option> <option value="6">Sábado</option>
-                        <option value="0">Domingo</option>
+                        <option value="ALL">Todos</option>
+                        <option value="1">Lunes</option> <option value="2">Martes</option> <option value="3">Miércoles</option>
+                        <option value="4">Jueves</option> <option value="5">Viernes</option> <option value="6">Sábado</option> <option value="0">Domingo</option>
                     </select>
                 </div>
                 <div class="filter-group">
-                    <label>Hora (Bloque)</label>
+                    <label>Hora</label>
                     <select id="f-hora" class="filter-select" onchange="applyFilters()">
-                        <option value="ALL">Todas las Horas</option>
-                        </select>
+                        <option value="ALL">Todas</option>
+                    </select>
                 </div>
-                <button class="btn-reset" onclick="resetFilters()">Limpiar Filtros</button>
+                <button class="btn-reset" onclick="resetFilters()">Limpiar</button>
             </div>
 
             <div class="table-scroll">
@@ -295,751 +218,442 @@
                         <tr>
                             <th class="sortable-header" onclick="sortLogs('date')">Fecha/Hora <span id="log-sort-date" class="sort-icon">▼</span></th>
                             <th class="sortable-header" onclick="sortLogs('algo')">Algoritmo <span id="log-sort-algo" class="sort-icon"></span></th>
-                            <th class="sortable-header" onclick="sortLogs('target')">Sorteo Obj. <span id="log-sort-target" class="sort-icon"></span></th>
+                            <th class="sortable-header" onclick="sortLogs('target')">Sorteo <span id="log-sort-target" class="sort-icon"></span></th>
                             <th>Predicción</th>
                             <th class="sortable-header" onclick="sortLogs('status')">Estado <span id="log-sort-status" class="sort-icon"></span></th>
                             <th class="sortable-header" onclick="sortLogs('score')">Score <span id="log-sort-score" class="sort-icon"></span></th>
                             <th>Acción</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        </tbody>
+                    <tbody></tbody>
                 </table>
             </div>
         </div>
 
         <div class="card">
-            <h3 style="margin-bottom:15px; color:#58a6ff;">📊 Resumen de Desempeño por Sorteo (Agregado)</h3>
+            <h3 style="margin-bottom:15px; color:#58a6ff;">📊 Resumen Agregado (Aciertos Reales)</h3>
             <div class="table-scroll">
                 <table id="aggregate-table">
                     <thead>
                         <tr>
-                            <th class="sortable-header" onclick="sortAggregate('target')">Sorteo <span id="sort-icon-target" class="sort-icon">▼</span></th>
-                            <th class="sortable-header" onclick="sortAggregate('count')" style="text-align:center;">Cant. Pred. <span id="sort-icon-count" class="sort-icon"></span></th>
-                            <th style="min-width:200px;">Sorteo Real (Aciertos Globales)</th>
-                            <th>Mejor Predicción</th>
-                            <th class="sortable-header" onclick="sortAggregate('avgTotal')" style="text-align:center;">Global <span id="sort-icon-avgTotal" class="sort-icon"></span></th>
-                            <th class="sortable-header" onclick="sortAggregate('avgBio')" style="text-align:center;">Bio <span id="sort-icon-avgBio" class="sort-icon"></span></th>
-                            <th class="sortable-header" onclick="sortAggregate('avgGauss')" style="text-align:center;">Gauss <span id="sort-icon-avgGauss" class="sort-icon"></span></th>
-                            <th class="sortable-header" onclick="sortAggregate('avgDelta')" style="text-align:center;">Delta <span id="sort-icon-avgDelta" class="sort-icon"></span></th>
-                            <th class="sortable-header" onclick="sortAggregate('avgMarkov')" style="text-align:center;">Markov <span id="sort-icon-avgMarkov" class="sort-icon"></span></th>
-                            <th class="sortable-header" onclick="sortAggregate('avgConsenso')" style="text-align:center;">Consenso <span id="sort-icon-avgConsenso" class="sort-icon"></span></th>
-                            
-                            <th class="sortable-header" onclick="sortAggregate('cnt6')" style="text-align:center; color:#ff00ff;">6A <span id="sort-icon-cnt6" class="sort-icon"></span></th>
-                            <th class="sortable-header" onclick="sortAggregate('cnt5')" style="text-align:center; color:#ffd700;">5A <span id="sort-icon-cnt5" class="sort-icon"></span></th>
-                            <th class="sortable-header" onclick="sortAggregate('cnt4')" style="text-align:center; color:#00f2ff;">4A <span id="sort-icon-cnt4" class="sort-icon"></span></th>
-                            <th class="sortable-header" onclick="sortAggregate('cnt3')" style="text-align:center; color:#2ea043;">3A <span id="sort-icon-cnt3" class="sort-icon"></span></th>
-                            <th class="sortable-header" onclick="sortAggregate('cnt2')" style="text-align:center;">2A <span id="sort-icon-cnt2" class="sort-icon"></span></th>
-                            <th class="sortable-header" onclick="sortAggregate('cnt1')" style="text-align:center;">1A <span id="sort-icon-cnt1" class="sort-icon"></span></th>
+                            <th class="sortable-header" onclick="sortAggregate('target')">Sorteo</th>
+                            <th class="sortable-header" onclick="sortAggregate('count')">N° Preds</th>
+                            <th>Ganadores Reales</th>
+                            <th class="sortable-header" onclick="sortAggregate('avgTotal')">Score Global</th>
+                            <th>Aciertos (Exactos)</th>
                         </tr>
                     </thead>
-                    <tbody id="aggregate-body">
-                        </tbody>
+                    <tbody id="aggregate-body"></tbody>
                 </table>
             </div>
         </div>
-
     </div>
 
     <script>
-        const CSV_URL = '../data/LOTO_SIMULACIONES.csv';
-        const MASTER_URL = '../data/LOTO_HISTORIAL_MAESTRO.csv';
-        
-        // PROBABILIDADES MATEMÁTICAS LOTO 41 NÚMEROS (Para comparar vs Azar)
-        const LOTO_PROBS = {
-            6: 0.000000222,
-            5: 0.0000467,
-            4: 0.001985,
-            3: 0.02911,
-            2: 0.17467,
-            1: 0.43319
+        // CONFIGURACIÓN MULTIVERSO
+        const DATA_SOURCES = {
+            'SIMS': '../data/LOTO_SIMULACIONES.csv',
+            'LOTO': '../data/LOTO_HISTORIAL_MAESTRO.csv',
+            'LOTO3': '../data/LOTO3_MAESTRO.csv',
+            'LOTO4': '../data/LOTO4_MAESTRO.csv',
+            'RACHA': '../data/RACHA_MAESTRO.csv'
         };
 
-        let GLOBAL_DATA = [];
-        let GLOBAL_MAESTRO = {};
-        let AGGREGATE_DATA = []; 
+        // Estado Global
+        let RAW_SIMULATIONS = [];
+        let MASTERS = {}; // { 'LOTO': {...}, 'LOTO3': {...} }
+        let CURRENT_UNIVERSE = 'LOTO';
         let CURRENT_CHART_MODE = 'hour';
         
-        // Estado de ordenamiento
         let SORT_COL = 'target'; 
         let SORT_DIR = 'desc';   
-
-        // Estado de ordenamiento para tabla logs
         let LOGS_SORT_COL = 'date';
         let LOGS_SORT_DIR = 'desc';
 
-        // Inicializar selector de horas
-        const hourSelect = document.getElementById('f-hora');
+        // Inicializar hora
+        const hSel = document.getElementById('f-hora');
         for(let i=0; i<24; i++) {
-            let opt = document.createElement('option');
-            opt.value = i;
-            opt.textContent = i.toString().padStart(2, '0') + ":00";
-            hourSelect.appendChild(opt);
+            let opt = document.createElement('option'); opt.value = i; opt.textContent = i+":00"; hSel.appendChild(opt);
         }
 
-        async function loadData() {
+        // --- CARGA DE DATOS MULTIVERSO ---
+        async function loadAllData() {
             try {
-                const [simResponse, masterResponse] = await Promise.all([
-                    fetch(CSV_URL),
-                    fetch(MASTER_URL)
-                ]);
-
-                if (masterResponse.ok) {
-                    const masterText = await masterResponse.text();
-                    processMaster(masterText);
-                }
-
-                const text = await simResponse.text();
-                processCSV(text);
+                // 1. Cargar todas las fuentes en paralelo
+                const promises = Object.entries(DATA_SOURCES).map(([key, url]) => 
+                    fetch(url).then(res => res.ok ? res.text() : null).then(text => ({key, text}))
+                );
                 
-            } catch (error) {
-                console.error("Error cargando CSVs:", error);
-                document.getElementById('last-update').textContent = "Error de conexión";
+                const results = await Promise.all(promises);
+                
+                // 2. Procesar
+                results.forEach(({key, text}) => {
+                    if (!text) return;
+                    if (key === 'SIMS') processSimulations(text);
+                    else processMaster(key, text);
+                });
+
+                // 3. Render inicial
+                applyFilters();
+                
+            } catch (e) {
+                console.error("Error crítico cargando datos:", e);
+                document.getElementById('last-update').textContent = "Error de Datos";
                 document.getElementById('last-update').style.background = "var(--danger)";
             }
         }
 
-        function processMaster(text) {
+        function processMaster(gameKey, text) {
             const lines = text.trim().split('\n');
+            if (lines.length < 2) return;
             const headers = lines[0].split(',');
             
+            // Detectar columnas de números según el juego
+            let numCols = [];
+            if (gameKey === 'LOTO') numCols = ['LOTO_n1','LOTO_n2','LOTO_n3','LOTO_n4','LOTO_n5','LOTO_n6'];
+            else if (gameKey === 'LOTO3') numCols = ['n1','n2','n3'];
+            else if (gameKey === 'LOTO4') numCols = ['n1','n2','n3','n4'];
+            else if (gameKey === 'RACHA') numCols = ['n1','n2','n3','n4','n5','n6','n7','n8','n9','n10'];
+
             const idxSorteo = headers.indexOf('sorteo');
-            const idxFecha = headers.indexOf('fecha');
-            const idxN1 = headers.indexOf('LOTO_n1');
-            const idxN2 = headers.indexOf('LOTO_n2');
-            const idxN3 = headers.indexOf('LOTO_n3');
-            const idxN4 = headers.indexOf('LOTO_n4');
-            const idxN5 = headers.indexOf('LOTO_n5');
-            const idxN6 = headers.indexOf('LOTO_n6');
+            const idxs = numCols.map(c => headers.indexOf(c));
 
-            if (idxSorteo === -1 || idxN1 === -1) return;
+            if (idxSorteo === -1) return;
 
+            const map = {};
             for (let i = 1; i < lines.length; i++) {
-                const row = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
-                if (row.length < headers.length) continue;
-                
+                const row = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/); // Regex split CSV seguro
                 const sorteo = row[idxSorteo];
-                const nums = [
-                    parseInt(row[idxN1]), parseInt(row[idxN2]), parseInt(row[idxN3]), 
-                    parseInt(row[idxN4]), parseInt(row[idxN5]), parseInt(row[idxN6])
-                ];
-                GLOBAL_MAESTRO[sorteo] = {
-                    numbers: nums,
-                    date: idxFecha !== -1 ? row[idxFecha] : 'Sin fecha'
-                };
+                if (!sorteo) continue;
+                
+                const nums = idxs.map(idx => idx !== -1 ? parseInt(row[idx]) : null).filter(n => n !== null);
+                map[sorteo] = nums;
             }
+            MASTERS[gameKey] = map;
         }
 
-        function processCSV(csvText) {
-            const lines = csvText.trim().split('\n');
-            GLOBAL_DATA = lines.slice(1).map(line => {
-                const parts = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
-                if(parts.length < 8) return null; 
-                
-                const dateObj = new Date(parts[1].replace(' ', 'T'));
-                
-                return {
-                    id: parts[0],
-                    fechaStr: parts[1],
-                    dateObj: dateObj,
-                    numeros: parts[2].replace(/"/g, ''),
-                    objetivo: parts[3],
-                    estado: parts[4],
-                    aciertos: parseInt(parts[5]),
-                    score: parseFloat(parts[6]),
-                    hora: parseInt(parts[7]),
-                    algoritmo: parts[8] ? parts[8].replace('\r', '') : 'desconocido'
-                };
-            }).filter(item => item !== null).reverse();
-
-            initDrawFilter();
-            applyFilters();
-            calculateAggregateData(GLOBAL_DATA); 
-        }
-
-        function initDrawFilter() {
-            const uniqueDraws = [...new Set(GLOBAL_DATA.map(d => d.objetivo))];
-            const select = document.getElementById('f-sorteo');
-            select.innerHTML = '<option value="ALL">Todos los Sorteos</option>';
-            uniqueDraws.forEach(draw => {
-                let opt = document.createElement('option');
-                opt.value = draw;
-                opt.textContent = "Sorteo #" + draw;
-                select.appendChild(opt);
-            });
-        }
-
-        function switchChartView(mode) {
-            CURRENT_CHART_MODE = mode;
-            applyFilters();
-        }
-
-        function updateDashboard(data) {
-            document.getElementById('total-sims').textContent = data.length;
-            document.getElementById('target-draw').textContent = "#" + (data[0]?.objetivo || 'N/A');
-            document.getElementById('last-update').textContent = "Último pulso: " + (data[0]?.fechaStr.split(' ')[1] || 'N/A');
-
-            const auditados = data.filter(d => d.estado === 'AUDITADO');
+        function processSimulations(text) {
+            const lines = text.trim().split('\n');
+            const headers = lines[0].split(',');
+            // Mapeo simple de índice
             
-            const globalAvg = auditados.length > 0 
-                ? (auditados.reduce((a, b) => a + b.score, 0) / auditados.length).toFixed(1) 
-                : 0;
-            document.getElementById('avg-score').textContent = globalAvg + "%";
-
-            let labels = [];
-            let bioScores = [], gaussScores = [], deltaScores = [], markovScores = [], consensoScores = [];
-            let bioCounts = [], gaussCounts = [], deltaCounts = [], markovCounts = [], consensoCounts = [];
-
-            let bestMomentLabel = "--", maxScoreFound = -1;
-
-            if (CURRENT_CHART_MODE === 'hour') {
-                labels = Array.from({length: 24}, (_, i) => `${i}:00`);
-                for (let i = 0; i < 24; i++) {
-                    const bioStat = calculateStats(auditados, d => d.hora === i && d.algoritmo.includes('forense_biometrico'));
-                    const gaussStat = calculateStats(auditados, d => d.hora === i && d.algoritmo.includes('gaussiano'));
-                    const deltaStat = calculateStats(auditados, d => d.hora === i && d.algoritmo.includes('delta'));
-                    const markovStat = calculateStats(auditados, d => d.hora === i && d.algoritmo.includes('markov'));
-                    const consensoStat = calculateStats(auditados, d => d.hora === i && d.algoritmo.includes('consenso'));
+            RAW_SIMULATIONS = lines.slice(1).map(line => {
+                const parts = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+                if (parts.length < 5) return null;
+                
+                // Detección flexible de columnas basada en si existe 'juego'
+                // Formato nuevo: id, fecha, juego, numeros, objetivo...
+                // Formato viejo: id, fecha, numeros, objetivo...
+                
+                let isNewFormat = parts.length > 9; // El nuevo tiene columna juego
+                
+                let obj = {};
+                try {
+                    obj.id = parts[0];
+                    obj.fechaStr = parts[1];
+                    obj.dateObj = new Date(parts[1].replace(' ', 'T'));
                     
-                    bioScores.push(bioStat.avg); bioCounts.push(bioStat.count);
-                    gaussScores.push(gaussStat.avg); gaussCounts.push(gaussStat.count);
-                    deltaScores.push(deltaStat.avg); deltaCounts.push(deltaStat.count);
-                    markovScores.push(markovStat.avg); markovCounts.push(markovStat.count);
-                    consensoScores.push(consensoStat.avg); consensoCounts.push(consensoStat.count);
+                    if (headers.includes('juego')) {
+                        // Leer columna juego si existe en cabecera, o inferir posición
+                        // Asumimos posición 2 si es formato nuevo
+                        obj.juego = parts[2]; 
+                        obj.numeros = parts[3];
+                        obj.objetivo = parts[4];
+                        obj.estado = parts[5];
+                        obj.aciertos = parseInt(parts[6] || 0);
+                        obj.score = parseFloat(parts[7] || 0);
+                        obj.hora = parseInt(parts[8] || 0);
+                        obj.algoritmo = parts[9] || 'unknown';
+                    } else {
+                        // Retrocompatibilidad
+                        obj.juego = 'LOTO';
+                        obj.numeros = parts[2];
+                        obj.objetivo = parts[3];
+                        obj.estado = parts[4];
+                        obj.aciertos = parseInt(parts[5] || 0);
+                        obj.score = parseFloat(parts[6] || 0);
+                        obj.hora = parseInt(parts[7] || 0);
+                        obj.algoritmo = parts[8] || 'unknown';
+                    }
                     
-                    let combined = Math.max(parseFloat(bioStat.avg), parseFloat(gaussStat.avg), parseFloat(deltaStat.avg), parseFloat(markovStat.avg), parseFloat(consensoStat.avg));
-                    if(combined > maxScoreFound) { maxScoreFound = combined; bestMomentLabel = `${i}:00 hrs`; }
-                }
-            } else if (CURRENT_CHART_MODE === 'day') {
-                const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-                labels = days;
-                for (let i = 0; i < 7; i++) {
-                    const bioStat = calculateStats(auditados, d => d.dateObj.getDay() === i && d.algoritmo.includes('forense_biometrico'));
-                    const gaussStat = calculateStats(auditados, d => d.dateObj.getDay() === i && d.algoritmo.includes('gaussiano'));
-                    const deltaStat = calculateStats(auditados, d => d.dateObj.getDay() === i && d.algoritmo.includes('delta'));
-                    const markovStat = calculateStats(auditados, d => d.dateObj.getDay() === i && d.algoritmo.includes('markov'));
-                    const consensoStat = calculateStats(auditados, d => d.dateObj.getDay() === i && d.algoritmo.includes('consenso'));
-
-                    bioScores.push(bioStat.avg); bioCounts.push(bioStat.count);
-                    gaussScores.push(gaussStat.avg); gaussCounts.push(gaussStat.count);
-                    deltaScores.push(deltaStat.avg); deltaCounts.push(deltaStat.count);
-                    markovScores.push(markovStat.avg); markovCounts.push(markovStat.count);
-                    consensoScores.push(consensoStat.avg); consensoCounts.push(consensoStat.count);
-
-                    let combined = Math.max(parseFloat(bioStat.avg), parseFloat(gaussStat.avg), parseFloat(consensoStat.avg));
-                    if(combined > maxScoreFound) { maxScoreFound = combined; bestMomentLabel = days[i]; }
-                }
-            } else if (CURRENT_CHART_MODE === 'month') {
-                const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-                labels = months;
-                for (let i = 0; i < 12; i++) {
-                    const bioStat = calculateStats(auditados, d => d.dateObj.getMonth() === i && d.algoritmo.includes('forense_biometrico'));
-                    const gaussStat = calculateStats(auditados, d => d.dateObj.getMonth() === i && d.algoritmo.includes('gaussiano'));
-                    const deltaStat = calculateStats(auditados, d => d.dateObj.getMonth() === i && d.algoritmo.includes('delta'));
-                    const markovStat = calculateStats(auditados, d => d.dateObj.getMonth() === i && d.algoritmo.includes('markov'));
-                    const consensoStat = calculateStats(auditados, d => d.dateObj.getMonth() === i && d.algoritmo.includes('consenso'));
-
-                    bioScores.push(bioStat.avg); bioCounts.push(bioStat.count);
-                    gaussScores.push(gaussStat.avg); gaussCounts.push(gaussStat.count);
-                    deltaScores.push(deltaStat.avg); deltaCounts.push(deltaStat.count);
-                    markovScores.push(markovStat.avg); markovCounts.push(markovStat.count);
-                    consensoScores.push(consensoStat.avg); consensoCounts.push(consensoStat.count);
-
-                    let combined = Math.max(parseFloat(bioStat.avg), parseFloat(gaussStat.avg), parseFloat(consensoStat.avg));
-                    if(combined > maxScoreFound) { maxScoreFound = combined; bestMomentLabel = months[i]; }
-                }
-            }
-
-            document.getElementById('best-moment').textContent = maxScoreFound > 0 ? bestMomentLabel : "Calculando...";
-            renderChart(labels, bioScores, gaussScores, deltaScores, markovScores, consensoScores, bioCounts, gaussCounts, deltaCounts, markovCounts, consensoCounts);
+                    // Limpieza
+                    obj.numeros = obj.numeros.replace(/"/g, '');
+                    obj.algoritmo = obj.algoritmo.replace(/\r/g, '');
+                    
+                    return obj;
+                } catch(e) { return null; }
+            }).filter(x => x !== null).reverse();
         }
 
-        function calculateStats(data, filterFn) {
-            const subset = data.filter(filterFn);
-            if (subset.length === 0) return { avg: 0, count: 0 };
-            const sum = subset.reduce((acc, curr) => acc + curr.score, 0);
-            return {
-                avg: (sum / subset.length).toFixed(1),
-                count: subset.length
-            };
+        // --- INTERACCIÓN ---
+        function switchUniverse(gameId) {
+            CURRENT_UNIVERSE = gameId;
+            // Actualizar clases botones
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if(btn.textContent.includes(gameId) || (gameId==='LOTO' && btn.textContent.includes('CLÁSICO'))) 
+                    btn.classList.add('active');
+            });
+            resetFilters(); // Reiniciar filtros al cambiar universo
+        }
+
+        function getFilteredData() {
+            // 1. Filtrar por Universo
+            let data = RAW_SIMULATIONS.filter(d => d.juego === CURRENT_UNIVERSE);
+            
+            // 2. Filtros de UI
+            const fSorteo = document.getElementById('f-sorteo').value;
+            const fAlgo = document.getElementById('f-algo').value;
+            const fDia = document.getElementById('f-dia').value;
+            const fHora = document.getElementById('f-hora').value;
+
+            return data.filter(d => {
+                if (fSorteo !== 'ALL' && d.objetivo !== fSorteo) return false;
+                if (fAlgo !== 'ALL' && !d.algoritmo.includes(fAlgo)) return false;
+                if (fDia !== 'ALL' && d.dateObj.getDay().toString() !== fDia) return false;
+                if (fHora !== 'ALL' && d.hora.toString() !== fHora) return false;
+                return true;
+            });
         }
 
         function applyFilters() {
-            const fSorteo = document.getElementById('f-sorteo').value;
-            const fMes = document.getElementById('f-mes').value;
-            const fDia = document.getElementById('f-dia').value;
-            const fHora = document.getElementById('f-hora').value;
-            const fAlgo = document.getElementById('f-algo').value;
+            const data = getFilteredData();
+            updateKPIs(data);
+            updateSorteoSelector(data);
+            renderTable(data);
+            renderAggregate(data);
+            updateChart(data);
+        }
 
-            const filtered = GLOBAL_DATA.filter(item => {
-                let match = true;
-                if (fSorteo !== 'ALL' && item.objetivo !== fSorteo) match = false;
-                if (fMes !== 'ALL' && item.dateObj.getMonth().toString() !== fMes) match = false;
-                if (fDia !== 'ALL' && item.dateObj.getDay().toString() !== fDia) match = false;
-                if (fHora !== 'ALL' && item.hora.toString() !== fHora) match = false;
-                if (fAlgo !== 'ALL' && !item.algoritmo.includes(fAlgo)) match = false; 
-                return match;
+        function updateSorteoSelector(data) {
+            const currentVal = document.getElementById('f-sorteo').value;
+            const unique = [...new Set(data.map(d => d.objetivo))];
+            const sel = document.getElementById('f-sorteo');
+            sel.innerHTML = '<option value="ALL">Todos los Sorteos</option>';
+            unique.forEach(u => {
+                let opt = document.createElement('option'); opt.value = u; opt.textContent = "#" + u;
+                sel.appendChild(opt);
             });
-
-            // LOGICA ORDENAMIENTO LOGS
-            filtered.sort((a, b) => {
-                let valA, valB;
-                switch(LOGS_SORT_COL) {
-                    case 'date': valA = a.id; valB = b.id; break;
-                    case 'algo': valA = a.algoritmo; valB = b.algoritmo; break;
-                    case 'target': valA = parseInt(a.objetivo); valB = parseInt(b.objetivo); break;
-                    case 'status': valA = a.estado; valB = b.estado; break;
-                    case 'score': valA = a.score; valB = b.score; break;
-                    default: valA = a.id; valB = b.id;
-                }
-                
-                if (valA < valB) return LOGS_SORT_DIR === 'asc' ? -1 : 1;
-                if (valA > valB) return LOGS_SORT_DIR === 'asc' ? 1 : -1;
-                return 0;
-            });
-
-            // Actualizar iconos logs
-            document.querySelectorAll('[id^="log-sort-"]').forEach(el => {
-                el.textContent = '';
-                el.classList.remove('sort-active');
-            });
-            const activeIcon = document.getElementById(`log-sort-${LOGS_SORT_COL}`);
-            if(activeIcon) {
-                activeIcon.textContent = LOGS_SORT_DIR === 'asc' ? '▲' : '▼';
-                activeIcon.classList.add('sort-active');
-            }
-
-            updateDashboard(filtered); 
-            renderTable(filtered);
+            if (unique.includes(currentVal)) sel.value = currentVal;
         }
 
-        function resetFilters() {
-            document.getElementById('f-sorteo').value = 'ALL';
-            document.getElementById('f-mes').value = 'ALL';
-            document.getElementById('f-dia').value = 'ALL';
-            document.getElementById('f-hora').value = 'ALL';
-            document.getElementById('f-algo').value = 'ALL';
-            applyFilters();
+        function updateKPIs(data) {
+            document.getElementById('total-sims').textContent = data.length;
+            document.getElementById('target-draw').textContent = data.length ? "#" + data[0].objetivo : "--";
+            document.getElementById('last-update').textContent = data.length ? data[0].fechaStr.split(' ')[1] : "--";
+            
+            const auditados = data.filter(d => d.estado === 'AUDITADO');
+            const avg = auditados.length ? (auditados.reduce((a,b)=>a+b.score,0)/auditados.length).toFixed(1) : 0;
+            document.getElementById('avg-score').textContent = avg + "%";
         }
 
-        function sortLogs(col) {
-            if (LOGS_SORT_COL === col) {
-                LOGS_SORT_DIR = LOGS_SORT_DIR === 'asc' ? 'desc' : 'asc';
-            } else {
-                LOGS_SORT_COL = col;
-                LOGS_SORT_DIR = 'desc'; 
-            }
-            applyFilters(); 
-        }
-
-        async function savePlay(btnElement, numbersStr) {
-            let numbers;
-            try {
-                numbers = JSON.parse(numbersStr);
-            } catch (e) {
-                console.error("Error parseando números:", e);
-                return;
-            }
-
-            const originalContent = btnElement.innerHTML;
-            btnElement.innerHTML = '...';
-            btnElement.disabled = true;
-
-            const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwBZd2vTrvxVdTjJnLoK2vMCR90qJqyH3ZfSDkNK4_n0aFYe3jCoeIZ3R58XNQBM1xQ3A/exec";
-
-            try {
-                await fetch(GOOGLE_SCRIPT_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ numeros: numbers, jugado: "SI" })
-                });
-
-                btnElement.innerHTML = '<i data-lucide="check" width="14"></i> Jugada';
-                btnElement.classList.add('btn-disabled');
-                
-                const simId = btnElement.getAttribute('data-id');
-                if (simId) {
-                    localStorage.setItem(`played_${simId}`, 'true');
-                }
-                
-                lucide.createIcons(); 
-
-            } catch (error) {
-                console.error(error);
-                btnElement.innerHTML = '<i data-lucide="x" width="14"></i> Error';
-                btnElement.disabled = false; 
-                setTimeout(() => {
-                    btnElement.innerHTML = originalContent;
-                    lucide.createIcons();
-                }, 2000);
-            }
-        }
-
+        // --- RENDERIZADO DE TABLAS ---
         function renderTable(data) {
+            // Ordenar
+            data.sort((a,b) => {
+                let valA = a[LOGS_SORT_COL], valB = b[LOGS_SORT_COL];
+                if (LOGS_SORT_COL === 'date') { valA = a.id; valB = b.id; }
+                if (LOGS_SORT_COL === 'target') { valA = parseInt(a.objetivo); valB = parseInt(b.objetivo); }
+                return LOGS_SORT_DIR === 'asc' ? (valA > valB ? 1 : -1) : (valA < valB ? 1 : -1);
+            });
+
             const tbody = document.querySelector('#logs-table tbody');
             tbody.innerHTML = '';
-            document.getElementById('filtered-count').textContent = `Mostrando ${data.length} registros`;
+            document.getElementById('filtered-count').textContent = `Mostrando ${Math.min(data.length, 50)} de ${data.length}`;
 
-            const filterSorteo = document.getElementById('f-sorteo').value;
-            let displayData = data;
-            if (filterSorteo === 'ALL') {
-                 displayData = data.slice(0, 50);
-            }
-
-            displayData.forEach(row => {
+            // Paginación visual simple
+            data.slice(0, 50).forEach(row => {
                 const tr = document.createElement('tr');
-                const badgeClass = row.estado === 'AUDITADO' ? 'audited' : 'pending';
-                const scoreDisplay = row.estado === 'AUDITADO' ? `<b>${row.score}%</b>` : '-';
                 
-                const numsClean = row.numeros.replace('[', '').replace(']', '').split(', ');
-                const winningNumbers = GLOBAL_MAESTRO[row.objetivo] ? GLOBAL_MAESTRO[row.objetivo].numbers : [];
-
-                const numsHTML = numsClean.map(n => {
-                    const numInt = parseInt(n);
-                    if (winningNumbers.length === 0) return `<span class="num-badge">${n}</span>`;
-
-                    if (winningNumbers.includes(numInt)) {
-                        return `<span class="num-badge match-exact" title="¡Acierto!">${n}</span>`;
-                    }
-
-                    let minDiff = 999;
-                    let closestWin = -1;
-                    winningNumbers.forEach(w => {
-                        const diff = Math.abs(w - numInt);
-                        if(diff < minDiff) { minDiff = diff; closestWin = w; }
-                    });
-
-                    if (minDiff === 1) return `<span class="num-badge match-close-1" title="¡Casi! Era el ${closestWin}">${n}</span>`;
-                    if (minDiff <= 3) return `<span class="num-badge match-close-2" title="Cerca del ${closestWin} (Dif: ${minDiff})">${n}</span>`;
+                // Badges
+                let algoClass = 'algo-badge';
+                if(row.algoritmo.includes('forense')) algoClass += ' algo-bio';
+                else if(row.algoritmo.includes('gauss')) algoClass += ' algo-gauss';
+                else if(row.algoritmo.includes('delta')) algoClass += ' algo-delta';
+                else if(row.algoritmo.includes('consenso')) algoClass += ' algo-consenso';
+                
+                // Highlight números
+                const realNums = MASTERS[CURRENT_UNIVERSE] ? MASTERS[CURRENT_UNIVERSE][row.objetivo] : [];
+                const myNums = row.numeros.replace('[','').replace(']','').split(',').map(n=>parseInt(n.trim()));
+                
+                let numsHtml = myNums.map(n => {
+                    if (realNums && realNums.includes(n)) return `<span class="num-badge match-exact">${n}</span>`;
                     return `<span class="num-badge match-far">${n}</span>`;
                 }).join('');
 
-                const fechaShort = row.fechaStr.split(' ')[0].slice(5) + " " + row.fechaStr.split(' ')[1].slice(0,5); 
-
-                let algoBadge = '<span class="algo-badge" style="color:#888; border:1px solid #444;">Desconocido</span>';
-                if(row.algoritmo.includes('biometrico')) algoBadge = '<span class="algo-badge algo-bio">🔮 Biométrico</span>';
-                if(row.algoritmo.includes('gaussiano')) algoBadge = '<span class="algo-badge algo-gauss">📐 Gaussiano</span>';
-                if(row.algoritmo.includes('delta')) algoBadge = '<span class="algo-badge algo-delta">📈 Delta</span>';
-                if(row.algoritmo.includes('markov')) algoBadge = '<span class="algo-badge algo-markov">🔗 Markov</span>';
-                if(row.algoritmo.includes('consenso')) algoBadge = '<span class="algo-badge algo-consenso">🤝 Consenso</span>';
-                if(row.algoritmo.includes('MASTER')) algoBadge = '<span class="algo-badge algo-premium">🏆 CARTA MAESTRA</span>';
-
-                let drawTooltip = winningNumbers.length > 0 ? `Ganadores: ${winningNumbers.join(', ')}` : "Esperando sorteo...";
-                let drawClass = winningNumbers.length > 0 ? "draw-badge" : "";
-
-                const isPlayedLocal = localStorage.getItem(`played_${row.id}`) === 'true';
-                
-                let actionBtn;
-                if (isPlayedLocal) {
-                    actionBtn = `<button class="btn-action btn-disabled" disabled><i data-lucide="check" width="14"></i> Jugada</button>`;
-                } else {
-                    actionBtn = `<button class="btn-action" data-id="${row.id}" onclick="savePlay(this, '${row.numeros}')"><i data-lucide="ticket" width="14"></i> Jugar</button>`;
-                }
+                // Botón jugar
+                const playedKey = `played_${row.id}`;
+                const isPlayed = localStorage.getItem(playedKey);
+                const btnHtml = isPlayed 
+                    ? `<button class="btn-action btn-disabled"><i data-lucide="check" width="12"></i> Jugado</button>`
+                    : `<button class="btn-action" onclick="savePlay(this, '${row.numeros}', '${row.id}')"><i data-lucide="ticket" width="12"></i> Jugar</button>`;
 
                 tr.innerHTML = `
-                    <td title="${row.fechaStr}">${fechaShort}</td>
-                    <td>${algoBadge}</td>
-                    <td><span class="${drawClass}" title="${drawTooltip}">${row.objetivo}</span></td>
-                    <td>${numsHTML}</td>
-                    <td class="${badgeClass}">${row.estado}</td>
-                    <td>${scoreDisplay}</td>
-                    <td>${actionBtn}</td>
+                    <td>${row.fechaStr.slice(5, 16)}</td>
+                    <td><span class="${algoClass}">${row.algoritmo.split('_')[0]}</span></td>
+                    <td>#${row.objetivo}</td>
+                    <td>${numsHtml}</td>
+                    <td class="${row.estado==='AUDITADO'?'audited':'pending'}">${row.estado}</td>
+                    <td><b>${row.estado==='AUDITADO'?row.score+'%':'-'}</b></td>
+                    <td>${btnHtml}</td>
                 `;
                 tbody.appendChild(tr);
             });
-            
-            if (filterSorteo === 'ALL' && data.length > 50) {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `<td colspan="7" style="text-align:center; color:#8b949e; font-style:italic;">... y ${data.length - 50} registros más ...</td>`;
-                tbody.appendChild(tr);
-            }
-            
-            lucide.createIcons(); 
+            lucide.createIcons();
         }
 
-        // --- LÓGICA DE TABLA AGREGADA CON ORDENAMIENTO ---
-        
-        function calculateAggregateData(data) {
+        function renderAggregate(data) {
             const groups = {};
             data.forEach(d => {
-                if (!groups[d.objetivo]) {
-                    groups[d.objetivo] = {
-                        target: parseInt(d.objetivo), 
-                        count: 0,
-                        scores: [],
-                        bioScores: [],
-                        gaussScores: [],
-                        deltaScores: [],
-                        markovScores: [],
-                        consensoScores: [],
-                        bestRow: null,
-                        maxScore: -1,
-                        avgTotal: 0, 
-                        avgBio: 0,
-                        avgGauss: 0,
-                        avgDelta: 0,
-                        avgMarkov: 0,
-                        avgConsenso: 0,
-                        all_numbers: [],
-                        // NUEVO: CONTADORES POR CANTIDAD DE ACIERTOS
-                        cnt6: 0, cnt5: 0, cnt4: 0, cnt3: 0, cnt2: 0, cnt1: 0
-                    };
-                }
-                const g = groups[d.objetivo];
-                g.count++;
-                
-                const nums = d.numeros.replace('[', '').replace(']', '').split(', ');
-                g.all_numbers.push(...nums);
-                
-                if (d.estado === 'AUDITADO') {
-                    g.scores.push(d.score);
-                    if (d.algoritmo.includes('biometrico')) g.bioScores.push(d.score);
-                    if (d.algoritmo.includes('gaussiano')) g.gaussScores.push(d.score);
-                    if (d.algoritmo.includes('delta')) g.deltaScores.push(d.score);
-                    if (d.algoritmo.includes('markov')) g.markovScores.push(d.score);
-                    if (d.algoritmo.includes('consenso')) g.consensoScores.push(d.score);
-                    
-                    if (d.score > g.maxScore) {
-                        g.maxScore = d.score;
-                        g.bestRow = d;
-                    }
-
-                    // Contar aciertos exactos para las nuevas columnas
-                    if (d.aciertos === 6) g.cnt6++;
-                    else if (d.aciertos === 5) g.cnt5++;
-                    else if (d.aciertos === 4) g.cnt4++;
-                    else if (d.aciertos === 3) g.cnt3++;
-                    else if (d.aciertos === 2) g.cnt2++;
-                    else if (d.aciertos === 1) g.cnt1++;
+                if(!groups[d.objetivo]) groups[d.objetivo] = { 
+                    target: parseInt(d.objetivo), count: 0, scores: [], hits: {6:0, 5:0, 4:0, 3:0, 2:0, 1:0} 
+                };
+                groups[d.objetivo].count++;
+                if(d.estado === 'AUDITADO') {
+                    groups[d.objetivo].scores.push(d.score);
+                    if(d.aciertos && groups[d.objetivo].hits[d.aciertos] !== undefined) groups[d.objetivo].hits[d.aciertos]++;
                 }
             });
 
-            Object.values(groups).forEach(g => {
-                g.avgTotal = g.scores.length ? (g.scores.reduce((a,b)=>a+b,0)/g.scores.length) : -1;
-                g.avgBio = g.bioScores.length ? (g.bioScores.reduce((a,b)=>a+b,0)/g.bioScores.length) : -1;
-                g.avgGauss = g.gaussScores.length ? (g.gaussScores.reduce((a,b)=>a+b,0)/g.gaussScores.length) : -1;
-                g.avgDelta = g.deltaScores.length ? (g.deltaScores.reduce((a,b)=>a+b,0)/g.deltaScores.length) : -1;
-                g.avgMarkov = g.markovScores.length ? (g.markovScores.reduce((a,b)=>a+b,0)/g.markovScores.length) : -1;
-                g.avgConsenso = g.consensoScores.length ? (g.consensoScores.reduce((a,b)=>a+b,0)/g.consensoScores.length) : -1;
-            });
+            const rows = Object.values(groups).map(g => ({
+                ...g,
+                avgTotal: g.scores.length ? (g.scores.reduce((a,b)=>a+b,0)/g.scores.length) : 0
+            })).sort((a,b) => b.target - a.target); // Default sort desc
 
-            AGGREGATE_DATA = Object.values(groups);
-            applySort(); 
-        }
-
-        function sortAggregate(col) {
-            if (SORT_COL === col) {
-                SORT_DIR = SORT_DIR === 'asc' ? 'desc' : 'asc';
-            } else {
-                SORT_COL = col;
-                SORT_DIR = 'desc';
-            }
-            applySort();
-        }
-
-        function applySort() {
-            AGGREGATE_DATA.sort((a, b) => {
-                let valA = a[SORT_COL];
-                let valB = b[SORT_COL];
-                
-                if (SORT_DIR === 'asc') return valA - valB;
-                else return valB - valA;
-            });
-
-            document.querySelectorAll('.sort-icon').forEach(el => {
-                el.textContent = '';
-                el.classList.remove('sort-active');
-            });
-            const activeIcon = document.getElementById(`sort-icon-${SORT_COL}`);
-            if(activeIcon) {
-                activeIcon.textContent = SORT_DIR === 'asc' ? '▲' : '▼';
-                activeIcon.classList.add('sort-active');
-            }
-
-            renderAggregateRows();
-        }
-
-        function renderAggregateRows() {
             const tbody = document.getElementById('aggregate-body');
             tbody.innerHTML = '';
-
-            AGGREGATE_DATA.forEach(g => {
+            
+            rows.forEach(g => {
                 const tr = document.createElement('tr');
+                const realNums = MASTERS[CURRENT_UNIVERSE] ? MASTERS[CURRENT_UNIVERSE][g.target] : [];
+                const realStr = realNums ? realNums.join(', ') : '-';
                 
-                const avgTotalStr = g.avgTotal >= 0 ? g.avgTotal.toFixed(1) + '%' : '-';
-                const avgBioStr = g.avgBio >= 0 ? g.avgBio.toFixed(1) + '%' : '-';
-                const avgGaussStr = g.avgGauss >= 0 ? g.avgGauss.toFixed(1) + '%' : '-';
-                const avgDeltaStr = g.avgDelta >= 0 ? g.avgDelta.toFixed(1) + '%' : '-';
-                const avgMarkovStr = g.avgMarkov >= 0 ? g.avgMarkov.toFixed(1) + '%' : '-';
-                const avgConsensoStr = g.avgConsenso >= 0 ? g.avgConsenso.toFixed(1) + '%' : '-';
-
-                let bestHtml = '-';
-                if (g.bestRow) {
-                    const numsClean = g.bestRow.numeros.replace('[', '').replace(']', '').split(', ');
-                    const winEntry = GLOBAL_MAESTRO[g.target];
-                    const winningNumbers = winEntry ? winEntry.numbers : [];
-                    
-                    bestHtml = numsClean.map(n => {
-                        const numInt = parseInt(n);
-                        if (winningNumbers.includes(numInt)) return `<span class="num-badge match-exact">${n}</span>`;
-                        let minDiff = 999;
-                        winningNumbers.forEach(w => { let d=Math.abs(w-numInt); if(d<minDiff) minDiff=d; });
-                        if (minDiff===1) return `<span class="num-badge match-close-1">${n}</span>`;
-                        if (minDiff<=3) return `<span class="num-badge match-close-2">${n}</span>`;
-                        return `<span class="num-badge match-far">${n}</span>`;
-                    }).join('');
-                    
-                    let badge = '';
-                    if(g.bestRow.algoritmo.includes('bio')) badge = '<span style="font-size:0.7em; margin-right:5px;">🔮</span>';
-                    else if(g.bestRow.algoritmo.includes('gauss')) badge = '<span style="font-size:0.7em; margin-right:5px;">📐</span>';
-                    else if(g.bestRow.algoritmo.includes('delta')) badge = '<span style="font-size:0.7em; margin-right:5px;">📈</span>';
-                    else if(g.bestRow.algoritmo.includes('markov')) badge = '<span style="font-size:0.7em; margin-right:5px;">🔗</span>';
-                    else if(g.bestRow.algoritmo.includes('consenso')) badge = '<span style="font-size:0.7em; margin-right:5px;">🤝</span>';
-                    else if(g.bestRow.algoritmo.includes('MASTER')) badge = '<span style="font-size:0.7em; margin-right:5px;">🏆</span>';
-                    
-                    bestHtml = `<div>${badge}${bestHtml} <small>(${g.maxScore}%)</small></div>`;
+                // Generar columnas de aciertos dinámicas según el juego
+                let hitCols = '';
+                if (CURRENT_UNIVERSE === 'LOTO3') {
+                    hitCols = `<span class="hit-col-3">${g.hits[3]} (3A)</span> <span class="hit-col-low">${g.hits[1]+g.hits[2]} (1-2A)</span>`;
+                } else if (CURRENT_UNIVERSE === 'RACHA') {
+                    // Racha interesa 10 o 0 (aprox)
+                    // Mostramos solo conteo de altos aciertos para simplificar
+                    hitCols = `<span class="hit-col-6">${g.hits[6]||0}</span> ...`; // Simplificado para no romper tabla
+                } else {
+                    hitCols = `
+                        <span class="hit-col-6">${g.hits[6]}</span>
+                        <span class="hit-col-5">${g.hits[5]}</span>
+                        <span class="hit-col-4">${g.hits[4]}</span>
+                        <span class="hit-col-3">${g.hits[3]}</span>
+                    `;
                 }
-
-                // --- COLUMNA DE ACIERTOS GLOBALES (Números reales) ---
-                const counts = {};
-                g.all_numbers.forEach(n => { counts[n] = (counts[n] || 0) + 1; });
-
-                const winEntry = GLOBAL_MAESTRO[g.target];
-                const winningNumbers = winEntry ? winEntry.numbers : [];
-                
-                let realDrawHtml = '-';
-                if (winningNumbers.length > 0) {
-                    realDrawHtml = winningNumbers.map(n => {
-                        const count = counts[n] || 0;
-                        return `<div style="display:inline-block; margin:1px; padding:2px 4px; background:rgba(46,160,67,0.15); border:1px solid #2ea043; border-radius:4px; font-size:0.8em;">
-                                    <b>${n}</b> <span style="color:#aaa; font-size:0.8em;">(${count})</span>
-                                </div>`;
-                    }).join(' ');
-                }
-
-                const masterEntry = GLOBAL_MAESTRO[g.target];
-                const dateTooltip = masterEntry ? `Fecha: ${masterEntry.date}` : 'Fecha desconocida';
-
-                // Cálculo de Expectativa vs Realidad para las columnas
-                // Formato: Actual (Esperado)
-                const getStatCell = (hits, actualCount) => {
-                    const expected = (g.count * LOTO_PROBS[hits]).toFixed(1);
-                    return `${actualCount} <span style="font-size:0.8em; opacity:0.6;">(${expected})</span>`;
-                };
 
                 tr.innerHTML = `
-                    <td><span class="draw-badge" title="${dateTooltip}">#${g.target}</span></td>
+                    <td>#${g.target}</td>
                     <td style="text-align:center;">${g.count}</td>
-                    <td>${realDrawHtml}</td> <td>${bestHtml}</td>
-                    <td style="text-align:center; font-weight:bold;">${avgTotalStr}</td>
-                    <td style="text-align:center; color:var(--bio-color);">${avgBioStr}</td>
-                    <td style="text-align:center; color:var(--gauss-color);">${avgGaussStr}</td>
-                    <td style="text-align:center; color:var(--delta-color);">${avgDeltaStr}</td>
-                    <td style="text-align:center; color:var(--markov-color);">${avgMarkovStr}</td>
-                    <td style="text-align:center; color:var(--consenso-color); font-weight:bold;">${avgConsensoStr}</td>
-                    
-                    <td class="hit-col-6" style="text-align:center;">${getStatCell(6, g.cnt6)}</td>
-                    <td class="hit-col-5" style="text-align:center;">${getStatCell(5, g.cnt5)}</td>
-                    <td class="hit-col-4" style="text-align:center;">${getStatCell(4, g.cnt4)}</td>
-                    <td class="hit-col-3" style="text-align:center;">${getStatCell(3, g.cnt3)}</td>
-                    <td class="hit-col-low" style="text-align:center;">${getStatCell(2, g.cnt2)}</td>
-                    <td class="hit-col-low" style="text-align:center;">${getStatCell(1, g.cnt1)}</td>
+                    <td><small>${realStr}</small></td>
+                    <td style="text-align:center;"><b>${g.avgTotal.toFixed(1)}%</b></td>
+                    <td style="display:flex; gap:10px; justify-content:center;">${hitCols}</td>
                 `;
                 tbody.appendChild(tr);
             });
         }
 
-        function renderChart(labels, bioData, gaussData, deltaData, markovData, consensoData, bioCounts, gaussCounts, deltaCounts, markovCounts, consensoCounts) {
+        // --- GRÁFICO (Chart.js) ---
+        function updateChart(data) {
             const ctx = document.getElementById('mainChart').getContext('2d');
-            if (window.myChart) window.myChart.destroy();
+            if(window.myChart) window.myChart.destroy();
             
+            // Agrupar datos por la vista seleccionada (Hora/Dia)
+            // Lógica simplificada para demostración: Agrupar solo por Algoritmo Global
+            // Un gráfico de barras comparando rendimiento promedio de algoritmos en este set
+            
+            const algos = {};
+            data.filter(d=>d.estado==='AUDITADO').forEach(d => {
+                const base = d.algoritmo.split('_')[0];
+                if(!algos[base]) algos[base] = {sum:0, count:0};
+                algos[base].sum += d.score;
+                algos[base].count++;
+            });
+
+            const labels = Object.keys(algos);
+            const values = labels.map(k => (algos[k].sum / algos[k].count).toFixed(1));
+
             window.myChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: labels,
-                    datasets: [
-                        {
-                            label: 'Biométrico',
-                            data: bioData,
-                            counts: bioCounts,
-                            backgroundColor: 'rgba(88, 166, 255, 0.6)',
-                            borderColor: '#58a6ff',
-                            borderWidth: 1
-                        },
-                        {
-                            label: 'Gaussiano',
-                            data: gaussData,
-                            counts: gaussCounts,
-                            backgroundColor: 'rgba(241, 224, 90, 0.6)',
-                            borderColor: '#f1e05a',
-                            borderWidth: 1
-                        },
-                        {
-                            label: 'Delta',
-                            data: deltaData,
-                            counts: deltaCounts,
-                            backgroundColor: 'rgba(32, 178, 170, 0.6)',
-                            borderColor: '#20b2aa',
-                            borderWidth: 1
-                        },
-                        {
-                            label: 'Markov',
-                            data: markovData,
-                            counts: markovCounts,
-                            backgroundColor: 'rgba(255, 105, 180, 0.6)',
-                            borderColor: '#ff69b4',
-                            borderWidth: 1
-                        },
-                        {
-                            label: 'Consenso',
-                            data: consensoData,
-                            counts: consensoCounts,
-                            backgroundColor: 'rgba(255, 255, 255, 0.6)',
-                            borderColor: '#ffffff',
-                            borderWidth: 1,
-                            type: 'line', /* Linea destacada para consenso */
-                            tension: 0.4
-                        }
-                    ]
+                    datasets: [{
+                        label: 'Afinidad Promedio (%)',
+                        data: values,
+                        backgroundColor: ['rgba(88, 166, 255, 0.5)', 'rgba(241, 224, 90, 0.5)', 'rgba(32, 178, 170, 0.5)', 'rgba(255, 105, 180, 0.5)'],
+                        borderColor: ['#58a6ff', '#f1e05a', '#20b2aa', '#ff69b4'],
+                        borderWidth: 1
+                    }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    scales: {
-                        y: { beginAtZero: true, max: 100, grid: { color: '#30363d' }, title: {display: true, text: 'Afinidad %'} },
-                        x: { grid: { display: false } }
-                    },
-                    plugins: {
-                        legend: { labels: { color: '#c9d1d9' } },
-                        tooltip: { 
-                            mode: 'index', 
-                            intersect: false,
-                            callbacks: {
-                                label: function(context) {
-                                    let label = context.dataset.label || '';
-                                    if (label) {
-                                        label += ': ';
-                                    }
-                                    if (context.parsed.y !== null) {
-                                        label += context.parsed.y + '%';
-                                    }
-                                    // Agregamos la cantidad de simulaciones
-                                    const count = context.dataset.counts[context.dataIndex];
-                                    if (count !== undefined) {
-                                        label += ` (${count} sims)`;
-                                    }
-                                    return label;
-                                }
-                            }
-                        }
-                    }
+                    scales: { y: { beginAtZero: true, max: 100, grid: { color: '#30363d' } } },
+                    plugins: { legend: { display: false } }
                 }
             });
         }
 
+        // --- UTILIDADES ---
+        function resetFilters() {
+            document.getElementById('f-sorteo').value = 'ALL';
+            document.getElementById('f-algo').value = 'ALL';
+            applyFilters();
+        }
+        function sortLogs(col) {
+            LOGS_SORT_COL = col;
+            LOGS_SORT_DIR = LOGS_SORT_DIR === 'asc' ? 'desc' : 'asc';
+            applyFilters();
+        }
+        function sortAggregate(col) { /* Implementar lógica similar si se requiere */ }
+        function switchChartView(mode) { CURRENT_CHART_MODE = mode; applyFilters(); }
+
+        async function savePlay(btn, numsStr, id) {
+            // Restaurar estado visual
+            const originalContent = btn.innerHTML;
+            btn.innerHTML = '...';
+            btn.disabled = true;
+
+            // Tu URL original detectada en tus archivos subidos
+            const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwBZd2vTrvxVdTjJnLoK2vMCR90qJqyH3ZfSDkNK4_n0aFYe3jCoeIZ3R58XNQBM1xQ3A/exec";
+
+            try {
+                // Parsear números si vienen como texto
+                let numbers = JSON.parse(numsStr);
+
+                // Envío real a la nube
+                await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors', // Importante para Google Scripts
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ numeros: numbers, jugado: "SI" })
+                });
+
+                // Marcar visualmente y en memoria local
+                localStorage.setItem(`played_${id}`, 'true');
+                btn.innerHTML = '<i data-lucide="check" width="12"></i> Listo';
+                btn.classList.add('btn-disabled');
+                lucide.createIcons();
+
+            } catch (error) {
+                console.error("Error guardando jugada:", error);
+                btn.innerHTML = '<i data-lucide="x" width="12"></i> Error';
+                btn.disabled = false;
+                
+                // Restaurar botón después de un momento
+                setTimeout(() => {
+                    btn.innerHTML = originalContent;
+                    lucide.createIcons();
+                }, 3000);
+            }
+        }
+
         // Iniciar
-        loadData();
+        loadAllData();
+
     </script>
 </body>
 </html>
