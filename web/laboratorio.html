@@ -645,7 +645,7 @@
             });
         }
 
-// --- GRÁFICOS CON TOOLTIP UNIFICADO (MODO INDEX) ---
+// --- GRÁFICOS CON TOOLTIP ORDENADO (RANKING) ---
         function updateDashboardCharts(data) {
             const ctx = document.getElementById('mainChart').getContext('2d');
             if(window.myChart) window.myChart.destroy();
@@ -708,7 +708,7 @@
                     let scores = buckets[i] ? buckets[i][a.key] : [];
                     return scores && scores.length 
                         ? (scores.reduce((sum, val) => sum + val, 0) / scores.length).toFixed(1) 
-                        : 0;
+                        : 0; // Se mantiene 0 para huecos, pero no afecta visualmente mucho
                 });
 
                 return {
@@ -718,7 +718,7 @@
                     backgroundColor: hexToRgba(a.color, 0.5),
                     borderWidth: a.label === 'Consenso' ? 2 : 1,
                     tension: 0.4,
-                    pointRadius: 3, // Puntos un poco más visibles para el hover
+                    pointRadius: 3,
                     pointHoverRadius: 5,
                     counts: labels.map((_, i) => buckets[i] && buckets[i][a.key] ? buckets[i][a.key].length : 0)
                 };
@@ -738,12 +738,10 @@
                 options: {
                     responsive: true, 
                     maintainAspectRatio: false,
-                    // --- AQUÍ ESTÁ EL CAMBIO MÁGICO ---
                     interaction: {
-                        mode: 'index',     // Agrupa por índice del eje X (Columna)
-                        intersect: false,  // No requiere tocar la línea exacta
+                        mode: 'index',
+                        intersect: false,
                     },
-                    // ----------------------------------
                     scales: { 
                         y: { beginAtZero: true, max: 100, grid: { color: '#30363d' } }, 
                         x: { grid: { display: false } } 
@@ -751,7 +749,12 @@
                     plugins: { 
                         legend: { labels: { color: '#c9d1d9' } },
                         tooltip: {
-                            backgroundColor: 'rgba(22, 27, 34, 0.9)', // Fondo oscuro estilo GitHub
+                            // --- AQUÍ ESTÁ EL CAMBIO DE ORDENAMIENTO ---
+                            itemSort: function(a, b) {
+                                return b.parsed.y - a.parsed.y; // Orden DESC (Mayor a Menor)
+                            },
+                            // -------------------------------------------
+                            backgroundColor: 'rgba(22, 27, 34, 0.95)',
                             titleColor: '#fff',
                             bodyColor: '#c9d1d9',
                             borderColor: '#30363d',
@@ -764,7 +767,6 @@
                                     if (context.parsed.y !== null) label += context.parsed.y + '%';
                                     
                                     const count = context.dataset.counts[context.dataIndex];
-                                    // Solo mostrar conteo si hay datos reales (>0 sims) para no ensuciar
                                     if (count > 0) label += ` (${count} sims)`;
                                     return label;
                                 }
@@ -774,7 +776,7 @@
                 }
             });
         }
-        
+
         // --- UTILIDADES ---
         function resetFilters() {
             document.getElementById('f-sorteo').value = 'ALL';
