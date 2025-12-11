@@ -1,16 +1,17 @@
-name: Juez Implacable (Auditoría)
+name: Juez Implacable (Auditoría Multiverso)
 
 on:
   push:
     paths:
-      - 'LOTO_HISTORIAL_MAESTRO.csv' # Se activa automático si subes resultados
-  workflow_dispatch: # <--- ESTO HABILITA EL BOTÓN MANUAL
+      - 'data/*_MAESTRO.csv' # Se activa solo si subes resultados nuevos (Loto, Racha, etc.)
+  workflow_dispatch: # Botón manual
+
+permissions:
+  contents: write
 
 jobs:
   judge:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write # Permiso para actualizar el CSV
 
     steps:
     - name: Checkout repo
@@ -19,20 +20,22 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.9'
+        python-version: '3.11'
 
     - name: Install dependencies
       run: |
         pip install pandas numpy
 
-    - name: Run Juez Implacable
+    - name: Ejecutar Juez Multiverso
       run: python engine/models/juez_implacable.py
 
-    - name: Commit and Push Results
+    - name: Publicar Veredictos
       run: |
         git config --global user.name 'Juez LotoAI'
         git config --global user.email 'juez@lotoai.com'
-        git pull
+        
+        git pull origin main # Sincronizar por si el Bot escribió algo mientras tanto
+        
         git add data/LOTO_SIMULACIONES.csv
-        git commit -m "⚖️ Auditoría completada (Recálculo)" || exit 0
+        git commit -m "⚖️ Juez: Auditoría completada tras carga de datos" || echo "Sin veredictos nuevos"
         git push

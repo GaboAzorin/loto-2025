@@ -1,9 +1,9 @@
-name: Bot Soñador (Generador de Predicciones)
+name: Bot Soñador (Multiverso)
 
 on:
   schedule:
     - cron: '*/15 * * * *' # Corre cada 15 minutos
-  workflow_dispatch: # Permite correrlo manualmente
+  workflow_dispatch: # Botón manual en GitHub
 
 permissions:
   contents: write
@@ -11,34 +11,38 @@ permissions:
 jobs:
   dream:
     runs-on: ubuntu-latest
-    timeout-minutes: 10 # Evita que se quede colgado eternamente
+    timeout-minutes: 10
 
     steps:
     - name: Checkout repo
       uses: actions/checkout@v3
 
-    # --- AGREGADO: Sincronizar antes de ejecutar ---
-    - name: Pull latest changes
-      run: git pull origin main
-    # -----------------------------------------------
+    - name: Sincronizar antes de empezar
+      run: git pull origin main || echo "Nada que pullear"
 
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.9'
+        python-version: '3.11'
 
     - name: Install dependencies
       run: |
         pip install pandas numpy pytz
 
-    - name: Run Bot Dreamer
+    - name: Ejecutar Bot Dreamer
       run: python engine/models/bot_dreamer.py
 
-    - name: Commit and Push
+    - name: Guardar Predicciones e Inteligencia
       run: |
         git config --global user.name 'LotoAI Bot'
         git config --global user.email 'bot@lotoai.com'
-        # Git pull por seguridad otra vez (no daña)
+        
+        # Agregamos el CSV de simulaciones
         git add data/LOTO_SIMULACIONES.csv
-        git commit -m "🤖 Nueva predicción generada por Bot Soñador" || exit 0
+        
+        # Agregamos los JSON de inteligencia (Vital para el laboratorio)
+        git add data/*_biometrics.json
+        
+        # Commit y Push seguro
+        git commit -m "🤖 Bot Multiverso: Nuevas predicciones + Biometría actualizada" || echo "Nada nuevo que guardar"
         git push
