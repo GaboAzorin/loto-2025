@@ -1,7 +1,9 @@
 import pandas as pd
+import json
 import os
 import pytz
 import time
+import numpy as np
 from datetime import datetime, timedelta
 
 # Importamos el cerebro
@@ -11,6 +13,7 @@ from analizador_forense import LotoForense
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, '..', '..', 'data')
 FILE_SIMULACIONES = os.path.join(DATA_DIR, "LOTO_SIMULACIONES.csv")
+FILE_GENOME = os.path.join(DATA_DIR, "loto_genome.json") # <--- NUEVA CONEXIÓN
 
 TZ_CHILE = pytz.timezone('America/Santiago')
 
@@ -63,8 +66,6 @@ def calcular_proximo_sorteo_real(game_id, csv_name):
         cursor_tiempo = TZ_CHILE.localize(last_date_naive)
         cursor_id = last_id
         
-        # print(f"   ⚓ Ancla encontrada: #{cursor_id} en {cursor_tiempo}")
-
     except:
         # Si no hay datos, asumimos sorteo #1 y empezamos a buscar desde ayer
         print(f"   ⚠️ Sin historial para {game_id}. Iniciando desde cero.")
@@ -73,16 +74,10 @@ def calcular_proximo_sorteo_real(game_id, csv_name):
 
     # 2. Simulación hacia el Futuro (Bridging the Gap)
     reglas = HORARIOS[game_id]
-    
-    # Límite de seguridad para evitar bucles infinitos (ej. 30 días)
     safety_break = 0
     
     while cursor_tiempo <= ahora and safety_break < 1000:
         safety_break += 1
-        
-        # Buscar el siguiente slot válido desde el cursor actual
-        # Avanzamos minuto a minuto NO, eso es lento. Avanzamos por slots.
-        
         encontrado_siguiente = False
         # Revisamos el día actual y el siguiente
         for dias_extra in [0, 1, 2, 3]: # Miramos hasta 3 días adelante
@@ -100,7 +95,7 @@ def calcular_proximo_sorteo_real(game_id, csv_name):
                     cursor_tiempo = candidato
                     cursor_id += 1
                     encontrado_siguiente = True
-                    break # Salimos al while principal para verificar si ya pasamos 'ahora'
+                    break 
             
             if encontrado_siguiente: break
     
@@ -121,8 +116,49 @@ def obtener_pesos_inteligentes():
         except: pass
     return pesos
 
+def cargar_genoma():
+    """Carga el aprendizaje del pasado (Entrenador Cognitivo)"""
+    if os.path.exists(FILE_GENOME):
+        try:
+            with open(FILE_GENOME, 'r') as f:
+                return json.load(f)
+        except: return None
+    return None
+
+def validar_cognitivamente(numeros, genoma, game_id):
+    """
+    Filtra predicciones basándose en el aprendizaje histórico.
+    Retorna True si la jugada respeta el ADN ganador.
+    """
+    # Por ahora, el genoma es experto en LOTO clásico (suma y pares)
+    # LOTO3 y LOTO4 tienen lógicas distintas, así que pasan siempre por ahora
+    if game_id != "LOTO" or not genoma: return True
+    
+    try:
+        morph = genoma.get('morphology', {})
+        
+        # 1. Filtro de Rango de Suma
+        rango_suma = morph.get('ideal_sum_range')
+        if rango_suma and isinstance(rango_suma, list):
+            suma = sum(numeros)
+            # Damos un pequeño margen de error (+- 5) al rango aprendido para no ser tan rígidos
+            if suma < (rango_suma[0] - 5) or suma > (rango_suma[1] + 5):
+                return False
+        
+        # 2. Filtro de Paridad (Opcional)
+        ideal_pares = morph.get('ideal_even_count')
+        if ideal_pares is not None and isinstance(ideal_pares, int):
+            pares = len([n for n in numeros if n % 2 == 0])
+            # Aceptamos si está a +1 o -1 de distancia del ideal
+            if abs(pares - ideal_pares) > 1:
+                return False
+                
+        return True
+    except:
+        return True
+
 def soñar():
-    print("💤 --- INICIANDO BOT SOÑADOR MULTIVERSO v10.0 (CRONONAUTA) ---")
+    print("💤 --- INICIANDO BOT SOÑADOR MULTIVERSO v11.0 (COGNITIVO) ---")
     
     ahora = datetime.now(TZ_CHILE)
     dia_semana = ahora.weekday()
@@ -131,6 +167,10 @@ def soñar():
     
     nuevas_filas = []
     pesos_voto = obtener_pesos_inteligentes()
+    genoma = cargar_genoma() # <--- Cargamos Inteligencia
+
+    if genoma:
+        print("   🧠 Cortex cargado: El bot aplicará filtros de aprendizaje histórico.")
     
     for game_id, config in MULTIVERSO_CONFIG.items():
         print(f"🌌 Universo: {game_id}")
@@ -160,9 +200,19 @@ def soñar():
 
         for i, (nombre, funcion) in enumerate(mis_algoritmos):
             try:
-                # Generación Unitaria
+                # --- AQUÍ OCURRE LA MAGIA COGNITIVA ---
+                # Intentamos generar hasta 20 veces una jugada que respete el Genoma
                 pred = funcion()
+                intentos = 0
+                max_intentos = 20 if game_id == "LOTO" else 1
                 
+                while intentos < max_intentos:
+                    if validar_cognitivamente(pred, genoma, game_id):
+                        break # La jugada es válida según la historia
+                    pred = funcion() # Reintentar
+                    intentos += 1
+                
+                # Guardamos la predicción (sea perfecta o "best effort")
                 nuevas_filas.append({
                     'id': base_id + i + (len(nuevas_filas)*100),
                     'fecha_generacion': ahora.strftime('%Y-%m-%d %H:%M:%S'),
@@ -174,14 +224,19 @@ def soñar():
                     'hora_dia': hora_actual,
                     'algoritmo': f"{nombre}_v1"
                 })
-                # print(f"   🤖 {nombre}: {pred}") # Log reducido
-
-                # Simulación Interna para Consenso
+                
+                # Simulación Interna para Consenso (También aplicamos filtro aquí para purificar el consenso)
                 peso = pesos_voto.get(nombre.split('_')[0], 1.0)
-                for _ in range(5):
+                
+                simulaciones_validas = 0
+                intentos_consenso = 0
+                while simulaciones_validas < 5 and intentos_consenso < 30:
                     sim = funcion()
-                    for num in sim:
-                        bolsa_pesos_consenso[num] = bolsa_pesos_consenso.get(num, 0) + peso
+                    if validar_cognitivamente(sim, genoma, game_id):
+                        for num in sim:
+                            bolsa_pesos_consenso[num] = bolsa_pesos_consenso.get(num, 0) + peso
+                        simulaciones_validas += 1
+                    intentos_consenso += 1
 
             except Exception as e:
                 print(f"   ⚠️ Error en {nombre}: {e}")
@@ -192,8 +247,7 @@ def soñar():
             ranking = sorted(bolsa_pesos_consenso, key=bolsa_pesos_consenso.get, reverse=True)
             top_consenso = sorted(ranking[:n_bolas])
             
-            # Ordenar números para estética (excepto si el juego requiere orden estricto, pero aquí asumimos ascendente para visualización)
-            if game_id != "LOTO3": # Loto 3 puede ser 9-2-5, no necesariamente 2-5-9, pero para CSV mejor ordenado
+            if game_id != "LOTO3": 
                  top_consenso.sort()
             
             nuevas_filas.append({

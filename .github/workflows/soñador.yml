@@ -11,7 +11,7 @@ permissions:
 jobs:
   dream:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15 # Aumentamos un poco por si el proceso de aprendizaje toma tiempo
 
     steps:
     - name: Checkout repo
@@ -29,20 +29,40 @@ jobs:
       run: |
         pip install pandas numpy pytz
 
-    - name: Ejecutar Bot Dreamer
+    # --- FASE 1: AUDITORÍA (El Pasado) ---
+    # El Juez revisa si las predicciones pendientes coincidieron con resultados nuevos
+    - name: 1. Ejecutar Juez Implacable
+      run: python engine/models/juez_implacable.py
+
+    # --- FASE 2: APRENDIZAJE (La Retrospectiva) ---
+    # El Entrenador analiza las jugadas ganadoras detectadas por el Juez y genera el 'Genoma'
+    - name: 2. Ejecutar Entrenador Cognitivo
+      run: python engine/models/entrenador_cognitivo.py
+
+    # --- FASE 3: BIOMETRÍA (El Presente) ---
+    # Actualiza las estadísticas duras (frecuencias, mapas de calor) en el JSON
+    - name: 3. Actualizar Biometría
+      run: python engine/models/generador_biometrico.py
+
+    # --- FASE 4: PREDICCIÓN (El Futuro) ---
+    # El Bot sueña, ahora con acceso a la inteligencia generada en los pasos anteriores
+    - name: 4. Ejecutar Bot Dreamer
       run: python engine/models/bot_dreamer.py
 
+    # --- FASE 5: PERSISTENCIA ---
     - name: Guardar Predicciones e Inteligencia
       run: |
         git config --global user.name 'LotoAI Bot'
         git config --global user.email 'bot@lotoai.com'
         
-        # Agregamos el CSV de simulaciones
+        # 1. Guardamos las nuevas simulaciones
         git add data/LOTO_SIMULACIONES.csv
         
-        # Agregamos los JSON de inteligencia (Vital para el laboratorio)
-        git add data/*_biometrics.json
+        # 2. Guardamos la inteligencia generada (Biometría y Genoma)
+        # Esto es vital para que el laboratorio visual funcione
+        git add data/loto_biometrics.json
+        git add data/loto_genome.json
         
         # Commit y Push seguro
-        git commit -m "🤖 Bot Multiverso: Nuevas predicciones + Biometría actualizada" || echo "Nada nuevo que guardar"
+        git commit -m "🧠 Ciclo LotoAI: Auditoría > Aprendizaje > Predicción" || echo "Sin cambios estructurales"
         git push
