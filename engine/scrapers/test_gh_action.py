@@ -2,10 +2,6 @@ import os
 import requests
 import json
 import re
-import urllib3
-
-# Desactivar advertencias de certificados SSL (común al usar proxies)
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # --- CONFIGURACIÓN ---
 TOKEN = os.environ.get("SCRAPERAPI_KEY", "").strip() 
@@ -13,66 +9,61 @@ GAME_ID = "5271" # Loto
 DRAW_ID = "5360" # Sorteo Objetivo
 OUTPUT_FILE = "resultado_nube_final.json"
 
-# CAMBIO CLAVE: Vamos al Home, que es más ligero que /view/resultados
-TARGET_URL = "https://www.polla.cl" 
+# URLs
+TARGET_URL = "https://www.polla.cl" # Home (Ligero)
 API_INTERNAL = "https://www.polla.cl/es/get/draw/results"
+PROXY_ENDPOINT = "http://api.scrape.do"
 
-def run_smart_scraper():
-    print(f"☁️ INICIANDO SCRAPER OPTIMIZADO (Target: Home)")
+def run_hybrid_scraper():
+    print(f"☁️ INICIANDO SCRAPER HÍBRIDO (Modo API + Cookies)")
     
     if len(TOKEN) < 10:
         print("❌ Error: Token vacío.")
         return
 
-    session = requests.Session()
-
-    # --- CONFIGURACIÓN PROXY SCRAPE.DO ---
-    # Usamos el modo Proxy Estándar.
-    # Sintaxis: http://token:render=true@proxy.scrape.do:8080
-    proxy_auth = f"{TOKEN}:render=true"
-    proxy_url = f"http://{proxy_auth}@proxy.scrape.do:8080"
+    # --- PASO 1: OBTENER HOME (Modo API) ---
+    # Usamos la configuración exacta que funcionó en tu Imagen 4
+    print("1️⃣ Solicitando Home (Buscando Token)...")
     
-    proxies = {
-        "http": proxy_url,
-        "https": proxy_url
+    params_home = {
+        'token': TOKEN,
+        'url': TARGET_URL,
+        'render': 'true',  # Activamos navegador
+        'timeout': '20000' # Damos 20s a Scrape.do para que no corte
     }
 
-    print(f"1️⃣ Solicitando {TARGET_URL} (Buscando Token)...")
-    
     try:
-        # Petición al Home usando el Proxy
-        # verify=False es necesario porque el proxy intercepta el SSL
-        resp_home = session.get(TARGET_URL, proxies=proxies, verify=False, timeout=120)
+        # GET a la API de Scrape.do
+        resp_home = requests.get(PROXY_ENDPOINT, params=params_home, timeout=120)
         
         if resp_home.status_code != 200:
-            print(f"❌ Falló Carga. Status: {resp_home.status_code}")
-            # Si es 502, es culpa de Scrape.do. Si es 403, es Polla.
-            print(f"   Respuesta: {resp_home.text[:200]}")
+            print(f"❌ Falló Home. Status: {resp_home.status_code}")
+            print(f"   Msg: {resp_home.text[:200]}")
             return
 
-        # Buscar Token
+        # A. Extraer Token
         token_polla = None
-        # Buscamos el token en el HTML del home
         m = re.search(r'csrfToken["\']\s*[:=]\s*["\']([a-zA-Z0-9]+)["\']', resp_home.text)
         if m: 
             token_polla = m.group(1)
             print(f"   ✅ ¡TOKEN CAPTURADO!: {token_polla[:15]}...")
         else:
-            print("   ⚠️ No encontré token en el Home.")
-            # Guardamos debug
-            with open("debug_home.html", "w", encoding="utf-8") as f: f.write(resp_home.text)
+            print("   ⚠️ Token no encontrado en HTML.")
             return
 
-        # --- PASO 2: POST A LA API ---
+        # B. Extraer Cookies (CRUCIAL)
+        # Las cookies vienen en la respuesta de Scrape.do
+        cookies_home = resp_home.cookies
+        print(f"   🍪 Cookies capturadas: {len(cookies_home)}")
+
+        # --- PASO 2: POST A LA API (Modo API) ---
         print(f"2️⃣ Consultando API Sorteo {DRAW_ID}...")
-        
-        # Para el POST, usamos el MISMO proxy pero desactivamos render si es posible
-        # Para simplificar, usamos la misma configuración de proxy (render=true no afecta negativamente al POST si ya tenemos cookies)
-        
-        headers_polla = {
-            "x-requested-with": "XMLHttpRequest",
-            "content-type": "application/x-www-form-urlencoded",
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+
+        # Configuración para el POST
+        # NO usamos 'render=true' aquí para evitar el error 400 anterior
+        params_api = {
+            'token': TOKEN,
+            'url': API_INTERNAL
         }
 
         data_polla = {
@@ -80,21 +71,26 @@ def run_smart_scraper():
             "drawId": DRAW_ID,
             "csrfToken": token_polla
         }
+        
+        headers_polla = {
+            "x-requested-with": "XMLHttpRequest",
+            "content-type": "application/x-www-form-urlencoded"
+        }
 
-        # Las cookies ya viajan en la 'session' automáticamente
-        resp_api = session.post(
-            API_INTERNAL, # Atacamos directo a la URL de Polla (el proxy intercepta)
-            proxies=proxies,
+        # Hacemos POST a Scrape.do, pasándole las cookies del paso 1
+        resp_api = requests.post(
+            PROXY_ENDPOINT, 
+            params=params_api, 
             headers=headers_polla, 
             data=data_polla,
-            verify=False,
+            cookies=cookies_home, # <--- El pegamento que mantiene la sesión
             timeout=120
         )
 
         if resp_api.status_code == 200:
             try:
                 data = resp_api.json()
-                print("   ✅ ¡ÉXITO TOTAL! JSON Recibido.")
+                print("   ✅ ¡VICTORIA! JSON Recibido.")
                 
                 with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
                     json.dump(data, f, indent=4, ensure_ascii=False)
@@ -104,7 +100,7 @@ def run_smart_scraper():
                 else:
                     print("   ⚠️ JSON válido pero vacío.")
             except:
-                print("   ❌ Respuesta no es JSON.")
+                print("   ❌ Error: Respuesta no es JSON.")
                 print(resp_api.text[:300])
         else:
             print(f"   ❌ Error API: {resp_api.status_code}")
@@ -114,4 +110,4 @@ def run_smart_scraper():
         print(f"🔥 Error Crítico: {e}")
 
 if __name__ == "__main__":
-    run_smart_scraper()
+    run_hybrid_scraper()
