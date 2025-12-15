@@ -1,110 +1,111 @@
-import os
-import requests
+import asyncio
 import json
 import re
+import os
+from playwright.async_api import async_playwright
 
 # --- CONFIGURACIÓN ---
-TOKEN = os.environ.get("SCRAPERAPI_KEY", "").strip() 
-
+TOKEN = os.environ.get("SCRAPERAPI_KEY", "").strip() # Tu llave de Scrape.do
 GAME_ID = "5271" # Loto
 DRAW_ID = "5360" # Sorteo Objetivo
-OUTPUT_FILE = "resultado_nube_scrapedou.json"
+OUTPUT_FILE = "resultado_nube_playwright.json"
 
-# URLs
 BASE_URL = "https://www.polla.cl/es/view/resultados"
-API_INTERNAL = "https://www.polla.cl/es/get/draw/results"
-PROXY_URL = "http://api.scrape.do"
+API_URL = "https://www.polla.cl/es/get/draw/results"
 
-def run_scrapedou_test():
-    print(f"☁️ INICIANDO BYPASS CON SCRAPE.DO (Versión Session)")
+async def run_proxy_test():
+    print(f"🕷️ INICIANDO PLAYWRIGHT CON PROXY SCRAPE.DO")
     
     if len(TOKEN) < 10:
-        print("❌ Error: La llave (Token) parece vacía.")
+        print("❌ Error: Token vacío.")
         return
 
-    # Usamos una Sesión para intentar mantener cookies entre peticiones
-    session = requests.Session()
-
-    print("1️⃣ Obteniendo Token CSRF (GET + Render)...")
-    
-    # Paso 1: GET con Render (Necesario para engañar a Incapsula)
-    params_home = {
-        'token': TOKEN,
-        'url': BASE_URL,
-        'render': 'true' 
-    }
-
-    try:
-        # Usamos session.get
-        response = session.get(PROXY_URL, params=params_home, timeout=120)
+    async with async_playwright() as p:
+        # --- LA MAGIA: CONFIGURAR EL PROXY ---
+        # Scrape.do permite usarlo como un proxy estándar.
+        # Formato: http://proxy.scrape.do:8080
+        # Auth: username=TOKEN, password=""
         
-        if response.status_code != 200:
-            print(f"❌ Falló Home. Status: {response.status_code}")
-            print(f"   Msg: {response.text[:300]}")
-            return
-
-        # Buscar el token
-        token_polla = None
-        m = re.search(r'csrfToken["\']\s*[:=]\s*["\']([a-zA-Z0-9]+)["\']', response.text)
-        if m: 
-            token_polla = m.group(1)
-            print(f"   ✅ Token encontrado: {token_polla[:15]}...")
-        else:
-            print("   ⚠️ Token no encontrado en HTML.")
-            with open("debug_scrapedou.html", "w", encoding="utf-8") as f: f.write(response.text)
-            return
-
-        # Paso 2: POST a la API (SIN RENDER)
-        # Aquí estaba el error: No se puede usar render=true en POST
-        print(f"2️⃣ Consultando Sorteo {DRAW_ID} (POST Limpio)...")
-        
-        params_api = {
-            'token': TOKEN,
-            'url': API_INTERNAL,
-            # 'render': 'true'  <--- ELIMINADO: Esto causaba el error 400
-        }
-        
-        headers_polla = {
-            "x-requested-with": "XMLHttpRequest",
-            "content-type": "application/x-www-form-urlencoded"
-        }
-        
-        data_polla = {
-            "gameId": GAME_ID,
-            "drawId": DRAW_ID,
-            "csrfToken": token_polla
-        }
-
-        # Usamos session.post para reutilizar conexión/cookies si Scrape.do lo permite
-        final_resp = session.post(
-            PROXY_URL, 
-            params=params_api, 
-            headers=headers_polla, 
-            data=data_polla,
-            timeout=120
+        print("🌍 Configurando túnel residencial...")
+        browser = await p.chromium.launch(
+            headless=True,
+            proxy={
+                "server": "http://proxy.scrape.do:8080",
+                "username": TOKEN,
+                "password": "" 
+            }
         )
+        
+        # Usamos tu User-Agent probado para parecer Windows 10 real
+        context = await browser.new_context(
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            ignore_https_errors=True # Importante para proxies
+        )
+        page = await context.new_page()
 
-        if final_resp.status_code == 200:
-            try:
-                data_json = final_resp.json()
-                print("   ✅ ¡ÉXITO TOTAL! JSON Recibido.")
-                
-                with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
-                    json.dump(data_json, f, indent=4, ensure_ascii=False)
-                
-                if data_json.get('results'):
-                    print(f"   🎉 Datos Sorteo: {data_json.get('drawDate')}")
-                else:
-                    print("   ⚠️ JSON válido pero vacío.")
-            except:
-                print("   ❌ Respuesta no es JSON.")
-                print(final_resp.text[:500])
-        else:
-            print(f"   ❌ Error API Polla: {final_resp.status_code}")
-            print(f"   Cuerpo: {final_resp.text[:500]}")
+        try:
+            print("1️⃣ Navegando al Home (Obteniendo Cookies y Token)...")
+            
+            # Navegamos. Como vamos por proxy, Scrape.do rota la IP por nosotros.
+            # Aumentamos timeout a 60s porque los proxies residenciales son algo lentos.
+            await page.goto(BASE_URL, timeout=60000, wait_until="domcontentloaded")
+            await asyncio.sleep(5) # Espera de seguridad
 
-    except Exception as e:
-        print(f"🔥 Error Crítico: {e}")
+            # TU LÓGICA DE EXTRACCIÓN (ROBUSTA)
+            token = await page.evaluate("document.querySelector('input[name=\"csrfToken\"]')?.value")
+            
+            if not token:
+                print("   ⚠️ Token no en DOM. Intentando Regex...")
+                content = await page.content()
+                m = re.search(r'csrfToken["\']\s*[:=]\s*["\']([a-zA-Z0-9]+)["\']', content)
+                if m: 
+                    token = m.group(1)
+            
+            if not token:
+                print("❌ FATAL: No se encontró Token CSRF.")
+                # Guardar HTML para debug
+                await page.screenshot(path="debug_error.png")
+                with open("debug_error.html", "w", encoding="utf-8") as f:
+                    f.write(await page.content())
+                return
+
+            print(f"   ✅ Token Validado: {token[:15]}...")
+
+            # 2. PETICIÓN API (Desde el contexto del navegador)
+            # Esto es vital: Playwright envía la petición DESDE la misma sesión/IP
+            print(f"2️⃣ Solicitando Sorteo {DRAW_ID}...")
+            
+            response = await page.request.post(API_URL, data={
+                "gameId": GAME_ID, 
+                "drawId": DRAW_ID, 
+                "csrfToken": token
+            }, headers={
+                "x-requested-with": "XMLHttpRequest"
+            })
+
+            if response.status == 200:
+                try:
+                    data = await response.json()
+                    print("   ✅ ¡ÉXITO! JSON Recibido.")
+                    
+                    with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
+                        json.dump(data, f, indent=4, ensure_ascii=False)
+                    
+                    if data.get('results'):
+                        print(f"   🎉 Fecha Sorteo: {data.get('drawDate')}")
+                    else:
+                        print("   ⚠️ JSON vacío (¿Sorteo futuro?)")
+                except:
+                    print("   ❌ Error parseando JSON.")
+            else:
+                print(f"   ❌ Error HTTP {response.status}")
+                print(await response.text())
+
+        except Exception as e:
+            print(f"🔥 Error Crítico: {e}")
+        
+        finally:
+            await browser.close()
 
 if __name__ == "__main__":
-    run_scrapedou_test()
+    asyncio.run(run_proxy_test())

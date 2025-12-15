@@ -1,41 +1,39 @@
-name: Scraping Nube con ScraperAPI
+name: Scraping Playwright + Proxy
 
 on:
-  workflow_dispatch: # Esto habilita el botón manual "Run workflow"
+  workflow_dispatch:
 
 jobs:
   scrape-proxy:
     runs-on: ubuntu-latest
     permissions:
-      contents: write # Permiso crucial para que el bot pueda guardar los archivos
+      contents: write
 
     steps:
-      - name: 📥 Descargar código (Checkout)
+      - name: 📥 Checkout
         uses: actions/checkout@v4
 
-      - name: 🐍 Configurar Python
+      - name: 🐍 Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
 
       - name: 📦 Instalar dependencias
-        run: pip install requests
+        run: |
+          pip install playwright requests
+          playwright install chromium --with-deps
 
-      - name: 🕷️ Ejecutar Scraper (Vía ScraperAPI)
+      - name: 🕷️ Ejecutar Scraper
         env:
-          SCRAPERAPI_KEY: ${{ secrets.SCRAPERAPI_KEY }} # <--- Aquí inyectamos el secreto
-        run: python engine/scrapers/test_gh_action.py   # <--- Ruta corregida a tu carpeta real
+          SCRAPERAPI_KEY: ${{ secrets.SCRAPERAPI_KEY }} 
+        run: python engine/scrapers/test_gh_action.py
 
-      - name: 📤 Guardar cambios (Commit & Push)
-        if: always() # Se ejecuta siempre, incluso si falla (para subir logs de error si los hay)
+      - name: 📤 Guardar cambios
+        if: always()
         run: |
           git config --global user.name 'GitHub Action Bot'
           git config --global user.email 'action@github.com'
-          
-          # Intentamos agregar tanto el resultado exitoso como el de error
-          git add resultado_nube_scraperapi.json || true
-          git add debug_scraperapi.html || true
-          
-          # Hacemos commit solo si hay algo nuevo
-          git commit -m "☁️ Resultado ScraperAPI (Auto)" || echo "⚠️ Nada nuevo que guardar"
+          git add resultado_nube_playwright.json || true
+          git add debug_error.html || true
+          git commit -m "🕷️ Resultado Playwright Proxy" || echo "Nada nuevo"
           git push
