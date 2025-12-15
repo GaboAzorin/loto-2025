@@ -3,664 +3,1327 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LOTO AI • COMMAND CENTER (Laboratorio Táctico)</title>
-    
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+    <title>🔬 Laboratorio LotoAI - Financial Master Ultimate</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
-
     <style>
         /* =========================================
-           ESTILOS SYSTEM-UI / CYBERPUNK PROFESIONAL
+           ESTILOS GLOBALES Y VARIABLES
            ========================================= */
         :root {
-            --bg-dark: #050a14;
-            --panel-bg: #0f1623;
-            --card-bg: #161b22;
-            --border: #30363d;
-            --text-main: #e6edf3;
+            --bg: #0d1117;
+            --card: #161b22;
+            --text: #c9d1d9;
             --text-muted: #8b949e;
+            --accent: #58a6ff;
+            --success: #2ea043;
+            --warning: #d29922;
+            --danger: #f85149;
+            --border: #30363d;
             
-            --accent-blue: #58a6ff;
-            --accent-green: #2ea043;
-            --accent-red: #da3633;
-            --accent-gold: #f2cc60;
-            --accent-purple: #bc8cff;
+            /* Colores Financieros */
+            --money: #00ff41; 
+            --loss: #ff3b5c;
+            --gold: #ffd700;
             
-            --neon-glow: 0 0 10px rgba(88, 166, 255, 0.3);
+            /* Colores de Algoritmos */
+            --bio-color: #58a6ff;   
+            --gauss-color: #f1e05a; 
+            --delta-color: #20b2aa; 
+            --markov-color: #ff69b4; 
+            --consenso-color: #ffffff; 
         }
 
-        * { box-sizing: border-box; }
-
-        body {
-            background-color: var(--bg-dark);
-            color: var(--text-main);
-            font-family: 'Inter', sans-serif;
-            margin: 0;
-            height: 100vh;
-            display: grid;
-            grid-template-columns: 350px 1fr 350px; /* Layout de 3 columnas denso */
-            grid-template-rows: 60px 1fr 40px;
-            overflow: hidden;
+        body { 
+            font-family: 'JetBrains Mono', monospace; 
+            background-color: var(--bg); 
+            color: var(--text); 
+            margin: 0; 
+            padding: 20px; 
+            overflow-x: hidden;
         }
 
-        /* --- HEADER --- */
-        .top-bar {
-            grid-column: 1 / -1;
-            background: var(--panel-bg);
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 20px;
-            z-index: 10;
+        .container { 
+            max-width: 1900px; 
+            margin: 0 auto; 
+            padding-bottom: 50px;
         }
-        .brand {
-            font-family: 'JetBrains Mono';
-            font-weight: 900;
-            font-size: 1.2rem;
-            color: white;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .nav-actions button {
-            background: #21262d;
-            border: 1px solid var(--border);
-            color: var(--text-main);
-            padding: 6px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.8rem;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .nav-actions button:hover { background: #30363d; }
-
-        /* --- COLUMNA IZQUIERDA: PREDICCIONES --- */
-        .col-left {
-            grid-column: 1;
-            grid-row: 2;
-            background: var(--bg-dark);
-            border-right: 1px solid var(--border);
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-        }
-        .col-header {
-            padding: 15px;
-            background: var(--panel-bg);
-            border-bottom: 1px solid var(--border);
-            position: sticky;
-            top: 0;
-            z-index: 5;
-        }
-        .col-title { font-size: 0.85rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
         
-        .pred-list { padding: 15px; display: flex; flex-direction: column; gap: 15px; }
+        /* =========================================
+           HEADER Y NAVEGACIÓN
+           ========================================= */
+        header { 
+            border-bottom: 1px solid var(--border); 
+            padding-bottom: 20px; 
+            margin-bottom: 20px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+        }
 
-        .pred-card {
-            background: var(--card-bg);
+        h1 { 
+            margin: 0; 
+            font-size: 1.8rem; 
+            color: var(--accent); 
+            display: flex; 
+            align-items: center; 
+            gap: 15px; 
+            letter-spacing: -1px;
+        }
+
+        .status-badge { 
+            background: var(--success); 
+            color: white; 
+            padding: 5px 12px; 
+            border-radius: 6px; 
+            font-size: 0.85rem; 
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        
+        .nav-link { 
+            color: var(--text); 
+            text-decoration: none; 
+            border: 1px solid var(--border); 
+            padding: 8px 15px; 
+            border-radius: 6px; 
+            transition: all 0.2s; 
+            background: var(--card);
+            font-size: 0.9rem;
+        }
+        .nav-link:hover { 
+            background: var(--border); 
+            color: white;
+        }
+
+        /* =========================================
+           PESTAÑAS DE MULTIVERSO
+           ========================================= */
+        .universe-tabs { 
+            display: flex; 
+            gap: 5px; 
+            margin-bottom: 25px; 
+            border-bottom: 1px solid var(--border); 
+            padding-bottom: 0; 
+        }
+
+        .tab-btn {
+            background: var(--card); 
+            border: 1px solid var(--border); 
+            color: var(--text-muted);
+            padding: 15px 30px; 
+            border-radius: 8px 8px 0 0; 
+            cursor: pointer;
+            font-family: inherit; 
+            font-weight: bold; 
+            transition: all 0.2s; 
+            position: relative; 
+            bottom: -1px;
+            font-size: 1rem;
+        }
+
+        .tab-btn:hover { 
+            background: #21262d; 
+            color: white;
+        }
+
+        .tab-btn.active {
+            background: var(--bg); 
+            border-bottom: 1px solid var(--bg); 
+            color: var(--accent); 
+            border-top: 3px solid var(--accent); 
+            opacity: 1;
+        }
+
+        /* =========================================
+           KPI CARDS (TARJETAS DE MÉTRICAS)
+           ========================================= */
+        .kpi-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); 
+            gap: 20px; 
+            margin-bottom: 30px; 
+        }
+
+        .card { 
+            background: var(--card); 
+            border: 1px solid var(--border); 
+            padding: 20px; 
+            border-radius: 8px; 
+            position: relative; 
+            overflow: hidden; 
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        }
+
+        .card h3 { 
+            margin: 0 0 10px 0; 
+            font-size: 0.85rem; 
+            color: var(--text-muted); 
+            text-transform: uppercase; 
+            letter-spacing: 1px; 
+        }
+
+        .card .value { 
+            font-size: 2rem; 
+            font-weight: bold; 
+            letter-spacing: -1px;
+        }
+        
+        /* ESTILOS ESPECÍFICOS PARA TARJETAS FINANCIERAS */
+        .card.money-card { 
+            border: 1px solid var(--money); 
+            background: linear-gradient(145deg, rgba(0,255,65,0.05) 0%, rgba(0,0,0,0) 100%); 
+        }
+        .card.money-card .value { 
+            color: var(--money); 
+            text-shadow: 0 0 15px rgba(0, 255, 65, 0.4); 
+        }
+        .card.money-card h3 { color: #8fbc8f; }
+        
+        .card.real-money { 
+            border: 1px solid var(--warning); 
+            background: linear-gradient(145deg, rgba(210, 153, 34, 0.05) 0%, rgba(0,0,0,0) 100%);
+        }
+        .card.real-money .value { color: var(--warning); }
+        .card.real-money h3 { color: #cc9933; }
+
+        /* =========================================
+           GRÁFICOS
+           ========================================= */
+        .chart-wrapper { 
+            background: var(--card); 
+            border: 1px solid var(--border); 
+            padding: 25px; 
+            border-radius: 8px; 
+            margin-bottom: 30px; 
+        }
+
+        .chart-header-controls { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 20px; 
+        }
+
+        .chart-container { 
+            position: relative; 
+            height: 350px; 
+            width: 100%; 
+        }
+
+        .chart-radios { 
+            display: flex; 
+            gap: 5px; 
+            background: #0d1117; 
+            padding: 5px; 
+            border-radius: 6px; 
+            border: 1px solid var(--border); 
+        }
+
+        .chart-radios label { 
+            cursor: pointer; 
+            padding: 8px 15px; 
+            border-radius: 4px; 
+            font-size: 0.8rem; 
+            color: var(--text-muted); 
+            transition: all 0.2s; 
+        }
+
+        .chart-radios input[type="radio"] { display: none; }
+        
+        .chart-radios input[type="radio"]:checked + span { 
+            color: var(--text); 
+            font-weight: bold; 
+            background: var(--border);
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        /* =========================================
+           FILTROS Y CONTROLES
+           ========================================= */
+        .filters-container { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); 
+            gap: 15px; 
+            margin-top: 20px; 
+            background: var(--card);
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .filter-group label { 
+            display: block; 
+            font-size: 0.8rem; 
+            color: var(--text-muted); 
+            margin-bottom: 8px; 
+            font-weight: bold;
+        }
+
+        .filter-select { 
+            width: 100%; 
+            background: #0d1117; 
+            color: var(--text); 
+            border: 1px solid var(--border); 
+            padding: 10px; 
+            border-radius: 6px; 
+            font-family: 'JetBrains Mono', monospace; 
+            font-size: 0.9rem;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .btn-reset { 
+            background: var(--border); 
+            color: var(--text); 
+            border: none; 
+            padding: 10px 20px; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            height: 42px; 
+            align-self: end; 
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+
+        .btn-reset:hover { background: #444; }
+
+        /* =========================================
+           TABLAS DE DATOS
+           ========================================= */
+        .table-scroll { 
+            overflow-x: auto; 
+            max-height: 600px; 
+            overflow-y: auto; 
             border: 1px solid var(--border);
             border-radius: 8px;
-            padding: 15px;
-            position: relative;
-            transition: all 0.2s;
-        }
-        .pred-card:hover { border-color: var(--accent-blue); transform: translateX(4px); }
-        .pred-card.active { border-color: var(--accent-gold); box-shadow: var(--neon-glow); background: #1c2128; }
-
-        .card-top { display: flex; justify-content: space-between; margin-bottom: 10px; }
-        .tag-game { font-size: 0.7rem; font-weight: bold; background: rgba(88, 166, 255, 0.15); color: var(--accent-blue); padding: 2px 6px; border-radius: 4px; }
-        .card-meta { font-size: 0.7rem; color: var(--text-muted); font-family: 'JetBrains Mono'; }
-
-        .card-nums { display: flex; gap: 5px; flex-wrap: wrap; justify-content: center; margin: 10px 0; }
-        .ball-sm {
-            width: 28px; height: 28px; line-height: 26px; text-align: center;
-            border-radius: 50%; background: #0d1117; border: 1px solid var(--border);
-            font-size: 0.75rem; font-weight: bold; font-family: 'JetBrains Mono';
-        }
-        .ball-sm.hot { border-color: var(--accent-gold); color: var(--accent-gold); }
-
-        .card-actions { margin-top: 10px; display: flex; gap: 5px; }
-        .btn-card { flex: 1; border: none; padding: 8px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; font-weight: bold; }
-        .btn-play { background: var(--accent-green); color: white; }
-        .btn-play:hover { background: #3fb950; }
-        .btn-analyze { background: #21262d; color: var(--text-main); border: 1px solid var(--border); }
-
-        /* --- COLUMNA CENTRAL: VISUALIZACIÓN TÁCTICA --- */
-        .col-center {
-            grid-column: 2;
-            grid-row: 2;
-            padding: 30px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 30px;
         }
 
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            font-size: 0.85rem; 
+            background: var(--bg);
+        }
+
+        th { 
+            text-align: left; 
+            color: var(--text-muted); 
+            border-bottom: 1px solid var(--border); 
+            padding: 12px 15px; 
+            position: sticky; 
+            top: 0; 
+            background: var(--card); 
+            z-index: 10; 
+            white-space: nowrap; 
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        td { 
+            padding: 10px 15px; 
+            border-bottom: 1px solid var(--border); 
+            vertical-align: middle; 
         }
         
-        .panel {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 20px;
-            min-height: 250px;
-            display: flex;
-            flex-direction: column;
-        }
-        .panel h3 { margin: 0 0 15px 0; font-size: 1rem; color: var(--text-main); display: flex; align-items: center; gap: 8px; }
-
-        /* Matriz de Cobertura */
-        .matrix-container {
-            display: grid;
-            grid-template-columns: repeat(10, 1fr);
-            gap: 6px;
-        }
-        .matrix-cell {
-            aspect-ratio: 1;
-            background: #0d1117;
-            border: 1px solid #21262d;
-            border-radius: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.8rem;
-            color: #484f58;
-            font-family: 'JetBrains Mono';
-            transition: all 0.3s;
-        }
-        .matrix-cell.covered {
-            background: rgba(46, 160, 67, 0.2);
-            border-color: var(--accent-green);
-            color: white;
-            box-shadow: 0 0 8px rgba(46, 160, 67, 0.2);
-        }
-        .matrix-cell.selected {
-            background: rgba(242, 204, 96, 0.2);
-            border-color: var(--accent-gold);
-            color: var(--accent-gold);
-            transform: scale(1.1);
+        tr:hover td {
+            background: rgba(88, 166, 255, 0.05);
         }
 
-        /* --- COLUMNA DERECHA: INTELIGENCIA DE MERCADO --- */
-        .col-right {
-            grid-column: 3;
-            grid-row: 2;
-            background: var(--bg-dark);
-            border-left: 1px solid var(--border);
-            overflow-y: auto;
-            padding: 20px;
+        /* BADGES Y ESTADOS */
+        .num-badge { 
+            background: #21262d; 
+            padding: 3px 8px; 
+            border-radius: 4px; 
+            margin-right: 3px; 
+            display: inline-block; 
+            cursor: help; 
+            border: 1px solid transparent;
         }
 
-        .stat-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px 0;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-            font-size: 0.85rem;
+        .pending { color: var(--warning); font-weight: bold; }
+        .audited { color: var(--success); font-weight: bold; }
+        
+        .algo-badge { 
+            font-size: 0.75rem; 
+            padding: 3px 8px; 
+            border-radius: 20px; 
+            border: 1px solid transparent; 
+            white-space: nowrap; 
+            text-transform: uppercase;
+            font-weight: bold;
         }
-        .stat-label { color: var(--text-muted); }
-        .stat-val { font-weight: bold; color: white; font-family: 'JetBrains Mono'; }
+        .algo-bio { color: var(--bio-color); border-color: rgba(88, 166, 255, 0.3); background: rgba(88, 166, 255, 0.1); }
+        .algo-gauss { color: var(--gauss-color); border-color: rgba(241, 224, 90, 0.3); background: rgba(241, 224, 90, 0.1); }
+        .algo-delta { color: var(--delta-color); border-color: rgba(32, 178, 170, 0.3); background: rgba(32, 178, 170, 0.1); }
+        .algo-markov { color: var(--markov-color); border-color: rgba(255, 105, 180, 0.3); background: rgba(255, 105, 180, 0.1); } 
+        .algo-consenso { color: var(--consenso-color); border-color: rgba(255, 255, 255, 0.3); background: rgba(255, 255, 255, 0.1); }
 
-        /* --- FOOTER: CONSOLA --- */
-        .footer-console {
-            grid-column: 1 / -1;
-            grid-row: 3;
-            background: black;
-            border-top: 1px solid var(--accent-blue);
-            padding: 0 15px;
-            display: flex;
-            align-items: center;
-            font-family: 'JetBrains Mono', monospace;
+        /* HIGHLIGHTS DE ACIERTOS */
+        .match-exact { 
+            color: #2ea043; 
+            font-weight: 900; 
+            border: 1px solid #2ea043; 
+            box-shadow: 0 0 8px rgba(46, 160, 67, 0.3); 
+            background: rgba(46, 160, 67, 0.1);
+        }
+        .match-far { color: #444; }
+        .draw-badge { cursor: help; border-bottom: 1px dotted var(--text-muted); }
+        
+        .sortable-header { cursor: pointer; user-select: none; transition: color 0.2s; }
+        .sortable-header:hover { color: var(--accent); background-color: rgba(255,255,255,0.05); }
+        .sort-icon { display: inline-block; margin-left: 5px; font-size: 0.8em; opacity: 0.5; }
+        .sort-active { color: var(--accent); opacity: 1; }
+
+        /* BOTONES DE ACCIÓN */
+        .btn-action {
+            background: rgba(0, 255, 65, 0.1); 
+            color: #00ff41; 
+            border: 1px solid rgba(0, 255, 65, 0.3);
+            padding: 6px 12px; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-family: 'JetBrains Mono', monospace; 
             font-size: 0.75rem;
-            color: var(--accent-blue);
+            display: inline-flex; 
+            align-items: center; 
+            gap: 5px; 
+            transition: all 0.2s;
         }
-        .console-cursor { display: inline-block; width: 8px; height: 14px; background: var(--accent-blue); animation: blink 1s infinite; margin-left: 5px; }
-        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+        .btn-action:hover { 
+            background: rgba(0, 255, 65, 0.2); 
+            box-shadow: 0 0 10px rgba(0, 255, 65, 0.2); 
+            transform: scale(1.05);
+        }
+        .btn-disabled { 
+            background: rgba(255, 255, 255, 0.05); 
+            color: #666; 
+            border: 1px solid #444; 
+            cursor: not-allowed; 
+            pointer-events: none; 
+        }
 
+        /* COLUMNAS DE ACIERTOS (CALOR) */
+        .hit-col-high { color: #ff00ff; font-weight: bold; background: rgba(255, 0, 255, 0.1); padding: 2px 5px; border-radius: 4px; }
+        .hit-col-mid { color: #00f2ff; font-weight: bold; background: rgba(0, 242, 255, 0.1); padding: 2px 5px; border-radius: 4px; }
+        .hit-col-low { color: #2ea043; padding: 2px 5px; }
+        .hit-col-dim { color: var(--text-muted); opacity: 0.4; }
+
+        /* TABLA AUDITORÍA FINANCIERA (NUEVA) */
+        .audit-table {
+            width: 100%;
+            margin-top: 20px;
+            border: 1px solid var(--border);
+            font-size: 0.8rem;
+        }
+        .audit-table th { background: #1a1f26; }
+        .audit-row-win { background: rgba(0, 255, 65, 0.05); }
+        .audit-money { color: var(--money); font-weight: bold; text-align: right; }
     </style>
 </head>
 <body>
+    <div class="container">
+        <header>
+            <div>
+                <h1>🔬 Laboratorio Multiverso</h1>
+                <p style="margin: 5px 0 0 0; font-size: 0.9rem; color: var(--text-muted);">Monitor de Inteligencia Artificial Forense & Análisis Financiero</p>
+            </div>
+            <div>
+                <span class="status-badge" id="last-update">Cargando datos...</span>
+                <a href="auditoria.html" class="nav-link" style="margin-left: 10px;">⚖️ Auditoría</a>
+                <a href="../index.html" class="nav-link" style="margin-left: 10px;">🏠 Inicio</a>
+            </div>
+        </header>
 
-    <div class="top-bar">
-        <div class="brand">
-            <i data-lucide="cpu" color="var(--accent-blue)"></i>
-            LOTO AI <span style="color:#484f58; font-weight:300;">| LAB TÁCTICO v3.0</span>
+        <div class="universe-tabs">
+            <button class="tab-btn active" data-game="LOTO" onclick="switchUniverse('LOTO')">LOTO CLÁSICO</button>
+            <button class="tab-btn" data-game="LOTO3" onclick="switchUniverse('LOTO3')">LOTO 3</button>
+            <button class="tab-btn" data-game="LOTO4" onclick="switchUniverse('LOTO4')">LOTO 4</button>
+            <button class="tab-btn" data-game="RACHA" onclick="switchUniverse('RACHA')">RACHA</button>
         </div>
-        <div class="nav-actions">
-            <button onclick="window.location.href='auditoria.html'">
-                <i data-lucide="scale"></i> IR A AUDITORÍA (PASADO)
-            </button>
-            <button onclick="loadData()" style="color:var(--accent-green); border-color:var(--accent-green)">
-                <i data-lucide="refresh-cw"></i> SINCRONIZAR
-            </button>
+
+        <div class="kpi-grid">
+            <div class="card">
+                <h3>Total simulaciones</h3>
+                <div class="value" id="total-sims">0</div>
+            </div>
+            <div class="card">
+                <h3>Sorteo objetivo actual</h3>
+                <div class="value" id="target-draw" style="color: var(--warning)">...</div>
+            </div>
+            <div class="card">
+                <h3>Mejor Momento</h3>
+                <div class="value" id="best-moment">--</div>
+            </div>
+            <div class="card">
+                <h3>Precisión promedio</h3>
+                <div class="value" id="avg-score">0%</div>
+            </div>
+        </div>
+
+        <div class="kpi-grid" id="financial-panel" style="display:none; border-top: 1px solid var(--border); padding-top: 25px; margin-top:20px;">
+            <div class="card money-card">
+                <h3>Inversión Hipotética</h3>
+                <div class="value" id="hypo-invest">$0</div>
+                <small style="color:#8fbc8f; display:block; margin-top:5px;">(Simulaciones x Costo)</small>
+            </div>
+            <div class="card money-card">
+                <h3>Ganancia Hipotética</h3>
+                <div class="value" id="hypo-win">$0</div>
+                <small style="color:#8fbc8f; display:block; margin-top:5px;">(Premios Prorrateados)</small>
+            </div>
+            <div class="card real-money">
+                <h3>Inversión Real</h3>
+                <div class="value" id="real-invest">$0</div>
+                <small style="color:#cc9933; display:block; margin-top:5px;">(Jugadas en CSV)</small>
+            </div>
+            <div class="card real-money">
+                <h3>Ganancia Real</h3>
+                <div class="value" id="real-win">$0</div>
+                <small style="color:#cc9933; display:block; margin-top:5px;">(A la billetera)</small>
+            </div>
+        </div>
+
+        <div id="financial-audit-log" style="display:none; margin-bottom:30px; background:var(--card); padding:20px; border-radius:8px; border:1px solid var(--border);">
+            <h3 style="color:var(--money); margin-top:0;">🧾 Detalle de Premios (Prorrateo Exacto)</h3>
+            <div class="table-scroll">
+                <table class="audit-table">
+                    <thead>
+                        <tr>
+                            <th>Fecha / Hora</th>
+                            <th>Algoritmo</th>
+                            <th>Números Jugados</th>
+                            <th>Aciertos</th>
+                            <th>Categoría Premio</th>
+                            <th>Cálculo (Monto / Ganadores)</th>
+                            <th>Tu Premio</th>
+                        </tr>
+                    </thead>
+                    <tbody id="audit-table-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="chart-wrapper">
+            <div class="chart-header-controls">
+                <h3 style="margin:0; color:var(--text-muted); font-size:1rem;">Rendimiento Comparativo (Afinidad %)</h3>
+                <div class="chart-radios">
+                    <label><input type="radio" name="chartView" value="hour" checked onchange="switchChartView(this.value)"><span>Hora</span></label>
+                    <label><input type="radio" name="chartView" value="day" onchange="switchChartView(this.value)"><span>Día Sem.</span></label>
+                    <label><input type="radio" name="chartView" value="month" onchange="switchChartView(this.value)"><span>Mes</span></label>
+                </div>
+            </div>
+            <div class="chart-container">
+                <canvas id="mainChart"></canvas>
+            </div>
+        </div>
+
+        <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                <h3>🔍 Explorador de Simulaciones</h3>
+                <span id="filtered-count" style="font-size:0.8rem; color:var(--text-muted)">Mostrando 0 registros</span>
+            </div>
+
+            <div class="filters-container">
+                <div class="filter-group">
+                    <label>Sorteo Objetivo</label>
+                    <select id="f-sorteo" class="filter-select" onchange="applyFilters()">
+                        <option value="ALL">Todos los Sorteos</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Algoritmo</label>
+                    <select id="f-algo" class="filter-select" onchange="applyFilters()">
+                        <option value="ALL">Todos</option>
+                        <option value="forense">🔮 Biométrico/Ponderado</option>
+                        <option value="gaussiano">📐 Gaussiano</option>
+                        <option value="delta">📈 Delta</option>
+                        <option value="markov">🔗 Markov</option>
+                        <option value="consenso">🤝 Consenso</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Día de Semana</label>
+                    <select id="f-dia" class="filter-select" onchange="applyFilters()">
+                        <option value="ALL">Todos</option>
+                        <option value="1">Lunes</option> <option value="2">Martes</option> <option value="3">Miércoles</option>
+                        <option value="4">Jueves</option> <option value="5">Viernes</option> <option value="6">Sábado</option> <option value="0">Domingo</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Hora</label>
+                    <select id="f-hora" class="filter-select" onchange="applyFilters()">
+                        <option value="ALL">Todas</option>
+                    </select>
+                </div>
+                <button class="btn-reset" onclick="resetFilters()">Limpiar</button>
+            </div>
+
+            <div class="table-scroll">
+                <table id="logs-table">
+                    <thead>
+                        <tr>
+                            <th class="sortable-header" onclick="sortLogs('date')">Fecha/Hora <span id="log-sort-date" class="sort-icon">▼</span></th>
+                            <th class="sortable-header" onclick="sortLogs('algo')">Algoritmo <span id="log-sort-algo" class="sort-icon"></span></th>
+                            <th class="sortable-header" onclick="sortLogs('target')">Sorteo <span id="log-sort-target" class="sort-icon"></span></th>
+                            <th>Predicción</th>
+                            <th class="sortable-header" onclick="sortLogs('status')">Estado <span id="log-sort-status" class="sort-icon"></span></th>
+                            <th class="sortable-header" onclick="sortLogs('score')">Score <span id="log-sort-score" class="sort-icon"></span></th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 style="margin-bottom:15px; color:var(--accent);">📊 Resumen de Desempeño por Sorteo (Agregado)</h3>
+            <div class="table-scroll">
+                <table id="aggregate-table">
+                    <thead id="agg-head"></thead>
+                    <tbody id="aggregate-body"></tbody>
+                </table>
+            </div>
         </div>
     </div>
 
-    <div class="col-left">
-        <div class="col-header">
-            <div class="col-title">SEÑALES ACTIVAS (<span id="count-pending">0</span>)</div>
-        </div>
-        <div id="predictions-list" class="pred-list">
-            <div style="text-align:center; padding:20px; color:var(--text-muted)">
-                <i data-lucide="loader" class="animate-spin"></i> Buscando señales...
-            </div>
-        </div>
-    </div>
+    <script>
+        // =========================================================
+        // 1. CONFIGURACIÓN DE FUENTES DE DATOS & REGLAS DE NEGOCIO
+        // =========================================================
+        const DATA_SOURCES = {
+            'SIMS': '../data/LOTO_SIMULACIONES.csv',
+            'JUGADAS': '../data/LOTO_JUGADAS.csv',
+            'LOTO': '../data/LOTO_HISTORIAL_MAESTRO.csv',
+            'LOTO3': '../data/LOTO3_MAESTRO.csv',
+            'LOTO4': '../data/LOTO4_MAESTRO.csv',
+            'RACHA': '../data/RACHA_MAESTRO.csv'
+        };
 
-    <div class="col-center">
-        <div class="panel" style="flex:1;">
-            <h3><i data-lucide="grid-3x3"></i> Matriz de Cobertura Táctica (LOTO)</h3>
-            <p style="font-size:0.8rem; color:var(--text-muted); margin-top:-10px; margin-bottom:20px;">
-                Visualización de los números cubiertos por todas las predicciones pendientes.
-                <br><span style="color:var(--accent-green)">Verde: Cubierto</span> | <span style="color:var(--accent-gold)">Dorado: Selección Actual</span>
-            </p>
-            <div id="coverage-matrix" class="matrix-container">
-                </div>
-        </div>
+        const UNIVERSE_CONFIG = {
+            'LOTO': {
+                algos: [
+                    {key: 'forense', label: 'Bio', color: '#58a6ff'},
+                    {key: 'gauss', label: 'Gauss', color: '#f1e05a'},
+                    {key: 'delta', label: 'Delta', color: '#20b2aa'},
+                    {key: 'markov', label: 'Markov', color: '#ff69b4'},
+                    {key: 'consenso', label: 'Consenso', color: '#ffffff'}
+                ],
+                hits: [6, 5, 4, 3, 2, 1],
+                cost: 1000
+            },
+            'LOTO3': {
+                algos: [
+                    {key: 'forense', label: 'Bio', color: '#58a6ff'},
+                    {key: 'consenso', label: 'Consenso', color: '#ffffff'}
+                ],
+                hits: [3, 2, 1],
+                cost: 500
+            },
+            'LOTO4': {
+                algos: [
+                    {key: 'forense', label: 'Bio', color: '#58a6ff'},
+                    {key: 'consenso', label: 'Consenso', color: '#ffffff'}
+                ],
+                hits: [4, 3, 2, 1],
+                cost: 500
+            },
+            'RACHA': {
+                algos: [
+                    {key: 'forense', label: 'Bio', color: '#58a6ff'},
+                    {key: 'consenso', label: 'Consenso', color: '#ffffff'}
+                ],
+                hits: [10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0],
+                cost: 500
+            }
+        };
 
-        <div class="dashboard-grid">
-            <div class="panel">
-                <h3><i data-lucide="radar"></i> Perfil de Equilibrio</h3>
-                <div style="flex:1; position:relative;">
-                    <canvas id="radarChart"></canvas>
-                </div>
-            </div>
-            <div class="panel">
-                <h3><i data-lucide="bar-chart-2"></i> Distribución de Terminaciones</h3>
-                <div style="flex:1; position:relative;">
-                    <canvas id="barChart"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-right">
-        <div style="margin-bottom:30px;">
-            <h4 style="color:white; border-bottom:1px solid var(--border); padding-bottom:10px;">INTELIGENCIA DE MERCADO</h4>
-            <div class="stat-row">
-                <span class="stat-label">Estado del Genoma</span>
-                <span class="stat-val" style="color:var(--accent-green)">ACTIVO</span>
-            </div>
-            <div class="stat-row">
-                <span class="stat-label">Última Actualización</span>
-                <span class="stat-val" id="genome-date">-</span>
-            </div>
-            <div class="stat-row">
-                <span class="stat-label">Casos Estudiados</span>
-                <span class="stat-val" id="genome-cases">0</span>
-            </div>
-        </div>
-
-        <div style="margin-bottom:30px;">
-            <h4 style="color:white; border-bottom:1px solid var(--border); padding-bottom:10px;">ZONAS CALIENTES (HOT)</h4>
-            <p style="font-size:0.75rem; color:var(--text-muted)">Números con mayor probabilidad según IA</p>
-            <div id="hot-numbers-list" style="display:flex; flex-wrap:wrap; gap:5px; margin-top:10px;">
-                </div>
-        </div>
-
-        <div>
-            <h4 style="color:white; border-bottom:1px solid var(--border); padding-bottom:10px;">ALGORITMOS LÍDERES</h4>
-            <div id="algo-ranking-list">
-                </div>
-        </div>
-    </div>
-
-    <div class="footer-console">
-        <span style="color:var(--accent-green)">root@loto-ai:~/lab#</span>&nbsp;<span id="console-msg">System initialized. Waiting for input...</span><span class="console-cursor"></span>
-    </div>
-
-<script>
-    // --- VARIABLES GLOBALES ---
-    let PENDING_DATA = [];
-    let GENOME = null;
-    let SELECTED_PRED_ID = null; // Para resaltar selección
-    let CHARTS = {};
-
-    // Configuración de la matriz (LOTO por defecto 41 números)
-    const MATRIX_SIZE = 41; 
-
-    // URL Google Script (Preservada)
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwBZd2vTrvxVdTjJnLoK2vMCR90qJqyH3ZfSDkNK4_n0aFYe3jCoeIZ3R58XNQBM1xQ3A/exec";
-
-    // --- INICIO ---
-    document.addEventListener("DOMContentLoaded", () => {
-        lucide.createIcons();
-        initMatrix();
-        loadData();
-    });
-
-    // --- CARGA DE DATOS ---
-    async function loadData() {
-        logConsole("Connecting to neural core...");
+        // Estado Global de la Aplicación
+        let RAW_SIMULATIONS = [];
+        let RAW_PLAYS = [];
+        let MASTERS = {}; 
+        let MASTERS_DATES = {}; 
+        let MASTERS_PRIZES = {}; 
+        let MASTERS_WINNERS = {}; 
+        let MASTERS_COMODIN = {}; 
         
-        // 1. Cargar Genoma (Inteligencia)
-        try {
-            const res = await fetch('../../data/loto_genome.json');
-            if(res.ok) {
-                GENOME = await res.json();
-                renderRightPanel();
-                logConsole("Genome loaded successfully.");
-            }
-        } catch(e) { logConsole("Genome load failed (Offline mode)."); }
+        let CURRENT_UNIVERSE = 'LOTO';
+        let CURRENT_CHART_MODE = 'hour';
+        
+        let SORT_COL = 'target'; 
+        let SORT_DIR = 'desc';   
+        let LOGS_SORT_COL = 'date';
+        let LOGS_SORT_DIR = 'desc';
 
-        // 2. Cargar Simulaciones (CSV)
-        Papa.parse('../../data/LOTO_SIMULACIONES.csv', {
-            download: true,
-            header: true,
-            skipEmptyLines: true,
-            complete: function(results) {
-                // Filtro: Solo PENDIENTE
-                PENDING_DATA = results.data.filter(r => r.estado === 'PENDIENTE');
-                PENDING_DATA.reverse(); // Más nuevas arriba
-                
-                renderPredictionsList();
-                updateMatrixCoverage(); // Actualizar matriz con TODAS las pendientes
-                updateCharts(); // Generar gráficos globales
-                
-                logConsole(`Found ${PENDING_DATA.length} active signals.`);
-            }
-        });
-    }
-
-    // --- RENDERIZADO UI: LISTA IZQUIERDA ---
-    function renderPredictionsList() {
-        const container = document.getElementById('predictions-list');
-        document.getElementById('count-pending').innerText = PENDING_DATA.length;
-        container.innerHTML = '';
-
-        if(PENDING_DATA.length === 0) {
-            container.innerHTML = `<div style="text-align:center; color:#8b949e;">Sin predicciones activas.</div>`;
-            return;
+        // Inicialización de Selectores
+        const hSel = document.getElementById('f-hora');
+        for(let i=0; i<24; i++) {
+            let opt = document.createElement('option'); opt.value = i; opt.textContent = i.toString().padStart(2,'0')+":00"; hSel.appendChild(opt);
         }
 
-        PENDING_DATA.forEach(row => {
-            let nums = [];
-            try { nums = JSON.parse(row.numeros); } catch(e) { return; }
-
-            // Chequeo de jugada realizada
-            const isPlayed = localStorage.getItem(`played_${row.id}`);
-
-            const card = document.createElement('div');
-            card.className = `pred-card ${SELECTED_PRED_ID === row.id ? 'active' : ''}`;
-            card.onclick = (e) => {
-                // Evitar disparar si clickea botones
-                if(e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
-                selectPrediction(row.id, nums);
-            };
-
-            const numsHtml = nums.map(n => {
-                // Verificar si es HOT según genoma
-                let isHot = false;
-                if(GENOME && GENOME.golden_hours && GENOME.golden_hours[n] > 0.05) isHot = true;
-                return `<div class="ball-sm ${isHot?'hot':''}">${n}</div>`;
-            }).join('');
-
-            card.innerHTML = `
-                <div class="card-top">
-                    <span class="tag-game">${row.juego}</span>
-                    <span class="card-meta">#${row.id.slice(-4)}</span>
-                </div>
-                <div class="card-nums">${numsHtml}</div>
-                <div class="card-meta" style="text-align:right;">${row.algoritmo.replace('_v1','')}</div>
-                
-                <div class="card-actions">
-                    <button class="btn-card btn-analyze" onclick="selectPrediction('${row.id}', [${nums}])">
-                        <i data-lucide="eye"></i> Analizar
-                    </button>
-                    <button class="btn-card btn-play" onclick="playPrediction(this, '${row.id}', '${row.numeros}')" ${isPlayed ? 'disabled style="background:#21262d; border:1px solid #2ea043; color:#2ea043;"' : ''}>
-                        ${isPlayed ? '<i data-lucide="check"></i> JUGADA' : '<i data-lucide="ticket"></i> JUGAR'}
-                    </button>
-                </div>
-            `;
-            container.appendChild(card);
-        });
-        lucide.createIcons();
-    }
-
-    // --- INTERACCIÓN: SELECCIÓN Y ANÁLISIS ---
-    function selectPrediction(id, nums) {
-        SELECTED_PRED_ID = id;
-        
-        // 1. Refrescar lista para mostrar borde activo
-        renderPredictionsList(); 
-        
-        // 2. Iluminar Matriz (Números seleccionados en Dorado)
-        highlightMatrix(nums);
-        
-        // 3. Actualizar Gráficos para esta predicción específica
-        updateCharts(nums);
-
-        logConsole(`Analyzing prediction #${id}... Data loaded.`);
-    }
-
-    // --- MATRIZ DE COBERTURA ---
-    function initMatrix() {
-        const container = document.getElementById('coverage-matrix');
-        container.innerHTML = '';
-        for(let i=1; i<=MATRIX_SIZE; i++) {
-            const cell = document.createElement('div');
-            cell.className = 'matrix-cell';
-            cell.id = `cell-${i}`;
-            cell.innerText = i;
-            container.appendChild(cell);
+        // Función auxiliar para colores transparentes en gráficos
+        function hexToRgba(hex, alpha) {
+            const r = parseInt(hex.slice(1, 3), 16);
+            const g = parseInt(hex.slice(3, 5), 16);
+            const b = parseInt(hex.slice(5, 7), 16);
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
         }
-    }
 
-    function updateMatrixCoverage() {
-        // Pinta de verde los números que están presentes en CUALQUIER predicción pendiente
-        // Limpiar primero
-        document.querySelectorAll('.matrix-cell').forEach(c => c.classList.remove('covered', 'selected'));
-
-        // Agregar cobertura global (Verde)
-        const coveredSet = new Set();
-        PENDING_DATA.forEach(row => {
+        // =========================================================
+        // 2. SISTEMA DE CARGA DE DATOS (DATA LOADER)
+        // =========================================================
+        async function loadAllData() {
             try {
-                const ns = JSON.parse(row.numeros);
-                ns.forEach(n => coveredSet.add(n));
-            } catch(e){}
-        });
-
-        coveredSet.forEach(n => {
-            const cell = document.getElementById(`cell-${n}`);
-            if(cell) cell.classList.add('covered');
-        });
-    }
-
-    function highlightMatrix(selectedNums) {
-        // Mantiene la cobertura global pero resalta la selección actual
-        updateMatrixCoverage(); // Reset base
-        selectedNums.forEach(n => {
-            const cell = document.getElementById(`cell-${n}`);
-            if(cell) cell.classList.add('selected');
-        });
-    }
-
-    // --- INTELIGENCIA DE MERCADO (DERECHA) ---
-    function renderRightPanel() {
-        if(!GENOME) return;
-        
-        // Metadata
-        document.getElementById('genome-date').innerText = GENOME.metadata.updated_at.split(' ')[0];
-        document.getElementById('genome-cases').innerText = GENOME.metadata.casos_estudiados;
-
-        // Hot Numbers
-        const hotContainer = document.getElementById('hot-numbers-list');
-        hotContainer.innerHTML = '';
-        // Ordenar horas doradas
-        const sortedHot = Object.entries(GENOME.golden_hours)
-            .sort(([,a],[,b]) => b - a)
-            .slice(0, 10);
-        
-        sortedHot.forEach(([num, score]) => {
-            const badge = document.createElement('div');
-            badge.style.cssText = "background:#21262d; border:1px solid #f2cc60; color:#f2cc60; padding:4px 8px; border-radius:4px; font-size:0.75rem; font-weight:bold;";
-            badge.innerText = num;
-            hotContainer.appendChild(badge);
-        });
-
-        // Algo Ranking
-        const algoContainer = document.getElementById('algo-ranking-list');
-        algoContainer.innerHTML = '';
-        if(GENOME.algo_ranking) {
-            Object.entries(GENOME.algo_ranking)
-                .sort(([,a],[,b]) => b - a)
-                .slice(0, 5)
-                .forEach(([name, score]) => {
-                    const row = document.createElement('div');
-                    row.className = 'stat-row';
-                    row.innerHTML = `<span class="stat-label">${name.replace('_v1','').slice(0,15)}</span> <span class="stat-val">${score}</span>`;
-                    algoContainer.appendChild(row);
+                const promises = Object.entries(DATA_SOURCES).map(([key, url]) => 
+                    fetch(url + '?t=' + Date.now()).then(res => res.ok ? res.text() : null).then(text => ({key, text}))
+                );
+                
+                const results = await Promise.all(promises);
+                
+                results.forEach(({key, text}) => {
+                    if (!text) return;
+                    if (key === 'SIMS') processSimulations(text);
+                    else if (key === 'JUGADAS') processPlays(text);
+                    else processMaster(key, text);
                 });
-        }
-    }
 
-    // --- GRÁFICOS (CHART.JS) ---
-    function updateCharts(focusNums = null) {
-        // Datos para Radar (Perfil)
-        // Si hay focusNums, analizamos esa jugada. Si no, promedio de todas.
-        let paridad = 0, altos = 0, primos = 0;
-        let count = 1;
-
-        if(focusNums) {
-            paridad = focusNums.filter(n => n%2===0).length; // Pares
-            altos = focusNums.filter(n => n > 20).length;
-            primos = focusNums.filter(n => [2,3,5,7,11,13,17,19,23,29,31,37,41].includes(n)).length;
-        } else {
-            // Promedio global pendientes (simplificado)
-            count = PENDING_DATA.length || 1;
-            // ... lógica de promedio omitida para brevedad, usamos valores dummy si es global
-            paridad = 3; altos = 3; primos = 2; 
+                applyFilters();
+                
+            } catch (e) {
+                console.error("Error crítico cargando datos:", e);
+                document.getElementById('last-update').textContent = "Error de Conexión";
+                document.getElementById('last-update').style.background = "var(--danger)";
+            }
         }
 
-        // Radar Chart
-        const radarCtx = document.getElementById('radarChart').getContext('2d');
-        if(CHARTS.radar) CHARTS.radar.destroy();
-        
-        CHARTS.radar = new Chart(radarCtx, {
-            type: 'radar',
-            data: {
-                labels: ['Pares', 'Altos (>20)', 'Primos', 'Bajos (<20)', 'Impares'],
-                datasets: [{
-                    label: focusNums ? 'Selección Actual' : 'Promedio Global',
-                    data: [paridad, altos, primos, 6-altos, 6-paridad],
-                    backgroundColor: 'rgba(88, 166, 255, 0.2)',
-                    borderColor: '#58a6ff',
-                    pointBackgroundColor: '#fff'
-                },
-                {
-                    label: 'Perfil Ganador Ideal (Genoma)',
-                    data: [3, 3, 2, 3, 3], // Aproximación estática, idealmente leer de Genoma
-                    borderColor: 'rgba(46, 160, 67, 0.5)',
-                    borderDash: [5, 5],
-                    fill: false,
-                    pointRadius: 0
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    r: {
-                        angleLines: { color: 'rgba(255,255,255,0.1)' },
-                        grid: { color: 'rgba(255,255,255,0.1)' },
-                        pointLabels: { color: '#8b949e' },
-                        suggestedMin: 0,
-                        suggestedMax: 6
+        // Procesador de Archivos Maestros (Historial + Premios + Ganadores)
+        function processMaster(gameKey, text) {
+            const lines = text.trim().split('\n');
+            if (lines.length < 2) return;
+            const headers = lines[0].split(',');
+            
+            // --- CONFIGURACIÓN DE COLUMNAS ---
+            let numCols = [];
+            let comodinCol = -1;
+
+            if (gameKey === 'LOTO') {
+                numCols = ['LOTO_n1','LOTO_n2','LOTO_n3','LOTO_n4','LOTO_n5','LOTO_n6'];
+                comodinCol = headers.indexOf('LOTO_comodin');
+            }
+            else if (gameKey === 'LOTO3') { numCols = ['n1','n2','n3']; }
+            else if (gameKey === 'LOTO4') { numCols = ['n1','n2','n3','n4']; }
+            else if (gameKey === 'RACHA') { numCols = ['n1','n2','n3','n4','n5','n6','n7','n8','n9','n10']; }
+
+            const idxSorteo = headers.indexOf('sorteo');
+            const idxFecha = headers.indexOf('fecha');
+            const idxs = numCols.map(c => headers.indexOf(c));
+
+            if (idxSorteo === -1) return;
+
+            // --- MAPEOS PARA EXTRACCIÓN ---
+            const map = {};
+            const dateMap = {};
+            const prizeMap = {};
+            const winnerMap = {};
+            const comodinMap = {};
+
+            // Mapeo Explícito de Columnas de Premios y Ganadores
+            let colMap = {};
+            let winnerColMap = {};
+
+            if (gameKey === 'LOTO') {
+                colMap = {
+                    'LOTO': headers.indexOf('LOTO_MONTO'),
+                    'SQUINA': headers.indexOf('SUPER_QUINA_5_ACIERTOS_COMODIN_MONTO'),
+                    'QUINA': headers.indexOf('QUINA_5_ACIERTOS_MONTO'),
+                    'SCUATERNA': headers.indexOf('SUPER_CUATERNA_4_ACIERTOS_COMODIN_MONTO'),
+                    'CUATERNA': headers.indexOf('CUATERNA_4_ACIERTOS_MONTO'),
+                    'STERNA': headers.indexOf('SUPER_TERNA_3_ACIERTOS_COMODIN_MONTO'),
+                    'TERNA': headers.indexOf('TERNA_3_ACIERTOS_MONTO'),
+                    'SDUPLA': headers.indexOf('SUPER_DUPLA_2_ACIERTOS_COMODIN_MONTO'),
+                    'POZO_REAL': headers.indexOf('LOTO_POZO_REAL')
+                };
+                winnerColMap = {
+                    'LOTO': headers.indexOf('LOTO_GANADORES'),
+                    'SQUINA': headers.indexOf('SUPER_QUINA_5_ACIERTOS_COMODIN_GANADORES'),
+                    'QUINA': headers.indexOf('QUINA_5_ACIERTOS_GANADORES'),
+                    'SCUATERNA': headers.indexOf('SUPER_CUATERNA_4_ACIERTOS_COMODIN_GANADORES'),
+                    'CUATERNA': headers.indexOf('CUATERNA_4_ACIERTOS_GANADORES'),
+                    'STERNA': headers.indexOf('SUPER_TERNA_3_ACIERTOS_COMODIN_GANADORES'),
+                    'TERNA': headers.indexOf('TERNA_3_ACIERTOS_GANADORES'),
+                    'SDUPLA': headers.indexOf('SUPER_DUPLA_2_ACIERTOS_COMODIN_GANADORES')
+                };
+            }
+            else if (gameKey === 'LOTO4') {
+                colMap = {
+                    '4P': headers.indexOf('4_PUNTOS_MONTO'),
+                    '3P': headers.indexOf('3_PUNTOS_MONTO'),
+                    '2P': headers.indexOf('2_PUNTOS_MONTO')
+                };
+                winnerColMap = {
+                    '4P': headers.indexOf('4_PUNTOS_GANADORES'),
+                    '3P': headers.indexOf('3_PUNTOS_GANADORES'),
+                    '2P': headers.indexOf('2_PUNTOS_GANADORES')
+                };
+            }
+
+            // --- ITERACIÓN POR FILAS ---
+            for (let i = 1; i < lines.length; i++) {
+                const row = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+                const sorteo = row[idxSorteo];
+                if (!sorteo) continue;
+                
+                // 1. Números Ganadores
+                const nums = idxs.map(idx => idx !== -1 ? parseInt(row[idx]) : null).filter(n => n !== null);
+                map[sorteo] = nums;
+                
+                // 2. Fecha y Comodín
+                if(idxFecha !== -1) dateMap[sorteo] = row[idxFecha].split(' ')[0];
+                if(comodinCol !== -1) comodinMap[sorteo] = parseInt(row[comodinCol]);
+
+                // 3. Extracción Financiera (Premios y Ganadores)
+                if (gameKey === 'LOTO' || gameKey === 'LOTO4') {
+                    prizeMap[sorteo] = {};
+                    winnerMap[sorteo] = {};
+                    
+                    // Extraer Montos ($)
+                    for (const [key, idx] of Object.entries(colMap)) {
+                        if (idx !== -1) {
+                            let val = parseFloat(row[idx]);
+                            prizeMap[sorteo][key] = isNaN(val) ? 0 : val;
+                        } else {
+                            prizeMap[sorteo][key] = 0; 
+                        }
                     }
-                },
-                plugins: { legend: { labels: { color: '#c9d1d9' } } }
+                    // Extraer Ganadores (Personas)
+                    for (const [key, idx] of Object.entries(winnerColMap)) {
+                        if (idx !== -1) {
+                            let val = parseInt(row[idx]);
+                            winnerMap[sorteo][key] = isNaN(val) ? 0 : val;
+                        } else {
+                            winnerMap[sorteo][key] = 0; 
+                        }
+                    }
+                }
             }
-        });
-
-        // Bar Chart (Terminaciones)
-        // Solo para Focus
-        if(!focusNums) {
-            if(CHARTS.bar) CHARTS.bar.destroy();
-            return; 
+            MASTERS[gameKey] = map;
+            MASTERS_DATES[gameKey] = dateMap;
+            MASTERS_PRIZES[gameKey] = prizeMap;
+            MASTERS_WINNERS[gameKey] = winnerMap; 
+            MASTERS_COMODIN[gameKey] = comodinMap;
         }
+
+        // Procesador de Simulaciones del Bot
+        function processSimulations(text) {
+            const lines = text.trim().split('\n');
+            const headers = lines[0].split(',');
+            
+            RAW_SIMULATIONS = lines.slice(1).map(line => {
+                const parts = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+                if (parts.length < 5) return null;
+                
+                let obj = {};
+                try {
+                    obj.id = parts[0];
+                    obj.fechaStr = parts[1];
+                    let dtRaw = parts[1].replace(' ', 'T');
+                    obj.dateObj = new Date(dtRaw);
+                    if(isNaN(obj.dateObj)) obj.dateObj = new Date();
+
+                    if (headers.includes('juego')) {
+                        obj.juego = parts[2]; 
+                        obj.numeros = parts[3];
+                        obj.objetivo = parts[4];
+                        obj.estado = parts[5];
+                        obj.aciertos = parseInt(parts[6] || 0);
+                        obj.score = parseFloat(parts[7] || 0);
+                        obj.hora = parseInt(parts[8]); 
+                        obj.algoritmo = parts[9] || 'unknown';
+                    } else {
+                        // Soporte Legacy
+                        obj.juego = 'LOTO';
+                        obj.numeros = parts[2];
+                        obj.objetivo = parts[3];
+                        obj.estado = parts[4];
+                        obj.aciertos = parseInt(parts[5] || 0);
+                        obj.score = parseFloat(parts[6] || 0);
+                        obj.hora = parseInt(parts[7]); 
+                        obj.algoritmo = parts[8] || 'unknown';
+                    }
+                    
+                    if(isNaN(obj.hora)) {
+                        obj.hora = obj.dateObj.getHours();
+                    }
+
+                    obj.numeros = obj.numeros.replace(/"/g, '');
+                    obj.algoritmo = obj.algoritmo.replace(/\r/g, '');
+                    
+                    return obj;
+                } catch(e) { return null; }
+            }).filter(x => x !== null).reverse();
+        }
+
+        // Procesador de Jugadas Reales (CSV Manual)
+        function processPlays(text) {
+            const lines = text.trim().split('\n');
+            RAW_PLAYS = lines.slice(1).map(line => {
+                const p = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+                if(p.length < 4) return null;
+                
+                // Solo nos interesan las que dicen "SI" en jugado
+                if(p[3] !== 'SI') return null;
+
+                return {
+                    numeros: p[2].replace(/"/g, ''),
+                    objetivo: p[5], // Sorteo objetivo
+                    juego: p[6] || 'LOTO' // Juego (Default Loto)
+                };
+            }).filter(x=>x);
+        }
+
+        // =========================================================
+        // 3. MOTOR FINANCIERO (THE MONEY ENGINE)
+        // =========================================================
         
-        const termCounts = {};
-        focusNums.forEach(n => {
-            const t = n % 10;
-            termCounts[t] = (termCounts[t] || 0) + 1;
-        });
+        // Función Nuclear: Calcula cuánto ganó UNA sola jugada
+        function calculateWinningsDetailed(game, myNums, winNums, comodin, drawId) {
+            if (!myNums || !winNums) return { amount: 0, category: '', formula: '' };
 
-        const barCtx = document.getElementById('barChart').getContext('2d');
-        if(CHARTS.bar) CHARTS.bar.destroy();
-        CHARTS.bar = new Chart(barCtx, {
-            type: 'bar',
-            data: {
-                labels: Object.keys(termCounts),
-                datasets: [{
-                    label: 'Frecuencia Terminación',
-                    data: Object.values(termCounts),
-                    backgroundColor: '#f2cc60'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: { display: false },
-                    x: { ticks: { color: '#8b949e' }, grid: {display:false} }
-                },
-                plugins: { legend: { display: false } }
+            // --- LOTO 3 ---
+            if (game === 'LOTO3') {
+                let total = 0;
+                let cats = [];
+                const mySorted = [...myNums].sort();
+                const winSorted = [...winNums].sort();
+                
+                // Exacta
+                if (JSON.stringify(myNums) === JSON.stringify(winNums)) {
+                    total += 500 * 400; cats.push("Exacta");
+                }
+                // Trío Par
+                if (JSON.stringify(mySorted) === JSON.stringify(winSorted)) {
+                    const unique = new Set(myNums);
+                    if (unique.size === 2) { total += 500 * 130; cats.push("Trío Par"); }
+                }
+                // Trío Azar
+                if (JSON.stringify(mySorted) === JSON.stringify(winSorted)) {
+                    const unique = new Set(myNums);
+                    if (unique.size === 3) { total += 500 * 65; cats.push("Trío Azar"); }
+                }
+                // Par
+                let parGanado = false;
+                if (myNums[0] === winNums[0] && myNums[1] === winNums[1]) parGanado = true;
+                if (myNums[1] === winNums[1] && myNums[2] === winNums[2]) parGanado = true;
+                if (parGanado) { total += 500 * 20; cats.push("Par"); }
+                // Terminación
+                if (myNums[2] === winNums[2]) { total += 500 * 4; cats.push("Terminación"); }
+                
+                if (total > 0) return { amount: total, category: cats.join("+"), formula: "Premios Fijos Acumulados" };
+                return { amount: 0, category: "", formula: "" };
             }
-        });
-    }
 
-    // --- ACCIONES DE JUEGO ---
-    async function playPrediction(btn, id, numsStr) {
-        if(!confirm("CONFIRMACIÓN TÁCTICA:\n¿Registrar esta jugada como REAL en la base de datos?")) return;
+            // --- LOTO CLÁSICO (Con Prorrateo Real) ---
+            if (game === 'LOTO') {
+                const hits = myNums.filter(n => winNums.includes(n)).length;
+                const hasComodin = comodin && myNums.includes(comodin);
+                const prizes = MASTERS_PRIZES['LOTO'][drawId] || {};
+                const winners = MASTERS_WINNERS['LOTO'][drawId] || {};
 
-        const original = btn.innerHTML;
-        btn.innerHTML = '...';
-        btn.disabled = true;
-        logConsole(`Processing transaction for ID #${id}...`);
+                // Helper de Prorrateo Matemático
+                const getPerPerson = (catKey, catName) => {
+                    const totalAmount = prizes[catKey] || 0;
+                    const count = winners[catKey] || 0;
+                    
+                    if (count > 0) {
+                        const individual = Math.floor(totalAmount / count);
+                        return { 
+                            amount: individual, 
+                            category: catName, 
+                            formula: `$${totalAmount.toLocaleString()} / ${count} ganadores` 
+                        };
+                    }
+                    // Si no hubo ganadores (0), devolvemos 0 (Pozo Vacante), a menos que sea Jackpot
+                    return { amount: 0, category: "", formula: "" }; 
+                };
 
-        try {
-            // 1. Google Script
-            let numbers = JSON.parse(numsStr);
-            await fetch(GOOGLE_SCRIPT_URL, { 
-                method: 'POST', 
-                mode: 'no-cors', 
-                headers: { 'Content-Type': 'application/json' }, 
-                body: JSON.stringify({ numeros: numbers, jugado: "SI", id_ref: id }) 
+                // Jerarquía de Premios
+                if (hits === 6) {
+                    let jackpot = prizes['LOTO'] || 0;
+                    let formula = "Pozo Repartido";
+                    if (jackpot === 0) {
+                        jackpot = prizes['POZO_REAL'] || 0; 
+                        formula = "Pozo Acumulado (Simulación)";
+                    }
+                    return { amount: jackpot, category: "LOTO 6 Aciertos", formula: formula };
+                }
+                if (hits === 5 && hasComodin) return getPerPerson('SQUINA', "Súper Quina");
+                if (hits === 5) return getPerPerson('QUINA', "Quina");
+                if (hits === 4 && hasComodin) return getPerPerson('SCUATERNA', "Súper Cuaterna");
+                if (hits === 4) return getPerPerson('CUATERNA', "Cuaterna");
+                if (hits === 3 && hasComodin) return getPerPerson('STERNA', "Súper Terna");
+                if (hits === 3) return getPerPerson('TERNA', "Terna");
+                if (hits === 2 && hasComodin) return getPerPerson('SDUPLA', "Súper Dupla");
+                
+                return { amount: 0, category: "", formula: "" };
+            }
+
+            // --- RACHA ---
+            if (game === 'RACHA') {
+                const winSet = new Set(winNums);
+                const hits = myNums.filter(n => winSet.has(n)).length;
+                
+                if (hits === 10 || hits === 0) return { amount: 6000000, category: "Racha Max", formula: "Fijo" };
+                if (hits === 9 || hits === 1) return { amount: 30000, category: "Racha Media", formula: "Fijo" };
+                if (hits === 8 || hits === 2) return { amount: 1500, category: "Racha Baja", formula: "Fijo" };
+                if (hits === 7 || hits === 3) return { amount: 500, category: "Racha Min", formula: "Fijo" };
+                return { amount: 0, category: "", formula: "" };
+            }
+
+            // --- LOTO 4 (Con Prorrateo) ---
+            if (game === 'LOTO4') {
+                const hits = myNums.filter(n => winNums.includes(n)).length;
+                const prizes = MASTERS_PRIZES['LOTO4'][drawId] || {};
+                const winners = MASTERS_WINNERS['LOTO4'][drawId] || {};
+
+                const getPerPerson = (catKey, catName) => {
+                    const totalAmount = prizes[catKey] || 0;
+                    const count = winners[catKey] || 0;
+                    if (count > 0) return { amount: Math.floor(totalAmount / count), category: catName, formula: `$${totalAmount.toLocaleString()} / ${count}` };
+                    return { amount: 0, category: "", formula: "" };
+                };
+                
+                if (hits === 4) return getPerPerson('4P', "4 Puntos");
+                if (hits === 3) return getPerPerson('3P', "3 Puntos");
+                if (hits === 2) return getPerPerson('2P', "2 Puntos");
+                return { amount: 0, category: "", formula: "" };
+            }
+
+            return { amount: 0, category: "", formula: "" };
+        }
+
+        // --- ORQUESTADOR FINANCIERO Y AUDITORÍA ---
+        function calculateFinance(filteredSims, targetDraw) {
+            const container = document.getElementById('financial-panel');
+            const auditLog = document.getElementById('financial-audit-log');
+            const auditBody = document.getElementById('audit-table-body');
+            const config = UNIVERSE_CONFIG[CURRENT_UNIVERSE];
+            
+            // Limpieza inicial
+            auditBody.innerHTML = '';
+            
+            if (targetDraw === 'ALL' || !config) {
+                container.style.display = 'none';
+                auditLog.style.display = 'none';
+                return;
+            }
+            container.style.display = 'grid'; // Mostrar KPIs
+            auditLog.style.display = 'block'; // Mostrar Tabla Detalle
+
+            // 1. Inversión
+            const hypoCount = filteredSims.length;
+            const hypoInvest = hypoCount * config.cost;
+
+            // 2. Ganancia Hipotética
+            let hypoWin = 0;
+            const winningNums = MASTERS[CURRENT_UNIVERSE][targetDraw];
+            const comodin = MASTERS_COMODIN[CURRENT_UNIVERSE] ? MASTERS_COMODIN[CURRENT_UNIVERSE][targetDraw] : null;
+
+            // --- 2. CAMBIO SOLICITADO: ACUMULADOR PARA ORDENAR ---
+            let winningRows = [];
+
+            if (winningNums) {
+                filteredSims.forEach(s => {
+                    const myNums = JSON.parse(s.numeros);
+                    const res = calculateWinningsDetailed(CURRENT_UNIVERSE, myNums, winningNums, comodin, targetDraw);
+                    
+                    if (res.amount > 0) {
+                        hypoWin += res.amount;
+                        // Guardamos la fila en memoria para ordenar después
+                        winningRows.push({ s, res, myNums });
+                    }
+                });
+            }
+
+            // --- 3. CAMBIO SOLICITADO: ORDENAR (Monto Desc > Fecha Desc) ---
+            winningRows.sort((a, b) => {
+                if (b.res.amount !== a.res.amount) return b.res.amount - a.res.amount; // 1. Monto Mayor primero
+                // Comparar Fechas (Como Strings ISO funcionan lexicográficamente si están bien formadas, o usamos Date obj)
+                // Usamos id que es timestamp en este sistema, o dateObj
+                return b.s.dateObj - a.s.dateObj; // 2. Más reciente primero
             });
 
-            // 2. Local State
-            localStorage.setItem(`played_${id}`, 'true');
-            
-            // 3. UI Feedback
-            btn.innerHTML = '<i data-lucide="check"></i> JUGADA';
-            btn.style.background = '#21262d';
-            btn.style.color = '#2ea043';
-            btn.style.borderColor = '#2ea043';
-            
-            logConsole(`Transaction OK. Prediction #${id} marked as REAL PLAY.`);
-            lucide.createIcons();
+            // --- 4. RENDERIZAR FILAS ORDENADAS ---
+            winningRows.forEach(row => {
+                const s = row.s;
+                const res = row.res;
+                const myNums = row.myNums;
 
-        } catch(e) {
-            logConsole(`Error: ${e.message}`);
-            btn.innerHTML = original;
-            btn.disabled = false;
+                // --- 2. CAMBIO SOLICITADO: PINTAR ACIERTOS Y COMODÍN ---
+                const numsFormatted = myNums.map(n => {
+                    let style = "";
+                    if (winningNums.includes(n)) style = "color:var(--success); font-weight:bold;";
+                    if (n === comodin) style = "color:var(--gold); font-weight:bold; text-shadow:0 0 5px rgba(255,215,0,0.5);";
+                    return `<span style="${style}">${n}</span>`;
+                }).join(", ");
+
+                const tr = document.createElement('tr');
+                tr.className = 'audit-row-win';
+                tr.innerHTML = `
+                    <td>${s.fechaStr}</td> <td><span class="algo-badge" style="color:var(--text); border:1px solid var(--border);">${s.algoritmo.split('_')[0]}</span></td>
+                    <td style="font-family:monospace; font-size:0.9em;">[ ${numsFormatted} ]</td>
+                    <td style="text-align:center; font-weight:bold;">${s.aciertos}</td>
+                    <td>${res.category}</td>
+                    <td><small>${res.formula}</small></td>
+                    <td class="audit-money">$${res.amount.toLocaleString('es-CL')}</td>
+                `;
+                auditBody.appendChild(tr);
+            });
+
+            // 3. Realidad
+            const realPlays = RAW_PLAYS.filter(p => p.juego === CURRENT_UNIVERSE && p.objetivo === targetDraw);
+            const realInvest = realPlays.length * config.cost;
+            let realWin = 0;
+            
+            if (winningNums) {
+                realPlays.forEach(play => {
+                    try {
+                        const myNums = JSON.parse(play.numeros);
+                        const res = calculateWinningsDetailed(CURRENT_UNIVERSE, myNums, winningNums, comodin, targetDraw);
+                        realWin += res.amount;
+                    } catch(e) {}
+                });
+            }
+
+            // Renderizado de KPIs
+            const fmt = (n) => "$" + n.toLocaleString('es-CL', {maximumFractionDigits: 0});
+            document.getElementById('hypo-invest').textContent = fmt(hypoInvest);
+            document.getElementById('hypo-win').textContent = fmt(hypoWin);
+            document.getElementById('real-invest').textContent = fmt(realInvest);
+            document.getElementById('real-win').textContent = fmt(realWin);
+            
+            document.getElementById('hypo-win').style.color = hypoWin >= hypoInvest ? 'var(--money)' : 'var(--loss)';
+            document.getElementById('real-win').style.color = realWin >= realInvest ? 'var(--warning)' : 'var(--loss)';
+            
+            // Si no hubo ganadores, mostrar mensaje en tabla
+            if (hypoWin === 0) {
+                auditBody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted);">Ninguna simulación obtuvo premio monetario en este sorteo.</td></tr>';
+            }
         }
-    }
 
-    function logConsole(msg) {
-        const c = document.getElementById('console-msg');
-        const now = new Date().toLocaleTimeString();
-        c.innerText = `[${now}] ${msg}`;
-    }
-</script>
+        // =========================================================
+        // 4. FUNCIONES DE UI Y NAVEGACIÓN (PRESERVADAS)
+        // =========================================================
+        function switchUniverse(gameId) {
+            CURRENT_UNIVERSE = gameId;
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if(btn.getAttribute('data-game') === gameId) {
+                    btn.classList.add('active');
+                }
+            });
+            resetFilters(); 
+        }
+
+        function applyFilters() {
+            const data = getFilteredData();
+            updateKPIs(data);
+            updateSorteoSelector(data);
+            renderTable(data);
+            calculateAndRenderAggregate(data);
+            updateDashboardCharts(data);
+            
+            const selectedDraw = document.getElementById('f-sorteo').value;
+            calculateFinance(data, selectedDraw);
+        }
+
+        function getFilteredData() {
+            let data = RAW_SIMULATIONS.filter(d => d.juego === CURRENT_UNIVERSE);
+            const fSorteo = document.getElementById('f-sorteo').value;
+            const fAlgo = document.getElementById('f-algo').value;
+            const fDia = document.getElementById('f-dia').value;
+            const fHora = document.getElementById('f-hora').value;
+            return data.filter(d => {
+                if (fSorteo !== 'ALL' && d.objetivo !== fSorteo) return false;
+                if (fAlgo !== 'ALL' && !d.algoritmo.includes(fAlgo)) return false;
+                if (fDia !== 'ALL' && d.dateObj.getDay().toString() !== fDia) return false;
+                if (fHora !== 'ALL' && d.hora.toString() !== fHora) return false;
+                return true;
+            });
+        }
+        function updateSorteoSelector(data) {
+            const currentVal = document.getElementById('f-sorteo').value;
+            const unique = [...new Set(data.map(d => d.objetivo))];
+            const sel = document.getElementById('f-sorteo');
+            sel.innerHTML = '<option value="ALL">Todos los Sorteos</option>';
+            unique.forEach(u => {
+                let opt = document.createElement('option'); opt.value = u; opt.textContent = "#" + u;
+                sel.appendChild(opt);
+            });
+            if (unique.includes(currentVal)) sel.value = currentVal;
+        }
+        function updateKPIs(data) {
+            document.getElementById('total-sims').textContent = data.length;
+            document.getElementById('target-draw').textContent = data.length ? "#" + data[0].objetivo : "--";
+            document.getElementById('last-update').textContent = data.length ? data[0].fechaStr.split(' ')[1] : "--";
+            const auditados = data.filter(d => d.estado === 'AUDITADO');
+            const avg = auditados.length ? (auditados.reduce((a,b)=>a+b.score,0)/auditados.length).toFixed(1) : 0;
+            document.getElementById('avg-score').textContent = avg + "%";
+        }
+        function renderTable(data) {
+            data.sort((a,b) => {
+                let valA = a[LOGS_SORT_COL], valB = b[LOGS_SORT_COL];
+                if (LOGS_SORT_COL === 'date') { valA = a.id; valB = b.id; }
+                if (LOGS_SORT_COL === 'target') { valA = parseInt(a.objetivo); valB = parseInt(b.objetivo); }
+                return LOGS_SORT_DIR === 'asc' ? (valA > valB ? 1 : -1) : (valA < valB ? 1 : -1);
+            });
+            const tbody = document.querySelector('#logs-table tbody');
+            tbody.innerHTML = '';
+            document.getElementById('filtered-count').textContent = `Mostrando ${Math.min(data.length, 50)} de ${data.length}`;
+            data.slice(0, 50).forEach(row => {
+                const tr = document.createElement('tr');
+                let algoClass = 'algo-badge';
+                if(row.algoritmo.includes('forense')) algoClass += ' algo-bio';
+                else if(row.algoritmo.includes('gauss')) algoClass += ' algo-gauss';
+                else if(row.algoritmo.includes('delta')) algoClass += ' algo-delta';
+                else if(row.algoritmo.includes('markov')) algoClass += ' algo-markov'; 
+                else if(row.algoritmo.includes('consenso')) algoClass += ' algo-consenso';
+                const realNums = MASTERS[CURRENT_UNIVERSE] ? MASTERS[CURRENT_UNIVERSE][row.objetivo] : [];
+                const myNums = row.numeros.replace('[','').replace(']','').split(',').map(n=>parseInt(n.trim()));
+                let numsHtml = myNums.map(n => {
+                    if (realNums && realNums.includes(n)) return `<span class="num-badge match-exact">${n}</span>`;
+                    return `<span class="num-badge match-far">${n}</span>`;
+                }).join('');
+                const playedKey = `played_${row.id}`;
+                const isPlayed = localStorage.getItem(playedKey);
+                const btnHtml = isPlayed 
+                    ? `<button class="btn-action btn-disabled"><i data-lucide="check" width="12"></i> Jugado</button>`
+                    : `<button class="btn-action" onclick="savePlay(this, '${row.numeros}', '${row.id}')"><i data-lucide="ticket" width="12"></i> Jugar</button>`;
+                tr.innerHTML = `
+                    <td>${row.fechaStr.slice(5, 16)}</td>
+                    <td><span class="${algoClass}">${row.algoritmo.split('_')[0]}</span></td>
+                    <td>#${row.objetivo}</td>
+                    <td>${numsHtml}</td>
+                    <td class="${row.estado==='AUDITADO'?'audited':'pending'}">${row.estado}</td>
+                    <td><b>${row.estado==='AUDITADO'?row.score+'%':'-'}</b></td>
+                    <td>${btnHtml}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+            lucide.createIcons();
+        }
+        function calculateAndRenderAggregate(data) {
+            const gameConfig = UNIVERSE_CONFIG[CURRENT_UNIVERSE] || UNIVERSE_CONFIG['LOTO'];
+            const thead = document.getElementById('agg-head');
+            let headerHTML = `<tr><th class="sortable-header" onclick="sortAggregate('target')">Sorteo</th><th class="sortable-header" onclick="sortAggregate('count')" style="text-align:center;">Cant.</th><th style="min-width:200px;">Sorteo Real (Aciertos Globales)</th><th>Mejor Predicción</th><th class="sortable-header" onclick="sortAggregate('avgTotal')" style="text-align:center;">Global</th>`;
+            gameConfig.algos.forEach(algo => { headerHTML += `<th style="text-align:center; color:${algo.color};">${algo.label}</th>`; });
+            gameConfig.hits.forEach(hits => {
+                let color = '#8b949e'; 
+                if(hits >= 6) color = '#ff00ff'; else if(hits >= 4) color = '#00f2ff'; else if(hits === 3 && CURRENT_UNIVERSE === 'LOTO3') color = '#ff00ff'; 
+                headerHTML += `<th style="text-align:center; color:${color};">${hits}A</th>`;
+            });
+            headerHTML += `</tr>`;
+            thead.innerHTML = headerHTML;
+            const groups = {};
+            data.forEach(d => {
+                if (!groups[d.objetivo]) {
+                    groups[d.objetivo] = { target: parseInt(d.objetivo), count: 0, scores: [], algoScores: {}, bestRow: null, maxScore: -1, all_numbers: [], hitsCount: {} };
+                    gameConfig.algos.forEach(a => groups[d.objetivo].algoScores[a.key] = []);
+                    gameConfig.hits.forEach(h => groups[d.objetivo].hitsCount[h] = 0);
+                }
+                const g = groups[d.objetivo];
+                g.count++;
+                const nums = d.numeros.replace('[', '').replace(']', '').split(',').map(n=>parseInt(n.trim()));
+                g.all_numbers.push(...nums);
+                if (d.estado === 'AUDITADO') {
+                    g.scores.push(d.score);
+                    gameConfig.algos.forEach(a => { if(d.algoritmo.includes(a.key)) g.algoScores[a.key].push(d.score); });
+                    if (d.score > g.maxScore) { g.maxScore = d.score; g.bestRow = d; }
+                    if (d.aciertos !== undefined && g.hitsCount[d.aciertos] !== undefined) { g.hitsCount[d.aciertos]++; }
+                }
+            });
+            const rows = Object.values(groups).sort((a, b) => b.target - a.target);
+            const tbody = document.getElementById('aggregate-body');
+            tbody.innerHTML = '';
+            rows.forEach(g => {
+                const tr = document.createElement('tr');
+                const dateStr = MASTERS_DATES[CURRENT_UNIVERSE] ? MASTERS_DATES[CURRENT_UNIVERSE][g.target] : 'N/A';
+                const realNums = MASTERS[CURRENT_UNIVERSE] ? MASTERS[CURRENT_UNIVERSE][g.target] : [];
+                const counts = {};
+                g.all_numbers.forEach(n => { counts[n] = (counts[n] || 0) + 1; });
+                let realHtml = '-';
+                if (realNums && realNums.length > 0) {
+                    realHtml = realNums.map(n => {
+                        const count = counts[n] || 0;
+                        return `<div style="display:inline-block; margin:1px; padding:2px 4px; background:rgba(46,160,67,0.15); border:1px solid #2ea043; border-radius:4px; font-size:0.8em;"><b>${n}</b> <span style="color:#aaa; font-size:0.8em;">(${count})</span></div>`;
+                    }).join(' ');
+                }
+                let bestHtml = '-';
+                if (g.bestRow) {
+                    const bNums = g.bestRow.numeros.replace('[','').replace(']','').split(',').map(n=>parseInt(n.trim()));
+                    const bHtml = bNums.map(n => {
+                        if(realNums.includes(n)) return `<span class="num-badge match-exact">${n}</span>`;
+                        return `<span class="num-badge match-far">${n}</span>`;
+                    }).join('');
+                    let badge = '🔮'; 
+                    if(g.bestRow.algoritmo.includes('gauss')) badge = '📐'; else if(g.bestRow.algoritmo.includes('delta')) badge = '📈'; else if(g.bestRow.algoritmo.includes('markov')) badge = '🔗'; else if(g.bestRow.algoritmo.includes('consenso')) badge = '🤝';
+                    bestHtml = `<div><span style="margin-right:5px;">${badge}</span>${bHtml} <small>(${g.maxScore}%)</small></div>`;
+                }
+                const avg = arr => arr.length ? (arr.reduce((a,b)=>a+b,0)/arr.length).toFixed(0)+'%' : '-';
+                let rowHTML = `<td><span class="draw-badge" title="Fecha: ${dateStr}">#${g.target}</span></td><td style="text-align:center;">${g.count}</td><td>${realHtml}</td><td>${bestHtml}</td><td style="text-align:center;"><b>${avg(g.scores)}</b></td>`;
+                gameConfig.algos.forEach(a => { rowHTML += `<td style="text-align:center; color:${a.color};">${avg(g.algoScores[a.key])}</td>`; });
+                gameConfig.hits.forEach(h => {
+                    let styleClass = 'hit-col-low'; if(h >= 6) styleClass = 'hit-col-high'; else if(h >= 4) styleClass = 'hit-col-mid';
+                    let val = g.hitsCount[h]; let valDisplay = val > 0 ? `<span class="${styleClass}">${val}</span>` : `<span class="hit-col-dim">-</span>`;
+                    rowHTML += `<td style="text-align:center;">${valDisplay}</td>`;
+                });
+                tr.innerHTML = rowHTML;
+                tbody.appendChild(tr);
+            });
+        }
+        function updateDashboardCharts(data) {
+            const ctx = document.getElementById('mainChart').getContext('2d');
+            if(window.myChart) window.myChart.destroy();
+            const auditados = data.filter(d => d.estado === 'AUDITADO');
+            const gameConfig = UNIVERSE_CONFIG[CURRENT_UNIVERSE] || UNIVERSE_CONFIG['LOTO'];
+            let labels = []; let buckets = {}; 
+            if (CURRENT_CHART_MODE === 'hour') {
+                labels = Array.from({length: 24}, (_, i) => `${i}:00`); labels.forEach((_, i) => buckets[i] = {});
+                auditados.forEach(d => { let h = d.hora; if (isNaN(h)) h = d.dateObj.getHours(); if (buckets[h]) { gameConfig.algos.forEach(a => { if(d.algoritmo.includes(a.key)) { if(!buckets[h][a.key]) buckets[h][a.key] = []; buckets[h][a.key].push(d.score); } }); } });
+            } else if (CURRENT_CHART_MODE === 'day') {
+                labels = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb']; labels.forEach((_, i) => buckets[i] = {});
+                auditados.forEach(d => { let day = d.dateObj.getDay(); if (buckets[day]) { gameConfig.algos.forEach(a => { if(d.algoritmo.includes(a.key)) { if(!buckets[day][a.key]) buckets[day][a.key] = []; buckets[day][a.key].push(d.score); } }); } });
+            } else if (CURRENT_CHART_MODE === 'month') {
+                labels = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']; labels.forEach((_, i) => buckets[i] = {});
+                auditados.forEach(d => { let m = d.dateObj.getMonth(); if (buckets[m]) { gameConfig.algos.forEach(a => { if(d.algoritmo.includes(a.key)) { if(!buckets[m][a.key]) buckets[m][a.key] = []; buckets[m][a.key].push(d.score); } }); } });
+            }
+            let datasets = gameConfig.algos.map(a => {
+                let dataPoints = labels.map((_, i) => { let scores = buckets[i] ? buckets[i][a.key] : []; return scores && scores.length ? (scores.reduce((sum, val) => sum + val, 0) / scores.length).toFixed(1) : 0; });
+                return { label: a.label, data: dataPoints, borderColor: a.color, backgroundColor: hexToRgba(a.color, 0.5), borderWidth: a.label === 'Consenso' ? 2 : 1, tension: 0.4, pointRadius: 3, pointHoverRadius: 5, counts: labels.map((_, i) => buckets[i] && buckets[i][a.key] ? buckets[i][a.key].length : 0) };
+            });
+            let maxVal = 0, bestLbl = '--'; const consensusDS = datasets.find(d => d.label === 'Consenso') || datasets[0]; if(consensusDS) { consensusDS.data.forEach((v, i) => { if(parseFloat(v) > maxVal) { maxVal = parseFloat(v); bestLbl = labels[i]; } }); }
+            document.getElementById('best-moment').textContent = bestLbl;
+            window.myChart = new Chart(ctx, { type: 'line', data: { labels: labels, datasets: datasets }, options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false, }, scales: { y: { beginAtZero: true, max: 100, grid: { color: '#30363d' } }, x: { grid: { display: false } } }, plugins: { legend: { labels: { color: '#c9d1d9' } }, tooltip: { itemSort: function(a, b) { return b.parsed.y - a.parsed.y; }, backgroundColor: 'rgba(22, 27, 34, 0.95)', titleColor: '#fff', bodyColor: '#c9d1d9', borderColor: '#30363d', borderWidth: 1, padding: 10, callbacks: { label: function(context) { let label = context.dataset.label || ''; if (label) label += ': '; if (context.parsed.y !== null) label += context.parsed.y + '%'; const count = context.dataset.counts[context.dataIndex]; if (count > 0) label += ` (${count} sims)`; return label; } } } } } });
+        }
+        function resetFilters() { document.getElementById('f-sorteo').value = 'ALL'; document.getElementById('f-algo').value = 'ALL'; applyFilters(); }
+        function sortLogs(col) { LOGS_SORT_COL = col; LOGS_SORT_DIR = LOGS_SORT_DIR === 'asc' ? 'desc' : 'asc'; applyFilters(); }
+        function sortAggregate(col) { SORT_COL = col; SORT_DIR = SORT_DIR === 'asc' ? 'desc' : 'asc'; applyFilters(); }
+        function switchChartView(mode) { CURRENT_CHART_MODE = mode; applyFilters(); }
+        async function savePlay(btn, numsStr, id) { const originalContent = btn.innerHTML; btn.innerHTML = '...'; btn.disabled = true; const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwBZd2vTrvxVdTjJnLoK2vMCR90qJqyH3ZfSDkNK4_n0aFYe3jCoeIZ3R58XNQBM1xQ3A/exec"; try { let numbers = JSON.parse(numsStr); await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ numeros: numbers, jugado: "SI" }) }); localStorage.setItem(`played_${id}`, 'true'); btn.innerHTML = '<i data-lucide="check" width="12"></i> Listo'; btn.classList.add('btn-disabled'); lucide.createIcons(); } catch (error) { console.error("Error guardando jugada:", error); btn.innerHTML = '<i data-lucide="x" width="12"></i> Error'; btn.disabled = false; setTimeout(() => { btn.innerHTML = originalContent; lucide.createIcons(); }, 3000); } }
+
+        // Iniciar
+        loadAllData();
+    </script>
 </body>
 </html>
