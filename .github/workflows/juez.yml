@@ -26,16 +26,30 @@ jobs:
       run: |
         pip install pandas numpy
 
+    # 1. AUDITORÍA: Revisa si ganamos algo con los datos nuevos
     - name: Ejecutar Juez Multiverso
       run: python engine/models/juez_implacable.py
 
-    - name: Publicar Veredictos
+    # 2. APRENDIZAJE: Actualiza el Genoma y la Biometría al instante
+    - name: Ejecutar Entrenador Cognitivo
+      run: python engine/models/entrenador_cognitivo.py
+
+    - name: Actualizar Biometría
+      run: python engine/models/generador_biometrico.py
+
+    # 3. GUARDADO: Sube los veredictos (CSV) y la nueva inteligencia (JSON)
+    - name: Publicar Veredictos e Inteligencia
       run: |
         git config --global user.name 'Juez LotoAI'
         git config --global user.email 'juez@lotoai.com'
         
-        git pull origin main # Sincronizar por si el Bot escribió algo mientras tanto
+        git pull origin main # Sincronizar por seguridad
         
+        # Agregamos las simulaciones auditadas
         git add data/LOTO_SIMULACIONES.csv
-        git commit -m "⚖️ Juez: Auditoría completada tras carga de datos" || echo "Sin veredictos nuevos"
+        
+        # Agregamos los archivos de inteligencia actualizados
+        git add data/*.json
+        
+        git commit -m "⚖️ Ciclo de Verdad: Auditoría y Aprendizaje completados tras carga" || echo "Sin cambios nuevos"
         git push
