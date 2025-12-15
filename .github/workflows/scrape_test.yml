@@ -25,7 +25,7 @@ jobs:
           playwright install chromium --with-deps
 
       - name: 🕷️ Ejecutar Script de Prueba
-        run: python test_gh_action.py
+        run: python engine/scrapers/test_gh_action.py
 
       - name: 📤 Guardar cambios (Commit & Push)
         # Solo corre si se generó el archivo json
