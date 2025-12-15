@@ -2,6 +2,7 @@ import os
 import requests
 import json
 import re
+import time
 
 # --- CONFIGURACIÓN ---
 TOKEN = os.environ.get("SCRAPERAPI_KEY", "").strip() 
@@ -10,80 +11,103 @@ DRAW_ID = "5360" # Sorteo Objetivo
 OUTPUT_FILE = "resultado_nube_final.json"
 
 # URLs
-TARGET_URL = "https://www.polla.cl" # Home (Ligero)
+TARGET_URL = "https://www.polla.cl" # Home
 API_INTERNAL = "https://www.polla.cl/es/get/draw/results"
 PROXY_ENDPOINT = "http://api.scrape.do"
 
-def run_hybrid_scraper():
-    print(f"☁️ INICIANDO SCRAPER HÍBRIDO (Modo API + Cookies)")
+def run_mobile_resilient_scraper():
+    print(f"☁️ INICIANDO SCRAPER MÓVIL (Con Reintentos)")
     
     if len(TOKEN) < 10:
         print("❌ Error: Token vacío.")
         return
 
-    # --- PASO 1: OBTENER HOME (Modo API) ---
-    # Usamos la configuración exacta que funcionó en tu Imagen 4
-    print("1️⃣ Solicitando Home (Buscando Token)...")
+    # --- PASO 1: OBTENER HOME (Bucle de Intentos) ---
+    token_polla = None
+    cookies_home = None
     
-    params_home = {
+    # Intentaremos hasta 10 veces si es necesario (el 502 es temporal)
+    MAX_RETRIES = 10 
+    
+    for i in range(1, MAX_RETRIES + 1):
+        print(f"\n🔄 Intento {i}/{MAX_RETRIES} conectando a Polla...")
+        
+        params_home = {
+            'token': TOKEN,
+            'url': TARGET_URL,
+            'render': 'true', 
+            'timeout': '25000' # Pedimos más tiempo
+        }
+        
+        # Simulamos ser un celular Android (sitio más ligero = menos error 502)
+        headers_mobile = {
+            "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Mobile Safari/537.36"
+        }
+
+        try:
+            resp_home = requests.get(
+                PROXY_ENDPOINT, 
+                params=params_home, 
+                headers=headers_mobile, 
+                timeout=120
+            )
+            
+            if resp_home.status_code == 200:
+                # Buscar Token
+                m = re.search(r'csrfToken["\']\s*[:=]\s*["\']([a-zA-Z0-9]+)["\']', resp_home.text)
+                if m: 
+                    token_polla = m.group(1)
+                    cookies_home = resp_home.cookies
+                    print(f"   ✅ ¡CONEXIÓN ESTABLECIDA! Token: {token_polla[:15]}...")
+                    break # ¡Éxito! Salimos del bucle
+                else:
+                    print("   ⚠️ Página cargó pero no veo el token. Reintentando...")
+            
+            elif resp_home.status_code == 502:
+                print("   ⚠️ Error 502 (Scrape.do saturado). Esperando 5s...")
+                time.sleep(5)
+            
+            else:
+                print(f"   ⚠️ Error {resp_home.status_code}. Reintentando...")
+                time.sleep(2)
+
+        except Exception as e:
+            print(f"   🔥 Excepción de conexión: {e}")
+            time.sleep(5)
+
+    if not token_polla:
+        print("\n❌ FALLO FATAL: No se pudo conectar tras todos los intentos.")
+        return
+
+    # --- PASO 2: POST A LA API (Ya tenemos el token) ---
+    print(f"\n2️⃣ Consultando API Sorteo {DRAW_ID}...")
+
+    params_api = {
         'token': TOKEN,
-        'url': TARGET_URL,
-        'render': 'true',  # Activamos navegador
-        'timeout': '20000' # Damos 20s a Scrape.do para que no corte
+        'url': API_INTERNAL
+        # Sin render aquí
+    }
+
+    data_polla = {
+        "gameId": GAME_ID,
+        "drawId": DRAW_ID,
+        "csrfToken": token_polla
+    }
+    
+    headers_polla = {
+        "x-requested-with": "XMLHttpRequest",
+        "content-type": "application/x-www-form-urlencoded",
+        # Mantenemos el User-Agent móvil
+        "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Mobile Safari/537.36"
     }
 
     try:
-        # GET a la API de Scrape.do
-        resp_home = requests.get(PROXY_ENDPOINT, params=params_home, timeout=120)
-        
-        if resp_home.status_code != 200:
-            print(f"❌ Falló Home. Status: {resp_home.status_code}")
-            print(f"   Msg: {resp_home.text[:200]}")
-            return
-
-        # A. Extraer Token
-        token_polla = None
-        m = re.search(r'csrfToken["\']\s*[:=]\s*["\']([a-zA-Z0-9]+)["\']', resp_home.text)
-        if m: 
-            token_polla = m.group(1)
-            print(f"   ✅ ¡TOKEN CAPTURADO!: {token_polla[:15]}...")
-        else:
-            print("   ⚠️ Token no encontrado en HTML.")
-            return
-
-        # B. Extraer Cookies (CRUCIAL)
-        # Las cookies vienen en la respuesta de Scrape.do
-        cookies_home = resp_home.cookies
-        print(f"   🍪 Cookies capturadas: {len(cookies_home)}")
-
-        # --- PASO 2: POST A LA API (Modo API) ---
-        print(f"2️⃣ Consultando API Sorteo {DRAW_ID}...")
-
-        # Configuración para el POST
-        # NO usamos 'render=true' aquí para evitar el error 400 anterior
-        params_api = {
-            'token': TOKEN,
-            'url': API_INTERNAL
-        }
-
-        data_polla = {
-            "gameId": GAME_ID,
-            "drawId": DRAW_ID,
-            "csrfToken": token_polla
-        }
-        
-        headers_polla = {
-            "x-requested-with": "XMLHttpRequest",
-            "content-type": "application/x-www-form-urlencoded"
-        }
-
-        # Hacemos POST a Scrape.do, pasándole las cookies del paso 1
         resp_api = requests.post(
             PROXY_ENDPOINT, 
             params=params_api, 
             headers=headers_polla, 
             data=data_polla,
-            cookies=cookies_home, # <--- El pegamento que mantiene la sesión
+            cookies=cookies_home, # Cookies capturadas arriba
             timeout=120
         )
 
@@ -107,7 +131,7 @@ def run_hybrid_scraper():
             print(resp_api.text[:300])
 
     except Exception as e:
-        print(f"🔥 Error Crítico: {e}")
+        print(f"🔥 Error Crítico Fase 2: {e}")
 
 if __name__ == "__main__":
-    run_hybrid_scraper()
+    run_mobile_resilient_scraper()
