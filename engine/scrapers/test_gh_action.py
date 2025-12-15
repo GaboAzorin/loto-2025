@@ -2,119 +2,126 @@ import os
 import requests
 import json
 import re
+import time
+import random
 
 # --- CONFIGURACIÓN ---
-# .strip() elimina espacios en blanco al inicio o final que causan el error 401
-API_KEY = os.environ.get("SCRAPERAPI_KEY", "").strip() 
+# Usamos la variable que ya tienes configurada, pero ahora sabemos que es de Scrape.do
+TOKEN = os.environ.get("SCRAPERAPI_KEY", "").strip() 
 
 GAME_ID = "5271" # Loto
 DRAW_ID = "5360" # Sorteo Objetivo
-OUTPUT_FILE = "resultado_nube_scraperapi.json"
+OUTPUT_FILE = "resultado_nube_scrapedou.json"
 
 # URLs
 BASE_URL = "https://www.polla.cl/es/view/resultados"
 API_INTERNAL = "https://www.polla.cl/es/get/draw/results"
+PROXY_URL = "http://api.scrape.do"
 
-def run_scraperapi_test():
-    print(f"☁️ INICIANDO BYPASS CON SCRAPERAPI (Free Tier)")
+def run_scrapedou_test():
+    print(f"☁️ INICIANDO BYPASS CON SCRAPE.DO")
     
-    # --- 1. DIAGNÓSTICO DE LLAVE (CRUCIAL) ---
-    longitud = len(API_KEY)
-    print(f"🔑 Diagnóstico: GitHub entregó una llave de {longitud} caracteres.")
-    
-    if longitud < 10:
-        print("❌ ERROR CRÍTICO: La llave está vacía o es muy corta.")
-        print("   👉 Revisa en GitHub: Settings > Secrets > Actions.")
-        print("   👉 Asegúrate que el secreto se llame: SCRAPERAPI_KEY")
+    if len(TOKEN) < 10:
+        print("❌ Error: La llave (Token) parece vacía.")
         return
-    # -----------------------------------------
 
-    # ScraperAPI endpoint
-    scraper_url = "http://api.scraperapi.com"
+    # Generamos un ID de sesión aleatorio.
+    # Esto obliga a Scrape.do a usar la MISMA IP para todas las peticiones de este script.
+    # Si cambiamos de IP a mitad de camino, Polla invalidará el token.
+    session_id = str(random.randint(100000, 999999))
+    print(f"🔄 Sesión Persistente ID: {session_id}")
 
-    print("1️⃣ Obteniendo Token CSRF vía ScraperAPI...")
+    print("1️⃣ Obteniendo Token CSRF vía Scrape.do...")
     
-    # Parámetros para pedir el Home (render=true activa el navegador real de ellos)
+    # Parámetros para la primera llamada (Home)
     params_home = {
-        'api_key': API_KEY,
+        'token': TOKEN,
         'url': BASE_URL,
-        'render': 'true',      
-        'country_code': 'us', # Probamos US, suele ser más rápido/estable en free tier
+        'render': 'true',       # Activa navegador real
+        'session_id': session_id, # Mantiene la IP/Cookies
+        'wait': '5000'          # Esperar 5 seg a que cargue el JS de seguridad
     }
 
     try:
-        # Hacemos GET a ScraperAPI -> Ellos van a Polla
-        response = requests.get(scraper_url, params=params_home, timeout=60)
+        # GET al Home
+        response = requests.get(PROXY_URL, params=params_home, timeout=120)
         
         if response.status_code != 200:
-            print(f"❌ Falló ScraperAPI en Home. Status: {response.status_code}")
-            # Si es 401 aquí, es definitivamente la llave o créditos agotados
+            print(f"❌ Falló Scrape.do en Home. Status: {response.status_code}")
             if response.status_code == 401:
-                print("   ⛔ Error 401: Llave inválida o sin créditos.")
+                print("   ⛔ Error 401: Verifica tu Token de Scrape.do")
+            if response.status_code == 403:
+                print("   ⛔ Error 403: Scrape.do fue bloqueado o se acabaron los créditos.")
+            print(response.text[:200])
             return
 
-        # Buscamos el token en el HTML que nos devolvieron
-        token = None
+        # Buscar el token
+        token_polla = None
         m = re.search(r'csrfToken["\']\s*[:=]\s*["\']([a-zA-Z0-9]+)["\']', response.text)
         if m: 
-            token = m.group(1)
-            print(f"   ✅ Token encontrado: {token[:15]}...")
+            token_polla = m.group(1)
+            print(f"   ✅ Token encontrado: {token_polla[:15]}...")
         else:
-            print("   ⚠️ Token no encontrado en el HTML devuelto.")
-            # Guardamos debug para ver qué nos devolvió ScraperAPI
-            with open("debug_scraperapi.html", "w", encoding="utf-8") as f: f.write(response.text)
+            print("   ⚠️ Token no encontrado. Guardando debug...")
+            with open("debug_scrapedou.html", "w", encoding="utf-8") as f: f.write(response.text)
             return
 
-        # --- 2. CONSULTAR LA API INTERNA ---
+        # 2️⃣ Petición API (POST)
         print(f"2️⃣ Consultando Sorteo {DRAW_ID}...")
         
-        # Headers necesarios para que Polla crea que somos un navegador
-        polla_headers = {
+        # Para hacer POST con Scrape.do, enviamos los datos a SU api, y él los reenvía.
+        # Scrape.do espera que le pasemos la URL destino en 'url' y el body normal.
+        
+        params_api = {
+            'token': TOKEN,
+            'url': API_INTERNAL,
+            'render': 'true', 
+            'session_id': session_id # IMPORTANTE: La misma sesión
+        }
+        
+        # Headers que Polla espera
+        headers_polla = {
             "x-requested-with": "XMLHttpRequest",
             "content-type": "application/x-www-form-urlencoded"
         }
         
-        # Payload con el token que acabamos de ganar
-        polla_data = {
+        # Datos del form
+        data_polla = {
             "gameId": GAME_ID,
             "drawId": DRAW_ID,
-            "csrfToken": token
+            "csrfToken": token_polla
         }
 
-        # Petición POST a través de ScraperAPI
-        final_response = requests.post(
-            scraper_url,
-            params={
-                'api_key': API_KEY,
-                'url': API_INTERNAL,
-                'render': 'true' 
-            },
-            headers=polla_headers,
-            data=polla_data
+        # Hacemos el POST
+        final_resp = requests.post(
+            PROXY_URL, 
+            params=params_api, 
+            headers=headers_polla, 
+            data=data_polla,
+            timeout=120
         )
 
-        if final_response.status_code == 200:
+        if final_resp.status_code == 200:
             try:
-                data = final_response.json()
+                data_json = final_resp.json()
                 print("   ✅ ¡ÉXITO! JSON Recibido.")
                 
-                # Guardamos el resultado
                 with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
-                    json.dump(data, f, indent=4, ensure_ascii=False)
+                    json.dump(data_json, f, indent=4, ensure_ascii=False)
                 
-                if data.get('results'):
-                    print(f"   🎉 Datos reales obtenidos: {data.get('drawDate')}")
+                if data_json.get('results'):
+                    print(f"   🎉 Sorteo: {data_json.get('drawDate')}")
                 else:
-                    print("   ⚠️ JSON válido pero sin resultados (¿Sorteo futuro?)")
+                    print("   ⚠️ JSON válido pero vacío.")
             except:
-                print("   ❌ La respuesta no es un JSON válido.")
-                print(final_response.text[:500])
+                print("   ❌ No es JSON válido.")
+                print(final_resp.text[:500])
         else:
-            print(f"   ❌ Error en API Polla: {final_response.status_code}")
-            print(final_response.text[:200])
+            print(f"   ❌ Error API Polla: {final_resp.status_code}")
+            print(final_resp.text[:200])
 
     except Exception as e:
-        print(f"🔥 Error Crítico en ejecución: {e}")
+        print(f"🔥 Error Crítico: {e}")
 
 if __name__ == "__main__":
-    run_scraperapi_test()
+    run_scrapedou_test()
