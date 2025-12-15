@@ -1,10 +1,10 @@
-name: Scraping Playwright + Proxy
+name: Scraping API Final
 
 on:
   workflow_dispatch:
 
 jobs:
-  scrape-proxy:
+  scrape-api:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -18,22 +18,24 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: 📦 Instalar dependencias
-        run: |
-          pip install playwright requests
-          playwright install chromium --with-deps
+      - name: 📦 Instalar requests
+        run: pip install requests
 
       - name: 🕷️ Ejecutar Scraper
         env:
           SCRAPERAPI_KEY: ${{ secrets.SCRAPERAPI_KEY }} 
         run: python engine/scrapers/test_gh_action.py
 
-      - name: 📤 Guardar cambios
-        if: always()
+      - name: 📤 Guardar resultados (Éxito o Debug)
+        if: always() # Se ejecuta aunque falle el python
         run: |
           git config --global user.name 'GitHub Action Bot'
           git config --global user.email 'action@github.com'
-          git add resultado_nube_playwright.json || true
-          git add debug_error.html || true
-          git commit -m "🕷️ Resultado Playwright Proxy" || echo "Nada nuevo"
+          
+          # Agregamos todo lo que empiece con resultado_ o debug_
+          git add resultado_nube_final.json || true
+          git add debug_*.html || true
+          git add debug_*.png || true
+          
+          git commit -m "🕷️ Reporte de Ejecución (Auto)" || echo "Nada nuevo"
           git push
