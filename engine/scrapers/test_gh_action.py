@@ -6,7 +6,6 @@ import time
 import random
 
 # --- CONFIGURACIÓN ---
-# Usamos la variable que ya tienes configurada, pero ahora sabemos que es de Scrape.do
 TOKEN = os.environ.get("SCRAPERAPI_KEY", "").strip() 
 
 GAME_ID = "5271" # Loto
@@ -21,25 +20,23 @@ PROXY_URL = "http://api.scrape.do"
 def run_scrapedou_test():
     print(f"☁️ INICIANDO BYPASS CON SCRAPE.DO")
     
+    # 1. Validación simple de llave
     if len(TOKEN) < 10:
         print("❌ Error: La llave (Token) parece vacía.")
         return
 
-    # Generamos un ID de sesión aleatorio.
-    # Esto obliga a Scrape.do a usar la MISMA IP para todas las peticiones de este script.
-    # Si cambiamos de IP a mitad de camino, Polla invalidará el token.
+    # 2. Session ID para mantener la IP (Vital para el Token CSRF)
     session_id = str(random.randint(100000, 999999))
     print(f"🔄 Sesión Persistente ID: {session_id}")
 
     print("1️⃣ Obteniendo Token CSRF vía Scrape.do...")
     
-    # Parámetros para la primera llamada (Home)
+    # Parámetros CORREGIDOS (Sin 'wait')
     params_home = {
         'token': TOKEN,
         'url': BASE_URL,
-        'render': 'true',       # Activa navegador real
-        'session_id': session_id, # Mantiene la IP/Cookies
-        'wait': '5000'          # Esperar 5 seg a que cargue el JS de seguridad
+        'render': 'true',       
+        'session_id': session_id 
     }
 
     try:
@@ -48,11 +45,7 @@ def run_scrapedou_test():
         
         if response.status_code != 200:
             print(f"❌ Falló Scrape.do en Home. Status: {response.status_code}")
-            if response.status_code == 401:
-                print("   ⛔ Error 401: Verifica tu Token de Scrape.do")
-            if response.status_code == 403:
-                print("   ⛔ Error 403: Scrape.do fue bloqueado o se acabaron los créditos.")
-            print(response.text[:200])
+            print(f"   Mensaje: {response.text[:300]}")
             return
 
         # Buscar el token
@@ -69,30 +62,25 @@ def run_scrapedou_test():
         # 2️⃣ Petición API (POST)
         print(f"2️⃣ Consultando Sorteo {DRAW_ID}...")
         
-        # Para hacer POST con Scrape.do, enviamos los datos a SU api, y él los reenvía.
-        # Scrape.do espera que le pasemos la URL destino en 'url' y el body normal.
-        
+        # Scrape.do reenvía nuestro POST al destino si usamos estos parámetros
         params_api = {
             'token': TOKEN,
             'url': API_INTERNAL,
             'render': 'true', 
-            'session_id': session_id # IMPORTANTE: La misma sesión
+            'session_id': session_id # Misma sesión = Misma IP
         }
         
-        # Headers que Polla espera
         headers_polla = {
             "x-requested-with": "XMLHttpRequest",
             "content-type": "application/x-www-form-urlencoded"
         }
         
-        # Datos del form
         data_polla = {
             "gameId": GAME_ID,
             "drawId": DRAW_ID,
             "csrfToken": token_polla
         }
 
-        # Hacemos el POST
         final_resp = requests.post(
             PROXY_URL, 
             params=params_api, 
@@ -112,13 +100,13 @@ def run_scrapedou_test():
                 if data_json.get('results'):
                     print(f"   🎉 Sorteo: {data_json.get('drawDate')}")
                 else:
-                    print("   ⚠️ JSON válido pero vacío.")
+                    print("   ⚠️ JSON válido pero vacío (¿Sorteo no existe?).")
             except:
                 print("   ❌ No es JSON válido.")
                 print(final_resp.text[:500])
         else:
             print(f"   ❌ Error API Polla: {final_resp.status_code}")
-            print(final_resp.text[:200])
+            print(final_resp.text[:300])
 
     except Exception as e:
         print(f"🔥 Error Crítico: {e}")
