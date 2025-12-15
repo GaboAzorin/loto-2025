@@ -13,50 +13,47 @@ BASE_URL = "https://www.polla.cl/es/view/resultados"
 API_INTERNAL = "https://www.polla.cl/es/get/draw/results"
 PROXY_URL = "http://api.scrape.do"
 
-def run_simple_fix():
-    print(f"☁️ INICIANDO SCRAPER SIMPLE (Configuración Exitosa)")
+def run_lightweight_scraper():
+    print(f"☁️ INICIANDO SCRAPER LIGERO (Sin Render)")
     
     if len(TOKEN) < 10:
         print("❌ Error: Token vacío.")
         return
 
-    # Usamos session para manejar cookies automáticamente
-    session = requests.Session()
-
-    # --- PASO 1: LA CONFIGURACIÓN EXACTA QUE FUNCIONÓ ---
-    print("1️⃣ Solicitando Home (GET + Render)...")
+    # --- PASO 1: GET SIMPLE (Sin Render) ---
+    print("1️⃣ Solicitando Home (Modo Texto)...")
     
-    # En la imagen b878e1.png (la exitosa), solo usamos estos parámetros:
     params_home = {
         'token': TOKEN,
         'url': BASE_URL,
-        'render': 'true' 
-        # SIN timeout, SIN session_id, SIN wait. Simple.
+        # 'render': 'true' <--- ELIMINADO. Probemos si la IP residencial es suficiente.
     }
 
     try:
-        resp_home = session.get(PROXY_URL, params=params_home, timeout=120)
+        # Usamos requests directo (sin Session) para imitar tu éxito anterior
+        resp_home = requests.get(PROXY_URL, params=params_home, timeout=60)
         
         if resp_home.status_code != 200:
             print(f"❌ Falló Home. Status: {resp_home.status_code}")
-            print(f"   Msg: {resp_home.text[:300]}")
             return
 
-        # Buscamos el Token
+        # Buscamos Token
         token_polla = None
         m = re.search(r'csrfToken["\']\s*[:=]\s*["\']([a-zA-Z0-9]+)["\']', resp_home.text)
         if m: 
             token_polla = m.group(1)
             print(f"   ✅ ¡TOKEN ENCONTRADO!: {token_polla[:15]}...")
         else:
-            print("   ⚠️ No hay token en el HTML. (Posible bloqueo visual)")
+            print("   ⚠️ No hay token. (Probablemente Incapsula pide JS).")
+            print("   📉 Si ves esto, significa que SÍ o SÍ necesitamos render=true.")
             return
 
-        # --- PASO 2: EL POST (Corregido) ---
+        # Capturamos cookies manualmente de la respuesta
+        cookies_home = resp_home.cookies
+        print(f"   🍪 Cookies obtenidas: {len(cookies_home)}")
+
+        # --- PASO 2: POST ---
         print(f"2️⃣ Consultando API Sorteo {DRAW_ID}...")
-        
-        # Aquí NO usamos render (porque es POST), pero pasamos las cookies
-        # que 'session' capturó en el paso 1.
         
         params_api = {
             'token': TOKEN,
@@ -74,12 +71,14 @@ def run_simple_fix():
             "content-type": "application/x-www-form-urlencoded"
         }
 
-        resp_api = session.post(
+        # Enviamos las cookies manualmente
+        resp_api = requests.post(
             PROXY_URL, 
             params=params_api, 
             headers=headers_polla, 
             data=data_polla,
-            timeout=120
+            cookies=cookies_home,
+            timeout=60
         )
 
         if resp_api.status_code == 200:
@@ -96,7 +95,6 @@ def run_simple_fix():
                     print("   ⚠️ JSON válido pero vacío.")
             except:
                 print("   ❌ Respuesta no es JSON.")
-                print(resp_api.text[:300])
         else:
             print(f"   ❌ Error API: {resp_api.status_code}")
             print(resp_api.text[:300])
@@ -105,4 +103,4 @@ def run_simple_fix():
         print(f"🔥 Error Crítico: {e}")
 
 if __name__ == "__main__":
-    run_simple_fix()
+    run_lightweight_scraper()
