@@ -11,81 +11,77 @@ DRAW_ID = "5360" # Sorteo Objetivo
 OUTPUT_FILE = "resultado_nube_final.json"
 
 # URLs
-TARGET_URL = "https://www.polla.cl" # Home
+TARGET_URL = "https://www.polla.cl" # Home (Más ligero)
 API_INTERNAL = "https://www.polla.cl/es/get/draw/results"
 PROXY_ENDPOINT = "http://api.scrape.do"
 
-def run_mobile_resilient_scraper():
-    print(f"☁️ INICIANDO SCRAPER MÓVIL (Con Reintentos)")
+def run_scrapedou_sniper():
+    print(f"☁️ INICIANDO SCRAPER FRANCOTIRADOR (Target: US Node)")
     
     if len(TOKEN) < 10:
         print("❌ Error: Token vacío.")
         return
 
-    # --- PASO 1: OBTENER HOME (Bucle de Intentos) ---
+    # --- PASO 1: OBTENER HOME (Bucle de intentos) ---
     token_polla = None
     cookies_home = None
     
-    # Intentaremos hasta 10 veces si es necesario (el 502 es temporal)
-    MAX_RETRIES = 10 
-    
-    for i in range(1, MAX_RETRIES + 1):
-        print(f"\n🔄 Intento {i}/{MAX_RETRIES} conectando a Polla...")
+    # Intentaremos 5 veces buscando un nodo estable en USA
+    for i in range(1, 6):
+        print(f"\n🔄 Intento {i}/5 (Node US)...")
         
         params_home = {
             'token': TOKEN,
             'url': TARGET_URL,
             'render': 'true', 
-            'timeout': '25000' # Pedimos más tiempo
+            'geoCode': 'us', # FORZAMOS USA: Suelen ser servidores más potentes
+            'timeout': '25000'
         }
         
-        # Simulamos ser un celular Android (sitio más ligero = menos error 502)
-        headers_mobile = {
-            "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Mobile Safari/537.36"
-        }
-
         try:
-            resp_home = requests.get(
-                PROXY_ENDPOINT, 
-                params=params_home, 
-                headers=headers_mobile, 
-                timeout=120
-            )
+            # Petición limpia: Sin headers manuales, dejamos que Scrape.do decida
+            resp = requests.get(PROXY_ENDPOINT, params=params_home, timeout=90)
             
-            if resp_home.status_code == 200:
+            if resp.status_code == 200:
                 # Buscar Token
-                m = re.search(r'csrfToken["\']\s*[:=]\s*["\']([a-zA-Z0-9]+)["\']', resp_home.text)
-                if m: 
+                m = re.search(r'csrfToken["\']\s*[:=]\s*["\']([a-zA-Z0-9]+)["\']', resp.text)
+                if m:
                     token_polla = m.group(1)
-                    cookies_home = resp_home.cookies
-                    print(f"   ✅ ¡CONEXIÓN ESTABLECIDA! Token: {token_polla[:15]}...")
-                    break # ¡Éxito! Salimos del bucle
+                    cookies_home = resp.cookies
+                    print(f"   ✅ ¡BLANCO! Token capturado: {token_polla[:15]}...")
+                    break 
                 else:
-                    print("   ⚠️ Página cargó pero no veo el token. Reintentando...")
+                    print("   ⚠️ HTML descargado pero sin token (¿Falta JS?). Reintentando...")
             
-            elif resp_home.status_code == 502:
-                print("   ⚠️ Error 502 (Scrape.do saturado). Esperando 5s...")
-                time.sleep(5)
+            elif resp.status_code == 502:
+                print("   ⚠️ Error 502 (Proxy sobrecargado). Esperando 3s...")
+                time.sleep(3)
             
             else:
-                print(f"   ⚠️ Error {resp_home.status_code}. Reintentando...")
-                time.sleep(2)
+                print(f"   ⚠️ Error {resp.status_code}. Reintentando...")
 
         except Exception as e:
-            print(f"   🔥 Excepción de conexión: {e}")
-            time.sleep(5)
+            print(f"   🔥 Error conexión: {e}")
+            time.sleep(2)
 
     if not token_polla:
-        print("\n❌ FALLO FATAL: No se pudo conectar tras todos los intentos.")
+        print("\n❌ MISIÓN FALLIDA: No se pudo obtener token.")
+        print("   Diagnóstico: Scrape.do no está logrando renderizar Polla.cl hoy.")
         return
 
-    # --- PASO 2: POST A LA API (Ya tenemos el token) ---
+    # --- PASO 2: POST A LA API ---
     print(f"\n2️⃣ Consultando API Sorteo {DRAW_ID}...")
 
     params_api = {
         'token': TOKEN,
-        'url': API_INTERNAL
-        # Sin render aquí
+        'url': API_INTERNAL,
+        'geoCode': 'us' # Mantenemos coherencia de zona
+    }
+
+    # Headers mínimos para el POST
+    headers_polla = {
+        "x-requested-with": "XMLHttpRequest",
+        "content-type": "application/x-www-form-urlencoded"
     }
 
     data_polla = {
@@ -93,28 +89,22 @@ def run_mobile_resilient_scraper():
         "drawId": DRAW_ID,
         "csrfToken": token_polla
     }
-    
-    headers_polla = {
-        "x-requested-with": "XMLHttpRequest",
-        "content-type": "application/x-www-form-urlencoded",
-        # Mantenemos el User-Agent móvil
-        "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Mobile Safari/537.36"
-    }
 
     try:
+        # Pasamos las cookies capturadas
         resp_api = requests.post(
             PROXY_ENDPOINT, 
             params=params_api, 
             headers=headers_polla, 
             data=data_polla,
-            cookies=cookies_home, # Cookies capturadas arriba
-            timeout=120
+            cookies=cookies_home,
+            timeout=90
         )
 
         if resp_api.status_code == 200:
             try:
                 data = resp_api.json()
-                print("   ✅ ¡VICTORIA! JSON Recibido.")
+                print("   ✅ ¡ÉXITO TOTAL! JSON Recibido.")
                 
                 with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
                     json.dump(data, f, indent=4, ensure_ascii=False)
@@ -128,10 +118,10 @@ def run_mobile_resilient_scraper():
                 print(resp_api.text[:300])
         else:
             print(f"   ❌ Error API: {resp_api.status_code}")
-            print(resp_api.text[:300])
+            print(resp_api.text[:500])
 
     except Exception as e:
         print(f"🔥 Error Crítico Fase 2: {e}")
 
 if __name__ == "__main__":
-    run_mobile_resilient_scraper()
+    run_scrapedou_sniper()
