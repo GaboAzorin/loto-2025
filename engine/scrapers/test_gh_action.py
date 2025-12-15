@@ -16,28 +16,31 @@ API_INTERNAL = "https://www.polla.cl/es/get/draw/results"
 PROXY_URL = "http://api.scrape.do"
 
 def run_scrapedou_test():
-    print(f"☁️ INICIANDO BYPASS CON SCRAPE.DO (Versión Limpia)")
+    print(f"☁️ INICIANDO BYPASS CON SCRAPE.DO (Versión Session)")
     
     if len(TOKEN) < 10:
         print("❌ Error: La llave (Token) parece vacía.")
         return
 
-    print("1️⃣ Obteniendo Token CSRF vía Scrape.do...")
+    # Usamos una Sesión para intentar mantener cookies entre peticiones
+    session = requests.Session()
+
+    print("1️⃣ Obteniendo Token CSRF (GET + Render)...")
     
-    # Parámetros ACEPTADOS por Scrape.do (Sin inventar nada)
+    # Paso 1: GET con Render (Necesario para engañar a Incapsula)
     params_home = {
         'token': TOKEN,
         'url': BASE_URL,
-        'render': 'true'
+        'render': 'true' 
     }
 
     try:
-        # GET al Home
-        response = requests.get(PROXY_URL, params=params_home, timeout=120)
+        # Usamos session.get
+        response = session.get(PROXY_URL, params=params_home, timeout=120)
         
         if response.status_code != 200:
-            print(f"❌ Falló Scrape.do en Home. Status: {response.status_code}")
-            print(f"   Mensaje: {response.text[:300]}")
+            print(f"❌ Falló Home. Status: {response.status_code}")
+            print(f"   Msg: {response.text[:300]}")
             return
 
         # Buscar el token
@@ -47,19 +50,18 @@ def run_scrapedou_test():
             token_polla = m.group(1)
             print(f"   ✅ Token encontrado: {token_polla[:15]}...")
         else:
-            print("   ⚠️ Token no encontrado. Guardando debug...")
+            print("   ⚠️ Token no encontrado en HTML.")
             with open("debug_scrapedou.html", "w", encoding="utf-8") as f: f.write(response.text)
             return
 
-        # 2️⃣ Petición API (POST)
-        print(f"2️⃣ Consultando Sorteo {DRAW_ID}...")
+        # Paso 2: POST a la API (SIN RENDER)
+        # Aquí estaba el error: No se puede usar render=true en POST
+        print(f"2️⃣ Consultando Sorteo {DRAW_ID} (POST Limpio)...")
         
-        # Scrape.do reenvía nuestro POST al destino
         params_api = {
             'token': TOKEN,
             'url': API_INTERNAL,
-            'render': 'true'
-            # Eliminamos session_id para evitar error 400
+            # 'render': 'true'  <--- ELIMINADO: Esto causaba el error 400
         }
         
         headers_polla = {
@@ -73,7 +75,8 @@ def run_scrapedou_test():
             "csrfToken": token_polla
         }
 
-        final_resp = requests.post(
+        # Usamos session.post para reutilizar conexión/cookies si Scrape.do lo permite
+        final_resp = session.post(
             PROXY_URL, 
             params=params_api, 
             headers=headers_polla, 
@@ -84,21 +87,21 @@ def run_scrapedou_test():
         if final_resp.status_code == 200:
             try:
                 data_json = final_resp.json()
-                print("   ✅ ¡ÉXITO! JSON Recibido.")
+                print("   ✅ ¡ÉXITO TOTAL! JSON Recibido.")
                 
                 with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
                     json.dump(data_json, f, indent=4, ensure_ascii=False)
                 
                 if data_json.get('results'):
-                    print(f"   🎉 Sorteo: {data_json.get('drawDate')}")
+                    print(f"   🎉 Datos Sorteo: {data_json.get('drawDate')}")
                 else:
-                    print("   ⚠️ JSON válido pero vacío (¿Sorteo no existe?).")
+                    print("   ⚠️ JSON válido pero vacío.")
             except:
-                print("   ❌ No es JSON válido.")
+                print("   ❌ Respuesta no es JSON.")
                 print(final_resp.text[:500])
         else:
             print(f"   ❌ Error API Polla: {final_resp.status_code}")
-            print(final_resp.text[:300])
+            print(f"   Cuerpo: {final_resp.text[:500]}")
 
     except Exception as e:
         print(f"🔥 Error Crítico: {e}")
