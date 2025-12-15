@@ -2,10 +2,11 @@ import asyncio
 import json
 import re
 import os
+import random
 from playwright.async_api import async_playwright
 
 # --- CONFIGURACIÓN ---
-TOKEN = os.environ.get("SCRAPERAPI_KEY", "").strip() # Tu llave de Scrape.do
+TOKEN = os.environ.get("SCRAPERAPI_KEY", "").strip() 
 GAME_ID = "5271" # Loto
 DRAW_ID = "5360" # Sorteo Objetivo
 OUTPUT_FILE = "resultado_nube_playwright.json"
@@ -14,67 +15,98 @@ BASE_URL = "https://www.polla.cl/es/view/resultados"
 API_URL = "https://www.polla.cl/es/get/draw/results"
 
 async def run_proxy_test():
-    print(f"🕷️ INICIANDO PLAYWRIGHT CON PROXY SCRAPE.DO")
+    print(f"🕷️ INICIANDO PLAYWRIGHT STEALTH + STICKY PROXY")
     
     if len(TOKEN) < 10:
         print("❌ Error: Token vacío.")
         return
 
+    # Generamos un ID de sesión para que Scrape.do nos de la MISMA IP
+    # durante toda la ejecución.
+    session_id = str(random.randint(10000, 99999))
+    print(f"🔄 Usando Sticky Session ID: {session_id}")
+
     async with async_playwright() as p:
-        # --- LA MAGIA: CONFIGURAR EL PROXY ---
-        # Scrape.do permite usarlo como un proxy estándar.
-        # Formato: http://proxy.scrape.do:8080
-        # Auth: username=TOKEN, password=""
         
-        print("🌍 Configurando túnel residencial...")
+        # --- CONFIGURACIÓN DEL PROXY (MODO EXPERTO) ---
+        # Username: Tu Token
+        # Password: Los parámetros de Scrape.do. 
+        #           'render=false' (porque ya renderizamos nosotros)
+        #           'sessionId=...' (para mantener la IP fija)
+        proxy_params = f"render=false&sessionId={session_id}"
+        
+        print("🌍 Configurando navegador blindado...")
+        
         browser = await p.chromium.launch(
             headless=True,
+            args=[
+                "--disable-blink-features=AutomationControlled", # Oculta que es un robot
+                "--no-sandbox",
+                "--disable-setuid-sandbox"
+            ],
             proxy={
                 "server": "http://proxy.scrape.do:8080",
                 "username": TOKEN,
-                "password": "" 
+                "password": proxy_params 
             }
         )
         
-        # Usamos tu User-Agent probado para parecer Windows 10 real
+        # Contexto con User-Agent de usuario real (Windows 10 / Chrome)
         context = await browser.new_context(
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            ignore_https_errors=True # Importante para proxies
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+            ignore_https_errors=True,
+            viewport={"width": 1920, "height": 1080}
         )
+        
+        # Truco extra: Inyectar script para ocultar webdriver
+        await context.add_init_script("""
+            Object.defineProperty(navigator, 'webdriver', {
+                get: () => undefined
+            });
+        """)
+
         page = await context.new_page()
 
         try:
-            print("1️⃣ Navegando al Home (Obteniendo Cookies y Token)...")
+            print("1️⃣ Navegando al Home (Timeout 90s)...")
             
-            # Navegamos. Como vamos por proxy, Scrape.do rota la IP por nosotros.
-            # Aumentamos timeout a 60s porque los proxies residenciales son algo lentos.
-            await page.goto(BASE_URL, timeout=60000, wait_until="domcontentloaded")
-            await asyncio.sleep(5) # Espera de seguridad
+            # Aumentamos timeout a 90s porque los proxies residenciales "sticky" a veces tardan en negociar
+            await page.goto(BASE_URL, timeout=90000, wait_until="domcontentloaded")
+            
+            # Esperamos un poco más para que Incapsula valide el navegador
+            print("   ⏳ Esperando validación de seguridad (5s)...")
+            await asyncio.sleep(5)
 
-            # TU LÓGICA DE EXTRACCIÓN (ROBUSTA)
+            # Validar título para saber si cargó Polla o el bloqueo
+            title = await page.title()
+            print(f"   📄 Título detectado: {title}")
+
+            # EXTRACCIÓN DEL TOKEN
             token = await page.evaluate("document.querySelector('input[name=\"csrfToken\"]')?.value")
             
             if not token:
                 print("   ⚠️ Token no en DOM. Intentando Regex...")
                 content = await page.content()
+                # Debug: Guardar HTML si falla (para ver si es bloqueo)
+                with open("debug_page_source.html", "w", encoding="utf-8") as f: f.write(content)
+                
                 m = re.search(r'csrfToken["\']\s*[:=]\s*["\']([a-zA-Z0-9]+)["\']', content)
                 if m: 
                     token = m.group(1)
             
             if not token:
                 print("❌ FATAL: No se encontró Token CSRF.")
-                # Guardar HTML para debug
-                await page.screenshot(path="debug_error.png")
-                with open("debug_error.html", "w", encoding="utf-8") as f:
-                    f.write(await page.content())
+                # Sacar foto del error
+                await page.screenshot(path="debug_screenshot.png")
+                print("   📸 Screenshot guardado como debug_screenshot.png")
                 return
 
             print(f"   ✅ Token Validado: {token[:15]}...")
 
-            # 2. PETICIÓN API (Desde el contexto del navegador)
-            # Esto es vital: Playwright envía la petición DESDE la misma sesión/IP
+            # 2. PETICIÓN API
             print(f"2️⃣ Solicitando Sorteo {DRAW_ID}...")
             
+            # Importante: La petición sale del MISMO contexto, por la MISMA IP (gracias al sessionId)
             response = await page.request.post(API_URL, data={
                 "gameId": GAME_ID, 
                 "drawId": DRAW_ID, 
@@ -99,7 +131,6 @@ async def run_proxy_test():
                     print("   ❌ Error parseando JSON.")
             else:
                 print(f"   ❌ Error HTTP {response.status}")
-                print(await response.text())
 
         except Exception as e:
             print(f"🔥 Error Crítico: {e}")
