@@ -57,63 +57,94 @@ def calcular_afinidad(prediccion, realidad, juego):
     """Calcula score 0-100 dependiendo de las reglas del juego."""
     if not prediccion or not realidad: return 0.0
     
-    # --- REGLAS RACHA (Efecto Espejo) ---
+    # --- REGLAS RACHA (Curva de Aprendizaje en V) ---
     if juego == "RACHA":
+        # Usamos sets porque en Racha no importa el orden, solo estar dentro o fuera
         aciertos = len(set(prediccion) & set(realidad))
-        # En Racha ganas con 10 aciertos O con 0 aciertos (y escalas intermedias)
-        # Convertimos esto a una escala de "interés" para el bot
+        
+        # Premios Reales (Estado final)
         if aciertos >= 10 or aciertos <= 0: return 100.0
-        if aciertos >= 9 or aciertos <= 1: return 85.0
-        if aciertos >= 8 or aciertos <= 2: return 60.0
-        if aciertos >= 7 or aciertos <= 3: return 40.0
-        return 0.0 # 4, 5, 6 aciertos no valen nada en Racha
+        if aciertos == 9 or aciertos == 1: return 85.0
+        if aciertos == 8 or aciertos == 2: return 60.0
+        if aciertos == 7 or aciertos == 3: return 40.0
         
-    # --- REGLAS LOTO 3 (Exactitud con repetición) ---
+        # --- CORRECCIÓN CRÍTICA PARA LA IA ---
+        # Si tengo 4, 5 o 6 aciertos, NO debo devolver 0 absoluto.
+        # Debo devolver un puntaje bajo pero que indique dirección.
+        # 5 es el peor estado (máxima entropía/azar). 4 y 6 son un poco mejores.
+        if aciertos == 4 or aciertos == 6: return 15.0 # Casi ganas algo
+        if aciertos == 5: return 5.0 # El peor resultado posible (ni cerca de 0 ni de 10)
+        
+        return 0.0 
+
+    # --- REGLAS LOTO 3 (Precisión Posicional Estricta) ---
     elif juego == "LOTO3":
-        # Loto 3 importa el orden a veces, pero aquí mediremos coincidencia numérica simple
-        # Si predigo [1, 1, 2] y sale [1, 2, 3], tengo 2 aciertos numéricos
-        # Implementación simple: intersección
-        # Nota: Para ser exactos en Loto3 habría que comparar conteos, pero set() simplifica
-        aciertos = 0
-        real_copy = list(realidad)
-        for num in prediccion:
-            if num in real_copy:
-                aciertos += 1
-                real_copy.remove(num)
+        # Asumimos que Loto 3 requiere ORDEN EXACTO (Posición 1, 2 y 3)
+        # Si predigo [1, 2, 3] y sale [1, 2, 3] -> 3 ptos
+        # Si predigo [3, 2, 1] y sale [1, 2, 3] -> 1 pto (solo el 2 coincide en posición)
         
-        if aciertos == 3: return 100.0
-        if aciertos == 2: return 50.0
-        if aciertos == 1: return 10.0
-        return 0.0
+        match_posicional = 0
+        match_numerico = 0 # Para consuelo si acertó el número pero no la posición
+        
+        # Copia para no destruir la lista original al contar numéricos
+        real_temp = list(realidad)
+        
+        # 1. Análisis Posicional (Lo que más vale)
+        for i in range(min(len(prediccion), len(realidad))):
+            if prediccion[i] == realidad[i]:
+                match_posicional += 1
+        
+        # 2. Análisis Numérico (Premio de consuelo)
+        # Esto ayuda a la IA a saber que "tenía los números correctos" aunque desordenados
+        for n in prediccion:
+            if n in real_temp:
+                match_numerico += 1
+                real_temp.remove(n)
+        
+        # CÁLCULO DE SCORE
+        if match_posicional == 3: return 100.0 # ¡Exacta!
+        
+        # Ponderamos: 70% Posición, 30% Tenencia
+        score_pos = (match_posicional / 3) * 70
+        score_num = (match_numerico / 3) * 30
+        
+        return score_pos + score_num
 
     # --- REGLAS LOTO / LOTO 4 (Clásico) ---
     else: 
+        # Aquí la lógica anterior estaba bien, pero podemos refinar la "Proximidad"
+        # para que no sea tan castigadora si fallamos por 1 número.
         aciertos = len(set(prediccion) & set(realidad))
         total_bolas = len(realidad)
         
-        # Puntuación exponencial
+        # Si aciertas todo, 100 pts
         ratio = aciertos / total_bolas
         if ratio == 1.0: return 100.0
         
-        # Bonus por proximidad (solo si no ganamos)
-        try:
-            # Calcular cuán lejos estuvimos matemáticamente
-            pred_vec = np.array(sorted(prediccion)[:total_bolas]) # Asegurar longitud
-            real_vec = np.array(sorted(realidad)[:total_bolas])
+        # Cálculo base exponencial (para que 5 aciertos valga mucho más que 1)
+        base_score = (ratio ** 2) * 100 
+        
+        # Bonus de proximidad (Solo si tenemos al menos 2 aciertos, para afinar puntería)
+        proximity_score = 0
+        if aciertos >= 2:
+            try:
+                # Ordenamos para comparar menor con menor
+                p_sorted = sorted(prediccion)[:total_bolas]
+                r_sorted = sorted(realidad)[:total_bolas]
+                
+                diff_total = 0
+                for p, r in zip(p_sorted, r_sorted):
+                    diff_total += abs(p - r)
+                
+                # Promedio de distancia por bola
+                avg_diff = diff_total / total_bolas
+                
+                # Si el error promedio es bajo (ej. fallé por 1 o 2 números), doy puntos extra
+                if avg_diff < 5: 
+                    proximity_score = (5 - avg_diff) * 2 # Max 10 pts extra
+            except: pass
             
-            # Si las longitudes difieren (error de dato), saltar proximidad
-            if len(pred_vec) == len(real_vec):
-                diff = np.mean(np.abs(pred_vec - real_vec))
-                # Un diff de 0 es 100 pts, un diff de 20 es 0 pts
-                proximity_score = max(0, 100 - (diff * 5))
-            else:
-                proximity_score = 0
-        except:
-            proximity_score = 0
-            
-        # El score final es mayormente aciertos, con un toque de proximidad
-        base_score = (aciertos / total_bolas) * 100
-        return (base_score * 0.8) + (proximity_score * 0.2)
+        return min(99.0, base_score + proximity_score)
 
 def juzgar():
     print("⚖️ JUEZ MULTIVERSO EN SESIÓN...")
