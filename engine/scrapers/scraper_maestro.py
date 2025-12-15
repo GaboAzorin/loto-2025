@@ -4,7 +4,8 @@ import os
 import json
 import requests
 import time
-import re  # <--- 1. IMPORTANTE: Agregado re para expresiones regulares
+import re
+import subprocess
 from datetime import datetime
 from playwright.async_api import async_playwright
 
@@ -171,6 +172,27 @@ def get_start_id(config):
     except: pass
     return max_id + 1 if max_id > 0 else config['start_draw']
 
+def subir_cambios_a_github():
+    print("\n📦 SUBIENDO DATOS A GITHUB...")
+    try:
+        # Verificar si hay cambios
+        status = subprocess.check_output(["git", "status", "--porcelain"], text=True)
+        if not status:
+            print("   ✅ No hay datos nuevos para subir.")
+            return
+
+        # Comandos git automáticos
+        subprocess.run(["git", "add", "."], check=True)
+        
+        mensaje = f"🤖 Update local: {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+        subprocess.run(["git", "commit", "-m", mensaje], check=True)
+        
+        subprocess.run(["git", "push"], check=True)
+        print("   🚀 ¡Listo! Los datos ya están en la web.")
+        
+    except Exception as e:
+        print(f"   ⚠️ No se pudo subir a GitHub (¿Tienes internet?): {e}")
+
 async def run_scraper():
     print("\n🕷️  INICIANDO SCRAPER MAESTRO (Manual/Local)...")
     sincronizar_jugadas()
@@ -269,6 +291,7 @@ async def run_scraper():
                     await asyncio.sleep(1)
 
         await browser.close()
+        subir_cambios_a_github()
         print("\n🏁 PROCESO FINALIZADO.")
 
 if __name__ == "__main__":
