@@ -2,7 +2,10 @@ import os
 import requests
 import json
 import re
-import time
+import urllib3
+
+# Desactivar advertencias de certificados SSL (común al usar proxies)
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # --- CONFIGURACIÓN ---
 TOKEN = os.environ.get("SCRAPERAPI_KEY", "").strip() 
@@ -10,100 +13,88 @@ GAME_ID = "5271" # Loto
 DRAW_ID = "5360" # Sorteo Objetivo
 OUTPUT_FILE = "resultado_nube_final.json"
 
-BASE_URL = "https://www.polla.cl/es/view/resultados"
+# CAMBIO CLAVE: Vamos al Home, que es más ligero que /view/resultados
+TARGET_URL = "https://www.polla.cl" 
 API_INTERNAL = "https://www.polla.cl/es/get/draw/results"
-PROXY_URL = "http://api.scrape.do"
 
-def run_resilient_scraper():
-    print(f"☁️ INICIANDO SCRAPER RESILIENTE (Reintentos Automáticos)")
+def run_smart_scraper():
+    print(f"☁️ INICIANDO SCRAPER OPTIMIZADO (Target: Home)")
     
     if len(TOKEN) < 10:
         print("❌ Error: Token vacío.")
         return
 
-    # Variables para guardar lo que logremos capturar
-    token_polla = None
-    cookies_home = None
+    session = requests.Session()
 
-    # --- FASE 1: OBTENER HOME (Bucle de intentos) ---
-    max_retries = 5
+    # --- CONFIGURACIÓN PROXY SCRAPE.DO ---
+    # Usamos el modo Proxy Estándar.
+    # Sintaxis: http://token:render=true@proxy.scrape.do:8080
+    proxy_auth = f"{TOKEN}:render=true"
+    proxy_url = f"http://{proxy_auth}@proxy.scrape.do:8080"
     
-    for i in range(1, max_retries + 1):
-        print(f"\n🔄 Intento {i}/{max_retries} para obtener Home...")
+    proxies = {
+        "http": proxy_url,
+        "https": proxy_url
+    }
+
+    print(f"1️⃣ Solicitando {TARGET_URL} (Buscando Token)...")
+    
+    try:
+        # Petición al Home usando el Proxy
+        # verify=False es necesario porque el proxy intercepta el SSL
+        resp_home = session.get(TARGET_URL, proxies=proxies, verify=False, timeout=120)
         
-        # Volvemos a la configuración que SÍ funcionó (con render)
-        params_home = {
-            'token': TOKEN,
-            'url': BASE_URL,
-            'render': 'true' # Necesario para Incapsula
+        if resp_home.status_code != 200:
+            print(f"❌ Falló Carga. Status: {resp_home.status_code}")
+            # Si es 502, es culpa de Scrape.do. Si es 403, es Polla.
+            print(f"   Respuesta: {resp_home.text[:200]}")
+            return
+
+        # Buscar Token
+        token_polla = None
+        # Buscamos el token en el HTML del home
+        m = re.search(r'csrfToken["\']\s*[:=]\s*["\']([a-zA-Z0-9]+)["\']', resp_home.text)
+        if m: 
+            token_polla = m.group(1)
+            print(f"   ✅ ¡TOKEN CAPTURADO!: {token_polla[:15]}...")
+        else:
+            print("   ⚠️ No encontré token en el Home.")
+            # Guardamos debug
+            with open("debug_home.html", "w", encoding="utf-8") as f: f.write(resp_home.text)
+            return
+
+        # --- PASO 2: POST A LA API ---
+        print(f"2️⃣ Consultando API Sorteo {DRAW_ID}...")
+        
+        # Para el POST, usamos el MISMO proxy pero desactivamos render si es posible
+        # Para simplificar, usamos la misma configuración de proxy (render=true no afecta negativamente al POST si ya tenemos cookies)
+        
+        headers_polla = {
+            "x-requested-with": "XMLHttpRequest",
+            "content-type": "application/x-www-form-urlencoded",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         }
 
-        try:
-            # Sin session, requests directo para forzar limpieza
-            resp = requests.get(PROXY_URL, params=params_home, timeout=90)
-            
-            if resp.status_code == 200:
-                # Buscar Token
-                m = re.search(r'csrfToken["\']\s*[:=]\s*["\']([a-zA-Z0-9]+)["\']', resp.text)
-                if m:
-                    token_polla = m.group(1)
-                    cookies_home = resp.cookies
-                    print(f"   ✅ ¡ÉXITO! Token capturado: {token_polla[:15]}...")
-                    break # Salimos del bucle
-                else:
-                    print("   ⚠️ Página cargó (200 OK) pero no veo el token. Reintentando...")
-            
-            elif resp.status_code == 502:
-                print("   ⚠️ Error 502 (Proxy inestable). Probando otra IP en 5 seg...")
-                time.sleep(5)
-            
-            else:
-                print(f"   ⚠️ Error {resp.status_code}. Reintentando...")
-                time.sleep(2)
+        data_polla = {
+            "gameId": GAME_ID,
+            "drawId": DRAW_ID,
+            "csrfToken": token_polla
+        }
 
-        except Exception as e:
-            print(f"   🔥 Error de conexión: {e}")
-            time.sleep(5)
-
-    if not token_polla:
-        print("\n❌ FALLO TOTAL: No se pudo entrar tras 5 intentos.")
-        return
-
-    # --- FASE 2: EL POST (Solo si tuvimos éxito arriba) ---
-    print(f"\n2️⃣ Consultando API Sorteo {DRAW_ID}...")
-    
-    # Parámetros para el POST (Sin render, con cookies)
-    params_api = {
-        'token': TOKEN,
-        'url': API_INTERNAL
-    }
-
-    headers_polla = {
-        "x-requested-with": "XMLHttpRequest",
-        "content-type": "application/x-www-form-urlencoded"
-    }
-
-    data_polla = {
-        "gameId": GAME_ID,
-        "drawId": DRAW_ID,
-        "csrfToken": token_polla
-    }
-
-    try:
-        # Importante: Pasamos las cookies capturadas en la Fase 1
-        resp_api = requests.post(
-            PROXY_URL, 
-            params=params_api, 
+        # Las cookies ya viajan en la 'session' automáticamente
+        resp_api = session.post(
+            API_INTERNAL, # Atacamos directo a la URL de Polla (el proxy intercepta)
+            proxies=proxies,
             headers=headers_polla, 
             data=data_polla,
-            cookies=cookies_home,
-            timeout=90
+            verify=False,
+            timeout=120
         )
 
         if resp_api.status_code == 200:
             try:
                 data = resp_api.json()
-                print("   ✅ ¡VICTORIA! JSON Recibido.")
+                print("   ✅ ¡ÉXITO TOTAL! JSON Recibido.")
                 
                 with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
                     json.dump(data, f, indent=4, ensure_ascii=False)
@@ -113,14 +104,14 @@ def run_resilient_scraper():
                 else:
                     print("   ⚠️ JSON válido pero vacío.")
             except:
-                print("   ❌ Error: Respuesta no es JSON.")
+                print("   ❌ Respuesta no es JSON.")
                 print(resp_api.text[:300])
         else:
             print(f"   ❌ Error API: {resp_api.status_code}")
-            print(resp_api.text[:500])
+            print(resp_api.text[:300])
 
     except Exception as e:
-        print(f"🔥 Error Crítico Fase 2: {e}")
+        print(f"🔥 Error Crítico: {e}")
 
 if __name__ == "__main__":
-    run_resilient_scraper()
+    run_smart_scraper()
