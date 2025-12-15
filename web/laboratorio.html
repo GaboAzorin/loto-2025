@@ -472,6 +472,57 @@
             </div>
         </div>
 
+        <div id="loto3-safe-plan" class="card" style="display:none; border: 1px solid var(--accent); background: linear-gradient(145deg, rgba(88, 166, 255, 0.05) 0%, rgba(0,0,0,0) 100%); margin-bottom: 30px;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                <div>
+                    <h3 style="color:var(--accent); font-size:1.1rem; margin-bottom:5px;">🛡️ Plan de Juego Seguro: "Escudo y Lanza"</h3>
+                    <p style="margin:0; font-size:0.9rem; color:var(--text-muted);">
+                        Estrategia optimizada para <strong id="plan-algo-name" style="color:white;">--</strong> 
+                        basada en rendimiento reciente.
+                    </p>
+                </div>
+                <div style="text-align:right;">
+                     <span class="status-badge" style="background:var(--accent);">Sorteo #<span id="plan-target">--</span></span>
+                </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:20px; margin-top:20px;">
+                <div style="background:rgba(0,0,0,0.3); padding:15px; border-radius:8px; border:1px dashed var(--border);">
+                    <div style="font-size:0.8rem; text-transform:uppercase; color:var(--text-muted); margin-bottom:10px;">Tus Números</div>
+                    <div style="display:flex; gap:10px; justify-content:center; font-size:2rem; font-weight:bold; margin-bottom:15px;">
+                        <span id="plan-n1" style="background:#0d1117; padding:5px 15px; border-radius:6px; border:1px solid var(--accent); color:white;">-</span>
+                        <span id="plan-n2" style="background:#0d1117; padding:5px 15px; border-radius:6px; border:1px solid var(--accent); color:white;">-</span>
+                        <span id="plan-n3" style="background:#0d1117; padding:5px 15px; border-radius:6px; border:1px solid var(--accent); color:var(--money);">-</span>
+                    </div>
+                    <div style="text-align:center; font-size:0.8rem; color:var(--warning);">
+                        ⚠️ Jugar en este orden exacto
+                    </div>
+                </div>
+
+                <div>
+                    <table style="width:100%; font-size:0.9rem;">
+                        <tr>
+                            <td style="padding:8px 0; color:var(--text-muted);">Apuesta A (Escudo)</td>
+                            <td style="text-align:right; font-weight:bold; color:white;">TERMINACIÓN</td>
+                            <td style="text-align:right; color:var(--text-muted);">$100</td>
+                        </tr>
+                        <tr>
+                            <td style="padding:8px 0; color:var(--text-muted);">Apuesta B (Lanza)</td>
+                            <td style="text-align:right; font-weight:bold; color:white;">PAR</td>
+                            <td style="text-align:right; color:var(--text-muted);">$100</td>
+                        </tr>
+                        <tr style="border-top:1px solid var(--border);">
+                            <td style="padding:10px 0; font-weight:bold;">COSTO TOTAL</td>
+                            <td></td>
+                            <td style="text-align:right; font-weight:bold; color:var(--money); font-size:1.1rem;">$200</td>
+                        </tr>
+                    </table>
+                    <div style="margin-top:10px; font-size:0.8rem; color:var(--text-muted); font-style:italic;">
+                        * Si aciertas el último número, recuperas y duplicas. Si aciertas par, ganas x9.
+                    </div>
+                </div>
+            </div>
+        </div>
         <div class="kpi-grid" id="financial-panel" style="display:none; border-top: 1px solid var(--border); padding-top: 25px; margin-top:20px;">
             <div class="card money-card">
                 <h3>Inversión Hipotética</h3>
@@ -1040,7 +1091,6 @@
             const winningNums = MASTERS[CURRENT_UNIVERSE][targetDraw];
             const comodin = MASTERS_COMODIN[CURRENT_UNIVERSE] ? MASTERS_COMODIN[CURRENT_UNIVERSE][targetDraw] : null;
 
-            // --- 2. CAMBIO SOLICITADO: ACUMULADOR PARA ORDENAR ---
             let winningRows = [];
 
             if (winningNums) {
@@ -1056,21 +1106,18 @@
                 });
             }
 
-            // --- 3. CAMBIO SOLICITADO: ORDENAR (Monto Desc > Fecha Desc) ---
+            // --- ORDENAR (Monto Desc > Fecha Desc) ---
             winningRows.sort((a, b) => {
                 if (b.res.amount !== a.res.amount) return b.res.amount - a.res.amount; // 1. Monto Mayor primero
-                // Comparar Fechas (Como Strings ISO funcionan lexicográficamente si están bien formadas, o usamos Date obj)
-                // Usamos id que es timestamp en este sistema, o dateObj
                 return b.s.dateObj - a.s.dateObj; // 2. Más reciente primero
             });
 
-            // --- 4. RENDERIZAR FILAS ORDENADAS ---
+            // --- RENDERIZAR FILAS ORDENADAS ---
             winningRows.forEach(row => {
                 const s = row.s;
                 const res = row.res;
                 const myNums = row.myNums;
 
-                // --- 2. CAMBIO SOLICITADO: PINTAR ACIERTOS Y COMODÍN ---
                 const numsFormatted = myNums.map(n => {
                     let style = "";
                     if (winningNums.includes(n)) style = "color:var(--success); font-weight:bold;";
@@ -1123,7 +1170,7 @@
         }
 
         // =========================================================
-        // 4. FUNCIONES DE UI Y NAVEGACIÓN (PRESERVADAS)
+        // 4. FUNCIONES DE UI Y NAVEGACIÓN
         // =========================================================
         function switchUniverse(gameId) {
             CURRENT_UNIVERSE = gameId;
@@ -1134,6 +1181,8 @@
                 }
             });
             resetFilters(); 
+            // NUEVO: Renderizar plan seguro si corresponde
+            setTimeout(() => renderSafePlanLoto3(), 50); 
         }
 
         function applyFilters() {
@@ -1146,6 +1195,9 @@
             
             const selectedDraw = document.getElementById('f-sorteo').value;
             calculateFinance(data, selectedDraw);
+
+            // NUEVO: Renderizar plan seguro
+            renderSafePlanLoto3();
         }
 
         function getFilteredData() {
@@ -1321,6 +1373,108 @@
         function sortAggregate(col) { SORT_COL = col; SORT_DIR = SORT_DIR === 'asc' ? 'desc' : 'asc'; applyFilters(); }
         function switchChartView(mode) { CURRENT_CHART_MODE = mode; applyFilters(); }
         async function savePlay(btn, numsStr, id) { const originalContent = btn.innerHTML; btn.innerHTML = '...'; btn.disabled = true; const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwBZd2vTrvxVdTjJnLoK2vMCR90qJqyH3ZfSDkNK4_n0aFYe3jCoeIZ3R58XNQBM1xQ3A/exec"; try { let numbers = JSON.parse(numsStr); await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ numeros: numbers, jugado: "SI" }) }); localStorage.setItem(`played_${id}`, 'true'); btn.innerHTML = '<i data-lucide="check" width="12"></i> Listo'; btn.classList.add('btn-disabled'); lucide.createIcons(); } catch (error) { console.error("Error guardando jugada:", error); btn.innerHTML = '<i data-lucide="x" width="12"></i> Error'; btn.disabled = false; setTimeout(() => { btn.innerHTML = originalContent; lucide.createIcons(); }, 3000); } }
+
+        // =========================================================
+        // 5. MOTOR DE PLAN SEGURO (LOTO 3) - NUEVO MÓDULO
+        // =========================================================
+        function renderSafePlanLoto3() {
+            const container = document.getElementById('loto3-safe-plan');
+            
+            // 1. Solo activar si estamos en LOTO 3
+            if (CURRENT_UNIVERSE !== 'LOTO3') {
+                container.style.display = 'none';
+                return;
+            }
+
+            // 2. Obtener datos básicos
+            // Analizamos todo el historial auditado
+            const allLoto3 = RAW_SIMULATIONS.filter(d => d.juego === 'LOTO3');
+            const audited = allLoto3.filter(d => d.estado === 'AUDITADO').sort((a,b) => a.id - b.id); 
+            
+            // Ventana de análisis: Últimos 60 juegos auditados
+            const recentHistory = audited.slice(-60);
+            
+            if (recentHistory.length < 10) {
+                container.style.display = 'none'; 
+                return;
+            }
+
+            // 3. Calcular Métricas por Algoritmo
+            const stats = {};
+            recentHistory.forEach(row => {
+                const algo = row.algoritmo;
+                if (!stats[algo]) stats[algo] = { count: 0, hits1: 0, hits2: 0 };
+                
+                stats[algo].count++;
+                if (row.aciertos >= 1) stats[algo].hits1++;
+                if (row.aciertos >= 2) stats[algo].hits2++;
+            });
+
+            // 4. Seleccionar el Campeón
+            let bestAlgo = null;
+            let maxPower = -1;
+
+            Object.keys(stats).forEach(algo => {
+                const s = stats[algo];
+                const powerRate = (s.hits2 / s.count) * 100;
+                const safetyRate = (s.hits1 / s.count) * 100;
+
+                // Criterio: Priorizar Poder, pero requerir mínima data (5 juegos)
+                if (s.count >= 5) { 
+                    if (powerRate > maxPower) {
+                        maxPower = powerRate;
+                        bestAlgo = algo;
+                    } else if (powerRate === maxPower) {
+                        if (bestAlgo && safetyRate > (stats[bestAlgo].hits1 / stats[bestAlgo].count * 100)) {
+                            bestAlgo = algo;
+                        }
+                    }
+                }
+            });
+
+            if (!bestAlgo) {
+                container.style.display = 'none';
+                return;
+            }
+
+            // 5. Buscar predicción PENDIENTE para el ganador
+            let targetDraw = document.getElementById('f-sorteo').value;
+            
+            if (targetDraw === 'ALL') {
+                const pending = allLoto3.filter(d => d.estado === 'PENDIENTE');
+                if (pending.length > 0) {
+                    targetDraw = pending[0].objetivo; 
+                } else {
+                    container.style.display = 'none';
+                    return;
+                }
+            }
+
+            const candidates = allLoto3.filter(d => 
+                d.estado === 'PENDIENTE' && 
+                d.objetivo == targetDraw && 
+                d.algoritmo === bestAlgo
+            );
+
+            if (candidates.length === 0) {
+                container.style.display = 'none';
+                return;
+            }
+
+            // Tomamos la más reciente
+            const winnerRow = candidates.sort((a,b) => b.id - a.id)[0];
+            const nums = JSON.parse(winnerRow.numeros);
+
+            // 6. RENDERIZAR
+            container.style.display = 'block';
+            
+            document.getElementById('plan-algo-name').textContent = bestAlgo.toUpperCase().replace('_', ' ');
+            document.getElementById('plan-target').textContent = targetDraw;
+            
+            document.getElementById('plan-n1').textContent = nums[0];
+            document.getElementById('plan-n2').textContent = nums[1];
+            document.getElementById('plan-n3').textContent = nums[2];
+        }
 
         // Iniciar
         loadAllData();
