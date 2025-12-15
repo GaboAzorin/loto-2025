@@ -1,0 +1,39 @@
+name: Prueba Scraping Remoto (Polla)
+
+on:
+  workflow_dispatch: # Esto permite ejecutarlo con un botón manual
+
+jobs:
+  test-scrape:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # IMPORTANTE: Permiso para que el bot pueda hacer git push
+
+    steps:
+      - name: 📥 Checkout del código
+        uses: actions/checkout@v4
+
+      - name: 🐍 Configurar Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: 📦 Instalar dependencias
+        run: |
+          python -m pip install --upgrade pip
+          pip install playwright requests
+          playwright install chromium --with-deps
+
+      - name: 🕷️ Ejecutar Script de Prueba
+        run: python test_gh_action.py
+
+      - name: 📤 Guardar cambios (Commit & Push)
+        # Solo corre si se generó el archivo json
+        if: success() 
+        run: |
+          git config --global user.name 'GitHub Action Bot'
+          git config --global user.email 'action@github.com'
+          git add resultado_gh_5360.json || true
+          git add debug_error.html || true
+          git commit -m "🤖 Nuevo resultado de prueba generado" || echo "Nada que commitear"
+          git push
