@@ -21,6 +21,7 @@
             --gold: #ffd700;
             --matrix: #00ff41;
             --danger: #ff3b5c;
+            --purple: #8a2be2;
         }
 
         * { margin:0; padding:0; box-sizing:border-box; }
@@ -67,7 +68,7 @@
         .stat-sub { font-size: 0.8rem; color: var(--matrix); display: flex; align-items: center; gap: 5px; }
         
         /* SECCIONES Y GRÁFICOS */
-        .section-title { color: white; margin-bottom: 1.5rem; font-size: 1.2rem; display: flex; align-items: center; gap: 10px; border-left: 4px solid var(--neon-cyan); padding-left: 10px; }
+        .section-title { color: white; margin-bottom: 1.5rem; font-size: 1.2rem; display: flex; align-items: center; gap: 10px; border-left: 4px solid var(--neon-cyan); padding-left: 10px; margin-top: 3rem;}
         
         .charts-grid {
             display: grid;
@@ -300,6 +301,26 @@
             </div>
     </div>
 
+    <h3 class="section-title">Evolución de la Inteligencia Artificial (LOTO)</h3>
+    <div class="charts-grid">
+        <div class="chart-card">
+            <div class="chart-header">
+                <div class="chart-title"><i data-lucide="trending-up" style="color:var(--purple)"></i> Tendencia de Aprendizaje (Score)</div>
+            </div>
+            <div class="chart-container">
+                <canvas id="aiTrendChart"></canvas>
+            </div>
+        </div>
+        <div class="chart-card">
+            <div class="chart-header">
+                <div class="chart-title"><i data-lucide="brain-circuit" style="color:var(--matrix)"></i> IA vs Azar (Distribución Real)</div>
+            </div>
+            <div class="chart-container">
+                <canvas id="aiVsRandomChart"></canvas>
+            </div>
+        </div>
+    </div>
+
 </div>
 
 <script>
@@ -310,15 +331,17 @@
     Chart.defaults.borderColor = 'rgba(255,255,255,0.1)';
     Chart.defaults.font.family = "'JetBrains Mono', monospace";
 
-    // CARGA DE DATOS EN PARALELO
+    // CARGA DE DATOS EN PARALELO (ACTUALIZADO CON SIMULACIONES.CSV)
     Promise.all([
         new Promise(resolve => Papa.parse('../data/LOTO_JUGADAS.csv', { download: true, header: true, skipEmptyLines: true, complete: res => resolve(res.data) })),
-        new Promise(resolve => Papa.parse('../data/LOTO_HISTORIAL_MAESTRO.csv', { download: true, header: true, skipEmptyLines: true, complete: res => resolve(res.data) }))
-    ]).then(([jugadasData, historialData]) => {
+        new Promise(resolve => Papa.parse('../data/LOTO_HISTORIAL_MAESTRO.csv', { download: true, header: true, skipEmptyLines: true, complete: res => resolve(res.data) })),
+        new Promise(resolve => Papa.parse('../data/LOTO_SIMULACIONES.csv', { download: true, header: true, skipEmptyLines: true, complete: res => resolve(res.data) }))
+    ]).then(([jugadasData, historialData, simulacionesData]) => {
         window.globalHistorial = historialData; // Guardamos globalmente para cruzar datos
         processUserStats(jugadasData);
         processGlobalStats(historialData);
-        renderMechanicalStats(historialData); 
+        renderMechanicalStats(historialData);
+        renderAIStats(simulacionesData); // NUEVA FUNCIÓN DE IA
     }).catch(err => {
         console.error("Error cargando CSVs:", err);
         document.getElementById('audit-body').innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--danger);">Error cargando bases de datos. Verifique que scraper_unificado.py se haya ejecutado.</td></tr>';
@@ -466,49 +489,36 @@
         });
     }
 
-    // --- NUEVA FUNCIÓN DE LÓGICA MECÁNICA ---
+    // --- FUNCIÓN DE LÓGICA MECÁNICA ---
     function renderMechanicalStats(data) {
-        // Inicializar Matriz [Número 1-41][Posición 0-5]
-        // Array de 42 para ignorar el índice 0 y facilitar mapeo
         let counts = Array.from({length: 42}, () => Array(6).fill(0));
         let maxFreq = 0;
 
         data.forEach(row => {
-            // Verificar si existen columnas de posición real (LOTO_pos1...6)
-            // Si no, usamos las columnas ordenadas (n1...n6) como fallback
             const hasPos = row['LOTO_pos1'] !== undefined;
-            
             for(let i=1; i<=6; i++) {
                 let val = hasPos ? parseInt(row[`LOTO_pos${i}`]) : parseInt(row[`LOTO_n${i}`]);
-                
                 if (!isNaN(val) && val >= 1 && val <= 41) {
-                    counts[val][i-1]++; // i-1 para índice 0-5
+                    counts[val][i-1]++;
                     if (counts[val][i-1] > maxFreq) maxFreq = counts[val][i-1];
                 }
             }
         });
 
         const container = document.getElementById('mechanical-matrix');
-        container.innerHTML = ''; // Limpiar
+        container.innerHTML = ''; 
 
-        // 1. Encabezados
         container.appendChild(createCell('Num', 'mech-header'));
         ['Bola 1', 'Bola 2', 'Bola 3', 'Bola 4', 'Bola 5', 'Bola 6'].forEach(h => {
             container.appendChild(createCell(h, 'mech-header'));
         });
 
-        // 2. Filas
         for (let num = 1; num <= 41; num++) {
-            // Etiqueta Número
             container.appendChild(createCell(num, 'mech-row-label'));
-
-            // Celdas de posición
             for (let pos = 0; pos < 6; pos++) {
                 let freq = counts[num][pos];
                 let cell = createCell(freq > 0 ? freq : '-', 'mech-cell');
-                
                 if (freq > 0) {
-                    // Calcular intensidad (1 a 5)
                     let intensity = Math.ceil((freq / maxFreq) * 5);
                     cell.classList.add(`heat-${intensity}`);
                     cell.title = `El #${num} salió ${freq} veces en la Posición ${pos+1}`;
@@ -516,6 +526,95 @@
                 container.appendChild(cell);
             }
         }
+    }
+
+    // ==============================================
+    // NUEVA FUNCIÓN: ESTADÍSTICAS IA vs REALIDAD
+    // ==============================================
+    function renderAIStats(data) {
+        // Filtrar solo LOTO y solo lo Auditado
+        const audited = data.filter(r => r.juego === 'LOTO' && r.estado === 'AUDITADO');
+        
+        // 1. Gráfico de Tendencia (Evolución Score Afinidad)
+        // Agrupamos por ID de Sorteo para sacar el promedio
+        const trendMap = {};
+        audited.forEach(r => {
+            if(!trendMap[r.sorteo_objetivo]) trendMap[r.sorteo_objetivo] = {sum:0, count:0};
+            trendMap[r.sorteo_objetivo].sum += parseFloat(r.score_afinidad || 0);
+            trendMap[r.sorteo_objetivo].count++;
+        });
+
+        const sortedSorteos = Object.keys(trendMap).sort((a,b) => a-b);
+        const trendData = sortedSorteos.map(s => (trendMap[s].sum / trendMap[s].count).toFixed(2));
+
+        new Chart(document.getElementById('aiTrendChart'), {
+            type: 'line',
+            data: {
+                labels: sortedSorteos,
+                datasets: [{
+                    label: 'Score Afinidad Promedio',
+                    data: trendData,
+                    borderColor: '#8a2be2', // Purple
+                    backgroundColor: 'rgba(138, 43, 226, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    fill: true,
+                    pointRadius: 3
+                }]
+            },
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false,
+                plugins: {
+                    title: { display: true, text: '¿Está aprendiendo el Bot? (Evolución temporal)' }
+                }
+            }
+        });
+
+        // 2. Gráfico IA vs Azar (Comparativa)
+        // Contamos aciertos reales
+        const hitCounts = {0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0};
+        audited.forEach(r => {
+            let ac = parseInt(r.aciertos) || 0;
+            if(hitCounts[ac] !== undefined) hitCounts[ac]++;
+        });
+
+        const totalAudit = audited.length || 1;
+        const observedProbs = [0,1,2,3].map(k => ((hitCounts[k]/totalAudit)*100).toFixed(1)); // Solo graficamos hasta 3 aciertos para que se vea bien
+
+        // Probabilidades Teóricas (Loto 6/41) aproximadas
+        const theoProbs = [36.1, 43.3, 17.5, 2.9]; 
+
+        new Chart(document.getElementById('aiVsRandomChart'), {
+            type: 'bar',
+            data: {
+                labels: ['0 Aciertos', '1 Acierto', '2 Aciertos', '3 Aciertos (Terna)'],
+                datasets: [
+                    {
+                        label: 'Azar Matemático (Teórico)',
+                        data: theoProbs,
+                        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                        borderColor: '#888',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'LotoAI (Real)',
+                        data: observedProbs,
+                        backgroundColor: 'rgba(0, 255, 65, 0.6)', // Matrix Green
+                        borderColor: '#00ff41',
+                        borderWidth: 1
+                    }
+                ]
+            },
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false,
+                scales: { y: { title: {display:true, text:'Probabilidad (%)'} } },
+                plugins: {
+                    title: { display: true, text: 'Capacidad de vencer al azar puro' }
+                }
+            }
+        });
     }
 
     function createCell(content, className) {
@@ -526,16 +625,10 @@
     }
 
     function formatearAciertosHTML(numerosJugadosStr, numerosGanadoresStr) {
-        // Limpiadores
         const clean = (str) => String(str).replace(/[\[\]"]/g, '').split(',').map(n => parseInt(n.trim()));
         const jugados = clean(numerosJugadosStr);
-        
-        // Si no hay ganadores, devolvemos formato limpio (separado por comas)
         if (!numerosGanadoresStr) return jugados.join(', ');
-
         const ganadores = clean(numerosGanadoresStr);
-
-        // Retornamos HTML con números separados por comas, coloreando los aciertos
         return jugados.map(num => {
             if (ganadores.includes(num)) {
                 return `<span class="numero-match">${num}</span>`;
@@ -552,17 +645,14 @@
                 ? `<span class="badge badge-pending"><i data-lucide="clock" width="12"></i> PENDIENTE</span>` 
                 : `<span class="badge badge-success"><i data-lucide="check-circle" width="12"></i> FINALIZADO</span>`;
             
-            // LÓGICA DE COLOREADO
             let winningStr = null;
             if (window.globalHistorial) {
                 const draw = window.globalHistorial.find(h => h.sorteo == r.sorteo_objetivo);
                 if (draw) {
-                    // Reconstruimos string de ganadores
                     winningStr = [draw.LOTO_n1, draw.LOTO_n2, draw.LOTO_n3, draw.LOTO_n4, draw.LOTO_n5, draw.LOTO_n6].join(',');
                 }
             }
 
-            // Usamos la función auxiliar con los datos crudos de la fila
             const numsDisplay = formatearAciertosHTML(r.numeros, winningStr);
 
             let metricsHtml = isPending ? '<span style="color:#555;">Esperando sorteo...</span>' : 
