@@ -2,8 +2,6 @@ import os
 import requests
 import json
 import re
-import time
-import random
 
 # --- CONFIGURACIÓN ---
 TOKEN = os.environ.get("SCRAPERAPI_KEY", "").strip() 
@@ -18,25 +16,19 @@ API_INTERNAL = "https://www.polla.cl/es/get/draw/results"
 PROXY_URL = "http://api.scrape.do"
 
 def run_scrapedou_test():
-    print(f"☁️ INICIANDO BYPASS CON SCRAPE.DO")
+    print(f"☁️ INICIANDO BYPASS CON SCRAPE.DO (Versión Limpia)")
     
-    # 1. Validación simple de llave
     if len(TOKEN) < 10:
         print("❌ Error: La llave (Token) parece vacía.")
         return
 
-    # 2. Session ID para mantener la IP (Vital para el Token CSRF)
-    session_id = str(random.randint(100000, 999999))
-    print(f"🔄 Sesión Persistente ID: {session_id}")
-
     print("1️⃣ Obteniendo Token CSRF vía Scrape.do...")
     
-    # Parámetros CORREGIDOS (Sin 'wait')
+    # Parámetros ACEPTADOS por Scrape.do (Sin inventar nada)
     params_home = {
         'token': TOKEN,
         'url': BASE_URL,
-        'render': 'true',       
-        'session_id': session_id 
+        'render': 'true'
     }
 
     try:
@@ -62,12 +54,12 @@ def run_scrapedou_test():
         # 2️⃣ Petición API (POST)
         print(f"2️⃣ Consultando Sorteo {DRAW_ID}...")
         
-        # Scrape.do reenvía nuestro POST al destino si usamos estos parámetros
+        # Scrape.do reenvía nuestro POST al destino
         params_api = {
             'token': TOKEN,
             'url': API_INTERNAL,
-            'render': 'true', 
-            'session_id': session_id # Misma sesión = Misma IP
+            'render': 'true'
+            # Eliminamos session_id para evitar error 400
         }
         
         headers_polla = {
