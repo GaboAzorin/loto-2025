@@ -253,12 +253,65 @@
     input:checked ~ .label-text { color: #00ff9d; font-weight: bold; }
 
     .status-bar { text-align: center; margin-top: 2rem; color: var(--text-muted); font-size: 0.8rem; }
+
+    /* --- NUEVOS ESTILOS DE NAVEGACIÓN (Pegar en <style>) --- */
+    header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .brand { 
+        font-family: 'JetBrains Mono', monospace; 
+        font-weight: 900; 
+        font-size: 1.5rem; 
+        color: white; 
+        letter-spacing: -1px; 
+    }
+
+    .brand span { color: var(--gold); }
+
+    .nav-link { 
+        color: var(--text); 
+        text-decoration: none; 
+        border: 1px solid var(--border); 
+        padding: 8px 15px; 
+        border-radius: 6px; 
+        transition: all 0.2s; 
+        background: var(--card);
+        font-size: 0.9rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-left: 10px;
+    }
+    .nav-link:hover { 
+        background: var(--border); 
+        color: white;
+        border-color: var(--neon-cyan);
+    }
   </style>
 </head>
 <body>
 
   <div class="container">
     
+    <header>
+        <div class="brand">LOTO<span>AI</span></div>
+        <div>
+            <a href="web/laboratorio.html" class="nav-link">
+                <i data-lucide="flask-conical" width="16"></i> Laboratorio
+            </a>
+            <a href="web/auditoria.html" class="nav-link">
+                <i data-lucide="shield-check" width="16"></i> Auditoría
+            </a>
+        </div>
+    </header>
+    <div class="timer">
+
     <div class="timer">
       <div class="time-box"><div class="time-num" id="days">00</div><div class="time-label">DÍAS</div></div>
       <div class="time-box"><div class="time-num" id="hours">00</div><div class="time-label">HRS</div></div>

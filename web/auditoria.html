@@ -185,14 +185,40 @@
         @media (max-width: 768px) {
             .charts-grid { grid-template-columns: 1fr; }
         }
+        .nav-link { 
+            color: var(--text-muted); 
+            text-decoration: none; 
+            border: 1px solid var(--border); 
+            padding: 8px 15px; 
+            border-radius: 6px; 
+            transition: all 0.2s; 
+            background: var(--card);
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: 10px;
+        }
+        .nav-link:hover { 
+            background: var(--border); 
+            color: white;
+            border-color: var(--neon-cyan);
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
     <header>
-        <div class="brand">LOTO<span>AI</span> /// AUDITORÍA MULTIVERSO</div>
-        <a href="../index.html" class="back-btn"><i data-lucide="arrow-left"></i> Volver al inicio</a>
+        <div class="brand">LOTO<span>AI</span> /// AUDITORÍA</div>
+        <div>
+            <a href="laboratorio.html" class="nav-link">
+                <i data-lucide="flask-conical" width="16"></i> Laboratorio
+            </a>
+            <a href="../index.html" class="nav-link">
+                <i data-lucide="home" width="16"></i> Inicio
+            </a>
+        </div>
     </header>
 
     <div class="tabs-container">
