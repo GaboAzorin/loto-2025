@@ -2,13 +2,26 @@ import pandas as pd
 import os
 import time
 import json
-import juez_implacable        # Importamos tus módulos existentes
-import entrenador_cognitivo   # Importamos el entrenador modificado
+import sys
+
+# Ajuste de rutas para encontrar los módulos hermanos
+current_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.join(current_dir, '..', 'models'))
+
+try:
+    import juez_implacable
+    import entrenador_cognitivo
+except ImportError:
+    # Fallback por si se ejecuta desde otra ruta
+    sys.path.append(os.path.join(current_dir, '..', '..', 'engine', 'models'))
+    import juez_implacable
+    import entrenador_cognitivo
 
 # --- CONFIGURACIÓN ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_DIR = os.path.join(BASE_DIR, '..', 'data')
+DATA_DIR = os.path.join(BASE_DIR, '..', '..', 'data')
 GENOMA_FILE = os.path.join(DATA_DIR, "loto_genome.json")
+SIMULACIONES_FILE = os.path.join(DATA_DIR, "LOTO_SIMULACIONES.csv")
 
 # Definir qué archivos maestros leer
 JUEGOS = {
@@ -26,8 +39,37 @@ def obtener_ultimo_procesado(juego):
             return data.get("last_processed", {}).get(juego, 0)
     except: return 0
 
+def obtener_punto_partida_inteligente(juego):
+    """
+    Busca cuál es la primera simulación registrada para este juego.
+    Así evitamos recorrer 10 años de historia donde no jugamos nada.
+    """
+    if not os.path.exists(SIMULACIONES_FILE):
+        return 0
+    
+    try:
+        df = pd.read_csv(SIMULACIONES_FILE)
+        # Filtramos por juego
+        df_juego = df[df['juego'] == juego]
+        
+        if df_juego.empty:
+            return 0
+            
+        # Encontramos el sorteo objetivo más antiguo que tenemos pendiente o auditado
+        primer_sorteo_registrado = df_juego['sorteo_objetivo'].min()
+        
+        if pd.isna(primer_sorteo_registrado):
+            return 0
+            
+        # Retornamos ese sorteo MENOS 10 (un buffer de seguridad para calentar motores)
+        return int(primer_sorteo_registrado) - 10
+        
+    except Exception as e:
+        print(f"⚠️ No se pudo calcular inicio inteligente: {e}")
+        return 0
+
 def reconstruir_linea_tiempo():
-    print("⏳ INICIANDO RECONSTRUCCIÓN TEMPORAL SECUENCIAL...")
+    print("⏳ INICIANDO RECONSTRUCCIÓN INTELIGENTE (WARP JUMP)...")
     
     for juego, archivo in JUEGOS.items():
         path = os.path.join(DATA_DIR, archivo)
@@ -41,36 +83,39 @@ def reconstruir_linea_tiempo():
         df_real = df_real.sort_values('sorteo', ascending=True)
         todos_sorteos = df_real['sorteo'].unique()
         
-        # 2. Ver dónde nos quedamos la última vez
-        ultimo_id = obtener_ultimo_procesado(juego)
+        # 2. LÓGICA DE SALTO TEMPORAL
+        ultimo_procesado = obtener_ultimo_procesado(juego)
+        inicio_simulaciones = obtener_punto_partida_inteligente(juego)
+        
+        # El punto de partida real es el MAYOR entre:
+        # A) Donde quedamos la última vez (si ya procesamos cosas)
+        # B) Donde empiezan mis simulaciones (para saltarnos la prehistoria)
+        punto_corte = max(ultimo_procesado, inicio_simulaciones)
         
         # 3. Identificar sorteos "nuevos" (futuro no procesado)
-        nuevos = [s for s in todos_sorteos if s > ultimo_id]
+        nuevos = [s for s in todos_sorteos if s > punto_corte]
         
         if not nuevos:
-            print(f"✅ {juego}: Todo al día (Último: {ultimo_id})")
+            print(f"✅ {juego}: Todo al día (Último procesado: {ultimo_procesado})")
             continue
             
-        print(f"\n🌀 {juego}: Detectados {len(nuevos)} sorteos nuevos para digerir secuencialmente.")
-        print(f"   Rango: {min(nuevos)} -> {max(nuevos)}")
+        print(f"\n🚀 {juego}: Saltando historia vacía...")
+        print(f"   📅 Inicio detectado en simulaciones: #{inicio_simulaciones}")
+        print(f"   🌀 Procesando {len(nuevos)} sorteos relevantes ({min(nuevos)} -> {max(nuevos)})")
         
         # 4. BUCLE DE VIAJE EN EL TIEMPO
         for sorteo_actual in nuevos:
-            print(f"\n   >>> Procesando Sorteo {sorteo_actual}...")
+            print(f"   >>> Procesando Sorteo {sorteo_actual}...")
             
-            # A. FASE JUEZ: Auditar SOLO hasta este sorteo
-            # (El juez por defecto audita todo lo que encuentra en el maestro, 
-            #  así que funcionará bien porque el sorteo ya está en el CSV).
-            #  Para ser más eficiente, podríamos modificar el juez para filtrar, 
-            #  pero correrlo completo no daña la lógica, solo gasta CPU.
+            # A. FASE JUEZ
             juez_implacable.juzgar() 
             
-            # B. FASE ENTRENADOR: Aprender de este hito
-            # Aquí es clave pasarle el 'sorteo_limite' para que no vea el futuro si hubiera más datos
+            # B. FASE ENTRENADOR
             entrenador_cognitivo.analizar_adn_ganador(juego_filtro=juego, sorteo_limite=sorteo_actual)
             
-            # Pequeña pausa para asegurar escritura en disco
-            time.sleep(0.5)
+            # Pausa técnica mínima para I/O
+            # (Reduje el sleep para que vaya más rápido aún)
+            time.sleep(0.1)
             
     print("\n✨ RECONSTRUCCIÓN FINALIZADA. El sistema está sincronizado.")
 
