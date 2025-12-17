@@ -2,13 +2,14 @@ import pandas as pd
 import json
 import os
 import numpy as np
-from datetime import datetime
+from datetime import datetime, timedelta
 
 # --- CONFIGURACIÓN ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, '..', '..', 'data')
 SIMULACIONES_FILE = os.path.join(DATA_DIR, "LOTO_SIMULACIONES.csv")
 GENOMA_FILE = os.path.join(DATA_DIR, "loto_genome.json")
+hora_chile = datetime.utcnow() - timedelta(hours=3),
 
 # FACTOR DE OLVIDO (0.1 = Memoria larga, 0.5 = Balanceado, 0.9 = Solo importa lo reciente)
 ALPHA = 0.3 
@@ -88,7 +89,7 @@ def analizar_adn_ganador(juego_filtro=None, sorteo_limite=None):
 
     # --- GUARDAR ---
     genoma["metadata"] = {
-        "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "updated_at": hora_chile.strftime("%Y-%m-%d %H:%M:%S"),
         "mode": "INCREMENTAL_EMA"
     }
     genoma["algo_ranking"] = ranking_actual
