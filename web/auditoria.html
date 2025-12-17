@@ -334,13 +334,32 @@
     let CURRENT_GAME = 'LOTO';
     let CHARTS = {};
 
-    // Configuración de Juegos para la Matriz
-    const GAME_CONFIGS = {
-        'LOTO':  { max: 41, cols: 6 },
-        'LOTO3': { max: 9,  cols: 3, zeroIndexed: true }, // Loto 3 incluye el 0
-        'LOTO4': { max: 41, cols: 4 },
-        'RACHA': { max: 20, cols: 10 }
+    // Configuración base
+    const GAME_LIMITS = {
+        'LOTO':  { max: 41 },
+        'LOTO3': { max: 9, zeroIndexed: true },
+        'LOTO4': { max: 41 },
+        'RACHA': { max: 20 }
     };
+
+    // Función auxiliar para detectar columnas de números (pos, n, etc.)
+    function detectNumberColumns(row, game) {
+        if (!row) return [];
+        const keys = Object.keys(row);
+        let candidates = keys.filter(k => {
+            const lower = k.toLowerCase();
+            return (lower.includes('n') || lower.includes('pos') || lower.includes('bola')) 
+                   && /\d$/.test(k) 
+                   && !lower.includes('ganadores') 
+                   && !lower.includes('monto');
+        });
+        candidates.sort((a, b) => {
+            const numA = parseInt(a.match(/\d+$/)[0]);
+            const numB = parseInt(b.match(/\d+$/)[0]);
+            return numA - numB;
+        });
+        return candidates;
+    }
 
     async function init() {
         try {
@@ -354,11 +373,10 @@
                     if(mRes.ok) GLOBAL_MAESTROS[g] = Papa.parse(await mRes.text(), { header: true, skipEmptyLines: true }).data;
                 } catch(e) { console.warn(`No maestro for ${g}`); }
             }
-            // Pequeño delay para asegurar carga
-            setTimeout(() => updateDashboard('LOTO'), 100);
+            setTimeout(() => switchGame('LOTO'), 200);
         } catch (err) {
             console.error("Error init:", err);
-            document.getElementById('audit-body').innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--danger);">Error cargando datos.</td></tr>';
+            document.getElementById('audit-body').innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--danger);">Error fatal cargando CSVs.</td></tr>';
         }
     }
 
@@ -415,72 +433,54 @@
         }
     }
 
-    // --- CORRECCIÓN 1: HUELLA MECÁNICA ROBUSTA ---
     function renderMechanicalMatrix(game) {
-        const config = GAME_CONFIGS[game];
         const maestro = GLOBAL_MAESTROS[game];
         const container = document.getElementById('mechanical-matrix');
-        
         container.innerHTML = ''; 
 
-        if (!maestro || !config || maestro.length === 0) {
-            container.innerHTML = '<div style="padding:20px; color:#666; text-align:center;">No hay datos de posición para ' + game + '</div>';
+        if (!maestro || maestro.length === 0) {
+            container.innerHTML = '<div style="padding:20px; color:#aaa;">⚠️ No hay datos maestros cargados para ' + game + '</div>';
             return;
         }
 
-        // Definición explícita de columnas según CSV real
-        let colKeys = [];
-        if (game === 'LOTO') {
-            // Intentar detectar si usa prefijo LOTO_ o no
-            if(maestro[0]['LOTO_n1']) colKeys = ['LOTO_n1','LOTO_n2','LOTO_n3','LOTO_n4','LOTO_n5','LOTO_n6'];
-            else colKeys = ['n1','n2','n3','n4','n5','n6'];
-        } else if (game === 'LOTO3') {
-            colKeys = ['n1','n2','n3'];
-        } else if (game === 'LOTO4') {
-            colKeys = ['n1','n2','n3','n4'];
-        } else if (game === 'RACHA') {
-            colKeys = ['n1','n2','n3','n4','n5','n6','n7','n8','n9','n10'];
+        const colKeys = detectNumberColumns(maestro[0], game);
+        if (colKeys.length === 0) {
+            container.innerHTML = '<div style="padding:20px; color:#ff3b5c;">❌ No se detectaron columnas de datos en el CSV.</div>';
+            return;
         }
+
+        const limits = GAME_LIMITS[game] || { max: 41 };
+        const maxVal = limits.max;
+        const minVal = limits.zeroIndexed ? 0 : 1;
+        const colsCount = colKeys.length;
 
         let counts = {}; 
-        let maxVal = config.max;
-        let minVal = config.zeroIndexed ? 0 : 1;
-        
-        for (let i = minVal; i <= maxVal; i++) {
-            counts[i] = new Array(config.cols).fill(0);
-        }
-
+        for (let i = minVal; i <= maxVal; i++) counts[i] = new Array(colsCount).fill(0);
         let maxFreq = 0;
 
         maestro.forEach(row => {
             colKeys.forEach((key, idx) => {
                 let val = parseInt(row[key]);
-                if (!isNaN(val) && counts[val] !== undefined) {
+                if (!isNaN(val) && counts[val]) {
                     counts[val][idx]++;
                     if (counts[val][idx] > maxFreq) maxFreq = counts[val][idx];
                 }
             });
         });
 
-        // Grid CSS Dinámico
-        container.style.gridTemplateColumns = `50px repeat(${config.cols}, 1fr)`;
-
-        // Headers
+        container.style.gridTemplateColumns = `50px repeat(${colsCount}, 1fr)`;
         container.appendChild(createCell('Num', 'mech-header'));
-        for(let i=1; i<=config.cols; i++) {
-            container.appendChild(createCell(`B${i}`, 'mech-header'));
-        }
+        for(let i=1; i<=colsCount; i++) container.appendChild(createCell(`Salida ${i}`, 'mech-header'));
 
-        // Body
         for (let num = minVal; num <= maxVal; num++) {
             container.appendChild(createCell(num, 'mech-row-label'));
-            for (let c = 0; c < config.cols; c++) {
+            for (let c = 0; c < colsCount; c++) {
                 let freq = counts[num][c];
                 let cell = createCell(freq > 0 ? freq : '-', 'mech-cell');
                 if (freq > 0) {
                     let intensity = Math.ceil((freq / maxFreq) * 5);
                     cell.classList.add(`heat-${intensity}`);
-                    cell.title = `#${num} en Pos ${c+1}: ${freq} veces`;
+                    cell.title = `El ${num} salió ${freq} veces en la extracción #${c+1}`;
                 }
                 container.appendChild(cell);
             }
@@ -494,119 +494,33 @@
         return d;
     }
 
-    // --- GRÁFICOS ---
-    function renderAlgoTrendChart(data) {
-        const ctx = document.getElementById('algoTrendChart').getContext('2d');
-        if(CHARTS['trend']) CHARTS['trend'].destroy();
-
-        const series = {};
-        const sorteosSet = new Set();
-        data.forEach(r => {
-            const algo = r.algoritmo.split('_v1')[0];
-            const sorteo = r.sorteo_objetivo;
-            sorteosSet.add(sorteo);
-            if(!series[algo]) series[algo] = {};
-            if(!series[algo][sorteo]) series[algo][sorteo] = {sum:0, cnt:0};
-            series[algo][sorteo].sum += parseFloat(r.score_afinidad);
-            series[algo][sorteo].cnt++;
-        });
-
-        const labels = Array.from(sorteosSet).sort((a,b)=>a-b);
-        const datasets = [];
-        const colors = ['#00f2ff', '#ffd700', '#ff3b5c', '#8a2be2', '#00ff41'];
-        let cIdx = 0;
-        for(const [algo, points] of Object.entries(series)) {
-            const dataPoints = labels.map(lbl => points[lbl] ? (points[lbl].sum/points[lbl].cnt).toFixed(2) : null);
-            datasets.push({
-                label: algo.toUpperCase(),
-                data: dataPoints,
-                borderColor: colors[cIdx++ % colors.length],
-                borderWidth: 2, tension: 0.3, pointRadius: 3, spanGaps: true
-            });
-        }
-
-        CHARTS['trend'] = new Chart(ctx, {
-            type: 'line',
-            data: { labels, datasets },
-            options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false } }
-        });
-    }
-
-    function renderHitsChart(data, game) {
-        const ctx = document.getElementById('hitsDistChart').getContext('2d');
-        if(CHARTS['hits']) CHARTS['hits'].destroy();
-        let labels = game === 'LOTO' ? ['0','1','2','3','4','5','6'] : 
-                     game === 'LOTO3' ? ['0','1','2','3'] :
-                     game === 'RACHA' ? ['0','1','2','3','4','5','6','7','8','9','10'] : ['0','1','2','3','4'];
-        
-        const counts = new Array(labels.length).fill(0);
-        data.forEach(r => {
-            let idx = labels.indexOf(String(r.aciertos));
-            if(idx !== -1) counts[idx]++;
-        });
-
-        CHARTS['hits'] = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: labels.map(l => l + ' Aciertos'),
-                datasets: [{ label: 'Frecuencia Real', data: counts, backgroundColor: 'rgba(0, 242, 255, 0.5)', borderColor: '#00f2ff', borderWidth: 1 }]
-            },
-            options: { responsive: true, maintainAspectRatio: false }
-        });
-    }
-
-    function renderErrorChart(data) {
-        const ctx = document.getElementById('errorChart').getContext('2d');
-        if(CHARTS['error']) CHARTS['error'].destroy();
-        const errorMap = {};
-        data.forEach(r => {
-            if(r.proximidad_prom) {
-                if(!errorMap[r.sorteo_objetivo]) errorMap[r.sorteo_objetivo] = {sum:0, c:0};
-                errorMap[r.sorteo_objetivo].sum += parseFloat(r.proximidad_prom);
-                errorMap[r.sorteo_objetivo].c++;
-            }
-        });
-        const labels = Object.keys(errorMap).sort((a,b)=>a-b);
-        const values = labels.map(l => (errorMap[l].sum / errorMap[l].c).toFixed(1));
-
-        CHARTS['error'] = new Chart(ctx, {
-            type: 'line',
-            data: { labels, datasets: [{ label: 'Desviación Promedio', data: values, borderColor: '#ff3b5c', backgroundColor: 'rgba(255, 59, 92, 0.1)', fill: true, tension: 0.4 }] },
-            options: { responsive: true, maintainAspectRatio: false, scales: { y: { reverse: true } } }
-        });
-    }
-
-    // --- CORRECCIÓN 2: RENDERIZADO TABLA (STRING MATCHING) ---
     function renderTable(rows) {
         const tbody = document.getElementById('audit-body');
         
+        if (!rows.length) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px;">No hay simulaciones registradas para este juego.</td></tr>';
+            return;
+        }
+
         tbody.innerHTML = rows.map(r => {
-            let winningStr = null;
-            
-            // Buscar sorteo real forzando String para coincidencia
+            let winningNums = [];
+
             if(GLOBAL_MAESTROS[CURRENT_GAME]) {
                 const draw = GLOBAL_MAESTROS[CURRENT_GAME].find(h => String(h.sorteo) === String(r.sorteo_objetivo));
                 
                 if(draw) {
-                    let winningNums = [];
-                    if(CURRENT_GAME === 'LOTO') {
-                        // Soporte para ambos formatos de CSV
-                        if(draw['LOTO_n1']) winningNums = [draw.LOTO_n1, draw.LOTO_n2, draw.LOTO_n3, draw.LOTO_n4, draw.LOTO_n5, draw.LOTO_n6];
-                        else winningNums = [draw.n1, draw.n2, draw.n3, draw.n4, draw.n5, draw.n6];
-                    }
-                    else if(CURRENT_GAME === 'LOTO3') winningNums = [draw.n1, draw.n2, draw.n3];
-                    else if(CURRENT_GAME === 'LOTO4') winningNums = [draw.n1, draw.n2, draw.n3, draw.n4];
-                    else if(CURRENT_GAME === 'RACHA') winningNums = [draw.n1, draw.n2, draw.n3, draw.n4, draw.n5, draw.n6, draw.n7, draw.n8, draw.n9, draw.n10];
-                    
-                    winningStr = winningNums.join(',');
+                    const colKeys = detectNumberColumns(draw, CURRENT_GAME);
+                    winningNums = colKeys.map(k => parseInt(draw[k])).filter(n => !isNaN(n));
                 }
             }
 
-            const numsHtml = formatearNumeros(r.numeros, winningStr);
+            // 🟢 AQUÍ USAMOS LA FUNCIÓN RECUPERADA PARA PINTAR LOS ACIERTOS
+            const numsHtml = formatearNumeros(r.numeros, winningNums);
             
             let scoreColor = parseInt(r.score_afinidad) > 50 ? 'var(--gold)' : 'white';
             let hitsColor = parseInt(r.aciertos) > 0 ? 'var(--neon-cyan)' : '#666';
-            
+            let playedTag = r.jugado_realmente === 'SI' ? '<span style="color:var(--neon-cyan); border:1px solid var(--neon-cyan); padding:2px 4px; border-radius:4px; font-size:0.6rem;">REAL</span>' : 'Simulación';
+
             return `
                 <tr>
                     <td>
@@ -627,18 +541,72 @@
                     </td>
                     <td>
                         <div style="font-size:0.75rem; color:#aaa;">Hr: ${r.hora_dia}:00</div>
+                        <div style="margin-top:2px;">${playedTag}</div>
                     </td>
                 </tr>
             `;
         }).join('');
     }
 
-    function formatearNumeros(predStr, realStr) {
-        const clean = (s) => String(s).replace(/[\[\]"]/g, '').split(',').map(n=>parseInt(n.trim()));
-        const pred = clean(predStr);
-        if(!realStr) return pred.join(', ');
-        const real = clean(realStr);
-        return pred.map(n => real.includes(n) ? `<span class="numero-match">${n}</span>` : `<span style="opacity:0.6">${n}</span>`).join(', ');
+    // 🟢 RE-AGREGADO: Función para colorear los números
+    function formatearNumeros(predStr, realNums) {
+        // Limpiamos el string de predicción "[1, 2, 3]" -> [1, 2, 3]
+        const clean = String(predStr).replace(/[\[\]"]/g, '').split(',').map(n=>parseInt(n.trim()));
+        
+        if(!realNums || realNums.length === 0) {
+            return clean.join(', '); // Si no hay maestro, devolvemos blanco
+        }
+
+        return clean.map(n => {
+            // Si el número predicto existe en el array de ganadores reales
+            if (realNums.includes(n)) {
+                return `<span class="numero-match">${n}</span>`;
+            }
+            return `<span style="opacity:0.6">${n}</span>`;
+        }).join(', ');
+    }
+
+    function renderAlgoTrendChart(data) {
+        const ctx = document.getElementById('algoTrendChart').getContext('2d');
+        if(CHARTS['trend']) CHARTS['trend'].destroy();
+        const series = {}; const sorteosSet = new Set();
+        data.forEach(r => {
+            const algo = r.algoritmo.split('_v1')[0];
+            const sorteo = r.sorteo_objetivo;
+            sorteosSet.add(sorteo);
+            if(!series[algo]) series[algo] = {};
+            if(!series[algo][sorteo]) series[algo][sorteo] = {sum:0, cnt:0};
+            series[algo][sorteo].sum += parseFloat(r.score_afinidad);
+            series[algo][sorteo].cnt++;
+        });
+        const labels = Array.from(sorteosSet).sort((a,b)=>a-b);
+        const datasets = [];
+        const colors = ['#00f2ff', '#ffd700', '#ff3b5c', '#8a2be2', '#00ff41'];
+        let cIdx = 0;
+        for(const [algo, points] of Object.entries(series)) {
+            const dataPoints = labels.map(lbl => points[lbl] ? (points[lbl].sum/points[lbl].cnt).toFixed(2) : null);
+            datasets.push({ label: algo.toUpperCase(), data: dataPoints, borderColor: colors[cIdx++ % colors.length], borderWidth: 2, tension: 0.3, pointRadius: 3, spanGaps: true });
+        }
+        CHARTS['trend'] = new Chart(ctx, { type: 'line', data: { labels, datasets }, options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false } } });
+    }
+
+    function renderHitsChart(data, game) {
+        const ctx = document.getElementById('hitsDistChart').getContext('2d');
+        if(CHARTS['hits']) CHARTS['hits'].destroy();
+        let labels = game === 'LOTO' ? ['0','1','2','3','4','5','6'] : game === 'LOTO3' ? ['0','1','2','3'] : game === 'RACHA' ? ['0','1','2','3','4','5','6','7','8','9','10'] : ['0','1','2','3','4'];
+        const counts = new Array(labels.length).fill(0);
+        data.forEach(r => { let idx = labels.indexOf(String(r.aciertos)); if(idx !== -1) counts[idx]++; });
+        CHARTS['hits'] = new Chart(ctx, { type: 'bar', data: { labels: labels.map(l => l + ' Aciertos'), datasets: [{ label: 'Frecuencia Real', data: counts, backgroundColor: 'rgba(0, 242, 255, 0.5)', borderColor: '#00f2ff', borderWidth: 1 }] }, options: { responsive: true, maintainAspectRatio: false } });
+    }
+
+    function renderErrorChart(data) {
+        const ctx = document.getElementById('errorChart').getContext('2d');
+        if(CHARTS['error']) CHARTS['error'].destroy();
+        const errorMap = {};
+        data.forEach(r => { if(r.proximidad_prom) { if(!errorMap[r.sorteo_objetivo]) errorMap[r.sorteo_objetivo] = {sum:0, c:0}; errorMap[r.sorteo_objetivo].sum += parseFloat(r.proximidad_prom); errorMap[r.sorteo_objetivo].c++; } });
+        const labels = Object.keys(errorMap).sort((a,b)=>a-b);
+        const values = labels.map(l => (errorMap[l].sum / errorMap[l].c).toFixed(1));
+        CHARTS['error'] = new Chart(ctx, { type: 'line', data: { labels, datasets: [{ label: 'Desviación Promedio', data: values, borderColor: '#ff3b5c', backgroundColor: 'rgba(255, 59, 92, 0.1)', fill: true, tension: 0.4 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { reverse: true } } } });
     }
 
     init();
