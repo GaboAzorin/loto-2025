@@ -1,7 +1,7 @@
 {
   "metadata": {
-    "updated_at": "2025-12-17 13:46:51",
-    "casos_estudiados": 734
+    "updated_at": "2025-12-17 14:28:29",
+    "mode": "INCREMENTAL_EMA"
   },
   "golden_hours": {
     "14": 0.064,
@@ -29,18 +29,20 @@
     "22": 0.0054
   },
   "algo_ranking": {
-    "consenso_meritocratico_v2": 20.91,
-    "consenso_v1": 32.28,
-    "delta_tactico_v1": 30.53,
-    "forense_biometrico_v1": 20.17,
-    "gaussiano_tactico_v1": 30.23,
-    "markov_chain_v1": 25.28
+    "consenso_meritocratico_v2": 18.16,
+    "consenso_v1": 23.9,
+    "delta_tactico_v1": 22.77,
+    "forense_biometrico_v1": 16.83,
+    "gaussiano_tactico_v1": 22.44,
+    "markov_chain_v1": 19.24,
+    "MASTER_PREMIUM_v1": 0.0
   },
   "morphology": {
     "ideal_sum_range": [
-      103,
-      119
+      10,
+      45
     ],
-    "ideal_even_count": 4
-  }
+    "ideal_even_count": 2
+  },
+  "last_processed": {}
 }
