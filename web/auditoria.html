@@ -418,9 +418,33 @@
     function renderMechanicalMatrix(game) {
         const config = GAME_CONFIGS[game];
         const maestro = GLOBAL_MAESTROS[game];
-        if (!maestro || !config) return;
+        
+        const container = document.getElementById('mechanical-matrix');
+        container.innerHTML = ''; // Limpiar siempre al inicio
 
-        // Estructura de conteo
+        if (!maestro || !config) {
+            container.innerHTML = '<div style="padding:20px; grid-column:1/-1;">No hay datos maestros cargados para ' + game + '</div>';
+            return;
+        }
+
+        // Definir explícitamente las columnas según el juego para evitar errores de lectura
+        let colKeys = [];
+        if (game === 'LOTO') {
+            // El scraper suele guardar como LOTO_n1 o LOTO_pos1
+            colKeys = ['LOTO_n1','LOTO_n2','LOTO_n3','LOTO_n4','LOTO_n5','LOTO_n6'];
+            // Fallback por si acaso usa el formato antiguo
+            if(maestro.length > 0 && !maestro[0]['LOTO_n1'] && maestro[0]['n1']) {
+                colKeys = ['n1','n2','n3','n4','n5','n6'];
+            }
+        } else if (game === 'LOTO3') {
+            colKeys = ['n1','n2','n3'];
+        } else if (game === 'LOTO4') {
+            colKeys = ['n1','n2','n3','n4'];
+        } else if (game === 'RACHA') {
+            colKeys = ['n1','n2','n3','n4','n5','n6','n7','n8','n9','n10'];
+        }
+
+        // Inicializar conteos
         let counts = {}; 
         let maxVal = config.max;
         let minVal = config.zeroIndexed ? 0 : 1;
@@ -431,34 +455,19 @@
 
         let maxFreq = 0;
 
+        // Procesar datos
         maestro.forEach(row => {
-            // Verificar columnas disponibles. Prefijo varía según juego en maestro
-            // LOTO usa "LOTO_n1" o "LOTO_pos1", RACHA usa "n1", etc.
-            
-            // Intento de detectar prefijo
-            let prefix = 'n'; // Default para LOTO3, LOTO4, RACHA
-            if (game === 'LOTO') prefix = 'LOTO_n'; // O LOTO_pos si existe
-
-            for (let c = 0; c < config.cols; c++) {
-                // Intentamos leer la posición exacta primero (más preciso)
-                let colName = `${prefix}${c+1}`;
-                if (game === 'LOTO') {
-                    if (row[`LOTO_pos${c+1}`]) colName = `LOTO_pos${c+1}`;
-                    else colName = `LOTO_n${c+1}`;
+            colKeys.forEach((key, idx) => {
+                let val = parseInt(row[key]);
+                // Validar que sea número y esté en rango
+                if (!isNaN(val) && counts[val] !== undefined) {
+                    counts[val][idx]++;
+                    if (counts[val][idx] > maxFreq) maxFreq = counts[val][idx];
                 }
-
-                let val = parseInt(row[colName]);
-                if (!isNaN(val) && counts[val]) {
-                    counts[val][c]++;
-                    if (counts[val][c] > maxFreq) maxFreq = counts[val][c];
-                }
-            }
+            });
         });
 
-        const container = document.getElementById('mechanical-matrix');
-        container.innerHTML = '';
-        
-        // Ajustar Grid CSS dinámicamente según columnas del juego
+        // Renderizar
         container.style.gridTemplateColumns = `50px repeat(${config.cols}, 1fr)`;
 
         // Headers
@@ -467,22 +476,23 @@
             container.appendChild(createCell(`B${i}`, 'mech-header'));
         }
 
-        // Body
+        // Celdas
         for (let num = minVal; num <= maxVal; num++) {
             container.appendChild(createCell(num, 'mech-row-label'));
             for (let c = 0; c < config.cols; c++) {
                 let freq = counts[num][c];
                 let cell = createCell(freq > 0 ? freq : '-', 'mech-cell');
                 if (freq > 0) {
+                    // Escala de calor relativa al máximo encontrado
                     let intensity = Math.ceil((freq / maxFreq) * 5);
                     cell.classList.add(`heat-${intensity}`);
-                    cell.title = `El #${num} salió ${freq} veces en posición ${c+1}`;
+                    cell.title = `El #${num} salió ${freq} veces en la posición ${c+1}`;
                 }
                 container.appendChild(cell);
             }
         }
     }
-
+    
     function createCell(content, className) {
         let d = document.createElement('div');
         d.className = className || '';
@@ -572,27 +582,64 @@
         });
     }
 
+    // --- CORRECCIÓN 2: VISUALIZACIÓN DE ACIERTOS ---
     function renderTable(rows) {
         const tbody = document.getElementById('audit-body');
+        
         tbody.innerHTML = rows.map(r => {
             let winningStr = null;
+            
+            // Buscar el sorteo real en el maestro
             if(GLOBAL_MAESTROS[CURRENT_GAME]) {
-                const draw = GLOBAL_MAESTROS[CURRENT_GAME].find(h => h.sorteo == r.sorteo_objetivo);
+                // Usamos String() para asegurar que "5360" sea igual a 5360
+                const draw = GLOBAL_MAESTROS[CURRENT_GAME].find(h => String(h.sorteo) === String(r.sorteo_objetivo));
+                
                 if(draw) {
-                    if(CURRENT_GAME === 'LOTO') winningStr = [draw.LOTO_n1, draw.LOTO_n2, draw.LOTO_n3, draw.LOTO_n4, draw.LOTO_n5, draw.LOTO_n6].join(',');
-                    else if(CURRENT_GAME === 'LOTO3') winningStr = [draw.n1, draw.n2, draw.n3].join(',');
-                    else if(CURRENT_GAME === 'LOTO4') winningStr = [draw.n1, draw.n2, draw.n3, draw.n4].join(',');
-                    else if(CURRENT_GAME === 'RACHA') winningStr = [draw.n1, draw.n2, draw.n3, draw.n4, draw.n5, draw.n6, draw.n7, draw.n8, draw.n9, draw.n10].join(',');
+                    // Extraer números ganadores según el juego actual
+                    let winningNums = [];
+                    if(CURRENT_GAME === 'LOTO') {
+                        // Intentar leer LOTO_n1...n6
+                        if(draw['LOTO_n1']) winningNums = [draw.LOTO_n1, draw.LOTO_n2, draw.LOTO_n3, draw.LOTO_n4, draw.LOTO_n5, draw.LOTO_n6];
+                        else winningNums = [draw.n1, draw.n2, draw.n3, draw.n4, draw.n5, draw.n6];
+                    }
+                    else if(CURRENT_GAME === 'LOTO3') winningNums = [draw.n1, draw.n2, draw.n3];
+                    else if(CURRENT_GAME === 'LOTO4') winningNums = [draw.n1, draw.n2, draw.n3, draw.n4];
+                    else if(CURRENT_GAME === 'RACHA') winningNums = [draw.n1, draw.n2, draw.n3, draw.n4, draw.n5, draw.n6, draw.n7, draw.n8, draw.n9, draw.n10];
+                    
+                    winningStr = winningNums.join(',');
                 }
             }
+
+            // Aquí ocurre la magia del coloreado
             const numsHtml = formatearNumeros(r.numeros, winningStr);
+            
+            // Formateo visual
+            let scoreColor = parseInt(r.score_afinidad) > 50 ? 'var(--gold)' : 'white';
+            let hitsColor = parseInt(r.aciertos) > 0 ? 'var(--neon-cyan)' : '#666';
+            let playedTag = r.jugado_realmente === 'SI' ? '<span style="color:var(--neon-cyan); border:1px solid var(--neon-cyan); padding:2px 4px; border-radius:4px; font-size:0.6rem;">REAL</span>' : 'Simulación';
+
             return `
                 <tr>
-                    <td><div style="font-weight:bold; color:white;">${r.fecha_generacion.split(' ')[0]}</div><div style="font-size:0.75rem; color:#666;">ID: ${r.id.toString().slice(-6)}</div></td>
-                    <td><div style="font-size:0.85rem; color:${r.estado==='AUDITADO'?'var(--matrix)':'var(--gold)'}">${r.estado}</div><div style="font-size:0.7rem; color:#aaa;">${r.algoritmo.replace('_v1','')}</div></td>
-                    <td><div style="color:white; font-family:'JetBrains Mono'; letter-spacing:1px; font-size:0.9rem;">${numsHtml}</div><div style="font-size:0.75rem; color:#666; margin-top:2px;">Target: #${r.sorteo_objetivo}</div></td>
-                    <td><div style="font-weight:bold; font-size:1rem; color:white;">${r.score_afinidad || 0} pts</div><div style="font-size:0.8rem; color:${parseInt(r.aciertos)>0?'var(--neon-cyan)':'#666'}">${r.aciertos} Aciertos</div></td>
-                    <td><div style="font-size:0.75rem; color:#aaa;">Hr: ${r.hora_dia}:00<br>${r.jugado_realmente==='SI' ? '<span style="color:var(--neon-cyan)">⚡ REAL</span>' : 'Simulación'}</div></td>
+                    <td>
+                        <div style="font-weight:bold; color:white;">${r.fecha_generacion.split(' ')[0]}</div>
+                        <div style="font-size:0.75rem; color:#666;">ID: ${r.id.toString().slice(-6)}</div>
+                    </td>
+                    <td>
+                        <div style="font-size:0.85rem; color:${r.estado==='AUDITADO'?'var(--matrix)':'var(--gold)'}">${r.estado}</div>
+                        <div style="font-size:0.7rem; color:#aaa;">${r.algoritmo.replace('_v1','')}</div>
+                    </td>
+                    <td>
+                        <div style="color:white; font-family:'JetBrains Mono'; letter-spacing:1px; font-size:0.9rem;">${numsHtml}</div>
+                        <div style="font-size:0.75rem; color:#666; margin-top:4px;">Target: #${r.sorteo_objetivo}</div>
+                    </td>
+                    <td>
+                        <div style="font-weight:bold; font-size:1rem; color:${scoreColor};">${r.score_afinidad || 0} pts</div>
+                        <div style="font-size:0.8rem; color:${hitsColor}">${r.aciertos} Aciertos</div>
+                    </td>
+                    <td>
+                        <div style="font-size:0.75rem; color:#aaa;">Hr: ${r.hora_dia}:00</div>
+                        <div style="margin-top:2px;">${playedTag}</div>
+                    </td>
                 </tr>
             `;
         }).join('');
