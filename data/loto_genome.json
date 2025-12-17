@@ -1,53 +1,47 @@
 {
-  "metadata": {
-    "updated_at": "2025-12-17 13:35:25",
-    "mode": "INCREMENTAL_EMA"
-  },
-  "golden_hours": {
-    "14": 0.064,
-    "6": 0.064,
-    "16": 0.0613,
-    "8": 0.0613,
-    "4": 0.0599,
-    "12": 0.0586,
-    "18": 0.0586,
-    "20": 0.0586,
-    "17": 0.0545,
-    "1": 0.049,
-    "19": 0.049,
-    "7": 0.0477,
-    "11": 0.0477,
-    "2": 0.0463,
-    "10": 0.045,
-    "13": 0.0354,
-    "15": 0.0313,
-    "5": 0.0286,
-    "3": 0.0259,
-    "0": 0.0191,
-    "23": 0.015,
-    "9": 0.0136,
-    "22": 0.0054
-  },
   "algo_ranking": {
-    "consenso_meritocratico_v2": 7.67,
-    "consenso_v1": 6.09,
-    "delta_tactico_v1": 5.82,
-    "forense_biometrico_v1": 6.98,
-    "gaussiano_tactico_v1": 5.08,
-    "markov_chain_v1": 5.94,
-    "MASTER_PREMIUM_v1": 0.0
+    "MASTER_PREMIUM_v1": 0.0,
+    "consenso_meritocratico_v2": 11.74,
+    "consenso_v1": 4.36,
+    "delta_tactico_v1": 4.67,
+    "forense_biometrico_v1": 9.03,
+    "gaussiano_tactico_v1": 4.27,
+    "markov_chain_v1": 5.14
   },
+  "last_processed": {},
   "morphology": {
-    "ideal_sum_range": [
-      10,
-      45
-    ],
-    "ideal_even_count": 2
+    "LOTO": {
+      "ideal_sum_range": [
+        123,
+        123
+      ],
+      "ideal_even_count": 3
+    },
+    "LOTO3": {
+      "ideal_sum_range": [
+        10,
+        14
+      ],
+      "ideal_even_count": 2
+    },
+    "LOTO4": {
+      "ideal_sum_range": [
+        40,
+        54
+      ],
+      "ideal_even_count": 1
+    },
+    "RACHA": {
+      "ideal_sum_range": [
+        105,
+        109
+      ],
+      "ideal_even_count": 6
+    }
   },
-  "last_processed": {
-    "LOTO3": 23904,
-    "RACHA": 10237,
-    "LOTO": 5361,
-    "LOTO4": 11505
+  "metadata": {
+    "updated_at": "2025-12-17 13:38:44",
+    "mode": "INCREMENTAL_EMA_LOBOTOMIZED",
+    "casos_estudiados": 4144
   }
 }
