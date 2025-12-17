@@ -9,7 +9,8 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, '..', '..', 'data')
 SIMULACIONES_FILE = os.path.join(DATA_DIR, "LOTO_SIMULACIONES.csv")
 GENOMA_FILE = os.path.join(DATA_DIR, "loto_genome.json")
-hora_chile = datetime.utcnow() - timedelta(hours=3)
+
+# NOTA: Borré la variable global 'hora_chile' de aquí para evitar confusiones.
 
 # FACTOR DE OLVIDO (0.1 = Memoria larga, 0.5 = Balanceado, 0.9 = Solo importa lo reciente)
 ALPHA = 0.3 
@@ -33,14 +34,12 @@ def analizar_adn_ganador(juego_filtro=None, sorteo_limite=None):
     df = pd.read_csv(SIMULACIONES_FILE)
     
     # Filtrar solo lo auditado y exitoso
-    # Definimos éxito: Score > 40 o Aciertos >= 3 (ajustable por juego)
     df = df[df['estado'] == 'AUDITADO'].copy()
     
     if juego_filtro:
         df = df[df['juego'] == juego_filtro]
     
     if sorteo_limite:
-        # Importante: Solo miramos hasta el sorteo indicado para no hacer trampa (look-ahead)
         df = df[df['sorteo_objetivo'] <= int(sorteo_limite)]
 
     if len(df) == 0:
@@ -51,23 +50,14 @@ def analizar_adn_ganador(juego_filtro=None, sorteo_limite=None):
     ranking_actual = genoma.get("algo_ranking", {})
     
     # --- LÓGICA DE APRENDIZAJE INCREMENTAL (EMA) ---
-    # En lugar de recalcular todo de cero, vamos a ajustar los pesos
-    # basándonos en el rendimiento reciente.
-    
-    # 1. Calcular rendimiento promedio en este lote de datos
     nuevo_ranking = df.groupby('algoritmo')['score_afinidad'].mean().to_dict()
     
-    # 2. Fusionar con el conocimiento previo usando EMA
     for algo, nuevo_score in nuevo_ranking.items():
-        score_antiguo = ranking_actual.get(algo, nuevo_score) # Si es nuevo, usamos su score actual
-        
-        # Fórmula: Nuevo = (Antiguo * (1 - Alpha)) + (Nuevo * Alpha)
-        # Esto suaviza la curva. Si Alpha es bajo, el sistema es conservador.
+        score_antiguo = ranking_actual.get(algo, nuevo_score)
         ranking_actual[algo] = round((score_antiguo * (1 - ALPHA)) + (nuevo_score * ALPHA), 2)
 
-    # --- ANÁLISIS MORFOLÓGICO (ESTO SÍ PUEDE SER GLOBAL) ---
-    # Para sumas y pares, mejor usar una ventana móvil de los últimos 50 éxitos
-    exitosas = df[(df['score_afinidad'] >= 50)].tail(50) # Últimas 50 buenas
+    # --- ANÁLISIS MORFOLÓGICO ---
+    exitosas = df[(df['score_afinidad'] >= 50)].tail(50)
     
     rango_suma = genoma.get("morphology", {}).get("ideal_sum_range", "UNKNOWN")
     balance_paridad = genoma.get("morphology", {}).get("ideal_even_count", "UNKNOWN")
@@ -87,9 +77,16 @@ def analizar_adn_ganador(juego_filtro=None, sorteo_limite=None):
         if pares:
             balance_paridad = int(round(np.mean(pares)))
 
+    # --- CALCULAR HORA CHILE (DENTRO DE LA FUNCIÓN) ---
+    # Esto asegura que se calcule al momento de guardar y evita errores de alcance
+    ahora_chile = datetime.utcnow() - timedelta(hours=3)
+    
+    # DEPURACIÓN: Si esto falla, veremos el tipo de dato en el log
+    # print(f"DEBUG TIME: {ahora_chile} (Tipo: {type(ahora_chile)})")
+
     # --- GUARDAR ---
     genoma["metadata"] = {
-        "updated_at": hora_chile.strftime("%Y-%m-%d %H:%M:%S"),
+        "updated_at": ahora_chile.strftime("%Y-%m-%d %H:%M:%S"),
         "mode": "INCREMENTAL_EMA"
     }
     genoma["algo_ranking"] = ranking_actual
@@ -98,7 +95,6 @@ def analizar_adn_ganador(juego_filtro=None, sorteo_limite=None):
         "ideal_even_count": balance_paridad
     }
     
-    # Guardamos hasta qué sorteo aprendimos para cada juego
     if "last_processed" not in genoma: genoma["last_processed"] = {}
     if juego_filtro and sorteo_limite:
         genoma["last_processed"][juego_filtro] = int(sorteo_limite)
