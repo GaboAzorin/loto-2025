@@ -9,7 +9,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, '..', '..', 'data')
 SIMULACIONES_FILE = os.path.join(DATA_DIR, "LOTO_SIMULACIONES.csv")
 GENOMA_FILE = os.path.join(DATA_DIR, "loto_genome.json")
-hora_chile = datetime.utcnow() - timedelta(hours=3),
+hora_chile = datetime.utcnow() - timedelta(hours=3)
 
 # FACTOR DE OLVIDO (0.1 = Memoria larga, 0.5 = Balanceado, 0.9 = Solo importa lo reciente)
 ALPHA = 0.3 
