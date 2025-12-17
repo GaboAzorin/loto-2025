@@ -291,6 +291,32 @@ async def run_scraper():
                     await asyncio.sleep(1)
 
         await browser.close()
+        # ==============================================================================
+        # 🧠 NUEVO BLOQUE: RECONSTRUCCIÓN TEMPORAL (ESTRATEGIA 1)
+        # ==============================================================================
+        print("\n⏳ EJECUTANDO RECONSTRUCCIÓN TEMPORAL (Aprendizaje Secuencial)...")
+        try:
+            import sys
+
+            models_path = os.path.abspath(os.path.join(BASE_DIR, '..', 'models'))
+            if models_path not in sys.path:
+                sys.path.append(models_path)
+
+            import reconstructor_temporal
+            import importlib
+            
+            importlib.reload(reconstructor_temporal) 
+            
+            reconstructor_temporal.reconstruir_linea_tiempo()
+            
+        except ImportError:
+            print("   ⚠️  ALERTA: No se encontró 'reconstructor_temporal.py'.")
+            print("       El scraping terminó bien, pero no se actualizó la IA.")
+        except Exception as e:
+            print(f"   ❌ ERROR CRÍTICO EN RECONSTRUCTOR: {e}")
+        # ==============================================================================
+
+        # Finalmente, subimos todo (CSVs nuevos + JSON del genoma actualizado)
         subir_cambios_a_github()
         print("\n🏁 PROCESO FINALIZADO.")
 
