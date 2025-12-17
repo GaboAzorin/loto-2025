@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "updated_at": "2025-12-17 12:53:13",
+    "updated_at": "2025-12-17 13:35:25",
     "mode": "INCREMENTAL_EMA"
   },
   "golden_hours": {
@@ -29,20 +29,20 @@
     "22": 0.0054
   },
   "algo_ranking": {
-    "consenso_meritocratico_v2": 5.92,
-    "consenso_v1": 6.83,
-    "delta_tactico_v1": 6.31,
-    "forense_biometrico_v1": 6.11,
-    "gaussiano_tactico_v1": 5.43,
-    "markov_chain_v1": 6.28,
+    "consenso_meritocratico_v2": 7.67,
+    "consenso_v1": 6.09,
+    "delta_tactico_v1": 5.82,
+    "forense_biometrico_v1": 6.98,
+    "gaussiano_tactico_v1": 5.08,
+    "markov_chain_v1": 5.94,
     "MASTER_PREMIUM_v1": 0.0
   },
   "morphology": {
     "ideal_sum_range": [
-      40,
-      54
+      10,
+      45
     ],
-    "ideal_even_count": 1
+    "ideal_even_count": 2
   },
   "last_processed": {
     "LOTO3": 23904,
