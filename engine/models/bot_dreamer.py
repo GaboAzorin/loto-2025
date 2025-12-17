@@ -11,11 +11,11 @@ from datetime import datetime, timedelta
 current_dir = os.path.dirname(os.path.abspath(__file__))
 if current_dir not in sys.path: sys.path.append(current_dir)
 
-# Intentamos importar, si falla (porque no estamos en la carpeta correcta), no explotamos
 try:
     from analizador_forense import LotoForense 
 except ImportError:
     LotoForense = None
+    print("⚠️ ADVERTENCIA: No se pudo importar LotoForense. El bot funcionará a media capacidad.")
 
 # --- CONFIGURACIÓN ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -25,7 +25,7 @@ FILE_GENOME = os.path.join(DATA_DIR, "loto_genome.json")
 
 TZ_CHILE = pytz.timezone('America/Santiago')
 
-# --- REGLAS DE NEGOCIO ---
+# --- REGLAS DE NEGOCIO (HORARIOS) ---
 HORARIOS = {
     "LOTO":   {"dias": [1, 3, 6],       "horas": [21]},
     "LOTO3":  {"dias": [0,1,2,3,4,5,6], "horas": [14, 18, 21]},
@@ -42,11 +42,15 @@ MULTIVERSO_CONFIG = {
 
 def calcular_proximo_sorteo_real(game_id, csv_name):
     """
-    Algoritmo Crononauta: Determina el ID exacto del próximo sorteo basado en el último registrado.
+    Algoritmo Crononauta:
+    1. Lee el último sorteo conocido del CSV (Ancla temporal).
+    2. Simula el paso del tiempo sorteo a sorteo según las reglas horarias.
+    3. Se detiene cuando encuentra el PRIMER sorteo que ocurre en el futuro respecto a 'ahora'.
     """
     path = os.path.join(DATA_DIR, csv_name)
     ahora = datetime.now(TZ_CHILE)
     
+    # 1. Obtener Ancla (Último dato real disponible)
     try:
         if not os.path.exists(path): raise Exception("No CSV")
         df = pd.read_csv(path)
@@ -55,29 +59,33 @@ def calcular_proximo_sorteo_real(game_id, csv_name):
         last_row = df.iloc[-1]
         last_id = int(last_row['sorteo'])
         
-        # Parseo de fecha flexible
+        # Parseo robusto de fecha (soporta ISO y formato local)
         fecha_str = str(last_row['fecha']).replace('T', ' ').split('.')[0]
         try:
             last_date_naive = datetime.strptime(fecha_str, "%Y-%m-%d %H:%M:%S")
         except:
             last_date_naive = datetime.strptime(fecha_str, "%d-%m-%Y %H:%M:%S")
             
+        # Localizar a Chile
         cursor_tiempo = TZ_CHILE.localize(last_date_naive)
         cursor_id = last_id
         
     except:
-        # Inicio en frío (sin historial)
+        # Si no hay datos, asumimos sorteo #0 y empezamos a buscar desde ayer
+        # print(f"   ⚠️ Sin historial para {game_id}. Iniciando desde cero.")
         cursor_tiempo = ahora - timedelta(days=1)
         cursor_id = 0
 
-    # Simulación temporal hacia el futuro
+    # 2. Simulación hacia el Futuro (Bridging the Gap)
     reglas = HORARIOS[game_id]
     safety_break = 0
     
+    # Avanzamos en el tiempo virtualmente hasta alcanzar el presente
     while cursor_tiempo <= ahora and safety_break < 1000:
         safety_break += 1
         encontrado_siguiente = False
-        # Miramos el futuro cercano (hoy + 3 días)
+        
+        # Revisamos los próximos 3 días buscando el siguiente slot de sorteo
         for dias_extra in [0, 1, 2, 3]: 
             check_date = cursor_tiempo.date() + timedelta(days=dias_extra)
             dia_semana = check_date.weekday()
@@ -85,8 +93,10 @@ def calcular_proximo_sorteo_real(game_id, csv_name):
             if dia_semana not in reglas['dias']: continue
             
             for hora in sorted(reglas['horas']):
+                # Crear timestamp del slot candidato
                 candidato = TZ_CHILE.localize(datetime(check_date.year, check_date.month, check_date.day, hora, 0, 0))
                 
+                # Si este candidato es ESTRICTAMENTE posterior al cursor actual
                 if candidato > cursor_tiempo:
                     cursor_tiempo = candidato
                     cursor_id += 1
@@ -97,22 +107,8 @@ def calcular_proximo_sorteo_real(game_id, csv_name):
     
     return cursor_id
 
-def obtener_pesos_inteligentes():
-    pesos = {'forense': 1.0, 'gaussiano': 1.0, 'delta': 1.0, 'markov': 1.0}
-    if os.path.exists(FILE_SIMULACIONES):
-        try:
-            df = pd.read_csv(FILE_SIMULACIONES)
-            auditado = df[df['estado'] == 'AUDITADO']
-            if not auditado.empty:
-                ranking = auditado.groupby('algoritmo')['score_afinidad'].mean()
-                for algo_name, score in ranking.items():
-                    key = algo_name.split('_')[0]
-                    if key in pesos:
-                        pesos[key] = max(0.2, score / 50.0)
-        except: pass
-    return pesos
-
 def cargar_genoma():
+    """Carga el archivo JSON del cerebro"""
     if os.path.exists(FILE_GENOME):
         try:
             with open(FILE_GENOME, 'r') as f:
@@ -120,16 +116,38 @@ def cargar_genoma():
         except: pass
     return {}
 
+def obtener_pesos_del_lobulo(game_id, genoma):
+    """
+    Extrae los pesos de confianza del ranking específico de este juego.
+    Esto permite que el consenso se incline por el mejor algoritmo de CADA juego.
+    """
+    pesos = {'forense': 1.0, 'gaussiano': 1.0, 'delta': 1.0, 'markov': 1.0}
+    
+    if not genoma: return pesos
+    
+    # Buscamos en el lóbulo de ranking específico (Estructura anidada)
+    ranking_lobulo = genoma.get("algo_ranking", {}).get(game_id, {})
+    
+    # Si encontramos ranking específico, ajustamos pesos
+    if ranking_lobulo and isinstance(ranking_lobulo, dict):
+        for algo_name, score in ranking_lobulo.items():
+            key = algo_name.split('_')[0] # ej: 'forense_biometrico_v1' -> 'forense'
+            if key in pesos:
+                # Convertimos score (0-100) en peso (0.2 - 3.0)
+                # Un score alto le da más votos en el consenso
+                pesos[key] = max(0.2, score / 8.0) 
+    
+    return pesos
+
 def validar_cognitivamente(numeros, genoma, game_id):
     """
-    Filtra predicciones basándose en la morfología específica del juego (Lóbulos).
+    Filtra predicciones basándose en la morfología específica del juego.
     """
     if not genoma: return True
     
     try:
-        # --- CAMBIO CRÍTICO: Acceso por Lóbulo ---
+        # Acceso por Lóbulo Específico
         todas_morfologias = genoma.get('morphology', {})
-        # Buscamos la memoria específica de ESTE juego. Si no hay, {} (Tabula Rasa)
         morph = todas_morfologias.get(game_id, {})
         
         if not morph: return True
@@ -155,10 +173,10 @@ def validar_cognitivamente(numeros, genoma, game_id):
         return True
 
 def soñar():
-    print("💤 --- INICIANDO BOT SOÑADOR MULTIVERSO v11.5 (LÓBULOS) ---")
+    print("💤 --- INICIANDO BOT SOÑADOR: LÓBULOS ESPECIALIZADOS v12.1 ---")
     
     if LotoForense is None:
-        print("❌ CRÍTICO: No se pudo importar LotoForense. Abortando sueño.")
+        print("❌ CRÍTICO: No se pudo importar LotoForense. Abortando.")
         return
 
     ahora = datetime.now(TZ_CHILE)
@@ -167,32 +185,29 @@ def soñar():
     base_id = int(time.time())
     
     nuevas_filas = []
-    pesos_voto = obtener_pesos_inteligentes()
     genoma = cargar_genoma()
 
     if genoma:
-        print("   🧠 Cortex cargado: Filtros morfológicos activos por juego.")
-    
+        print("   🧠 Cortex cargado: Rankings y Morfología segmentados por juego.")
+
     for game_id, config in MULTIVERSO_CONFIG.items():
-        # Verificamos si estamos en hora de jugar para este juego
-        # (Opcional: Si quieres que sueñe siempre, comenta el 'continue')
-        # reglas = HORARIOS[game_id]
-        # if dia_semana not in reglas['dias']: continue
-        
         print(f"🌌 Universo: {game_id}")
         
-        # 1. Calcular Objetivo Inteligente
+        # A. Obtener pesos específicos para este juego (Ranking Local)
+        pesos_voto = obtener_pesos_del_lobulo(game_id, genoma)
+        print(f"   ⚖️ Pesos de confianza (basado en mérito local): {pesos_voto}")
+
+        # B. Calcular Objetivo Crononauta (Lógica Completa)
         objetivo = calcular_proximo_sorteo_real(game_id, config['csv'])
         print(f"   🎯 Objetivo Crononauta: #{objetivo}")
-
-        # 2. Instanciar Cerebro
-        try:
+        
+        # C. Instanciar Algoritmos
+        try: 
             forense = LotoForense(game_id=game_id, target_day=dia_semana)
         except Exception as e:
-            print(f"   ⚠️ Error instanciando Forense para {game_id}: {e}")
+            print(f"   ⚠️ Error instanciando Forense: {e}")
             continue
 
-        # 3. Definir Algoritmos
         mis_algoritmos = [('forense_biometrico', forense.predict_weighted)]
         if config['algos_extra']:
             mis_algoritmos.extend([
@@ -201,24 +216,22 @@ def soñar():
                 ('markov_chain',      forense.predict_markov)
             ])
 
-        # 4. Ejecución
+        # D. Ejecución de Algoritmos Individuales
         bolsa_pesos_consenso = {} 
 
         for i, (nombre, funcion) in enumerate(mis_algoritmos):
             try:
-                # Generación con Reintentos Cognitivos
-                # Ahora aplicamos reintentos a TODOS los juegos (no solo Loto)
+                # Reintentos Cognitivos (Rejection Sampling)
                 intentos = 0
-                max_intentos = 30 # Intentamos 30 veces encajar en el perfil morfológico
-                
+                max_intentos = 30 
                 pred = funcion()
+                
                 while intentos < max_intentos:
-                    if validar_cognitivamente(pred, genoma, game_id):
-                        break 
+                    if validar_cognitivamente(pred, genoma, game_id): break 
                     pred = funcion()
                     intentos += 1
                 
-                # Guardamos la predicción
+                # Registrar Predicción Individual
                 nuevas_filas.append({
                     'id': base_id + i + (len(nuevas_filas)*100),
                     'fecha_generacion': ahora.strftime('%Y-%m-%d %H:%M:%S'),
@@ -231,33 +244,32 @@ def soñar():
                     'algoritmo': f"{nombre}_v1"
                 })
                 
-                # Aporte al Consenso (Solo si es válida cognitivamente)
-                # Esto purifica el consenso: solo entran votos de jugadas "inteligentes"
-                peso = pesos_voto.get(nombre.split('_')[0], 1.0)
-                simulaciones_validas = 0
-                intentos_consenso = 0
+                # E. Voto para el Consenso (Ponderado por Ranking Local)
+                key_algo = nombre.split('_')[0]
+                peso = pesos_voto.get(key_algo, 1.0)
                 
-                while simulaciones_validas < 5 and intentos_consenso < 30:
+                # Simulamos N veces para robustecer el consenso
+                validas = 0; reintentos = 0
+                while validas < 5 and reintentos < 30:
                     sim = funcion()
                     if validar_cognitivamente(sim, genoma, game_id):
                         for num in sim:
                             bolsa_pesos_consenso[num] = bolsa_pesos_consenso.get(num, 0) + peso
-                        simulaciones_validas += 1
-                    intentos_consenso += 1
-
+                        validas += 1
+                    reintentos += 1
+                    
             except Exception as e:
                 print(f"   ⚠️ Error en {nombre}: {e}")
 
-        # 5. Generar Consenso
+        # F. Generar Consenso Meritocrático
         try:
             if bolsa_pesos_consenso:
-                n_bolas = forense.rules['n']
-                ranking = sorted(bolsa_pesos_consenso, key=bolsa_pesos_consenso.get, reverse=True)
-                top_consenso = sorted(ranking[:n_bolas])
+                n = forense.rules['n']
+                # Ordenamos las bolas por peso total acumulado
+                ranking_bolas = sorted(bolsa_pesos_consenso, key=bolsa_pesos_consenso.get, reverse=True)
+                top_consenso = sorted(ranking_bolas[:n])
                 
-                # Loto 3 respeta orden de llegada si es necesario, pero usualmente se muestra ordenado
-                if game_id != "LOTO3": 
-                     top_consenso.sort()
+                if game_id != "LOTO3": top_consenso.sort()
                 
                 nuevas_filas.append({
                     'id': base_id + 999 + (len(nuevas_filas)*10),
@@ -270,10 +282,10 @@ def soñar():
                     'hora_dia': hora_actual,
                     'algoritmo': 'consenso_meritocratico_v2'
                 })
-                print(f"   🤝 CONSENSO: {top_consenso}")
+                print(f"   🤝 CONSENSO LOCAL: {top_consenso}")
         except: pass
 
-    # Guardado Final
+    # G. Guardado Seguro
     if nuevas_filas:
         cols = ['id', 'fecha_generacion', 'juego', 'numeros', 'sorteo_objetivo', 'estado', 'aciertos', 'score_afinidad', 'hora_dia', 'algoritmo']
         try:
@@ -282,19 +294,16 @@ def soñar():
                 df_old = pd.read_csv(FILE_SIMULACIONES)
                 if 'juego' not in df_old.columns: df_old['juego'] = 'LOTO'
                 df_final = pd.concat([df_old, df_new], ignore_index=True)
-            else:
-                df_final = df_new
+            else: df_final = df_new
             
-            # Asegurar que todas las columnas existan
-            for col in cols:
-                if col not in df_final.columns: df_final[col] = 0
+            # Rellenar columnas faltantes con 0 o default
+            for c in cols: 
+                if c not in df_final.columns: df_final[c] = 0
                 
             df_final.to_csv(FILE_SIMULACIONES, index=False, columns=cols)
-            print(f"\n💾 Éxito: {len(nuevas_filas)} sueños registrados en el CSV.")
+            print(f"\n💾 Guardado exitoso: {len(nuevas_filas)} predicciones.")
         except Exception as e:
-            print(f"❌ Error Guardado CSV: {e}")
-    else:
-        print("💤 No hubo actividad onírica en este ciclo.")
+            print(f"❌ Error guardando CSV: {e}")
 
 if __name__ == "__main__":
     soñar()
