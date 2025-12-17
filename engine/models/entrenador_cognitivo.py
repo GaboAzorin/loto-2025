@@ -10,21 +10,20 @@ DATA_DIR = os.path.join(BASE_DIR, '..', '..', 'data')
 SIMULACIONES_FILE = os.path.join(DATA_DIR, "LOTO_SIMULACIONES.csv")
 GENOMA_FILE = os.path.join(DATA_DIR, "loto_genome.json")
 
-# NOTA: Borré la variable global 'hora_chile' de aquí para evitar confusiones.
-
-# FACTOR DE OLVIDO (0.1 = Memoria larga, 0.5 = Balanceado, 0.9 = Solo importa lo reciente)
+# FACTOR DE OLVIDO (0.3 = Balance ideal entre historia y tendencia reciente)
 ALPHA = 0.3 
 
 def cargar_genoma():
     if os.path.exists(GENOMA_FILE):
-        with open(GENOMA_FILE, 'r') as f:
-            return json.load(f)
-    return {"algo_ranking": {}, "last_processed": {}}
+        try:
+            with open(GENOMA_FILE, 'r') as f:
+                return json.load(f)
+        except: pass
+    return {"algo_ranking": {}, "last_processed": {}, "morphology": {}}
 
 def analizar_adn_ganador(juego_filtro=None, sorteo_limite=None):
     """
-    juego_filtro: (Opcional) Si queremos entrenar solo un juego específico.
-    sorteo_limite: (Opcional) Entrenar SOLO hasta este sorteo (para simulación temporal).
+    Entrena el cerebro separando la morfología por juego (Lóbulos Independientes).
     """
     print(f"🧠 ENTRENADOR: Analizando patrones{' para ' + juego_filtro if juego_filtro else ''}...")
     
@@ -33,7 +32,7 @@ def analizar_adn_ganador(juego_filtro=None, sorteo_limite=None):
 
     df = pd.read_csv(SIMULACIONES_FILE)
     
-    # Filtrar solo lo auditado y exitoso
+    # Filtrar solo lo auditado
     df = df[df['estado'] == 'AUDITADO'].copy()
     
     if juego_filtro:
@@ -49,52 +48,70 @@ def analizar_adn_ganador(juego_filtro=None, sorteo_limite=None):
     genoma = cargar_genoma()
     ranking_actual = genoma.get("algo_ranking", {})
     
-    # --- LÓGICA DE APRENDIZAJE INCREMENTAL (EMA) ---
+    # Asegurar que existe la estructura de morfología
+    if "morphology" not in genoma: genoma["morphology"] = {}
+
+    # --- 1. APRENDIZAJE DE ALGORITMOS (GLOBAL) ---
+    # Mantenemos el ranking global por ahora, ya que el Consenso domina en todos.
     nuevo_ranking = df.groupby('algoritmo')['score_afinidad'].mean().to_dict()
     
     for algo, nuevo_score in nuevo_ranking.items():
         score_antiguo = ranking_actual.get(algo, nuevo_score)
+        # EMA: Suavizado exponencial
         ranking_actual[algo] = round((score_antiguo * (1 - ALPHA)) + (nuevo_score * ALPHA), 2)
 
-    # --- ANÁLISIS MORFOLÓGICO ---
-    exitosas = df[(df['score_afinidad'] >= 50)].tail(50)
-    
-    rango_suma = genoma.get("morphology", {}).get("ideal_sum_range", "UNKNOWN")
-    balance_paridad = genoma.get("morphology", {}).get("ideal_even_count", "UNKNOWN")
+    # --- 2. ANÁLISIS MORFOLÓGICO POR LÓBULOS (JUEGO POR JUEGO) ---
+    # Identificamos qué juegos están presentes en este lote de datos
+    juegos_en_lote = df['juego'].unique()
 
-    if len(exitosas) > 0:
-        sumas = []
-        pares = []
-        for _, row in exitosas.iterrows():
-            try:
-                nums = json.loads(row['numeros'])
-                sumas.append(sum(nums))
-                pares.append(len([n for n in nums if n % 2 == 0]))
-            except: pass
+    for juego_id in juegos_en_lote:
+        # Filtramos las simulaciones EXITOSAS de ESTE juego específico
+        # Criterio de éxito: Score > 50 (Alta afinidad)
+        exitosas = df[(df['juego'] == juego_id) & (df['score_afinidad'] >= 50)].tail(50)
         
-        if sumas:
-            rango_suma = [int(np.percentile(sumas, 25)), int(np.percentile(sumas, 75))]
-        if pares:
-            balance_paridad = int(round(np.mean(pares)))
+        # Recuperamos la memoria anterior de este juego (o creamos una nueva)
+        memoria_juego = genoma["morphology"].get(juego_id, {
+            "ideal_sum_range": [0, 999], 
+            "ideal_even_count": -1
+        })
 
-    # --- CALCULAR HORA CHILE (DENTRO DE LA FUNCIÓN) ---
-    # Esto asegura que se calcule al momento de guardar y evita errores de alcance
+        if len(exitosas) > 0:
+            sumas = []
+            pares = []
+            for _, row in exitosas.iterrows():
+                try:
+                    nums = json.loads(row['numeros'])
+                    sumas.append(sum(nums))
+                    # Contamos pares
+                    pares.append(len([n for n in nums if n % 2 == 0]))
+                except: pass
+            
+            # Actualizamos la morfología SOLO para este juego
+            if sumas:
+                # Rango intercuartil (elimina extremos locos)
+                memoria_juego["ideal_sum_range"] = [int(np.percentile(sumas, 25)), int(np.percentile(sumas, 75))]
+            
+            if pares:
+                # Promedio redondeado
+                memoria_juego["ideal_even_count"] = int(round(np.mean(pares)))
+            
+            # Guardamos en el lóbulo correspondiente
+            genoma["morphology"][juego_id] = memoria_juego
+            print(f"   🧬 Lóbulo {juego_id} actualizado: Suma {memoria_juego['ideal_sum_range']}, Pares {memoria_juego['ideal_even_count']}")
+
+    # --- CALCULAR HORA ---
+    # Definido dentro de la función para seguridad
     ahora_chile = datetime.utcnow() - timedelta(hours=3)
-    
-    # DEPURACIÓN: Si esto falla, veremos el tipo de dato en el log
-    # print(f"DEBUG TIME: {ahora_chile} (Tipo: {type(ahora_chile)})")
 
-    # --- GUARDAR ---
+    # --- GUARDAR GENOMA ---
     genoma["metadata"] = {
         "updated_at": ahora_chile.strftime("%Y-%m-%d %H:%M:%S"),
-        "mode": "INCREMENTAL_EMA"
+        "mode": "INCREMENTAL_EMA_LOBOTOMIZED", # Marca de la nueva versión
+        "casos_estudiados": len(df)
     }
     genoma["algo_ranking"] = ranking_actual
-    genoma["morphology"] = {
-        "ideal_sum_range": rango_suma,
-        "ideal_even_count": balance_paridad
-    }
     
+    # last_processed management
     if "last_processed" not in genoma: genoma["last_processed"] = {}
     if juego_filtro and sorteo_limite:
         genoma["last_processed"][juego_filtro] = int(sorteo_limite)
@@ -102,7 +119,8 @@ def analizar_adn_ganador(juego_filtro=None, sorteo_limite=None):
     with open(GENOMA_FILE, 'w', encoding='utf-8') as f:
         json.dump(genoma, f, indent=2)
     
-    print(f"   🧬 Genoma actualizado. Líder actual: {max(ranking_actual, key=ranking_actual.get)} ({max(ranking_actual.values())} pts)")
+    lider = max(ranking_actual, key=ranking_actual.get) if ranking_actual else "None"
+    print(f"   💾 Cerebro guardado. Líder Global: {lider}")
 
 if __name__ == "__main__":
     analizar_adn_ganador()
