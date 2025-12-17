@@ -339,7 +339,7 @@
         'LOTO':  { max: 41, cols: 6 },
         'LOTO3': { max: 9,  cols: 3, zeroIndexed: true }, // Loto 3 incluye el 0
         'LOTO4': { max: 41, cols: 4 },
-        'RACHA': { max: 20, cols: 10 } // Racha tiene 10 columnas en maestro, aunque son más para sorteo
+        'RACHA': { max: 20, cols: 10 }
     };
 
     async function init() {
@@ -354,7 +354,8 @@
                     if(mRes.ok) GLOBAL_MAESTROS[g] = Papa.parse(await mRes.text(), { header: true, skipEmptyLines: true }).data;
                 } catch(e) { console.warn(`No maestro for ${g}`); }
             }
-            updateDashboard('LOTO');
+            // Pequeño delay para asegurar carga
+            setTimeout(() => updateDashboard('LOTO'), 100);
         } catch (err) {
             console.error("Error init:", err);
             document.getElementById('audit-body').innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--danger);">Error cargando datos.</td></tr>';
@@ -379,7 +380,7 @@
         renderAlgoTrendChart(auditData);
         renderHitsChart(auditData, game);
         renderErrorChart(auditData);
-        renderMechanicalMatrix(game); // NUEVO: Llamada a la función recuperada
+        renderMechanicalMatrix(game); 
         renderTable(gameData.reverse().slice(0, 100));
     }
 
@@ -414,28 +415,25 @@
         }
     }
 
-    // --- RENDERIZADO DE MATRIZ MECÁNICA (LÓGICA MEJORADA) ---
+    // --- CORRECCIÓN 1: HUELLA MECÁNICA ROBUSTA ---
     function renderMechanicalMatrix(game) {
         const config = GAME_CONFIGS[game];
         const maestro = GLOBAL_MAESTROS[game];
-        
         const container = document.getElementById('mechanical-matrix');
-        container.innerHTML = ''; // Limpiar siempre al inicio
+        
+        container.innerHTML = ''; 
 
-        if (!maestro || !config) {
-            container.innerHTML = '<div style="padding:20px; grid-column:1/-1;">No hay datos maestros cargados para ' + game + '</div>';
+        if (!maestro || !config || maestro.length === 0) {
+            container.innerHTML = '<div style="padding:20px; color:#666; text-align:center;">No hay datos de posición para ' + game + '</div>';
             return;
         }
 
-        // Definir explícitamente las columnas según el juego para evitar errores de lectura
+        // Definición explícita de columnas según CSV real
         let colKeys = [];
         if (game === 'LOTO') {
-            // El scraper suele guardar como LOTO_n1 o LOTO_pos1
-            colKeys = ['LOTO_n1','LOTO_n2','LOTO_n3','LOTO_n4','LOTO_n5','LOTO_n6'];
-            // Fallback por si acaso usa el formato antiguo
-            if(maestro.length > 0 && !maestro[0]['LOTO_n1'] && maestro[0]['n1']) {
-                colKeys = ['n1','n2','n3','n4','n5','n6'];
-            }
+            // Intentar detectar si usa prefijo LOTO_ o no
+            if(maestro[0]['LOTO_n1']) colKeys = ['LOTO_n1','LOTO_n2','LOTO_n3','LOTO_n4','LOTO_n5','LOTO_n6'];
+            else colKeys = ['n1','n2','n3','n4','n5','n6'];
         } else if (game === 'LOTO3') {
             colKeys = ['n1','n2','n3'];
         } else if (game === 'LOTO4') {
@@ -444,7 +442,6 @@
             colKeys = ['n1','n2','n3','n4','n5','n6','n7','n8','n9','n10'];
         }
 
-        // Inicializar conteos
         let counts = {}; 
         let maxVal = config.max;
         let minVal = config.zeroIndexed ? 0 : 1;
@@ -455,11 +452,9 @@
 
         let maxFreq = 0;
 
-        // Procesar datos
         maestro.forEach(row => {
             colKeys.forEach((key, idx) => {
                 let val = parseInt(row[key]);
-                // Validar que sea número y esté en rango
                 if (!isNaN(val) && counts[val] !== undefined) {
                     counts[val][idx]++;
                     if (counts[val][idx] > maxFreq) maxFreq = counts[val][idx];
@@ -467,7 +462,7 @@
             });
         });
 
-        // Renderizar
+        // Grid CSS Dinámico
         container.style.gridTemplateColumns = `50px repeat(${config.cols}, 1fr)`;
 
         // Headers
@@ -476,23 +471,22 @@
             container.appendChild(createCell(`B${i}`, 'mech-header'));
         }
 
-        // Celdas
+        // Body
         for (let num = minVal; num <= maxVal; num++) {
             container.appendChild(createCell(num, 'mech-row-label'));
             for (let c = 0; c < config.cols; c++) {
                 let freq = counts[num][c];
                 let cell = createCell(freq > 0 ? freq : '-', 'mech-cell');
                 if (freq > 0) {
-                    // Escala de calor relativa al máximo encontrado
                     let intensity = Math.ceil((freq / maxFreq) * 5);
                     cell.classList.add(`heat-${intensity}`);
-                    cell.title = `El #${num} salió ${freq} veces en la posición ${c+1}`;
+                    cell.title = `#${num} en Pos ${c+1}: ${freq} veces`;
                 }
                 container.appendChild(cell);
             }
         }
     }
-    
+
     function createCell(content, className) {
         let d = document.createElement('div');
         d.className = className || '';
@@ -582,23 +576,21 @@
         });
     }
 
-    // --- CORRECCIÓN 2: VISUALIZACIÓN DE ACIERTOS ---
+    // --- CORRECCIÓN 2: RENDERIZADO TABLA (STRING MATCHING) ---
     function renderTable(rows) {
         const tbody = document.getElementById('audit-body');
         
         tbody.innerHTML = rows.map(r => {
             let winningStr = null;
             
-            // Buscar el sorteo real en el maestro
+            // Buscar sorteo real forzando String para coincidencia
             if(GLOBAL_MAESTROS[CURRENT_GAME]) {
-                // Usamos String() para asegurar que "5360" sea igual a 5360
                 const draw = GLOBAL_MAESTROS[CURRENT_GAME].find(h => String(h.sorteo) === String(r.sorteo_objetivo));
                 
                 if(draw) {
-                    // Extraer números ganadores según el juego actual
                     let winningNums = [];
                     if(CURRENT_GAME === 'LOTO') {
-                        // Intentar leer LOTO_n1...n6
+                        // Soporte para ambos formatos de CSV
                         if(draw['LOTO_n1']) winningNums = [draw.LOTO_n1, draw.LOTO_n2, draw.LOTO_n3, draw.LOTO_n4, draw.LOTO_n5, draw.LOTO_n6];
                         else winningNums = [draw.n1, draw.n2, draw.n3, draw.n4, draw.n5, draw.n6];
                     }
@@ -610,14 +602,11 @@
                 }
             }
 
-            // Aquí ocurre la magia del coloreado
             const numsHtml = formatearNumeros(r.numeros, winningStr);
             
-            // Formateo visual
             let scoreColor = parseInt(r.score_afinidad) > 50 ? 'var(--gold)' : 'white';
             let hitsColor = parseInt(r.aciertos) > 0 ? 'var(--neon-cyan)' : '#666';
-            let playedTag = r.jugado_realmente === 'SI' ? '<span style="color:var(--neon-cyan); border:1px solid var(--neon-cyan); padding:2px 4px; border-radius:4px; font-size:0.6rem;">REAL</span>' : 'Simulación';
-
+            
             return `
                 <tr>
                     <td>
@@ -638,7 +627,6 @@
                     </td>
                     <td>
                         <div style="font-size:0.75rem; color:#aaa;">Hr: ${r.hora_dia}:00</div>
-                        <div style="margin-top:2px;">${playedTag}</div>
                     </td>
                 </tr>
             `;
