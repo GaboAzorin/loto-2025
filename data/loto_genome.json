@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "updated_at": "2025-12-17 12:23:54",
+    "updated_at": "2025-12-17 12:29:27",
     "mode": "INCREMENTAL_EMA"
   },
   "golden_hours": {
@@ -29,12 +29,12 @@
     "22": 0.0054
   },
   "algo_ranking": {
-    "consenso_meritocratico_v2": 16.24,
-    "consenso_v1": 18.04,
-    "delta_tactico_v1": 17.34,
-    "forense_biometrico_v1": 14.49,
-    "gaussiano_tactico_v1": 16.99,
-    "markov_chain_v1": 15.01,
+    "consenso_meritocratico_v2": 14.89,
+    "consenso_v1": 13.94,
+    "delta_tactico_v1": 13.54,
+    "forense_biometrico_v1": 12.85,
+    "gaussiano_tactico_v1": 13.17,
+    "markov_chain_v1": 12.05,
     "MASTER_PREMIUM_v1": 0.0
   },
   "morphology": {
