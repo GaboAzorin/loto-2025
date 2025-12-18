@@ -4844,3 +4844,14 @@ id,fecha_generacion,juego,numeros,sorteo_objetivo,estado,aciertos,score_afinidad
 1766060044,2025-12-18 08:56:05,LOTO4,"[5, 7, 17, 19]",11508,PENDIENTE,0,0.0,8,consenso_meritocratico_v2
 1766059865,2025-12-18 08:56:05,RACHA,"[1, 3, 4, 10, 11, 12, 14, 18, 19, 20]",10241,PENDIENTE,0,0.0,8,forense_biometrico_v1
 1766060064,2025-12-18 08:56:05,RACHA,"[2, 6, 8, 9, 10, 11, 12, 14, 16, 20]",10241,PENDIENTE,0,0.0,8,consenso_meritocratico_v2
+1766062629,2025-12-18 09:57:09,LOTO,"[6, 7, 16, 17, 35, 37]",5362,PENDIENTE,0,0.0,9,forense_biometrico_v1
+1766062730,2025-12-18 09:57:09,LOTO,"[11, 12, 16, 19, 30, 34]",5362,PENDIENTE,0,0.0,9,gaussiano_tactico_v1
+1766062831,2025-12-18 09:57:09,LOTO,"[7, 11, 16, 21, 30, 33]",5362,PENDIENTE,0,0.0,9,delta_tactico_v1
+1766062932,2025-12-18 09:57:09,LOTO,"[22, 28, 31, 33, 37, 41]",5362,PENDIENTE,0,0.0,9,markov_chain_v1
+1766063668,2025-12-18 09:57:09,LOTO,"[5, 7, 14, 17, 32, 38]",5362,PENDIENTE,0,0.0,9,consenso_meritocratico_v2
+1766063129,2025-12-18 09:57:09,LOTO3,"[4, 5, 6]",23908,PENDIENTE,0,0.0,9,forense_biometrico_v1
+1766063688,2025-12-18 09:57:09,LOTO3,"[2, 4, 5]",23908,PENDIENTE,0,0.0,9,consenso_meritocratico_v2
+1766063329,2025-12-18 09:57:09,LOTO4,"[7, 12, 19, 20]",11508,PENDIENTE,0,0.0,9,forense_biometrico_v1
+1766063708,2025-12-18 09:57:09,LOTO4,"[1, 15, 19, 21]",11508,PENDIENTE,0,0.0,9,consenso_meritocratico_v2
+1766063529,2025-12-18 09:57:09,RACHA,"[1, 3, 5, 6, 7, 12, 14, 18, 19, 20]",10241,PENDIENTE,0,0.0,9,forense_biometrico_v1
+1766063728,2025-12-18 09:57:09,RACHA,"[1, 4, 9, 10, 13, 14, 16, 17, 18, 20]",10241,PENDIENTE,0,0.0,9,consenso_meritocratico_v2
