@@ -10,23 +10,23 @@
       "markov_chain_v1": 5.13
     },
     "LOTO3": {
-      "consenso_meritocratico_v2": 19.78,
-      "forense_biometrico_v1": 15.85
+      "consenso_meritocratico_v2": 19.88,
+      "forense_biometrico_v1": 16.04
     },
     "LOTO4": {
-      "consenso_meritocratico_v2": 5.74,
-      "forense_biometrico_v1": 6.35
+      "consenso_meritocratico_v2": 5.79,
+      "forense_biometrico_v1": 6.29
     },
     "RACHA": {
       "consenso_meritocratico_v2": 16.1,
-      "forense_biometrico_v1": 15.29
+      "forense_biometrico_v1": 15.31
     }
   },
   "last_processed": {
-    "LOTO3": 23907,
-    "RACHA": 10240,
+    "LOTO3": 23909,
+    "RACHA": 10241,
     "LOTO": 5361,
-    "LOTO4": 11507
+    "LOTO4": 11508
   },
   "morphology": {
     "LOTO": {
@@ -53,14 +53,14 @@
     "RACHA": {
       "ideal_sum_range": [
         105,
-        112
+        115
       ],
       "ideal_even_count": 6
     }
   },
   "metadata": {
-    "updated_at": "2025-12-18 18:54:17",
+    "updated_at": "2025-12-18 19:08:27",
     "mode": "FULL_LOBOTOMY_V2",
-    "casos_estudiados": 4426
+    "casos_estudiados": 700
   }
 }
