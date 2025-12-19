@@ -566,30 +566,140 @@
         }).join(', ');
     }
 
+// --- NUEVA FUNCIÓN AUXILIAR: CÁLCULO DE REGRESIÓN LINEAL ---
+    function calculateTrendLine(yValues) {
+        let xValues = [];
+        let yClean = [];
+
+        // 1. Filtramos nulls para obtener pares X,Y válidos para el cálculo
+        yValues.forEach((y, x) => {
+            if (y !== null && y !== undefined) {
+                xValues.push(x);
+                yClean.push(parseFloat(y));
+            }
+        });
+
+        const n = yClean.length;
+        if (n < 2) return new Array(yValues.length).fill(null); // Necesitamos al menos 2 puntos
+
+        // 2. Sumatorias
+        let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
+        for (let i = 0; i < n; i++) {
+            sumX += xValues[i];
+            sumY += yClean[i];
+            sumXY += xValues[i] * yClean[i];
+            sumXX += xValues[i] * xValues[i];
+        }
+
+        // 3. Fórmula de la pendiente (m) y la intersección (b)
+        // y = mx + b
+        const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+        const intercept = (sumY - slope * sumX) / n;
+
+        // 4. Generamos la línea completa proyectada sobre todo el eje X original
+        return yValues.map((_, x) => {
+            return slope * x + intercept;
+        });
+    }
+
+    // --- FUNCIÓN DE GRÁFICO ACTUALIZADA ---
     function renderAlgoTrendChart(data) {
         const ctx = document.getElementById('algoTrendChart').getContext('2d');
-        if(CHARTS['trend']) CHARTS['trend'].destroy();
-        const series = {}; const sorteosSet = new Set();
+        if (CHARTS['trend']) CHARTS['trend'].destroy();
+
+        // 1. Agrupar datos
+        const series = {}; 
+        const sorteosSet = new Set();
+        
         data.forEach(r => {
             const algo = r.algoritmo.split('_v1')[0];
             const sorteo = r.sorteo_objetivo;
             sorteosSet.add(sorteo);
+            
             if(!series[algo]) series[algo] = {};
             if(!series[algo][sorteo]) series[algo][sorteo] = {sum:0, cnt:0};
+            
             series[algo][sorteo].sum += parseFloat(r.score_afinidad);
             series[algo][sorteo].cnt++;
         });
+
         const labels = Array.from(sorteosSet).sort((a,b)=>a-b);
         const datasets = [];
-        const colors = ['#00f2ff', '#ffd700', '#ff3b5c', '#8a2be2', '#00ff41'];
+        const colors = ['#00f2ff', '#ffd700', '#ff3b5c', '#8a2be2', '#00ff41', '#ff9f43', '#ffffff']; // Añadí más colores por si acaso
+        
         let cIdx = 0;
-        for(const [algo, points] of Object.entries(series)) {
-            const dataPoints = labels.map(lbl => points[lbl] ? (points[lbl].sum/points[lbl].cnt).toFixed(2) : null);
-            datasets.push({ label: algo.toUpperCase(), data: dataPoints, borderColor: colors[cIdx++ % colors.length], borderWidth: 2, tension: 0.3, pointRadius: 3, spanGaps: true });
-        }
-        CHARTS['trend'] = new Chart(ctx, { type: 'line', data: { labels, datasets }, options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false } } });
-    }
 
+        // 2. Crear Datasets (Datos Reales + Tendencia)
+        for (const [algo, points] of Object.entries(series)) {
+            const color = colors[cIdx % colors.length];
+            cIdx++;
+
+            // Datos reales (puntos sólidos)
+            const dataPoints = labels.map(lbl => points[lbl] ? (points[lbl].sum/points[lbl].cnt).toFixed(2) : null);
+            
+            datasets.push({ 
+                label: algo.toUpperCase(), 
+                data: dataPoints, 
+                borderColor: color, 
+                backgroundColor: color,
+                borderWidth: 2, 
+                tension: 0.3, 
+                pointRadius: 3, 
+                spanGaps: true,
+                order: 1 // Capa superior
+            });
+
+            // Datos de Tendencia (Línea punteada)
+            const trendPoints = calculateTrendLine(dataPoints);
+            
+            datasets.push({
+                label: `Tendencia ${algo.toUpperCase()}`,
+                data: trendPoints,
+                borderColor: color, // Mismo color
+                borderWidth: 1,     // Más fina
+                borderDash: [5, 5], // Punteada
+                pointRadius: 0,     // Sin puntos
+                fill: false,
+                tension: 0,         // Línea recta estricta
+                spanGaps: true,
+                order: 2,            // Capa inferior
+                hidden: true         // Opcional: inicia oculto si quieres limpiar la vista, o quita esta línea
+            });
+        }
+
+        CHARTS['trend'] = new Chart(ctx, { 
+            type: 'line', 
+            data: { labels, datasets }, 
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false, 
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: {
+                        labels: {
+                            // Filtramos la leyenda para que no se duplique visualmente (opcional)
+                            filter: function(item, chart) {
+                                return !item.text.includes('Tendencia'); 
+                            },
+                            color: '#a0aec0',
+                            font: { family: "'JetBrains Mono', monospace" }
+                        }
+                    },
+                    tooltip: {
+                        filter: function(tooltipItem) {
+                            // Solo mostrar tooltip de los datos reales, no de la tendencia matemática
+                            return !tooltipItem.dataset.label.includes('Tendencia');
+                        }
+                    }
+                },
+                scales: {
+                    x: { grid: { color: 'rgba(255,255,255,0.05)' } },
+                    y: { grid: { color: 'rgba(255,255,255,0.05)' } }
+                }
+            } 
+        });
+    }
+    
     function renderHitsChart(data, game) {
         const ctx = document.getElementById('hitsDistChart').getContext('2d');
         if(CHARTS['hits']) CHARTS['hits'].destroy();
