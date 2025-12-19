@@ -19,7 +19,7 @@
     },
     "RACHA": {
       "consenso_meritocratico_v2": 16.11,
-      "forense_biometrico_v1": 15.37
+      "forense_biometrico_v1": 15.39
     }
   },
   "last_processed": {
@@ -59,8 +59,8 @@
     }
   },
   "metadata": {
-    "updated_at": "2025-12-19 09:06:53",
+    "updated_at": "2025-12-19 09:07:17",
     "mode": "FULL_LOBOTOMY_V2",
-    "casos_estudiados": 738
+    "casos_estudiados": 5131
   }
 }
