@@ -18,13 +18,13 @@
       "forense_biometrico_v1": 6.35
     },
     "RACHA": {
-      "consenso_meritocratico_v2": 16.1,
-      "forense_biometrico_v1": 15.34
+      "consenso_meritocratico_v2": 16.11,
+      "forense_biometrico_v1": 15.37
     }
   },
   "last_processed": {
     "LOTO3": 23910,
-    "RACHA": 10241,
+    "RACHA": 10242,
     "LOTO": 5362,
     "LOTO4": 11509
   },
@@ -52,15 +52,15 @@
     },
     "RACHA": {
       "ideal_sum_range": [
-        105,
-        115
+        106,
+        114
       ],
       "ideal_even_count": 6
     }
   },
   "metadata": {
-    "updated_at": "2025-12-19 08:54:02",
+    "updated_at": "2025-12-19 09:06:53",
     "mode": "FULL_LOBOTOMY_V2",
-    "casos_estudiados": 5099
+    "casos_estudiados": 738
   }
 }
