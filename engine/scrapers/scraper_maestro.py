@@ -296,11 +296,6 @@ async def run_scraper():
         # ==============================================================================
         print("\n⏳ EJECUTANDO RECONSTRUCCIÓN TEMPORAL (Aprendizaje Secuencial)...")
         try:
-            import sys
-
-            models_path = os.path.abspath(os.path.join(BASE_DIR, '..', 'models'))
-            if models_path not in sys.path:
-                sys.path.append(models_path)
 
             import reconstructor_temporal
             import importlib
