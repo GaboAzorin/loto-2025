@@ -266,6 +266,19 @@
         </div>
     </div>
 
+    <div class="chart-card" style="grid-column: span 1 / -1;">
+    <div class="chart-header">
+        <div class="chart-title">
+            <i data-lucide="trending-up" style="color:var(--purple)"></i> 
+            Tendencia de Score por Algoritmo
+        </div>
+        <div id="trend-ticker" style="display:flex; gap:15px; font-size:0.85rem;"></div>
+    </div>
+    <div class="chart-container">
+        <canvas id="algoTrendChart"></canvas>
+    </div>
+    </div>
+
     <div class="charts-grid">
         <div class="chart-card">
             <div class="chart-header">
@@ -567,11 +580,11 @@
     }
 
 // --- NUEVA FUNCIÓN AUXILIAR: CÁLCULO DE REGRESIÓN LINEAL ---
+// --- 1. FUNCIÓN MATEMÁTICA MEJORADA (Devuelve objeto con datos y pendiente) ---
     function calculateTrendLine(yValues) {
         let xValues = [];
         let yClean = [];
 
-        // 1. Filtramos nulls para obtener pares X,Y válidos para el cálculo
         yValues.forEach((y, x) => {
             if (y !== null && y !== undefined) {
                 xValues.push(x);
@@ -580,9 +593,8 @@
         });
 
         const n = yClean.length;
-        if (n < 2) return new Array(yValues.length).fill(null); // Necesitamos al menos 2 puntos
+        if (n < 2) return { values: new Array(yValues.length).fill(null), slope: 0 };
 
-        // 2. Sumatorias
         let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
         for (let i = 0; i < n; i++) {
             sumX += xValues[i];
@@ -591,34 +603,32 @@
             sumXX += xValues[i] * xValues[i];
         }
 
-        // 3. Fórmula de la pendiente (m) y la intersección (b)
-        // y = mx + b
         const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
         const intercept = (sumY - slope * sumX) / n;
 
-        // 4. Generamos la línea completa proyectada sobre todo el eje X original
-        return yValues.map((_, x) => {
-            return slope * x + intercept;
-        });
+        const trendValues = yValues.map((_, x) => slope * x + intercept);
+
+        // Devolvemos tanto la línea para el gráfico como el valor numérico de la pendiente
+        return { values: trendValues, slope: slope };
     }
 
-    // --- FUNCIÓN DE GRÁFICO ACTUALIZADA ---
-function renderAlgoTrendChart(data) {
+    // --- 2. RENDERIZADO CON VISUALIZACIÓN DE PENDIENTE ---
+    function renderAlgoTrendChart(data) {
         const ctx = document.getElementById('algoTrendChart').getContext('2d');
+        const tickerContainer = document.getElementById('trend-ticker'); // Referencia al nuevo div
+        
         if (CHARTS['trend']) CHARTS['trend'].destroy();
+        tickerContainer.innerHTML = ''; // Limpiar datos viejos
 
-        // 1. Agrupar datos
+        // Agrupación de datos (igual que antes)
         const series = {}; 
         const sorteosSet = new Set();
-        
         data.forEach(r => {
             const algo = r.algoritmo.split('_v1')[0];
             const sorteo = r.sorteo_objetivo;
             sorteosSet.add(sorteo);
-            
             if(!series[algo]) series[algo] = {};
             if(!series[algo][sorteo]) series[algo][sorteo] = {sum:0, cnt:0};
-            
             series[algo][sorteo].sum += parseFloat(r.score_afinidad);
             series[algo][sorteo].cnt++;
         });
@@ -626,73 +636,73 @@ function renderAlgoTrendChart(data) {
         const labels = Array.from(sorteosSet).sort((a,b)=>a-b);
         const datasets = [];
         const colors = ['#00f2ff', '#ffd700', '#ff3b5c', '#8a2be2', '#00ff41', '#ff9f43', '#ffffff'];
-        
         let cIdx = 0;
 
-        // 2. Crear Datasets (Datos Reales + Tendencia)
+        // Iterar series
         for (const [algo, points] of Object.entries(series)) {
             const color = colors[cIdx % colors.length];
             cIdx++;
 
-            // A. Datos reales (Línea sólida)
             const dataPoints = labels.map(lbl => points[lbl] ? (points[lbl].sum/points[lbl].cnt).toFixed(2) : null);
-            
             datasets.push({ 
                 label: algo.toUpperCase(), 
                 data: dataPoints, 
                 borderColor: color, 
                 backgroundColor: color,
-                borderWidth: 2, 
-                tension: 0.3, 
-                pointRadius: 3, 
-                spanGaps: true,
-                order: 1 
+                borderWidth: 2, tension: 0.3, pointRadius: 3, spanGaps: true, order: 1 
             });
 
-            // B. Datos de Tendencia (Línea punteada)
-            const trendPoints = calculateTrendLine(dataPoints);
+            // Calcular tendencia y obtener pendiente
+            const trendResult = calculateTrendLine(dataPoints);
             
             datasets.push({
                 label: `Tendencia ${algo.toUpperCase()}`,
-                data: trendPoints,
-                borderColor: color, 
-                borderWidth: 1,     // Línea fina
-                borderDash: [5, 5], // Efecto punteado
-                pointRadius: 0,     // Sin puntos
-                fill: false,
-                tension: 0,         // Recta perfecta
-                spanGaps: true,
-                order: 2,           
-                hidden: false       // <--- AQUÍ ESTABA EL ERROR (antes true)
+                data: trendResult.values, // Usamos .values aquí
+                borderColor: color, borderWidth: 1, borderDash: [5, 5], pointRadius: 0, 
+                fill: false, tension: 0, spanGaps: true, order: 2, hidden: false
             });
+
+            // --- LÓGICA DE COLORES PARA LA PENDIENTE ---
+            const m = trendResult.slope;
+            let slopeColor = '#00f2ff'; // Azul por defecto (cero)
+            let icon = 'minus';         // Guion
+
+            // Usamos un umbral muy pequeño para el "cero" debido a los decimales
+            if (m > 0.0001) {
+                slopeColor = '#00ff41'; // Verde (Positivo)
+                icon = 'trending-up';
+            } else if (m < -0.0001) {
+                slopeColor = '#ff3b5c'; // Rojo (Negativo)
+                icon = 'trending-down';
+            } else {
+                 slopeColor = '#00f2ff'; // Azul (Neutro/Cero)
+            }
+
+            // Inyectar HTML en la cabecera
+            const badgeHtml = `
+                <div style="display:flex; align-items:center; gap:6px; background:rgba(255,255,255,0.05); padding:4px 10px; border-radius:6px; border:1px solid ${color}">
+                    <span style="color:${color}; font-weight:bold;">${algo.toUpperCase()}</span>
+                    <i data-lucide="${icon}" width="14" style="color:${slopeColor}"></i>
+                    <span style="color:${slopeColor}; font-family:'JetBrains Mono'; font-weight:bold;">
+                        ${(m * 10).toFixed(3)} 
+                    </span>
+                    <span style="font-size:0.6rem; color:#666; margin-left:-2px;">/10s</span>
+                </div>
+            `;
+            tickerContainer.insertAdjacentHTML('beforeend', badgeHtml);
         }
+
+        // Renderizar iconos de Lucide recién inyectados
+        lucide.createIcons();
 
         CHARTS['trend'] = new Chart(ctx, { 
             type: 'line', 
             data: { labels, datasets }, 
             options: { 
-                responsive: true, 
-                maintainAspectRatio: false, 
-                interaction: { mode: 'index', intersect: false },
+                responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
                 plugins: {
-                    legend: {
-                        labels: {
-                            color: '#a0aec0',
-                            font: { family: "'JetBrains Mono', monospace" },
-                            // He quitado el filtro para que veas que la serie existe en la leyenda
-                            // Si luego quieres ocultar el texto en la leyenda, descomenta esto:
-                            /*
-                            filter: function(item, chart) {
-                                return !item.text.includes('Tendencia'); 
-                            }
-                            */
-                        }
-                    },
-                    tooltip: {
-                        filter: function(tooltipItem) {
-                            return !tooltipItem.dataset.label.includes('Tendencia');
-                        }
-                    }
+                    legend: { labels: { color: '#a0aec0', font: { family: "'JetBrains Mono', monospace" } } },
+                    tooltip: { filter: function(tooltipItem) { return !tooltipItem.dataset.label.includes('Tendencia'); } }
                 },
                 scales: {
                     x: { grid: { color: 'rgba(255,255,255,0.05)' } },
