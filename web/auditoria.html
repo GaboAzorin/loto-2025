@@ -102,7 +102,7 @@
             min-width: 0;
             display: flex; flex-direction: column;
         }
-        .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+        .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 10px; }
         .chart-title { font-weight: 700; color: white; display: flex; align-items: center; gap: 10px; }
         
         .chart-container {
@@ -112,7 +112,7 @@
             overflow: hidden;
         }
 
-        /* --- ESTILOS PARA LA MATRIZ MECÁNICA (RECUPERADO) --- */
+        /* --- ESTILOS PARA LA MATRIZ MECÁNICA --- */
         .mech-dashboard {
             background: var(--card);
             border: 1px solid var(--border);
@@ -127,7 +127,6 @@
 
         .mech-grid-container {
             display: grid;
-            /* Se define dinámicamente en JS, pero ponemos base */
             gap: 4px;
             font-size: 0.8rem;
             font-family: 'JetBrains Mono', monospace;
@@ -184,6 +183,7 @@
 
         @media (max-width: 768px) {
             .charts-grid { grid-template-columns: 1fr; }
+            .chart-header { flex-direction: column; align-items: flex-start; }
         }
         .nav-link { 
             color: var(--text-muted); 
@@ -255,7 +255,11 @@
     <div class="charts-grid">
         <div class="chart-card" style="grid-column: span 1 / -1;">
             <div class="chart-header">
-                <div class="chart-title"><i data-lucide="trending-up" style="color:var(--purple)"></i> Tendencia de Score por Algoritmo</div>
+                <div class="chart-title">
+                    <i data-lucide="trending-up" style="color:var(--purple)"></i> 
+                    Tendencia de Score por Algoritmo
+                </div>
+                <div id="trend-ticker" style="display:flex; gap:15px; font-size:0.85rem; flex-wrap: wrap;"></div>
             </div>
             <div class="chart-container">
                 <canvas id="algoTrendChart"></canvas>
@@ -264,19 +268,6 @@
                 * Muestra cómo mejora el puntaje promedio de cada motor de predicción a lo largo de los sorteos.
             </div>
         </div>
-    </div>
-
-    <div class="chart-card" style="grid-column: span 1 / -1;">
-    <div class="chart-header">
-        <div class="chart-title">
-            <i data-lucide="trending-up" style="color:var(--purple)"></i> 
-            Tendencia de Score por Algoritmo
-        </div>
-        <div id="trend-ticker" style="display:flex; gap:15px; font-size:0.85rem;"></div>
-    </div>
-    <div class="chart-container">
-        <canvas id="algoTrendChart"></canvas>
-    </div>
     </div>
 
     <div class="charts-grid">
@@ -362,9 +353,9 @@
         let candidates = keys.filter(k => {
             const lower = k.toLowerCase();
             return (lower.includes('n') || lower.includes('pos') || lower.includes('bola')) 
-                   && /\d$/.test(k) 
-                   && !lower.includes('ganadores') 
-                   && !lower.includes('monto');
+                    && /\d$/.test(k) 
+                    && !lower.includes('ganadores') 
+                    && !lower.includes('monto');
         });
         candidates.sort((a, b) => {
             const numA = parseInt(a.match(/\d+$/)[0]);
@@ -527,7 +518,6 @@
                 }
             }
 
-            // 🟢 AQUÍ USAMOS LA FUNCIÓN RECUPERADA PARA PINTAR LOS ACIERTOS
             const numsHtml = formatearNumeros(r.numeros, winningNums);
             
             let scoreColor = parseInt(r.score_afinidad) > 50 ? 'var(--gold)' : 'white';
@@ -561,17 +551,14 @@
         }).join('');
     }
 
-    // 🟢 RE-AGREGADO: Función para colorear los números
     function formatearNumeros(predStr, realNums) {
-        // Limpiamos el string de predicción "[1, 2, 3]" -> [1, 2, 3]
         const clean = String(predStr).replace(/[\[\]"]/g, '').split(',').map(n=>parseInt(n.trim()));
         
         if(!realNums || realNums.length === 0) {
-            return clean.join(', '); // Si no hay maestro, devolvemos blanco
+            return clean.join(', ');
         }
 
         return clean.map(n => {
-            // Si el número predicto existe en el array de ganadores reales
             if (realNums.includes(n)) {
                 return `<span class="numero-match">${n}</span>`;
             }
@@ -579,8 +566,7 @@
         }).join(', ');
     }
 
-// --- NUEVA FUNCIÓN AUXILIAR: CÁLCULO DE REGRESIÓN LINEAL ---
-// --- 1. FUNCIÓN MATEMÁTICA MEJORADA (Devuelve objeto con datos y pendiente) ---
+    // --- FUNCIÓN MATEMÁTICA: REGRESIÓN LINEAL ---
     function calculateTrendLine(yValues) {
         let xValues = [];
         let yClean = [];
@@ -607,20 +593,17 @@
         const intercept = (sumY - slope * sumX) / n;
 
         const trendValues = yValues.map((_, x) => slope * x + intercept);
-
-        // Devolvemos tanto la línea para el gráfico como el valor numérico de la pendiente
         return { values: trendValues, slope: slope };
     }
 
-    // --- 2. RENDERIZADO CON VISUALIZACIÓN DE PENDIENTE ---
+    // --- RENDERIZADO CON VISUALIZACIÓN DE PENDIENTE ---
     function renderAlgoTrendChart(data) {
         const ctx = document.getElementById('algoTrendChart').getContext('2d');
-        const tickerContainer = document.getElementById('trend-ticker'); // Referencia al nuevo div
+        const tickerContainer = document.getElementById('trend-ticker');
         
         if (CHARTS['trend']) CHARTS['trend'].destroy();
-        tickerContainer.innerHTML = ''; // Limpiar datos viejos
+        tickerContainer.innerHTML = ''; 
 
-        // Agrupación de datos (igual que antes)
         const series = {}; 
         const sorteosSet = new Set();
         data.forEach(r => {
@@ -638,7 +621,6 @@
         const colors = ['#00f2ff', '#ffd700', '#ff3b5c', '#8a2be2', '#00ff41', '#ff9f43', '#ffffff'];
         let cIdx = 0;
 
-        // Iterar series
         for (const [algo, points] of Object.entries(series)) {
             const color = colors[cIdx % colors.length];
             cIdx++;
@@ -652,33 +634,27 @@
                 borderWidth: 2, tension: 0.3, pointRadius: 3, spanGaps: true, order: 1 
             });
 
-            // Calcular tendencia y obtener pendiente
             const trendResult = calculateTrendLine(dataPoints);
             
             datasets.push({
                 label: `Tendencia ${algo.toUpperCase()}`,
-                data: trendResult.values, // Usamos .values aquí
+                data: trendResult.values,
                 borderColor: color, borderWidth: 1, borderDash: [5, 5], pointRadius: 0, 
                 fill: false, tension: 0, spanGaps: true, order: 2, hidden: false
             });
 
-            // --- LÓGICA DE COLORES PARA LA PENDIENTE ---
             const m = trendResult.slope;
-            let slopeColor = '#00f2ff'; // Azul por defecto (cero)
-            let icon = 'minus';         // Guion
+            let slopeColor = '#00f2ff';
+            let icon = 'minus';
 
-            // Usamos un umbral muy pequeño para el "cero" debido a los decimales
             if (m > 0.0001) {
-                slopeColor = '#00ff41'; // Verde (Positivo)
+                slopeColor = '#00ff41';
                 icon = 'trending-up';
             } else if (m < -0.0001) {
-                slopeColor = '#ff3b5c'; // Rojo (Negativo)
+                slopeColor = '#ff3b5c';
                 icon = 'trending-down';
-            } else {
-                 slopeColor = '#00f2ff'; // Azul (Neutro/Cero)
             }
 
-            // Inyectar HTML en la cabecera
             const badgeHtml = `
                 <div style="display:flex; align-items:center; gap:6px; background:rgba(255,255,255,0.05); padding:4px 10px; border-radius:6px; border:1px solid ${color}">
                     <span style="color:${color}; font-weight:bold;">${algo.toUpperCase()}</span>
@@ -692,7 +668,6 @@
             tickerContainer.insertAdjacentHTML('beforeend', badgeHtml);
         }
 
-        // Renderizar iconos de Lucide recién inyectados
         lucide.createIcons();
 
         CHARTS['trend'] = new Chart(ctx, { 
