@@ -2,12 +2,12 @@
   "algo_ranking": {
     "LOTO": {
       "MASTER_PREMIUM_v1": 0.0,
-      "consenso_meritocratico_v2": 5.45,
+      "consenso_meritocratico_v2": 5.43,
       "consenso_v1": 4.37,
       "delta_tactico_v1": 4.52,
       "forense_biometrico_v1": 4.08,
-      "gaussiano_tactico_v1": 4.54,
-      "markov_chain_v1": 4.8
+      "gaussiano_tactico_v1": 4.55,
+      "markov_chain_v1": 4.79
     },
     "LOTO3": {
       "consenso_meritocratico_v2": 19.93,
@@ -59,7 +59,7 @@
     }
   },
   "metadata": {
-    "updated_at": "2025-12-19 02:27:05",
+    "updated_at": "2025-12-19 02:47:34",
     "mode": "FULL_LOBOTOMY_V2",
     "casos_estudiados": 5099
   }
