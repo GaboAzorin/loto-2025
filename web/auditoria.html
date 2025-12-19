@@ -603,7 +603,7 @@
     }
 
     // --- FUNCIÓN DE GRÁFICO ACTUALIZADA ---
-    function renderAlgoTrendChart(data) {
+function renderAlgoTrendChart(data) {
         const ctx = document.getElementById('algoTrendChart').getContext('2d');
         if (CHARTS['trend']) CHARTS['trend'].destroy();
 
@@ -625,7 +625,7 @@
 
         const labels = Array.from(sorteosSet).sort((a,b)=>a-b);
         const datasets = [];
-        const colors = ['#00f2ff', '#ffd700', '#ff3b5c', '#8a2be2', '#00ff41', '#ff9f43', '#ffffff']; // Añadí más colores por si acaso
+        const colors = ['#00f2ff', '#ffd700', '#ff3b5c', '#8a2be2', '#00ff41', '#ff9f43', '#ffffff'];
         
         let cIdx = 0;
 
@@ -634,7 +634,7 @@
             const color = colors[cIdx % colors.length];
             cIdx++;
 
-            // Datos reales (puntos sólidos)
+            // A. Datos reales (Línea sólida)
             const dataPoints = labels.map(lbl => points[lbl] ? (points[lbl].sum/points[lbl].cnt).toFixed(2) : null);
             
             datasets.push({ 
@@ -646,24 +646,24 @@
                 tension: 0.3, 
                 pointRadius: 3, 
                 spanGaps: true,
-                order: 1 // Capa superior
+                order: 1 
             });
 
-            // Datos de Tendencia (Línea punteada)
+            // B. Datos de Tendencia (Línea punteada)
             const trendPoints = calculateTrendLine(dataPoints);
             
             datasets.push({
                 label: `Tendencia ${algo.toUpperCase()}`,
                 data: trendPoints,
-                borderColor: color, // Mismo color
-                borderWidth: 1,     // Más fina
-                borderDash: [5, 5], // Punteada
+                borderColor: color, 
+                borderWidth: 1,     // Línea fina
+                borderDash: [5, 5], // Efecto punteado
                 pointRadius: 0,     // Sin puntos
                 fill: false,
-                tension: 0,         // Línea recta estricta
+                tension: 0,         // Recta perfecta
                 spanGaps: true,
-                order: 2,            // Capa inferior
-                hidden: true         // Opcional: inicia oculto si quieres limpiar la vista, o quita esta línea
+                order: 2,           
+                hidden: false       // <--- AQUÍ ESTABA EL ERROR (antes true)
             });
         }
 
@@ -677,17 +677,19 @@
                 plugins: {
                     legend: {
                         labels: {
-                            // Filtramos la leyenda para que no se duplique visualmente (opcional)
+                            color: '#a0aec0',
+                            font: { family: "'JetBrains Mono', monospace" },
+                            // He quitado el filtro para que veas que la serie existe en la leyenda
+                            // Si luego quieres ocultar el texto en la leyenda, descomenta esto:
+                            /*
                             filter: function(item, chart) {
                                 return !item.text.includes('Tendencia'); 
-                            },
-                            color: '#a0aec0',
-                            font: { family: "'JetBrains Mono', monospace" }
+                            }
+                            */
                         }
                     },
                     tooltip: {
                         filter: function(tooltipItem) {
-                            // Solo mostrar tooltip de los datos reales, no de la tendencia matemática
                             return !tooltipItem.dataset.label.includes('Tendencia');
                         }
                     }
@@ -699,7 +701,7 @@
             } 
         });
     }
-    
+
     function renderHitsChart(data, game) {
         const ctx = document.getElementById('hitsDistChart').getContext('2d');
         if(CHARTS['hits']) CHARTS['hits'].destroy();
