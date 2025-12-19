@@ -2,7 +2,7 @@
   "algo_ranking": {
     "LOTO": {
       "MASTER_PREMIUM_v1": 0.0,
-      "consenso_meritocratico_v2": 5.42,
+      "consenso_meritocratico_v2": 5.41,
       "consenso_v1": 4.37,
       "delta_tactico_v1": 4.52,
       "forense_biometrico_v1": 4.08,
@@ -59,7 +59,7 @@
     }
   },
   "metadata": {
-    "updated_at": "2025-12-19 03:38:12",
+    "updated_at": "2025-12-19 03:59:54",
     "mode": "FULL_LOBOTOMY_V2",
     "casos_estudiados": 5099
   }
