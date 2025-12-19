@@ -38,12 +38,58 @@
       padding-bottom: 50px;
     }
 
-    .container { max-width: 1400px; margin: 0 auto; padding: 2rem 1.5rem; }
+    .container { 
+        max-width: 1400px; 
+        margin: 0 auto; 
+        padding: 2rem 1.5rem; 
+    }
+
+    /* =========================================
+       HEADER & NAV
+       ========================================= */
+    header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .brand { 
+        font-family: 'JetBrains Mono', monospace; 
+        font-weight: 900; 
+        font-size: 1.5rem; 
+        color: white; 
+        letter-spacing: -1px; 
+    }
+
+    .brand span { color: var(--gold); }
+
+    .nav-link { 
+        color: var(--text); 
+        text-decoration: none; 
+        border: 1px solid var(--border); 
+        padding: 8px 15px; 
+        border-radius: 6px; 
+        transition: all 0.2s; 
+        background: var(--card);
+        font-size: 0.9rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-left: 10px;
+    }
+    .nav-link:hover { 
+        background: var(--border); 
+        color: white;
+        border-color: var(--neon-cyan);
+    }
 
     /* =========================================
        COMPONENTE: TEMPORIZADOR (TIMER)
        ========================================= */
-    .timer { display: flex; justify-content: center; gap: 1rem; margin: 2rem 0; flex-wrap: wrap; }
+    .timer { display: flex; justify-content: center; gap: 1rem; margin: 0 0 3rem 0; flex-wrap: wrap; }
     .time-box {
       background: var(--card); border: 1px solid var(--border);
       border-radius: 1rem; padding: 1rem 1.5rem; text-align: center; min-width: 90px;
@@ -52,36 +98,63 @@
     .time-label { font-size: 0.7rem; color: var(--text-muted); letter-spacing: 1px; margin-top: 5px; }
 
     /* =========================================
-       COMPONENTE: GENERADOR CUÁNTICO
+       LAYOUT GENERADORES (GRID SYSTEM)
        ========================================= */
+    .generators-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 2rem;
+        margin-bottom: 3rem;
+    }
+
+    /* En pantallas grandes, poner uno al lado del otro */
+    @media (min-width: 1024px) {
+        .generators-grid {
+            grid-template-columns: 1fr 1fr;
+            align-items: start;
+        }
+    }
+
     .generator-card {
         background: linear-gradient(145deg, rgba(20,30,50,0.9), rgba(10,15,25,0.95));
         border: 1px solid var(--gold);
         border-radius: 1.5rem;
         padding: 2rem;
-        margin: 0 auto 3rem;
-        max-width: 800px;
+        width: 100%;
         text-align: center;
         box-shadow: 0 0 30px rgba(255, 215, 0, 0.1);
         position: relative;
         overflow: hidden;
+        height: 100%; /* Para que tengan la misma altura en grid */
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
     }
+
+    /* Estilo específico para la tarjeta Forense (azul) */
+    .generator-card.forensic {
+        border-color: var(--neon-cyan);
+        background: linear-gradient(145deg, rgba(5,20,30,0.95), rgba(0,10,20,0.98));
+    }
+
     .gen-btn {
         background: var(--gold);
         color: black;
         font-family: 'JetBrains Mono', monospace;
         font-weight: 900;
-        font-size: 1.1rem;
-        padding: 1rem 2rem;
+        font-size: 1rem; /* Ajustado levemente */
+        padding: 1rem 1.5rem;
         border: none;
         border-radius: 99px;
         cursor: pointer;
         display: inline-flex;
         align-items: center;
+        justify-content: center;
         gap: 10px;
         transition: all 0.3s;
         text-transform: uppercase;
         box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+        margin: 0 auto;
     }
     .gen-btn:hover { transform: scale(1.05); box-shadow: 0 0 40px rgba(255, 215, 0, 0.6); }
     .gen-btn:active { transform: scale(0.95); }
@@ -89,12 +162,40 @@
     .gen-result { margin-top: 2rem; min-height: 100px; display: none; opacity: 0; transition: opacity 0.5s; }
     .gen-balls { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin-bottom: 1.5rem; }
     .gen-ball {
-        width: 55px; height: 55px; border-radius: 50%;
+        width: 50px; height: 50px; border-radius: 50%;
         background: radial-gradient(circle at 30% 30%, #ffd700, #bfa100);
-        color: black; font-weight: 900; font-size: 1.3rem;
+        color: black; font-weight: 900; font-size: 1.2rem;
         display: flex; align-items: center; justify-content: center;
         box-shadow: 0 5px 15px rgba(0,0,0,0.5);
         border: 2px solid white;
+    }
+
+    /* Botones de modalidades forenses */
+    .forensic-modes {
+        display: flex; 
+        flex-wrap: wrap; 
+        justify-content: center; 
+        gap: 8px; 
+        margin-bottom: 1.5rem;
+    }
+    .btn-mode {
+        background: transparent; 
+        border: 1px solid var(--neon-cyan); 
+        color: var(--neon-cyan); 
+        font-size: 0.8rem; 
+        padding: 0.6rem 1rem; 
+        box-shadow: none;
+        border-radius: 99px;
+        cursor: pointer;
+        font-family: 'JetBrains Mono', monospace;
+        font-weight: 700;
+        transition: all 0.2s;
+        text-transform: uppercase;
+    }
+    .btn-mode.active, .btn-mode:hover {
+        background: var(--neon-cyan);
+        color: black;
+        box-shadow: 0 0 15px rgba(0, 242, 255, 0.3);
     }
 
     /* =========================================
@@ -102,8 +203,8 @@
        ========================================= */
     .telemetry-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-        gap: 10px;
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+        gap: 8px;
         margin-bottom: 1.5rem;
         padding: 1rem;
         background: rgba(0,0,0,0.2);
@@ -111,46 +212,26 @@
         border: 1px solid rgba(255, 215, 0, 0.1);
     }
     
-    /* Estilo base del item */
     .tele-item {
         display: flex; flex-direction: column; align-items: center; justify-content: center;
         padding: 0.5rem; border-radius: 8px; background: rgba(255,255,255,0.03);
-        position: relative; /* Necesario para el tooltip */
-        cursor: help;       /* Cursor de ayuda */
-        transition: background 0.2s;
+        position: relative; cursor: help; transition: background 0.2s;
     }
     .tele-item:hover { background: rgba(255,255,255,0.08); }
 
-    /* TOOLTIP CSS (NUEVO) */
     .tele-item::after {
-        content: attr(data-title); /* Toma el texto del atributo data-title */
-        position: absolute;
-        bottom: 110%; /* Arriba del elemento */
-        left: 50%;
+        content: attr(data-title);
+        position: absolute; bottom: 110%; left: 50%;
         transform: translateX(-50%) translateY(10px);
-        width: 220px;
-        background: rgba(5, 15, 25, 0.98);
-        border: 1px solid var(--neon-cyan);
-        color: #fff;
-        text-align: center;
-        padding: 10px;
-        border-radius: 8px;
-        font-size: 0.75rem;
-        font-weight: normal;
+        width: 220px; background: rgba(5, 15, 25, 0.98);
+        border: 1px solid var(--neon-cyan); color: #fff;
+        text-align: center; padding: 10px; border-radius: 8px;
+        font-size: 0.75rem; font-weight: normal;
         box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-        opacity: 0;
-        visibility: hidden;
-        transition: all 0.2s ease-in-out;
-        pointer-events: none; /* Para que no interfiera con el mouse */
-        z-index: 100;
-        line-height: 1.3;
+        opacity: 0; visibility: hidden; transition: all 0.2s ease-in-out;
+        pointer-events: none; z-index: 100; line-height: 1.3;
     }
-
-    .tele-item:hover::after {
-        opacity: 1;
-        visibility: visible;
-        transform: translateX(-50%) translateY(0);
-    }
+    .tele-item:hover::after { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0); }
 
     .tele-label { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
     .tele-val { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 0.9rem; color: white; display: flex; align-items: center; gap: 5px; }
@@ -158,6 +239,23 @@
     .metric-good { color: var(--matrix); }
     .metric-warn { color: #fbbf24; }
     .metric-bad { color: var(--danger); }
+
+    /* =========================================
+       SEARCH
+       ========================================= */
+    .search-wrapper { max-width: 600px; margin: 0 auto 4rem; text-align: center; }
+    #search { 
+        width: 100%; 
+        padding: 1rem 1.5rem; 
+        border-radius: 99px; 
+        background: var(--card); 
+        border: 1px solid var(--border); 
+        color: white; 
+        font-size: 1.1rem; 
+        text-align: center; 
+        transition: all 0.3s;
+    }
+    #search:focus { outline: none; border-color: var(--neon-cyan); box-shadow: 0 0 20px rgba(0, 242, 255, 0.1); }
 
     /* =========================================
        DASHBOARD HERO & SWIPER
@@ -208,7 +306,7 @@
         font-size: 1.1rem; color: var(--neon-cyan);
     }
     .prize-grid {
-        display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem;
+        display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1rem;
     }
     .prize-card {
         background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border);
@@ -238,10 +336,6 @@
     td { padding: 1rem; border-bottom: 1px solid var(--border); font-size: 0.95rem; }
     tr:hover { background: rgba(255,255,255,0.03); }
     
-    .search-wrapper { max-width: 500px; margin: 0 auto 3rem; text-align: center; }
-    #search { width: 100%; padding: 1rem 1.5rem; border-radius: 99px; background: var(--card); border: 1px solid var(--border); color: white; font-size: 1.1rem; text-align: center; }
-    #search:focus { outline: none; border-color: var(--neon-cyan); }
-    
     .table-controls { display: flex; justify-content: flex-end; align-items: center; margin-bottom: 1rem; padding: 0 0.5rem; }
     .toggle-switch { position: relative; display: flex; align-items: center; gap: 10px; cursor: pointer; user-select: none; }
     .toggle-switch input { opacity: 0; width: 0; height: 0; position: absolute; }
@@ -253,46 +347,6 @@
     input:checked ~ .label-text { color: #00ff9d; font-weight: bold; }
 
     .status-bar { text-align: center; margin-top: 2rem; color: var(--text-muted); font-size: 0.8rem; }
-
-    /* --- NUEVOS ESTILOS DE NAVEGACIÓN (Pegar en <style>) --- */
-    header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 2rem;
-        padding-bottom: 1rem;
-        border-bottom: 1px solid var(--border);
-    }
-
-    .brand { 
-        font-family: 'JetBrains Mono', monospace; 
-        font-weight: 900; 
-        font-size: 1.5rem; 
-        color: white; 
-        letter-spacing: -1px; 
-    }
-
-    .brand span { color: var(--gold); }
-
-    .nav-link { 
-        color: var(--text); 
-        text-decoration: none; 
-        border: 1px solid var(--border); 
-        padding: 8px 15px; 
-        border-radius: 6px; 
-        transition: all 0.2s; 
-        background: var(--card);
-        font-size: 0.9rem;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        margin-left: 10px;
-    }
-    .nav-link:hover { 
-        background: var(--border); 
-        color: white;
-        border-color: var(--neon-cyan);
-    }
   </style>
 </head>
 <body>
@@ -310,7 +364,6 @@
             </a>
         </div>
     </header>
-    <div class="timer">
 
     <div class="timer">
       <div class="time-box"><div class="time-num" id="days">00</div><div class="time-label">DÍAS</div></div>
@@ -319,45 +372,48 @@
       <div class="time-box"><div class="time-num" id="secs">00</div><div class="time-label">SEG</div></div>
     </div>
 
-    <div class="generator-card">
-        <h3 style="color:white; margin-bottom:1.5rem; text-transform:uppercase; letter-spacing:2px; font-size:0.9rem;">
-            <i data-lucide="cpu" style="width:16px; vertical-align:middle; margin-right:5px; color:var(--gold);"></i>
-            Algoritmo Predictivo Gaussiano (Peso Mecánico)
-        </h3>
+    <div class="generators-grid">
         
-        <button class="gen-btn" onclick="generateLuckyNumbers()">
-            <i data-lucide="sparkles"></i> Generar Jugada Maestra
-        </button>
+        <div class="generator-card">
+            <h3 style="color:white; margin-bottom:1.5rem; text-transform:uppercase; letter-spacing:2px; font-size:0.9rem;">
+                <i data-lucide="cpu" style="width:16px; vertical-align:middle; margin-right:5px; color:var(--gold);"></i>
+                Algoritmo Gaussiano
+            </h3>
+            
+            <button class="gen-btn" onclick="generateLuckyNumbers()">
+                <i data-lucide="sparkles"></i> Generar Jugada
+            </button>
 
-        <div id="gen-output" class="gen-result">
-            <div class="gen-balls" id="gen-balls-container"></div>
-            <div id="telemetry-panel" class="telemetry-grid"></div>
-            <div class="gen-stats" id="gen-stats-text"></div>
-        </div>
-    </div>
-
-    <div class="generator-card" style="border-color: var(--neon-cyan); background: linear-gradient(145deg, rgba(5,20,30,0.95), rgba(0,10,20,0.98)); margin-top: 0;">
-        <h3 style="color:var(--neon-cyan); margin-bottom:1.5rem; text-transform:uppercase; letter-spacing:2px; font-size:0.9rem;">
-            <i data-lucide="scan-eye" style="width:16px; vertical-align:middle; margin-right:5px;"></i>
-            Análisis Forense Biométrico (Peso Real)
-        </h3>
-        <p style="color:var(--text-muted); font-size:0.8rem; margin-bottom:1.5rem;">
-            Basado en <span id="forensic-last-update" style="color:var(--gold); font-weight:bold;">cargando datos...</span>
-        </p>
-
-        <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:10px; margin-bottom:1.5rem;">
-            <button onclick="generarPrediccionForense('LOTO')" class="gen-btn" style="background:var(--neon-cyan); color:black; font-size:0.9rem; padding:0.8rem 1.5rem;">LOTO</button>
-            <button onclick="generarPrediccionForense('RECARGADO')" class="gen-btn" style="background:transparent; border:1px solid var(--neon-cyan); color:var(--neon-cyan); font-size:0.9rem; padding:0.8rem 1.5rem; box-shadow:none;">Recargado</button>
-            <button onclick="generarPrediccionForense('REVANCHA')" class="gen-btn" style="background:transparent; border:1px solid var(--neon-cyan); color:var(--neon-cyan); font-size:0.9rem; padding:0.8rem 1.5rem; box-shadow:none;">Revancha</button>
-            <button onclick="generarPrediccionForense('DESQUITE')" class="gen-btn" style="background:transparent; border:1px solid var(--neon-cyan); color:var(--neon-cyan); font-size:0.9rem; padding:0.8rem 1.5rem; box-shadow:none;">Desquite</button>
-            <button onclick="generarPrediccionForense('JUBILAZO_1')" class="gen-btn" style="background:transparent; border:1px solid var(--neon-cyan); color:var(--neon-cyan); font-size:0.9rem; padding:0.8rem 1.5rem; box-shadow:none;">Jubilazo</button>
+            <div id="gen-output" class="gen-result">
+                <div class="gen-balls" id="gen-balls-container"></div>
+                <div id="telemetry-panel" class="telemetry-grid"></div>
+                <div class="gen-stats" id="gen-stats-text"></div>
+            </div>
         </div>
 
-        <div id="forensic-output" style="min-height:0; opacity:1; transition:all 0.3s;">
-            <div style="color:var(--text-muted); font-style:italic; font-size:0.9rem;">Selecciona una modalidad arriba para escanear la física de la tómbola...</div>
+        <div class="generator-card forensic">
+            <h3 style="color:var(--neon-cyan); margin-bottom:1.5rem; text-transform:uppercase; letter-spacing:2px; font-size:0.9rem;">
+                <i data-lucide="scan-eye" style="width:16px; vertical-align:middle; margin-right:5px;"></i>
+                Análisis Forense Real
+            </h3>
+            <p style="color:var(--text-muted); font-size:0.8rem; margin-bottom:1.5rem;">
+                Basado en <span id="forensic-last-update" style="color:var(--gold); font-weight:bold;">cargando datos...</span>
+            </p>
+
+            <div class="forensic-modes">
+                <button onclick="generarPrediccionForense('LOTO')" class="btn-mode active">LOTO</button>
+                <button onclick="generarPrediccionForense('RECARGADO')" class="btn-mode">Recargado</button>
+                <button onclick="generarPrediccionForense('REVANCHA')" class="btn-mode">Revancha</button>
+                <button onclick="generarPrediccionForense('DESQUITE')" class="btn-mode">Desquite</button>
+                <button onclick="generarPrediccionForense('JUBILAZO_1')" class="btn-mode">Jubilazo</button>
+            </div>
+
+            <div id="forensic-output" style="min-height:0; opacity:1; transition:all 0.3s;">
+                <div style="color:var(--text-muted); font-style:italic; font-size:0.9rem;">Selecciona una modalidad arriba para escanear la física de la tómbola...</div>
+            </div>
         </div>
-    </div>
-    <div class="search-wrapper">
+
+    </div> <div class="search-wrapper">
       <input type="number" id="search" placeholder="🔍 Buscar sorteo (ej: 5352)..." />
     </div>
 
