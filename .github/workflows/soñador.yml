@@ -55,22 +55,17 @@ jobs:
       run: |
         git config --global user.name 'LotoAI Bot'
         git config --global user.email 'bot@lotoai.com'
-        
-        # --- SOLUCIÓN ERROR 408: AUMENTAR BUFFER ---
-        # Aumentamos el buffer a 500MB para que pasen los cerebros (.pkl)
         git config --global http.postBuffer 524288000
-        # -------------------------------------------
+        
+        # 1. PRIMERO Sincronizamos (Pull) para traer cambios remotos
+        git pull origin main --rebase || echo "Nada que rebasar"
 
-        # Guardar CSVs y JSONs
+        # 2. LUEGO Agregamos los archivos (Add)
         git add data/LOTO_SIMULACIONES.csv || true
         git add data/loto_biometrics.json || true
         git add data/loto_genome.json || true
-        
-        # Guardamos los cerebros entrenados (.pkl)
         git add data/*.pkl || true
         
-        # Hacemos pull rebase antes de commit para evitar conflictos
-        git pull origin main --rebase || echo "Nada que rebasar"
-        
+        # 3. FINALMENTE Comiteamos y Subimos (Commit & Push)
         git commit -m "🧠 Ciclo LotoAI: Auditoría > Aprendizaje > Predicción" || echo "Sin cambios estructurales"
         git push origin main

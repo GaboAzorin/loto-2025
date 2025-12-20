@@ -204,22 +204,28 @@ class OraculoNeural:
 
         samples = len(X)
         
-        # --- HIPERPARÁMETROS ADAPTATIVOS ---
-        # Si hay pocos datos, somos conservadores. Si hay muchos, agresivos.
+        # --- HIPERPARÁMETROS ADAPTATIVOS (OPTIMIZADOS PARA GITHUB < 100MB) ---
+        # Hemos reducido n_estimators y max_depth para evitar modelos gigantes de >100MB.
+        # Esto también ayuda a reducir el Overfitting (memorización de ruido).
+        
         if samples < 2000: 
-            depth, est = 8, 150
+            # Modo Loto (Pocos datos)
+            depth, est = 6, 100
             print(f"   🛡️ Modo Táctico ({samples} muestras)")
         elif samples < 8000:
-            depth, est = 12, 200
+            # Modo Loto4 (Datos medios)
+            depth, est = 10, 150
             print(f"   ⚖️ Modo Estratégico ({samples} muestras)")
         else: 
-            depth, est = 18, 300
-            print(f"   🚀 Modo Profundo ({samples} muestras)")
+            # Modo Racha/Loto3 (Big Data)
+            # ANTES: depth 18, est 300 (Generaba 140MB)
+            # AHORA: depth 14, est 150 (Generará ~40-60MB)
+            depth, est = 14, 150 
+            print(f"   🚀 Modo Profundo Optimizado ({samples} muestras)")
 
         rf = RandomForestClassifier(
             n_estimators=est,
             max_depth=depth,
-            # Balancear clases solo en SET (muchos ceros)
             class_weight='balanced' if self.config['type'] == 'SET' else None,
             n_jobs=-1,
             random_state=42
@@ -227,8 +233,11 @@ class OraculoNeural:
         
         self.model = MultiOutputClassifier(rf)
         self.model.fit(X, y)
-        joblib.dump(self.model, self.model_file, compress=3)
-        print("✅ Modelo entrenado y guardado.")
+        
+        # COMPRESIÓN MÁXIMA (Nivel 9)
+        # Cambiamos de 3 a 9 para asegurar que entre en GitHub
+        joblib.dump(self.model, self.model_file, compress=9)
+        print("✅ Modelo entrenado, comprimido y guardado.")
 
     def predecir(self, fecha_objetivo=None):
         """
