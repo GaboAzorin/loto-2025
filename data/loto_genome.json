@@ -10,12 +10,12 @@
       "markov_chain_v1": 4.79
     },
     "LOTO3": {
-      "consenso_meritocratico_v2": 20.15,
-      "forense_biometrico_v1": 16.52,
+      "consenso_meritocratico_v2": 20.21,
+      "forense_biometrico_v1": 16.5,
       "oraculo_neural_v3": 22.28
     },
     "LOTO4": {
-      "consenso_meritocratico_v2": 5.75,
+      "consenso_meritocratico_v2": 5.76,
       "forense_biometrico_v1": 6.3,
       "oraculo_neural_v3": 2.96
     },
@@ -61,7 +61,7 @@
     }
   },
   "metadata": {
-    "updated_at": "2025-12-20 14:41:13",
+    "updated_at": "2025-12-20 14:53:42",
     "mode": "FULL_LOBOTOMY_V2",
     "casos_estudiados": 5510
   }
