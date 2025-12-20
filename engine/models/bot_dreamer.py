@@ -267,6 +267,47 @@ def soñar():
             except Exception as e:
                 print(f"   ⚠️ Error en {nombre}: {e}")
 
+# --- BLOQUE NUEVO: ORÁCULO NEURAL (MACHINE LEARNING) ---
+        # Este bloque corre fuera del bucle estándar porque usa una lógica distinta (predecir vs generar)
+        if OraculoNeural:
+            try:
+                # 1. Instanciar el cerebro para este juego
+                oracle = OraculoNeural(game_id)
+                
+                # 2. Definir fecha objetivo (usamos 'ahora' ajustado al timezone para dar contexto de día)
+                fecha_target = datetime.now(TZ_CHILE)
+                
+                # 3. Obtener predicción pura (Ya viene ordenada y limpia desde la clase)
+                pred_ml = oracle.predecir(fecha_objetivo=fecha_target)
+                
+                # 4. Validar formato (que tenga la cantidad correcta de bolas)
+                if pred_ml and len(pred_ml) == forense.rules['n']:
+                    
+                    # 4.1 Guardar la jugada individual del ML
+                    nuevas_filas.append({
+                        'id': base_id + 888 + (len(nuevas_filas)*10), # ID distintivo
+                        'fecha_generacion': ahora.strftime('%Y-%m-%d %H:%M:%S'),
+                        'juego': game_id,
+                        'numeros': str(sorted(pred_ml)),
+                        'sorteo_objetivo': objetivo,
+                        'estado': 'PENDIENTE',
+                        'aciertos': 0, 'score_afinidad': 0.0,
+                        'hora_dia': hora_actual,
+                        'algoritmo': 'oraculo_neural_v3'
+                    })
+                    
+                    # 4.2 ¡VOTAR EN EL CONSENSO! 
+                    # Esto es vital: El ML aporta sus votos a la "Bolsa de Consenso"
+                    # Le damos un peso fijo alto (2.0) o dinámico si quisieras
+                    peso_ml = 2.0 
+                    for num in pred_ml:
+                         bolsa_pesos_consenso[num] = bolsa_pesos_consenso.get(num, 0) + peso_ml
+                         
+                    print(f"   🧠 ORÁCULO ML: {pred_ml}")
+            except Exception as e:
+                print(f"   ⚠️ Fallo en ML: {e}")
+        # -------------------------------------------------------
+
         # F. Generar Consenso Meritocrático
         try:
             if bolsa_pesos_consenso:
