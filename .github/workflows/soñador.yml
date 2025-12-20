@@ -27,7 +27,8 @@ jobs:
 
     - name: Install dependencies
       run: |
-        pip install pandas numpy pytz
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
 
     # --- FASE 1: AUDITORÍA (El Pasado) ---
     # El Juez revisa si las predicciones pendientes coincidieron con resultados nuevos
@@ -46,6 +47,7 @@ jobs:
 
     # --- FASE 4: PREDICCIÓN (El Futuro) ---
     # El Bot sueña, ahora con acceso a la inteligencia generada en los pasos anteriores
+    # Aquí se entrenará el Oráculo Neural si no encuentra el modelo guardado
     - name: 4. Ejecutar Bot Dreamer
       run: python engine/models/bot_dreamer.py
 
