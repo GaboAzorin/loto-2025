@@ -227,7 +227,7 @@ class OraculoNeural:
         
         self.model = MultiOutputClassifier(rf)
         self.model.fit(X, y)
-        joblib.dump(self.model, self.model_file)
+        joblib.dump(self.model, self.model_file, compress=3)
         print("✅ Modelo entrenado y guardado.")
 
     def predecir(self, fecha_objetivo=None):
