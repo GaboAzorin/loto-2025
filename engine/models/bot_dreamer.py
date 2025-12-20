@@ -7,6 +7,12 @@ import sys
 import numpy as np
 from datetime import datetime, timedelta
 
+try:
+    from oraculo_neural import OraculoNeural
+except ImportError:
+    OraculoNeural = None
+    print("⚠️ Módulo OraculoNeural no disponible (¿Falta sklearn?).")
+
 # Aseguramos que Python encuentre el módulo analizador_forense
 current_dir = os.path.dirname(os.path.abspath(__file__))
 if current_dir not in sys.path: sys.path.append(current_dir)
