@@ -11,14 +11,18 @@ permissions:
 jobs:
   dream:
     runs-on: ubuntu-latest
-    timeout-minutes: 15 # Aumentamos un poco por si el proceso de aprendizaje toma tiempo
+    timeout-minutes: 15
 
     steps:
     - name: Checkout repo
       uses: actions/checkout@v3
+      with:
+        ref: main
 
-    - name: Sincronizar antes de empezar
-      run: git pull origin main || echo "Nada que pullear"
+    - name: Sincronizar estado
+      run: |
+        git config pull.rebase false
+        git pull origin main || echo "Repositorio ya actualizado"
 
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -31,23 +35,18 @@ jobs:
         pip install -r requirements.txt
 
     # --- FASE 1: AUDITORÍA (El Pasado) ---
-    # El Juez revisa si las predicciones pendientes coincidieron con resultados nuevos
     - name: 1. Ejecutar Juez Implacable
       run: python engine/models/juez_implacable.py
 
     # --- FASE 2: APRENDIZAJE (La Retrospectiva) ---
-    # El Entrenador analiza las jugadas ganadoras detectadas por el Juez y genera el 'Genoma'
     - name: 2. Ejecutar Entrenador Cognitivo
       run: python engine/models/entrenador_cognitivo.py
 
     # --- FASE 3: BIOMETRÍA (El Presente) ---
-    # Actualiza las estadísticas duras (frecuencias, mapas de calor) en el JSON
     - name: 3. Actualizar Biometría
       run: python engine/models/generador_biometrico.py
 
     # --- FASE 4: PREDICCIÓN (El Futuro) ---
-    # El Bot sueña, ahora con acceso a la inteligencia generada en los pasos anteriores
-    # Aquí se entrenará el Oráculo Neural si no encuentra el modelo guardado
     - name: 4. Ejecutar Bot Dreamer
       run: python engine/models/bot_dreamer.py
 
@@ -57,14 +56,15 @@ jobs:
         git config --global user.name 'LotoAI Bot'
         git config --global user.email 'bot@lotoai.com'
         
-        # 1. Guardamos las nuevas simulaciones
-        git add data/LOTO_SIMULACIONES.csv
+        # Guardar CSVs y JSONs
+        git add data/LOTO_SIMULACIONES.csv || true
+        git add data/loto_biometrics.json || true
+        git add data/loto_genome.json || true
         
-        # 2. Guardamos la inteligencia generada (Biometría y Genoma)
-        # Esto es vital para que el laboratorio visual funcione
-        git add data/loto_biometrics.json
-        git add data/loto_genome.json
+        # --- ESTO ES LO IMPORTANTE NUEVO ---
+        # Guardamos los cerebros entrenados (.pkl) para que el bot sea más rápido la próxima vez
+        git add data/*.pkl || true
+        # -----------------------------------
         
-        # Commit y Push seguro
         git commit -m "🧠 Ciclo LotoAI: Auditoría > Aprendizaje > Predicción" || echo "Sin cambios estructurales"
-        git push
+        git push origin main
