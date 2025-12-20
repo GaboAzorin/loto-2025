@@ -249,6 +249,7 @@ def soñar():
                     'hora_dia': hora_actual,
                     'algoritmo': f"{nombre}_v1"
                 })
+                print(f"   🔹 {nombre}: {pred}")
                 
                 # E. Voto para el Consenso (Ponderado por Ranking Local)
                 key_algo = nombre.split('_')[0]
