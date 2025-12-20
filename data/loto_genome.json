@@ -11,11 +11,11 @@
     },
     "LOTO3": {
       "consenso_meritocratico_v2": 19.79,
-      "forense_biometrico_v1": 16.62
+      "forense_biometrico_v1": 16.61
     },
     "LOTO4": {
       "consenso_meritocratico_v2": 5.71,
-      "forense_biometrico_v1": 6.32
+      "forense_biometrico_v1": 6.31
     },
     "RACHA": {
       "consenso_meritocratico_v2": 16.21,
@@ -59,7 +59,7 @@
     }
   },
   "metadata": {
-    "updated_at": "2025-12-20 11:22:20",
+    "updated_at": "2025-12-20 11:43:00",
     "mode": "FULL_LOBOTOMY_V2",
     "casos_estudiados": 5410
   }
