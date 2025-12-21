@@ -11,11 +11,14 @@ sys.path.append(os.path.join(current_dir, '..', 'models'))
 try:
     import juez_implacable
     import entrenador_cognitivo
+    # Importamos el Oráculo
+    from oraculo_neural import OraculoNeural
 except ImportError:
     # Fallback por si se ejecuta desde otra ruta
     sys.path.append(os.path.join(current_dir, '..', '..', 'engine', 'models'))
     import juez_implacable
     import entrenador_cognitivo
+    from oraculo_neural import OraculoNeural
 
 # --- CONFIGURACIÓN ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -69,7 +72,7 @@ def obtener_punto_partida_inteligente(juego):
         return 0
 
 def reconstruir_linea_tiempo():
-    print("⏳ INICIANDO RECONSTRUCCIÓN INTELIGENTE (WARP JUMP)...")
+    print("⏳ INICIANDO RECONSTRUCCIÓN EXHAUSTIVA (MODO HOMOLOGACIÓN TOTAL)...")
     
     for juego, archivo in JUEGOS.items():
         path = os.path.join(DATA_DIR, archivo)
@@ -96,28 +99,34 @@ def reconstruir_linea_tiempo():
         nuevos = [s for s in todos_sorteos if s > punto_corte]
         
         if not nuevos:
-            print(f"✅ {juego}: Todo al día (Último procesado: {ultimo_procesado})")
+            # print(f"✅ {juego}: Todo al día.")
             continue
             
-        print(f"\n🚀 {juego}: Saltando historia vacía...")
-        print(f"   📅 Inicio detectado en simulaciones: #{inicio_simulaciones}")
-        print(f"   🌀 Procesando {len(nuevos)} sorteos relevantes ({min(nuevos)} -> {max(nuevos)})")
+        print(f"\n🚀 {juego}: Detectados {len(nuevos)} sorteos nuevos.")
+        print(f"   📅 Sincronizando desde sorteo #{min(nuevos)}...")
         
+        # Instanciamos el oráculo para este juego
+        oraculo = OraculoNeural(juego)
+
         # 4. BUCLE DE VIAJE EN EL TIEMPO
         for sorteo_actual in nuevos:
-            print(f"   >>> Procesando Sorteo {sorteo_actual}...")
+            print(f"   >>> Procesando Sorteo #{sorteo_actual}...")
             
-            # A. FASE JUEZ
+            # A. FASE JUEZ (Actualiza estados de apuestas pasadas)
             juez_implacable.juzgar() 
             
-            # B. FASE ENTRENADOR
+            # B. FASE ENTRENADOR (Actualiza heurísticos, pares, sumas)
             entrenador_cognitivo.analizar_adn_ganador(juego_filtro=juego, sorteo_limite=sorteo_actual)
             
-            # Pausa técnica mínima para I/O
-            # (Reduje el sleep para que vaya más rápido aún)
+            # C. FASE ORÁCULO NEURAL (EL REQUERIMIENTO CLAVE)
+            # Re-entrenamos el modelo AHORA MISMO, con los datos disponibles hasta ESTE momento.
+            # Al usar sorteo_limite, el modelo "ignora" que existen sorteos futuros en el CSV.
+            oraculo.entrenar(sorteo_limite=sorteo_actual)
+            
+            # Pausa técnica mínima
             time.sleep(0.1)
             
-    print("\n✨ RECONSTRUCCIÓN FINALIZADA. El sistema está sincronizado.")
+    print("\n✨ RECONSTRUCCIÓN FINALIZADA. Todos los modelos están sincronizados al último sorteo.")
 
 if __name__ == "__main__":
     reconstruir_linea_tiempo()

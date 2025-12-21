@@ -188,13 +188,23 @@ class OraculoNeural:
                 
         return np.array(X), np.array(y), input_cols, target_cols
 
-    def entrenar(self):
-        print(f"🧠 ORÁCULO ({self.game_id}): Iniciando entrenamiento físico...")
+    # === CAMBIO ÚNICO: SOPORTE PARA SORTEO LÍMITE ===
+    def entrenar(self, sorteo_limite=None):
+        msg_extra = f" (Hasta sorteo #{sorteo_limite})" if sorteo_limite else ""
+        print(f"🧠 ORÁCULO ({self.game_id}): Iniciando entrenamiento físico...{msg_extra}")
+        
         if not os.path.exists(self.maestro_file):
             print(f"❌ Archivo no encontrado: {self.maestro_file}")
             return
 
         df = pd.read_csv(self.maestro_file)
+        
+        # --- FILTRO DE TIEMPO (CRUCIAL PARA TU REQUERIMIENTO) ---
+        if sorteo_limite is not None and 'sorteo' in df.columns:
+            # Simulamos que los datos futuros NO existen aún
+            df = df[df['sorteo'] <= int(sorteo_limite)]
+        # --------------------------------------------------------
+
         if len(df) < 50: return
 
         X, y, _, _ = self._preparar_dataset(df)
@@ -204,10 +214,7 @@ class OraculoNeural:
 
         samples = len(X)
         
-        # --- HIPERPARÁMETROS ADAPTATIVOS (OPTIMIZADOS PARA GITHUB < 100MB) ---
-        # Hemos reducido n_estimators y max_depth para evitar modelos gigantes de >100MB.
-        # Esto también ayuda a reducir el Overfitting (memorización de ruido).
-        
+        # --- HIPERPARÁMETROS ADAPTATIVOS ---
         if samples < 2000: 
             # Modo Loto (Pocos datos)
             depth, est = 6, 100
@@ -218,8 +225,6 @@ class OraculoNeural:
             print(f"   ⚖️ Modo Estratégico ({samples} muestras)")
         else: 
             # Modo Racha/Loto3 (Big Data)
-            # ANTES: depth 18, est 300 (Generaba 140MB)
-            # AHORA: depth 14, est 150 (Generará ~40-60MB)
             depth, est = 14, 150 
             print(f"   🚀 Modo Profundo Optimizado ({samples} muestras)")
 
@@ -234,8 +239,7 @@ class OraculoNeural:
         self.model = MultiOutputClassifier(rf)
         self.model.fit(X, y)
         
-        # COMPRESIÓN MÁXIMA (Nivel 9)
-        # Cambiamos de 3 a 9 para asegurar que entre en GitHub
+        # Guardar (Esto sobrescribe el pkl en cada iteración, logrando el efecto deseado)
         joblib.dump(self.model, self.model_file, compress=9)
         print("✅ Modelo entrenado, comprimido y guardado.")
 
