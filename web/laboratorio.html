@@ -1292,32 +1292,63 @@
             });
             lucide.createIcons();
         }
-        function calculateAndRenderAggregate(data) {
+function calculateAndRenderAggregate(data) {
             const gameConfig = UNIVERSE_CONFIG[CURRENT_UNIVERSE] || UNIVERSE_CONFIG['LOTO'];
             const thead = document.getElementById('agg-head');
-            let headerHTML = `<tr><th class="sortable-header" onclick="sortAggregate('target')">Sorteo</th><th class="sortable-header" onclick="sortAggregate('count')" style="text-align:center;">Cant.</th><th style="min-width:200px;">Sorteo Real (Aciertos Globales)</th><th>Mejor Predicción</th><th class="sortable-header" onclick="sortAggregate('avgTotal')" style="text-align:center;">Global</th>`;
-            gameConfig.algos.forEach(algo => { headerHTML += `<th style="text-align:center; color:${algo.color};">${algo.label}</th>`; });
+            
+            // 1. Modificar Encabezados para incluir Financieros
+            let headerHTML = `
+                <tr>
+                    <th class="sortable-header" onclick="sortAggregate('target')">Sorteo</th>
+                    <th class="sortable-header" onclick="sortAggregate('count')" style="text-align:center;">Cant.</th>
+                    <th style="text-align:right;">Inv. Hip.</th>
+                    <th style="text-align:right;">Gan. Hip.</th>
+                    <th style="min-width:200px;">Sorteo Real (Aciertos Globales)</th>
+                    <th>Mejor Predicción</th>
+                    <th class="sortable-header" onclick="sortAggregate('avgTotal')" style="text-align:center;">Global</th>`;
+            
+            gameConfig.algos.forEach(algo => { 
+                headerHTML += `<th style="text-align:center; color:${algo.color};">${algo.label}</th>`; 
+            });
+            
             gameConfig.hits.forEach(hits => {
                 let color = '#8b949e'; 
-                if(hits >= 6) color = '#ff00ff'; else if(hits >= 4) color = '#00f2ff'; else if(hits === 3 && CURRENT_UNIVERSE === 'LOTO3') color = '#ff00ff'; 
+                if(hits >= 6) color = '#ff00ff'; 
+                else if(hits >= 4) color = '#00f2ff'; 
+                else if(hits === 3 && CURRENT_UNIVERSE === 'LOTO3') color = '#ff00ff'; 
                 headerHTML += `<th style="text-align:center; color:${color};">${hits}A</th>`;
             });
             headerHTML += `</tr>`;
             thead.innerHTML = headerHTML;
+
+            // 2. Agrupación de Datos
             const groups = {};
             data.forEach(d => {
                 if (!groups[d.objetivo]) {
-                    groups[d.objetivo] = { target: parseInt(d.objetivo), count: 0, scores: [], algoScores: {}, bestRow: null, maxScore: -1, all_numbers: [], hitsCount: {} };
+                    groups[d.objetivo] = { 
+                        target: parseInt(d.objetivo), 
+                        count: 0, 
+                        scores: [], 
+                        algoScores: {}, 
+                        bestRow: null, 
+                        maxScore: -1, 
+                        all_numbers: [], 
+                        hitsCount: {},
+                        sims: [] // Guardamos las simulaciones para cálculo financiero
+                    };
                     gameConfig.algos.forEach(a => groups[d.objetivo].algoScores[a.key] = []);
                     gameConfig.hits.forEach(h => groups[d.objetivo].hitsCount[h] = 0);
                 }
                 const g = groups[d.objetivo];
                 g.count++;
+                g.sims.push(d); // Acumulamos simulaciones
+                
                 const nums = d.numeros.replace('[', '').replace(']', '').split(',').map(n=>parseInt(n.trim()));
                 g.all_numbers.push(...nums);
+                
                 if (d.estado === 'AUDITADO') {
                     g.scores.push(d.score);
-                    // --- CORRECCIÓN EN AGREGACIÓN PARA ORÁCULO ---
+                    // Lógica de agrupación de algoritmos (incluyendo Oráculo)
                     gameConfig.algos.forEach(a => { 
                         if(a.key === 'oraculo') {
                              if(d.algoritmo.includes('oraculo') || d.algoritmo.includes('rf')) g.algoScores[a.key].push(d.score); 
@@ -1329,15 +1360,48 @@
                     if (d.aciertos !== undefined && g.hitsCount[d.aciertos] !== undefined) { g.hitsCount[d.aciertos]++; }
                 }
             });
+
             const rows = Object.values(groups).sort((a, b) => b.target - a.target);
             const tbody = document.getElementById('aggregate-body');
             tbody.innerHTML = '';
+
+            // 3. Renderizado de Filas
             rows.forEach(g => {
                 const tr = document.createElement('tr');
                 const dateStr = MASTERS_DATES[CURRENT_UNIVERSE] ? MASTERS_DATES[CURRENT_UNIVERSE][g.target] : 'N/A';
                 const realNums = MASTERS[CURRENT_UNIVERSE] ? MASTERS[CURRENT_UNIVERSE][g.target] : [];
+                const comodin = MASTERS_COMODIN[CURRENT_UNIVERSE] ? MASTERS_COMODIN[CURRENT_UNIVERSE][g.target] : null;
+
+                // --- CÁLCULO FINANCIERO AGREGADO ---
+                const costPerSim = gameConfig.cost;
+                const inversion = g.count * costPerSim;
+                let ganancia = 0;
+
+                // Solo calculamos si hay números ganadores cargados
+                if (realNums && realNums.length > 0) {
+                    g.sims.forEach(s => {
+                        try {
+                            const myNums = JSON.parse(s.numeros);
+                            // Reutilizamos la función del motor financiero existente
+                            const res = calculateWinningsDetailed(CURRENT_UNIVERSE, myNums, realNums, comodin, g.target);
+                            ganancia += res.amount;
+                        } catch(e) {}
+                    });
+                }
+
+                // Formateo y Lógica de Color
+                const fmtMoney = (m) => "$" + m.toLocaleString('es-CL');
+                const colorGanancia = ganancia >= inversion ? 'var(--money)' : 'var(--loss)';
+                
+                // Si no hay sorteo real, mostramos guión gris. Si hay, mostramos monto coloreado.
+                const gananciaDisplay = (realNums && realNums.length > 0) 
+                    ? `<span style="color:${colorGanancia}; font-weight:bold;">${fmtMoney(ganancia)}</span>`
+                    : `<span style="color:var(--text-muted);">-</span>`;
+                // -----------------------------------
+
                 const counts = {};
                 g.all_numbers.forEach(n => { counts[n] = (counts[n] || 0) + 1; });
+                
                 let realHtml = '-';
                 if (realNums && realNums.length > 0) {
                     realHtml = realNums.map(n => {
@@ -1345,6 +1409,7 @@
                         return `<div style="display:inline-block; margin:1px; padding:2px 4px; background:rgba(46,160,67,0.15); border:1px solid #2ea043; border-radius:4px; font-size:0.8em;"><b>${n}</b> <span style="color:#aaa; font-size:0.8em;">(${count})</span></div>`;
                     }).join(' ');
                 }
+                
                 let bestHtml = '-';
                 if (g.bestRow) {
                     const bNums = g.bestRow.numeros.replace('[','').replace(']','').split(',').map(n=>parseInt(n.trim()));
@@ -1352,26 +1417,42 @@
                         if(realNums.includes(n)) return `<span class="num-badge match-exact">${n}</span>`;
                         return `<span class="num-badge match-far">${n}</span>`;
                     }).join('');
+                    
                     let badge = '🔮'; 
                     if(g.bestRow.algoritmo.includes('gauss')) badge = '📐'; 
                     else if(g.bestRow.algoritmo.includes('delta')) badge = '📈'; 
                     else if(g.bestRow.algoritmo.includes('markov')) badge = '🔗'; 
-                    else if(g.bestRow.algoritmo.includes('oraculo')) badge = '🧠'; /* NUEVO BADGE */
+                    else if(g.bestRow.algoritmo.includes('oraculo')) badge = '🧠'; 
                     else if(g.bestRow.algoritmo.includes('consenso')) badge = '🤝';
                     bestHtml = `<div><span style="margin-right:5px;">${badge}</span>${bHtml} <small>(${g.maxScore}%)</small></div>`;
                 }
+                
                 const avg = arr => arr.length ? (arr.reduce((a,b)=>a+b,0)/arr.length).toFixed(0)+'%' : '-';
-                let rowHTML = `<td><span class="draw-badge" title="Fecha: ${dateStr}">#${g.target}</span></td><td style="text-align:center;">${g.count}</td><td>${realHtml}</td><td>${bestHtml}</td><td style="text-align:center;"><b>${avg(g.scores)}</b></td>`;
-                gameConfig.algos.forEach(a => { rowHTML += `<td style="text-align:center; color:${a.color};">${avg(g.algoScores[a.key])}</td>`; });
+                
+                let rowHTML = `
+                    <td><span class="draw-badge" title="Fecha: ${dateStr}">#${g.target}</span></td>
+                    <td style="text-align:center;">${g.count}</td>
+                    <td style="text-align:right; color:var(--text-muted);">${fmtMoney(inversion)}</td>
+                    <td style="text-align:right;">${gananciaDisplay}</td>
+                    <td>${realHtml}</td>
+                    <td>${bestHtml}</td>
+                    <td style="text-align:center;"><b>${avg(g.scores)}</b></td>`;
+                
+                gameConfig.algos.forEach(a => { 
+                    rowHTML += `<td style="text-align:center; color:${a.color};">${avg(g.algoScores[a.key])}</td>`; 
+                });
+                
                 gameConfig.hits.forEach(h => {
                     let styleClass = 'hit-col-low'; if(h >= 6) styleClass = 'hit-col-high'; else if(h >= 4) styleClass = 'hit-col-mid';
                     let val = g.hitsCount[h]; let valDisplay = val > 0 ? `<span class="${styleClass}">${val}</span>` : `<span class="hit-col-dim">-</span>`;
                     rowHTML += `<td style="text-align:center;">${valDisplay}</td>`;
                 });
+                
                 tr.innerHTML = rowHTML;
                 tbody.appendChild(tr);
             });
         }
+        
         function updateDashboardCharts(data) {
             const ctx = document.getElementById('mainChart').getContext('2d');
             if(window.myChart) window.myChart.destroy();
