@@ -243,14 +243,18 @@ class OraculoNeural:
         joblib.dump(self.model, self.model_file, compress=9)
         print("✅ Modelo entrenado, comprimido y guardado.")
 
-    def predecir(self, fecha_objetivo=None):
+    def predecir(self, fecha_objetivo=None, _intento_recuperacion=False):
         """
         Genera predicción. 
         fecha_objetivo: datetime object o string YYYY-MM-DD
         """
-        if self.model is None: self.entrenar()
+        # 1. Si no hay modelo en memoria, intentar cargar o entrenar
+        if self.model is None: 
+            self.entrenar()
+        
         if self.model is None: return []
 
+        # 2. Cargar datos para el input
         df = pd.read_csv(self.maestro_file)
         df = df.sort_values('sorteo', ascending=True)
         
@@ -291,7 +295,7 @@ class OraculoNeural:
         input_features.append(target_dow)
         X_pred = np.array([input_features])
         
-        # Ejecutar Predicción
+        # Ejecutar Predicción (CON CAPTURA DE ERROR DE VERSIÓN)
         try:
             if self.config['type'] == 'SET':
                 probs = self.model.predict_proba(X_pred)
@@ -300,14 +304,25 @@ class OraculoNeural:
                 # Loto 3
                 prediction = self.model.predict(X_pred)
                 return [int(x) for x in prediction[0]]
+                
         except Exception as e:
-            print(f"❌ Error en predicción {self.game_id}: {e}")
-            return []
+            # --- ZONA DE AUTO-CURACIÓN ---
+            err_msg = str(e).lower()
+            # Detectar error de compatibilidad scikit-learn (monotonic_cst)
+            if not _intento_recuperacion and ("monotonic" in err_msg or "attribute" in err_msg or "version" in err_msg):
+                print(f"♻️ INCOMPATIBILIDAD DETECTADA ({e}). Re-entrenando modelo en el entorno actual...")
+                self.model = None # Forzar limpieza
+                self.entrenar()   # Re-entrenar con la librería local
+                # Intentar de nuevo (solo una vez para evitar bucles infinitos)
+                return self.predecir(fecha_objetivo, _intento_recuperacion=True)
+            else:
+                print(f"❌ Error irrecuperable en predicción {self.game_id}: {e}")
+                return []
 
 if __name__ == "__main__":
     # Test Unitario
     for g in ["LOTO", "LOTO3", "RACHA", "LOTO4"]:
         print(f"\n--- {g} ---")
         ai = OraculoNeural(g)
-        ai.entrenar()
+        # ai.entrenar() # Descomentar si se quiere forzar entrenamiento
         print(f"🔮 Predicción: {ai.predecir()}")
