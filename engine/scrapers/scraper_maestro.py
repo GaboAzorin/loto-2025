@@ -8,9 +8,6 @@ import re
 import subprocess
 from datetime import datetime
 from playwright.async_api import async_playwright
-from gap_utils import time_elapsed
-
-a = time.time()
 
 # --- IMPORTACIÓN DE PARSERS ---
 try:
@@ -324,9 +321,6 @@ async def run_scraper():
 
         # Finalmente, subimos todo (CSVs nuevos + JSON del genoma actualizado)
         subir_cambios_a_github()
-        b = time.time()
-        print(f"\n⏱️  Tiempo total de ejecución: {time_elapsed(a, b)} segundos.")
-        print("\n🏁 PROCESO FINALIZADO.")
 
 if __name__ == "__main__":
     asyncio.run(run_scraper())
