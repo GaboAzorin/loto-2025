@@ -800,7 +800,7 @@
             if (lines.length < 2) return;
             const headers = lines[0].split(',');
             
-            // --- CONFIGURACIÓN DE COLUMNAS ---
+            // --- CONFIGURACIÓN DE COLUMNAS DE NÚMEROS ---
             let numCols = [];
             let comodinCol = -1;
 
@@ -864,6 +864,23 @@
                     '2P': headers.indexOf('2_PUNTOS_GANADORES')
                 };
             }
+            // --- AQUÍ ESTABA EL FALTANTE: LOTO 3 ---
+            else if (gameKey === 'LOTO3') {
+                colMap = {
+                    'EXACTA_MONTO': headers.indexOf('EXACTA_MONTO'),
+                    'TRIO_PAR_MONTO': headers.indexOf('TRIO_PAR_MONTO'),
+                    'TRIO_AZAR_MONTO': headers.indexOf('TRIO_AZAR_MONTO'),
+                    'PAR_MONTO': headers.indexOf('PAR_MONTO'),
+                    'TERMINACION_MONTO': headers.indexOf('TERMINACION_MONTO')
+                };
+                winnerColMap = {
+                    'EXACTA': headers.indexOf('EXACTA_GANADORES'),
+                    'TRIO_PAR': headers.indexOf('TRIO_PAR_GANADORES'),
+                    'TRIO_AZAR': headers.indexOf('TRIO_AZAR_GANADORES'),
+                    'PAR': headers.indexOf('PAR_GANADORES'),
+                    'TERMINACION': headers.indexOf('TERMINACION_GANADORES')
+                };
+            }
 
             // --- ITERACIÓN POR FILAS ---
             for (let i = 1; i < lines.length; i++) {
@@ -879,31 +896,30 @@
                 if(idxFecha !== -1) dateMap[sorteo] = row[idxFecha].split(' ')[0];
                 if(comodinCol !== -1) comodinMap[sorteo] = parseInt(row[comodinCol]);
 
-                // 3. Extracción Financiera (Premios y Ganadores)
-                if (gameKey === 'LOTO' || gameKey === 'LOTO4') {
-                    prizeMap[sorteo] = {};
-                    winnerMap[sorteo] = {};
-                    
-                    // Extraer Montos ($)
-                    for (const [key, idx] of Object.entries(colMap)) {
-                        if (idx !== -1) {
-                            let val = parseFloat(row[idx]);
-                            prizeMap[sorteo][key] = isNaN(val) ? 0 : val;
-                        } else {
-                            prizeMap[sorteo][key] = 0; 
-                        }
+                // 3. Extracción Financiera (AHORA SÍ FUNCIONA PARA TODOS)
+                prizeMap[sorteo] = {};
+                winnerMap[sorteo] = {};
+                
+                // Extraer Montos ($)
+                for (const [key, idx] of Object.entries(colMap)) {
+                    if (idx !== -1 && row[idx]) {
+                        let val = parseFloat(row[idx]);
+                        prizeMap[sorteo][key] = isNaN(val) ? 0 : val;
+                    } else {
+                        prizeMap[sorteo][key] = 0; 
                     }
-                    // Extraer Ganadores (Personas)
-                    for (const [key, idx] of Object.entries(winnerColMap)) {
-                        if (idx !== -1) {
-                            let val = parseInt(row[idx]);
-                            winnerMap[sorteo][key] = isNaN(val) ? 0 : val;
-                        } else {
-                            winnerMap[sorteo][key] = 0; 
-                        }
+                }
+                // Extraer Ganadores (Personas)
+                for (const [key, idx] of Object.entries(winnerColMap)) {
+                    if (idx !== -1 && row[idx]) {
+                        let val = parseInt(row[idx]);
+                        winnerMap[sorteo][key] = isNaN(val) ? 0 : val;
+                    } else {
+                        winnerMap[sorteo][key] = 0; 
                     }
                 }
             }
+            // Guardar en memoria global
             MASTERS[gameKey] = map;
             MASTERS_DATES[gameKey] = dateMap;
             MASTERS_PRIZES[gameKey] = prizeMap;
