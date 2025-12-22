@@ -11,19 +11,19 @@
       "oraculo_neural_v3": 2.78
     },
     "LOTO3": {
-      "consenso_meritocratico_v2": 21.96,
+      "consenso_meritocratico_v2": 21.97,
       "forense_biometrico_v1": 17.71,
-      "oraculo_neural_v3": 55.8
+      "oraculo_neural_v3": 55.96
     },
     "LOTO4": {
       "consenso_meritocratico_v2": 5.44,
       "forense_biometrico_v1": 6.1,
-      "oraculo_neural_v3": 3.35
+      "oraculo_neural_v3": 3.34
     },
     "RACHA": {
-      "consenso_meritocratico_v2": 17.0,
+      "consenso_meritocratico_v2": 17.01,
       "forense_biometrico_v1": 15.62,
-      "oraculo_neural_v3": 21.6
+      "oraculo_neural_v3": 21.49
     }
   },
   "last_processed": {
@@ -63,7 +63,7 @@
     }
   },
   "metadata": {
-    "updated_at": "2025-12-22 17:28:38",
+    "updated_at": "2025-12-22 17:47:23",
     "mode": "FULL_LOBOTOMY_V2",
     "casos_estudiados": 7156
   }
