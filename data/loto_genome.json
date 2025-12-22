@@ -13,7 +13,7 @@
     "LOTO3": {
       "consenso_meritocratico_v2": 21.97,
       "forense_biometrico_v1": 17.71,
-      "oraculo_neural_v3": 56.08
+      "oraculo_neural_v3": 56.16
     },
     "LOTO4": {
       "consenso_meritocratico_v2": 5.44,
@@ -23,7 +23,7 @@
     "RACHA": {
       "consenso_meritocratico_v2": 17.01,
       "forense_biometrico_v1": 15.62,
-      "oraculo_neural_v3": 21.41
+      "oraculo_neural_v3": 21.36
     }
   },
   "last_processed": {
@@ -63,7 +63,7 @@
     }
   },
   "metadata": {
-    "updated_at": "2025-12-22 18:23:15",
+    "updated_at": "2025-12-22 18:42:57",
     "mode": "FULL_LOBOTOMY_V2",
     "casos_estudiados": 7156
   }
