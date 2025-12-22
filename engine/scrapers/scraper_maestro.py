@@ -299,6 +299,14 @@ async def run_scraper():
         # ==============================================================================
         print("\n⏳ EJECUTANDO RECONSTRUCCIÓN TEMPORAL (Aprendizaje Secuencial)...")
         try:
+            import sys
+            # 1. Calculamos la ruta a la carpeta 'models' (hermana de 'scrapers')
+            # Estamos en engine/scrapers, así que subimos uno (..) y entramos a models
+            ruta_models = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'models')
+            
+            # 2. Agregamos esa ruta al sistema para que Python pueda importar desde ahí
+            if ruta_models not in sys.path:
+                sys.path.append(ruta_models)
 
             import reconstructor_temporal
             import importlib
