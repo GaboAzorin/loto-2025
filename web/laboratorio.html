@@ -678,6 +678,21 @@
             'RACHA': '../data/RACHA_MAESTRO.csv'
         };
 
+        // 💰 CONFIGURACIÓN DE ESTRATEGIA LOTO 3 (FLAT BETTING)
+        const ESTRATEGIA_LOTO3 = {
+            exacta: 100,      
+            trio: 100,
+            par: 100,         
+            terminacion: 100  
+        };
+        
+        // Función de Escalamiento (Ahora será x1 porque la base es 100)
+        function calcularPremioEscalado(montoBaseCSV, apuestaUsuario) {
+            if (!montoBaseCSV || montoBaseCSV === 0) return 0;
+            // Si el CSV trae el premio para una apuesta de $100, esto devuelve el monto exacto.
+            return montoBaseCSV * (apuestaUsuario / 100); 
+        }
+
         // --- ACTUALIZACIÓN DE ALGORITMOS: AGREGADO ORÁCULO NEURAL ---
         const UNIVERSE_CONFIG = {
             'LOTO': {
@@ -974,31 +989,73 @@
 
             // --- LOTO 3 ---
             if (game === 'LOTO3') {
+                // 1. Obtener montos del Maestro
+                const prizes = (MASTERS_PRIZES['LOTO3'] && MASTERS_PRIZES['LOTO3'][drawId]) ? MASTERS_PRIZES['LOTO3'][drawId] : {};
+                
+                // 2. Análisis Morfológico de tu jugada
+                const uniqueMy = new Set(myNums);
+                const esTriple = (uniqueMy.size === 1); // Ej: 8,8,8
+                const esTrioPar = (uniqueMy.size === 2); // Ej: 8,8,2
+                const esTrioAzar = (uniqueMy.size === 3); // Ej: 1,2,3
+
+                // 3. Validación de Aciertos (Comparar con winNums)
+                const n1 = winNums[0]; const n2 = winNums[1]; const n3 = winNums[2];
                 let total = 0;
                 let cats = [];
-                const mySorted = [...myNums].sort();
-                const winSorted = [...winNums].sort();
-                
-                if (JSON.stringify(myNums) === JSON.stringify(winNums)) { total += 500 * 400; cats.push("Exacta"); }
-                
-                const unique = new Set(myNums);
-                // Trío Par
-                if (JSON.stringify(mySorted) === JSON.stringify(winSorted)) {
-                    if (unique.size === 2) { total += 500 * 130; cats.push("Trío Par"); }
+                let formulas = [];
+
+                // A. EXACTA (Orden estricto)
+                if (myNums[0] == n1 && myNums[1] == n2 && myNums[2] == n3) {
+                    const premio = calcularPremioEscalado(prizes['EXACTA_MONTO'], ESTRATEGIA_LOTO3.exacta);
+                    total += premio;
+                    cats.push("Exacta");
+                    formulas.push(`$${premio.toLocaleString()}`);
                 }
-                // Trío Azar
-                if (JSON.stringify(mySorted) === JSON.stringify(winSorted)) {
-                    if (unique.size === 3) { total += 500 * 65; cats.push("Trío Azar"); }
+
+                // B. TRIO (Solo si NO es triple)
+                if (!esTriple) {
+                    const sortedMy = [...myNums].sort().join('');
+                    const sortedWin = [...winNums].sort().join('');
+                    
+                    if (sortedMy === sortedWin) {
+                        if (esTrioAzar) {
+                            const premio = calcularPremioEscalado(prizes['TRIO_AZAR_MONTO'], ESTRATEGIA_LOTO3.trio);
+                            total += premio;
+                            cats.push("Trío Azar");
+                        } else if (esTrioPar) {
+                            const premio = calcularPremioEscalado(prizes['TRIO_PAR_MONTO'], ESTRATEGIA_LOTO3.trio);
+                            total += premio;
+                            cats.push("Trío Par");
+                        }
+                    }
                 }
-                // Par
-                let parGanado = false;
-                if (myNums[0] === winNums[0] && myNums[1] === winNums[1]) parGanado = true;
-                if (myNums[1] === winNums[1] && myNums[2] === winNums[2]) parGanado = true;
-                if (parGanado) { total += 500 * 20; cats.push("Par"); }
-                // Terminación
-                if (myNums[2] === winNums[2]) { total += 500 * 4; cats.push("Terminación"); }
-                
-                if (total > 0) return { amount: total, category: cats.join("+"), formula: "Premios Fijos Acumulados" };
+
+                // C. PAR (2 aciertos cualesquiera - Regla estándar Polla: Par Final o Par en cualquier orden dependiendo del reglamento vigente)
+                // Usaremos intersección simple para ser generosos, o posición estricta si prefieres.
+                // Lógica Robusta: Contar coincidencias posicionales o de contenido.
+                // Para Loto 3, el "Par" suele ser los dos últimos o par de números contenidos.
+                // Usaremos: Contenido (Intersección de multiconjunto)
+                let aciertosPar = 0;
+                let copiaWin = [...winNums];
+                myNums.forEach(n => {
+                    const idx = copiaWin.indexOf(n);
+                    if (idx > -1) { aciertosPar++; copiaWin.splice(idx, 1); }
+                });
+
+                if (aciertosPar >= 2) {
+                    const premio = calcularPremioEscalado(prizes['PAR_MONTO'], ESTRATEGIA_LOTO3.par);
+                    total += premio;
+                    cats.push("Par");
+                }
+
+                // D. TERMINACIÓN (Último dígito coincide)
+                if (myNums[2] == n3) {
+                    const premio = calcularPremioEscalado(prizes['TERMINACION_MONTO'], ESTRATEGIA_LOTO3.terminacion);
+                    total += premio;
+                    cats.push("Terminación");
+                }
+
+                if (total > 0) return { amount: total, category: cats.join(" + "), formula: formulas.join(" + ") };
                 return { amount: 0, category: "", formula: "" };
             }
 
@@ -1083,9 +1140,10 @@
             const auditBody = document.getElementById('audit-table-body');
             const config = UNIVERSE_CONFIG[CURRENT_UNIVERSE];
             
-            // Limpieza inicial
+            // Limpieza inicial UI
             auditBody.innerHTML = '';
             
+            // Si no hay sorteo seleccionado o configuración, ocultar panel
             if (targetDraw === 'ALL' || !config) {
                 container.style.display = 'none';
                 auditLog.style.display = 'none';
@@ -1094,42 +1152,76 @@
             container.style.display = 'grid'; // Mostrar KPIs
             auditLog.style.display = 'block'; // Mostrar Tabla Detalle
 
-            // 1. Inversión
-            const hypoCount = filteredSims.length;
-            const hypoInvest = hypoCount * config.cost;
+            // ---------------------------------------------------------
+            // 1. FUNCIÓN DE COSTO INTELIGENTE (Detecta Triples)
+            // ---------------------------------------------------------
+            const getCost = (numsArr) => {
+                // Para LOTO, RACHA, LOTO4 usamos el costo fijo configurado
+                if (CURRENT_UNIVERSE !== 'LOTO3') {
+                    return config.cost; 
+                }
 
-            // 2. Ganancia Hipotética
+                // Para LOTO 3 calculamos según categorías activas ($100 c/u)
+                const unique = new Set(numsArr);
+                const esTriple = (unique.size === 1); // Ej: [8, 8, 8]
+                
+                let costo = 0;
+                costo += ESTRATEGIA_LOTO3.exacta;      // $100
+                costo += ESTRATEGIA_LOTO3.par;         // $100
+                costo += ESTRATEGIA_LOTO3.terminacion; // $100
+                
+                // Solo cobramos Trío si NO es un triple
+                if (!esTriple) {
+                    costo += ESTRATEGIA_LOTO3.trio;    // $100
+                }
+                
+                return costo; // Retornará 300 o 400
+            };
+
+            // ---------------------------------------------------------
+            // 2. CÁLCULO HIPOTÉTICO (SIMULACIONES)
+            // ---------------------------------------------------------
+            let hypoInvest = 0;
             let hypoWin = 0;
+
             const winningNums = MASTERS[CURRENT_UNIVERSE][targetDraw];
             const comodin = MASTERS_COMODIN[CURRENT_UNIVERSE] ? MASTERS_COMODIN[CURRENT_UNIVERSE][targetDraw] : null;
 
-            let winningRows = [];
+            let winningRows = []; // Para guardar los ganadores y mostrarlos en tabla
 
-            if (winningNums) {
-                filteredSims.forEach(s => {
-                    const myNums = JSON.parse(s.numeros);
+            filteredSims.forEach(s => {
+                let myNums = [];
+                try { myNums = JSON.parse(s.numeros); } catch(e) { return; }
+                
+                // A. Sumar Costo Variable
+                hypoInvest += getCost(myNums);
+
+                // B. Calcular Ganancia (Solo si el sorteo ya ocurrió)
+                if (winningNums) {
                     const res = calculateWinningsDetailed(CURRENT_UNIVERSE, myNums, winningNums, comodin, targetDraw);
-                    
                     if (res.amount > 0) {
                         hypoWin += res.amount;
-                        // Guardamos la fila en memoria para ordenar después
+                        // Guardamos para la tabla de detalle
                         winningRows.push({ s, res, myNums });
                     }
-                });
-            }
-
-            // --- ORDENAR (Monto Desc > Fecha Desc) ---
-            winningRows.sort((a, b) => {
-                if (b.res.amount !== a.res.amount) return b.res.amount - a.res.amount; // 1. Monto Mayor primero
-                return b.s.dateObj - a.s.dateObj; // 2. Más reciente primero
+                }
             });
 
-            // --- RENDERIZAR FILAS ORDENADAS ---
+            // ---------------------------------------------------------
+            // 3. RENDERIZADO DE TABLA DE DETALLE (GANADORES)
+            // ---------------------------------------------------------
+            // Ordenar: Primero Mayor Monto, luego Más Reciente
+            winningRows.sort((a, b) => {
+                if (b.res.amount !== a.res.amount) return b.res.amount - a.res.amount;
+                return b.s.dateObj - a.s.dateObj; 
+            });
+
             winningRows.forEach(row => {
                 const s = row.s;
                 const res = row.res;
                 const myNums = row.myNums;
 
+                // Formateo visual de números (Verdes si acertaron)
                 const numsFormatted = myNums.map(n => {
                     let style = "";
                     if (winningNums.includes(n)) style = "color:var(--success); font-weight:bold;";
@@ -1140,7 +1232,8 @@
                 const tr = document.createElement('tr');
                 tr.className = 'audit-row-win';
                 tr.innerHTML = `
-                    <td>${s.fechaStr}</td> <td><span class="algo-badge" style="color:var(--text); border:1px solid var(--border);">${s.algoritmo.split('_')[0]}</span></td>
+                    <td>${s.fechaStr}</td> 
+                    <td><span class="algo-badge" style="color:var(--text); border:1px solid var(--border);">${s.algoritmo.split('_')[0]}</span></td>
                     <td style="font-family:monospace; font-size:0.9em;">[ ${numsFormatted} ]</td>
                     <td style="text-align:center; font-weight:bold;">${s.aciertos}</td>
                     <td>${res.category}</td>
@@ -1150,32 +1243,43 @@
                 auditBody.appendChild(tr);
             });
 
-            // 3. Realidad
+            // ---------------------------------------------------------
+            // 4. CÁLCULO REAL (LO QUE JUGASTE EN LOTO_JUGADAS.CSV)
+            // ---------------------------------------------------------
             const realPlays = RAW_PLAYS.filter(p => p.juego === CURRENT_UNIVERSE && p.objetivo === targetDraw);
-            const realInvest = realPlays.length * config.cost;
+            let realInvest = 0;
             let realWin = 0;
             
-            if (winningNums) {
-                realPlays.forEach(play => {
-                    try {
-                        const myNums = JSON.parse(play.numeros);
+            realPlays.forEach(play => {
+                try {
+                    const myNums = JSON.parse(play.numeros);
+                    
+                    // A. Costo Real Variable
+                    realInvest += getCost(myNums);
+
+                    // B. Ganancia Real
+                    if (winningNums) {
                         const res = calculateWinningsDetailed(CURRENT_UNIVERSE, myNums, winningNums, comodin, targetDraw);
                         realWin += res.amount;
-                    } catch(e) {}
-                });
-            }
+                    }
+                } catch(e) {}
+            });
 
-            // Renderizado de KPIs
+            // ---------------------------------------------------------
+            // 5. ACTUALIZACIÓN DE TARJETAS KPI (DASHBOARD)
+            // ---------------------------------------------------------
             const fmt = (n) => "$" + n.toLocaleString('es-CL', {maximumFractionDigits: 0});
+            
             document.getElementById('hypo-invest').textContent = fmt(hypoInvest);
             document.getElementById('hypo-win').textContent = fmt(hypoWin);
             document.getElementById('real-invest').textContent = fmt(realInvest);
             document.getElementById('real-win').textContent = fmt(realWin);
             
+            // Colores Dinámicos (Verde si ganancia >= inversión, Rojo si pérdida)
             document.getElementById('hypo-win').style.color = hypoWin >= hypoInvest ? 'var(--money)' : 'var(--loss)';
             document.getElementById('real-win').style.color = realWin >= realInvest ? 'var(--warning)' : 'var(--loss)';
             
-            // Si no hubo ganadores, mostrar mensaje en tabla
+            // Mensaje si no hubo ganadores simulados
             if (hypoWin === 0) {
                 auditBody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted);">Ninguna simulación obtuvo premio monetario en este sorteo.</td></tr>';
             }
