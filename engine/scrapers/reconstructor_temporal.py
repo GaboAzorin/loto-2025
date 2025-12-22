@@ -4,21 +4,24 @@ import time
 import json
 import sys
 
-# Ajuste de rutas para encontrar los módulos hermanos
+# --- GESTIÓN DE RUTAS ROBUSTA ---
+# Calculamos la carpeta donde vive ESTE archivo (engine/models)
 current_dir = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(os.path.join(current_dir, '..', 'models'))
 
+# Agregamos esta carpeta al sistema para que encuentre a sus vecinos (Juez, Oráculo)
+if current_dir not in sys.path:
+    sys.path.append(current_dir)
+
+# Ahora importamos sin miedo
 try:
     import juez_implacable
     import entrenador_cognitivo
-    # Importamos el Oráculo
     from oraculo_neural import OraculoNeural
-except ImportError:
-    # Fallback por si se ejecuta desde otra ruta
-    sys.path.append(os.path.join(current_dir, '..', '..', 'engine', 'models'))
-    import juez_implacable
-    import entrenador_cognitivo
-    from oraculo_neural import OraculoNeural
+except ImportError as e:
+    print(f"❌ ERROR CRÍTICO EN RECONSTRUCTOR: No puedo importar mis dependencias.")
+    print(f"   Detalle del error: {e}")
+    # Relanzamos el error para que el Scraper sepa que algo grave pasó
+    raise e 
 
 # --- CONFIGURACIÓN ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
