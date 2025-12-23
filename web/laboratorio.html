@@ -1005,70 +1005,70 @@
 
             // --- LOTO 3 ---
             if (game === 'LOTO3') {
-                // 1. Obtener montos del Maestro
-                const prizes = (MASTERS_PRIZES['LOTO3'] && MASTERS_PRIZES['LOTO3'][drawId]) ? MASTERS_PRIZES['LOTO3'][drawId] : {};
-                
-                // 2. Análisis Morfológico de tu jugada
-                const uniqueMy = new Set(myNums);
-                const esTriple = (uniqueMy.size === 1); // Ej: 8,8,8
-                const esTrioPar = (uniqueMy.size === 2); // Ej: 8,8,2
-                const esTrioAzar = (uniqueMy.size === 3); // Ej: 1,2,3
+                // Configuración de Premios Fijos (Reglas Polla)
+                const BASE_APUESTA = 100;
+                const MULT_EXACTA = 400;
+                const MULT_TRIO_PAR = 130;
+                const MULT_TRIO_AZAR = 65;
+                const MULT_PAR = 20;
+                const MULT_TERM = 4;
 
-                // 3. Validación de Aciertos (Comparar con winNums)
-                const n1 = winNums[0]; const n2 = winNums[1]; const n3 = winNums[2];
+                const p = myNums; // Predicción [n1, n2, n3]
+                const r = winNums; // Real [n1, n2, n3]
+                
+                // Análisis de Topología (¿Qué jugamos?)
+                const uniqueMy = new Set(p).size;
+                const juegaTrio = (uniqueMy === 2 || uniqueMy === 3); // Solo juega trío si hay 2 o 3 distintos
+                
                 let total = 0;
                 let cats = [];
                 let formulas = [];
 
-                // A. EXACTA (Orden estricto)
-                if (myNums[0] == n1 && myNums[1] == n2 && myNums[2] == n3) {
-                    const premio = calcularPremioEscalado(prizes['EXACTA_MONTO'], ESTRATEGIA_LOTO3.exacta);
-                    total += premio;
+                // A. EXACTA ($100 -> $40.000)
+                // Coincidencia exacta en valor y posición
+                if (p[0] === r[0] && p[1] === r[1] && p[2] === r[2]) {
+                    total += BASE_APUESTA * MULT_EXACTA;
                     cats.push("Exacta");
-                    formulas.push(`$${premio.toLocaleString()}`);
+                    formulas.push("$40.000");
                 }
 
-                // B. TRIO (Solo si NO es triple)
-                if (!esTriple) {
-                    const sortedMy = [...myNums].sort().join('');
-                    const sortedWin = [...winNums].sort().join('');
+                // B. TRÍO (Depende de Topología)
+                // Ordenamos para comparar conjuntos
+                if (juegaTrio) {
+                    const pSort = [...p].sort((a,b)=>a-b).join(',');
+                    const rSort = [...r].sort((a,b)=>a-b).join(',');
                     
-                    if (sortedMy === sortedWin) {
-                        if (esTrioAzar) {
-                            const premio = calcularPremioEscalado(prizes['TRIO_AZAR_MONTO'], ESTRATEGIA_LOTO3.trio);
-                            total += premio;
-                            cats.push("Trío Azar");
-                        } else if (esTrioPar) {
-                            const premio = calcularPremioEscalado(prizes['TRIO_PAR_MONTO'], ESTRATEGIA_LOTO3.trio);
-                            total += premio;
+                    if (pSort === rSort) {
+                        if (uniqueMy === 2) { 
+                            // Trío Par (2 iguales, 1 distinto) -> $13.000
+                            total += BASE_APUESTA * MULT_TRIO_PAR;
                             cats.push("Trío Par");
+                            formulas.push("$13.000");
+                        } else if (uniqueMy === 3) {
+                            // Trío Azar (3 distintos) -> $6.500
+                            total += BASE_APUESTA * MULT_TRIO_AZAR;
+                            cats.push("Trío Azar");
+                            formulas.push("$6.500");
                         }
                     }
                 }
 
-                // C. PAR (2 aciertos cualesquiera - Regla estándar Polla: Par Final o Par en cualquier orden dependiendo del reglamento vigente)
-                // Usaremos intersección simple para ser generosos, o posición estricta si prefieres.
-                // Lógica Robusta: Contar coincidencias posicionales o de contenido.
-                // Para Loto 3, el "Par" suele ser los dos últimos o par de números contenidos.
-                // Usaremos: Contenido (Intersección de multiconjunto)
-                let aciertosPar = 0;
-                let copiaWin = [...winNums];
-                myNums.forEach(n => {
-                    const idx = copiaWin.indexOf(n);
-                    if (idx > -1) { aciertosPar++; copiaWin.splice(idx, 1); }
-                });
-
-                if (aciertosPar >= 2) {
-                    const premio = calcularPremioEscalado(prizes['PAR_MONTO'], ESTRATEGIA_LOTO3.par);
-                    total += premio;
+                // C. PAR ($100 -> $2.000)
+                // Se gana si aciertas Par Inicial O Par Final
+                const parFront = (p[0] === r[0] && p[1] === r[1]);
+                const parBack  = (p[1] === r[1] && p[2] === r[2]);
+                
+                if (parFront || parBack) {
+                    total += BASE_APUESTA * MULT_PAR;
                     cats.push("Par");
+                    formulas.push("$2.000");
                 }
 
-                // D. TERMINACIÓN (Último dígito coincide)
-                if (myNums[2] == n3) {
-                    const premio = calcularPremioEscalado(prizes['TERMINACION_MONTO'], ESTRATEGIA_LOTO3.terminacion);
-                    total += premio;
+                // D. TERMINACIÓN ($100 -> $400)
+                if (p[2] === r[2]) {
+                    total += BASE_APUESTA * MULT_TERM;
                     cats.push("Terminación");
+                    formulas.push("$400");
                 }
 
                 if (total > 0) return { amount: total, category: cats.join(" + "), formula: formulas.join(" + ") };
@@ -1169,29 +1169,29 @@
             auditLog.style.display = 'block'; // Mostrar Tabla Detalle
 
             // ---------------------------------------------------------
-            // 1. FUNCIÓN DE COSTO INTELIGENTE (Detecta Triples)
+            // 1. FUNCIÓN DE COSTO INTELIGENTE (Lógica Aditiva)
             // ---------------------------------------------------------
             const getCost = (numsArr) => {
-                // Para LOTO, RACHA, LOTO4 usamos el costo fijo configurado
+                // Para LOTO, RACHA, LOTO4 usamos el costo fijo global
                 if (CURRENT_UNIVERSE !== 'LOTO3') {
                     return config.cost; 
                 }
 
-                // Para LOTO 3 calculamos según categorías activas ($100 c/u)
-                const unique = new Set(numsArr);
-                const esTriple = (unique.size === 1); // Ej: [8, 8, 8]
+                // Para LOTO 3: Sumamos $100 por cada categoría activa
+                const unique = new Set(numsArr).size;
                 
                 let costo = 0;
-                costo += ESTRATEGIA_LOTO3.exacta;      // $100
-                costo += ESTRATEGIA_LOTO3.par;         // $100
-                costo += ESTRATEGIA_LOTO3.terminacion; // $100
+                costo += 100; // Exacta (Siempre va)
+                costo += 100; // Par (Siempre va)
+                costo += 100; // Terminación (Siempre va)
                 
-                // Solo cobramos Trío si NO es un triple
-                if (!esTriple) {
-                    costo += ESTRATEGIA_LOTO3.trio;    // $100
+                // Trío solo se cobra si la combinación lo permite
+                // (Si son 3 iguales como [0,0,0], NO se juega Trío)
+                if (unique === 2 || unique === 3) {
+                    costo += 100; 
                 }
                 
-                return costo; // Retornará 300 o 400
+                return costo; // Retornará 400 (lo normal) o 300 (triple)
             };
 
             // ---------------------------------------------------------
