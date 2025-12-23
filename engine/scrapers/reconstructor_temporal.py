@@ -121,10 +121,65 @@ def reconstruir_linea_tiempo():
             # B. FASE ENTRENADOR (Actualiza heurísticos, pares, sumas)
             entrenador_cognitivo.analizar_adn_ganador(juego_filtro=juego, sorteo_limite=sorteo_actual)
             
-            # C. FASE ORÁCULO NEURAL (EL REQUERIMIENTO CLAVE)
-            # Re-entrenamos el modelo AHORA MISMO, con los datos disponibles hasta ESTE momento.
-            # Al usar sorteo_limite, el modelo "ignora" que existen sorteos futuros en el CSV.
+            # C. FASE ORÁCULO NEURAL (LA LÓGICA QUE PIDES)
+    
+            # 1. Verificamos si ya existe una predicción del Oráculo para este sorteo
+            df_sim = pd.read_csv(SIMULACIONES_FILE) if os.path.exists(SIMULACIONES_FILE) else pd.DataFrame()
+            
+            existe_prediccion = False
+            if not df_sim.empty and 'sorteo_objetivo' in df_sim.columns:
+                # Buscamos si el oráculo ya opinó sobre este sorteo
+                filtro = (df_sim['juego'] == juego) & \
+                        (df_sim['sorteo_objetivo'] == sorteo_actual) & \
+                        (df_sim['algoritmo'] == 'oraculo_neural_v3')
+                
+                if not df_sim[filtro].empty:
+                    existe_prediccion = True
+                    print(f"      ✅ Ya existe predicción del Oráculo para el sorteo {sorteo_actual}.")
+                    # AQUÍ TU DECISIÓN:
+                    # Si confías en que la predicción existente se hizo con los datos correctos, 'continue'.
+                    # Si crees que se hizo 'tarde' o mal, la borramos y regeneramos.
+                    # Según tu pedido: "reemplazar las simulaciones que se pasaron".
+                    
+                    # Borramos la anterior para garantizar que sea la "pura" generada con Time Travel
+                    df_sim = df_sim[~filtro] # Eliminamos la fila vieja
+                    df_sim.to_csv(SIMULACIONES_FILE, index=False)
+                    print(f"      ♻️  Regenerando predicción pura (Time Travel) para asegurar consistencia...")
+
+            # 2. Entrenamos el Oráculo VIAJANDO AL PASADO (Sorteo Limite = Sorteo Actual)
+            # Esto asegura que el modelo NO vea los resultados del sorteo actual, solo los anteriores.
             oraculo.entrenar(sorteo_limite=sorteo_actual)
+            
+            # 3. Predecimos "el futuro" (que es el presente para nosotros, pero futuro para el modelo)
+            # Nota: Usamos una fecha dummy o la fecha real del sorteo si la tienes, 
+            # pero lo importante es que el modelo está cortado en el tiempo.
+            prediccion = oraculo.predecir(fecha_objetivo=datetime.now()) 
+            
+            if prediccion:
+                print(f"      🔮 Oráculo dice (Reconstrucción): {prediccion}")
+                
+                # 4. Guardamos la simulación "correcta"
+                nueva_fila = {
+                    'id': int(time.time()),
+                    'fecha_generacion': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                    'juego': juego,
+                    'numeros': str(prediccion),
+                    'sorteo_objetivo': sorteo_actual,
+                    'estado': 'PENDIENTE', # Se auditará en la siguiente vuelta del Juez
+                    'aciertos': 0,
+                    'score_afinidad': 0.0,
+                    'hora_dia': 12, # Hora estándar simulada
+                    'algoritmo': 'oraculo_neural_v3'
+                }
+                
+                # Re-cargamos por si hubo cambios concurrentes (paranoia de programador)
+                if os.path.exists(SIMULACIONES_FILE):
+                    df_final = pd.read_csv(SIMULACIONES_FILE)
+                    df_final = pd.concat([df_final, pd.DataFrame([nueva_fila])], ignore_index=True)
+                else:
+                    df_final = pd.DataFrame([nueva_fila])
+                    
+                df_final.to_csv(SIMULACIONES_FILE, index=False)
             
             # Pausa técnica mínima
             time.sleep(0.1)
