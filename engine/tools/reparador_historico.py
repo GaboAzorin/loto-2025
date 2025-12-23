@@ -188,4 +188,4 @@ def reparar_historia_inteligente(juego):
     print(f"\n✨ PROCESO TERMINADO.")
 
 if __name__ == "__main__":
-    reparar_historia_inteligente("RACHA")
+    reparar_historia_inteligente("LOTO")
