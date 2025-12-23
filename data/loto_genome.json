@@ -56,15 +56,15 @@
     },
     "RACHA": {
       "ideal_sum_range": [
-        111,
-        122
+        107,
+        116
       ],
       "ideal_even_count": 6
     }
   },
   "metadata": {
-    "updated_at": "2025-12-23 12:29:35",
+    "updated_at": "2025-12-23 12:48:00",
     "mode": "FULL_LOBOTOMY_V2",
-    "casos_estudiados": 7303
+    "casos_estudiados": 7219
   }
 }
