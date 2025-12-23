@@ -6,106 +6,139 @@ from datetime import datetime
 
 # CONFIGURACIÓN
 LIMITE_MB = 100
-BYTES_LIMITE = LIMITE_MB * 1024 * 1024  # 100 MB en bytes
+BYTES_LIMITE = LIMITE_MB * 1024 * 1024 
 
-def obtener_lista_archivos(ruta_origen):
-    """Recorre la carpeta y retorna una lista de todos los archivos (sin .pkl)"""
-    lista_archivos = []
-    for carpeta_actual, _, archivos in os.walk(ruta_origen):
-        for archivo in archivos:
-            if archivo.lower().endswith('.pkl'):
-                continue
-            
-            ruta_completa = os.path.join(carpeta_actual, archivo)
-            ruta_relativa = os.path.relpath(ruta_completa, ruta_origen)
-            peso = os.path.getsize(ruta_completa)
-            
-            lista_archivos.append({
-                'ruta_completa': ruta_completa,
-                'ruta_relativa': ruta_relativa,
-                'peso': peso
-            })
-    return lista_archivos
+def formatear_tamano(bytes_size):
+    """Convierte bytes a MB o KB para que sea legible"""
+    for unidad in ['B', 'KB', 'MB', 'GB']:
+        if bytes_size < 1024.0:
+            return f"{bytes_size:.2f} {unidad}"
+        bytes_size /= 1024.0
+    return f"{bytes_size:.2f} TB"
 
-def comprimir_por_lotes():
-    # 1. Interfaz gráfica oculta
+def comprimir_inteligente():
     root = tk.Tk()
     root.withdraw()
 
-    print("Abriendo explorador...")
-    ruta_seleccionada = filedialog.askdirectory(title="Selecciona la carpeta a comprimir")
+    print("--- RESPALDO INTELIGENTE ---")
+    ruta_seleccionada = filedialog.askdirectory(title="Selecciona la carpeta")
     
     if not ruta_seleccionada:
-        print("Cancelado.")
         return
 
     ruta_seleccionada = os.path.normpath(ruta_seleccionada)
     nombre_carpeta = os.path.basename(ruta_seleccionada)
     directorio_padre = os.path.dirname(ruta_seleccionada)
-    
-    # Timestamp: Año-Mes-Dia-Hora-Minuto
     timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M")
+    
+    # Nombre base común
     nombre_base = f"{timestamp}-{nombre_carpeta}"
 
-    print(f"Analizando archivos en: {ruta_seleccionada}...")
+    print(f"Analizando: {ruta_seleccionada} ...\n")
     
-    # 2. Obtener todos los archivos válidos
-    archivos_a_procesar = obtener_lista_archivos(ruta_seleccionada)
+    todos_los_archivos = []
+    archivos_para_zip = []
+
+    # 1. ESCANEO Y REPORTE
+    for carpeta_actual, subcarpetas, archivos in os.walk(ruta_seleccionada):
+        if '.git' in subcarpetas: subcarpetas.remove('.git') # Ignorar carpeta git
+        
+        for archivo in archivos:
+            ruta_completa = os.path.join(carpeta_actual, archivo)
+            peso = os.path.getsize(ruta_completa)
+            ruta_relativa = os.path.relpath(ruta_completa, ruta_seleccionada)
+            
+            es_pkl = archivo.lower().endswith('.pkl')
+            
+            todos_los_archivos.append({
+                'nombre': archivo,
+                'ruta_relativa': ruta_relativa,
+                'ruta_completa': ruta_completa,
+                'peso': peso,
+                'excluido': es_pkl
+            })
+
+            if not es_pkl:
+                archivos_para_zip.append({
+                    'ruta_completa': ruta_completa,
+                    'ruta_relativa': ruta_relativa,
+                    'peso': peso
+                })
+
+    # Ordenar y mostrar reporte
+    todos_los_archivos.sort(key=lambda x: x['peso'], reverse=True)
+
+    print("="*60)
+    print(f"{'PESO':<12} | {'ESTADO':<10} | {'NOMBRE DEL ARCHIVO'}")
+    print("="*60)
+
+    for item in todos_los_archivos:
+        peso_fmt = formatear_tamano(item['peso'])
+        estado = "[EXCLUIDO]" if item['excluido'] else "   OK   "
+        if item['peso'] > BYTES_LIMITE and not item['excluido']:
+            estado = "⚠️ GIGANTE"
+        
+        print(f"{peso_fmt:<12} | {estado:<10} | {item['ruta_relativa']}")
+
+    print("="*60)
+    print(f"Archivos válidos a comprimir: {len(archivos_para_zip)}")
+    print("-" * 60)
     
-    if not archivos_a_procesar:
-        print("No se encontraron archivos válidos (o solo había .pkl).")
+    if not archivos_para_zip:
+        print("No hay archivos válidos para comprimir.")
         return
 
-    # 3. Lógica de Lotes (Batching)
+    print("\nIniciando compresión...")
+
+    # 2. COMPRESIÓN POR LOTES
     numero_parte = 1
     peso_actual_lote = 0
     
-    # Función auxiliar para crear el nombre del zip
     def get_zip_path(num):
-        nombre = f"{nombre_base}_parte{num}.zip"
-        return os.path.join(directorio_padre, nombre)
+        return os.path.join(directorio_padre, f"{nombre_base}_parte{num}.zip")
 
-    # Abrimos el primer ZIP
     ruta_zip_actual = get_zip_path(numero_parte)
     zip_actual = zipfile.ZipFile(ruta_zip_actual, 'w', zipfile.ZIP_DEFLATED)
     
-    print(f"Creando Parte {numero_parte}...")
-
-    for item in archivos_a_procesar:
+    for item in archivos_para_zip:
         peso_archivo = item['peso']
         
-        # VERIFICACIÓN: ¿Cabe este archivo en el lote actual?
-        # Si (peso_actual + nuevo_archivo) supera el límite Y el lote no está vacío
-        # entonces cerramos y abrimos uno nuevo.
+        # Si se pasa del límite, cerramos y abrimos uno nuevo
         if (peso_actual_lote + peso_archivo > BYTES_LIMITE) and (peso_actual_lote > 0):
-            # Cerrar el actual
             zip_actual.close()
-            print(f" -> Parte {numero_parte} finalizada ({peso_actual_lote / (1024*1024):.2f} MB)")
+            print(f"📦 {os.path.basename(ruta_zip_actual)} guardado ({formatear_tamano(peso_actual_lote)})")
             
-            # Iniciar nuevo lote
             numero_parte += 1
             peso_actual_lote = 0
             ruta_zip_actual = get_zip_path(numero_parte)
             zip_actual = zipfile.ZipFile(ruta_zip_actual, 'w', zipfile.ZIP_DEFLATED)
-            print(f"Creando Parte {numero_parte}...")
 
-        # Escribir archivo en el ZIP actual
         zip_actual.write(item['ruta_completa'], item['ruta_relativa'])
         peso_actual_lote += peso_archivo
 
-    # 4. Cerrar el último ZIP que haya quedado abierto
     zip_actual.close()
-    print(f" -> Parte {numero_parte} finalizada ({peso_actual_lote / (1024*1024):.2f} MB)")
+    print(f"📦 {os.path.basename(ruta_zip_actual)} guardado ({formatear_tamano(peso_actual_lote)})")
+    
+    # 3. RENOMBRADO INTELIGENTE (Si solo hubo 1 parte)
+    if numero_parte == 1:
+        ruta_original = get_zip_path(1)
+        ruta_final_limpia = os.path.join(directorio_padre, f"{nombre_base}.zip")
+        
+        try:
+            # Si existiera uno previo con el mismo nombre exacto, lo borramos para evitar error
+            if os.path.exists(ruta_final_limpia):
+                os.remove(ruta_final_limpia)
+                
+            os.rename(ruta_original, ruta_final_limpia)
+            print(f"\n✨ Como todo cupo en un solo archivo, se renombró a:")
+            print(f"📂 {os.path.basename(ruta_final_limpia)}")
+        except Exception as e:
+            print(f"No se pudo renombrar el archivo único: {e}")
+    else:
+        print(f"\n✅ Se generaron {numero_parte} partes debido al peso total.")
 
-    print("-" * 40)
-    print(f"✅ Proceso terminado.")
-    print(f"📦 Total de partes creadas: {numero_parte}")
-    print(f"📂 Ubicación: {directorio_padre}")
-    print("-" * 40)
+    print("\nPROCESO FINALIZADO.")
 
 if __name__ == "__main__":
-    try:
-        comprimir_por_lotes()
-    except Exception as e:
-        print(f"Error: {e}")
+    comprimir_inteligente()
     input("\nPresiona Enter para salir...")
