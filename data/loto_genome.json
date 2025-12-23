@@ -11,9 +11,9 @@
       "oraculo_neural_v3": 0.01
     },
     "LOTO3": {
-      "consenso_meritocratico_v2": 20.69,
+      "consenso_meritocratico_v2": 20.68,
       "forense_biometrico_v1": 17.1,
-      "oraculo_neural_v3": 12.05
+      "oraculo_neural_v3": 11.99
     },
     "LOTO4": {
       "consenso_meritocratico_v2": 5.61,
@@ -63,7 +63,7 @@
     }
   },
   "metadata": {
-    "updated_at": "2025-12-23 19:34:49",
+    "updated_at": "2025-12-23 19:50:20",
     "mode": "FULL_LOBOTOMY_V2",
     "casos_estudiados": 7046
   }
