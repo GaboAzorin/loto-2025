@@ -1,6 +1,7 @@
 import pandas as pd
 import os
 import time
+from datetime import datetime, timedelta
 import json
 import sys
 
@@ -85,8 +86,8 @@ def reconstruir_linea_tiempo():
         df_real = pd.read_csv(path)
         if 'sorteo' not in df_real.columns: continue
         
-        # Ordenar por sorteo (antiguo a nuevo)
-        df_real = df_real.sort_values('sorteo', ascending=True)
+        # Ordenar por sorteo (antiguo a nuevo) y RESETEAR INDICE para poder buscar el anterior por posición
+        df_real = df_real.sort_values('sorteo', ascending=True).reset_index(drop=True)
         todos_sorteos = df_real['sorteo'].unique()
         
         # 2. LÓGICA DE SALTO TEMPORAL
@@ -113,7 +114,38 @@ def reconstruir_linea_tiempo():
 
         # 4. BUCLE DE VIAJE EN EL TIEMPO
         for sorteo_actual in nuevos:
-            print(f"   >>> Procesando Sorteo #{sorteo_actual}...")
+            print(f"   >>> Procesando Sorteo #{sorteo_actual}...", end=" ")
+
+            # --- CÁLCULO DE FECHA SIMULADA (La lógica de los 5 minutos) ---
+            # Buscamos la fila actual
+            fila_actual_idx = df_real.index[df_real['sorteo'] == sorteo_actual].tolist()
+            
+            # Fecha por defecto (hoy) por si falla la lógica
+            fecha_simulada = datetime.now()
+            fecha_target_dt = datetime.now()
+
+            if fila_actual_idx:
+                idx = fila_actual_idx[0]
+                
+                # Obtener la fecha REAL del sorteo actual (para pasársela al Oráculo como target)
+                fecha_target_str = df_real.iloc[idx]['fecha']
+                try:
+                    fecha_target_dt = datetime.strptime(fecha_target_str, '%Y-%m-%d %H:%M:%S')
+                except: pass
+
+                # Calcular fecha de generación (Sorteo Anterior + 5 min)
+                if idx > 0:
+                    fila_anterior = df_real.iloc[idx - 1]
+                    fecha_anterior_str = fila_anterior['fecha']
+                    try:
+                        dt_anterior = datetime.strptime(fecha_anterior_str, '%Y-%m-%d %H:%M:%S')
+                        fecha_simulada = dt_anterior + timedelta(minutes=5)
+                    except ValueError:
+                        pass 
+            
+            fecha_sim_str = fecha_simulada.strftime('%Y-%m-%d %H:%M:%S')
+            print(f"[{fecha_sim_str}]")
+            # -------------------------------------------------------------
             
             # A. FASE JUEZ (Actualiza estados de apuestas pasadas)
             juez_implacable.juzgar() 
@@ -126,49 +158,40 @@ def reconstruir_linea_tiempo():
             # 1. Verificamos si ya existe una predicción del Oráculo para este sorteo
             df_sim = pd.read_csv(SIMULACIONES_FILE) if os.path.exists(SIMULACIONES_FILE) else pd.DataFrame()
             
-            existe_prediccion = False
             if not df_sim.empty and 'sorteo_objetivo' in df_sim.columns:
                 # Buscamos si el oráculo ya opinó sobre este sorteo
                 filtro = (df_sim['juego'] == juego) & \
-                        (df_sim['sorteo_objetivo'] == sorteo_actual) & \
-                        (df_sim['algoritmo'] == 'oraculo_neural_v3')
+                         (df_sim['sorteo_objetivo'] == sorteo_actual) & \
+                         (df_sim['algoritmo'] == 'oraculo_neural_v3')
                 
                 if not df_sim[filtro].empty:
-                    existe_prediccion = True
-                    print(f"      ✅ Ya existe predicción del Oráculo para el sorteo {sorteo_actual}.")
-                    # AQUÍ TU DECISIÓN:
-                    # Si confías en que la predicción existente se hizo con los datos correctos, 'continue'.
-                    # Si crees que se hizo 'tarde' o mal, la borramos y regeneramos.
-                    # Según tu pedido: "reemplazar las simulaciones que se pasaron".
-                    
                     # Borramos la anterior para garantizar que sea la "pura" generada con Time Travel
                     df_sim = df_sim[~filtro] # Eliminamos la fila vieja
                     df_sim.to_csv(SIMULACIONES_FILE, index=False)
-                    print(f"      ♻️  Regenerando predicción pura (Time Travel) para asegurar consistencia...")
+                    # print(f"      ♻️  Regenerando predicción...")
 
             # 2. Entrenamos el Oráculo VIAJANDO AL PASADO (Sorteo Limite = Sorteo Actual)
             # Esto asegura que el modelo NO vea los resultados del sorteo actual, solo los anteriores.
             oraculo.entrenar(sorteo_limite=sorteo_actual)
             
-            # 3. Predecimos "el futuro" (que es el presente para nosotros, pero futuro para el modelo)
-            # Nota: Usamos una fecha dummy o la fecha real del sorteo si la tienes, 
-            # pero lo importante es que el modelo está cortado en el tiempo.
-            prediccion = oraculo.predecir(fecha_objetivo=datetime.now()) 
+            # 3. Predecimos "el futuro"
+            # Usamos la fecha target REAL para que el modelo sepa qué día de la semana es el objetivo
+            prediccion = oraculo.predecir(fecha_objetivo=fecha_target_dt) 
             
             if prediccion:
-                print(f"      🔮 Oráculo dice (Reconstrucción): {prediccion}")
+                print(f"      🔮 Oráculo dice: {prediccion}")
                 
                 # 4. Guardamos la simulación "correcta"
                 nueva_fila = {
                     'id': int(time.time()),
-                    'fecha_generacion': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                    'fecha_generacion': fecha_sim_str, # <--- USAMOS LA FECHA SIMULADA
                     'juego': juego,
                     'numeros': str(prediccion),
                     'sorteo_objetivo': sorteo_actual,
-                    'estado': 'PENDIENTE', # Se auditará en la siguiente vuelta del Juez
+                    'estado': 'PENDIENTE', 
                     'aciertos': 0,
                     'score_afinidad': 0.0,
-                    'hora_dia': 12, # Hora estándar simulada
+                    'hora_dia': fecha_simulada.hour, # <--- HORA SIMULADA
                     'algoritmo': 'oraculo_neural_v3'
                 }
                 
