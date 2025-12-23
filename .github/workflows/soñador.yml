@@ -1,0 +1,71 @@
+name: Bot Soñador (Multiverso)
+
+on:
+  schedule:
+    - cron: '*/15 * * * *' # Corre cada 15 minutos
+  workflow_dispatch: # Botón manual en GitHub
+
+permissions:
+  contents: write
+
+jobs:
+  dream:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v3
+      with:
+        ref: main
+
+    - name: Sincronizar estado
+      run: |
+        git config pull.rebase false
+        git pull origin main || echo "Repositorio ya actualizado"
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    # --- FASE 1: AUDITORÍA (El Pasado) ---
+    - name: 1. Ejecutar Juez Implacable
+      run: python engine/models/juez_implacable.py
+
+    # --- FASE 2: APRENDIZAJE (La Retrospectiva) ---
+    - name: 2. Ejecutar Entrenador Cognitivo
+      run: python engine/models/entrenador_cognitivo.py
+
+    # --- FASE 3: BIOMETRÍA (El Presente) ---
+    - name: 3. Actualizar Biometría
+      run: python engine/models/generador_biometrico.py
+
+    # --- FASE 4: PREDICCIÓN (El Futuro) ---
+    - name: 4. Ejecutar Bot Dreamer
+      run: python engine/models/bot_dreamer.py
+
+    # --- FASE 5: PERSISTENCIA ---
+    - name: Guardar Predicciones e Inteligencia
+      run: |
+        git config --global user.name 'LotoAI Bot'
+        git config --global user.email 'bot@lotoai.com'
+        git config --global http.postBuffer 524288000
+        
+        # 1. PRIMERO Sincronizamos (Pull) para traer cambios remotos
+        git pull origin main --rebase || echo "Nada que rebasar"
+
+        # 2. LUEGO Agregamos los archivos (Add)
+        git add data/LOTO_SIMULACIONES.csv || true
+        git add data/loto_biometrics.json || true
+        git add data/loto_genome.json || true
+        git add data/*.pkl || true
+        
+        # 3. FINALMENTE Comiteamos y Subimos (Commit & Push)
+        git commit -m "🧠 Ciclo LotoAI: Auditoría > Aprendizaje > Predicción" || echo "Sin cambios estructurales"
+        git push origin main
