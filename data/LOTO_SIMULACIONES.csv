@@ -1967,8 +1967,8 @@ id,fecha_generacion,juego,numeros,sorteo_objetivo,estado,aciertos,score_afinidad
 1765575258,2025-12-12 18:22:38,LOTO4,"[5, 8, 12, 30]",11497,AUDITADO,1,6.25,18,forense_biometrico_v1
 1765575458,2025-12-12 18:22:38,RACHA,"[3, 4, 5, 9, 10, 14, 15, 16, 18, 19]",10230,AUDITADO,5,5.0,18,forense_biometrico_v1
 1765575597,2025-12-12 18:22:38,LOTO,"[2, 16, 17, 18, 21, 27]",5360,AUDITADO,0,0.0,18,consenso_meritocratico_v2
-1765575617,2025-12-12 18:22:38,LOTO3,"[1, 6, 9]",23892,AUDITADO,1,33.33,18,consenso_meritocratico_v2
 1765575617,2025-12-12 18:40:17,LOTO,"[2, 19, 21, 25, 31, 38]",5360,AUDITADO,1,2.78,18,forense_biometrico_v1
+1765575617,2025-12-12 18:22:38,LOTO3,"[1, 6, 9]",23892,AUDITADO,1,33.33,18,consenso_meritocratico_v2
 1765575637,2025-12-12 18:22:38,LOTO4,"[3, 15, 17, 20]",11497,AUDITADO,0,0.0,18,consenso_meritocratico_v2
 1765575657,2025-12-12 18:22:38,RACHA,"[5, 6, 7, 10, 11, 12, 15, 17, 18, 19]",10230,AUDITADO,6,15.0,18,consenso_meritocratico_v2
 1765575718,2025-12-12 18:40:17,LOTO,"[5, 12, 23, 25, 30, 35]",5360,AUDITADO,1,2.78,18,gaussiano_tactico_v1
@@ -2563,8 +2563,8 @@ id,fecha_generacion,juego,numeros,sorteo_objetivo,estado,aciertos,score_afinidad
 1765661963,2025-12-13 18:22:04,LOTO,"[2, 9, 13, 18, 22, 40]",5360,AUDITADO,0,0.0,18,consenso_meritocratico_v2
 1765661983,2025-12-13 18:22:04,LOTO3,"[2, 7, 8]",23895,AUDITADO,0,0.0,18,consenso_meritocratico_v2
 1765662003,2025-12-13 18:22:04,LOTO4,"[5, 15, 16, 19]",11499,AUDITADO,0,0.0,18,consenso_meritocratico_v2
-1765662023,2025-12-13 18:22:04,RACHA,"[2, 3, 4, 7, 8, 11, 12, 13, 14, 20]",10232,AUDITADO,4,15.0,18,consenso_meritocratico_v2
 1765662023,2025-12-13 18:40:23,LOTO,"[1, 6, 19, 22, 27, 36]",5360,AUDITADO,0,0.0,18,forense_biometrico_v1
+1765662023,2025-12-13 18:22:04,RACHA,"[2, 3, 4, 7, 8, 11, 12, 13, 14, 20]",10232,AUDITADO,4,15.0,18,consenso_meritocratico_v2
 1765662124,2025-12-13 18:40:23,LOTO,"[12, 16, 19, 29, 30, 33]",5360,AUDITADO,1,2.78,18,gaussiano_tactico_v1
 1765662225,2025-12-13 18:40:23,LOTO,"[2, 8, 16, 19, 34, 41]",5360,AUDITADO,0,0.0,18,delta_tactico_v1
 1765662326,2025-12-13 18:40:23,LOTO,"[2, 21, 27, 29, 32, 40]",5360,AUDITADO,0,0.0,18,markov_chain_v1
@@ -2883,8 +2883,8 @@ id,fecha_generacion,juego,numeros,sorteo_objetivo,estado,aciertos,score_afinidad
 1765713305,2025-12-14 08:40:05,RACHA,"[1, 2, 6, 7, 9, 11, 13, 14, 15, 19]",10233,AUDITADO,5,5.0,8,forense_biometrico_v1
 1765713363,2025-12-14 08:52:41,LOTO,"[14, 18, 19, 23, 27, 32]",5360,AUDITADO,0,0.0,8,delta_tactico_v1
 1765713444,2025-12-14 08:40:05,LOTO,"[12, 14, 18, 20, 23, 32]",5360,AUDITADO,1,2.78,8,consenso_meritocratico_v2
-1765713464,2025-12-14 08:52:41,LOTO,"[14, 18, 20, 23, 32, 33]",5360,AUDITADO,0,0.0,8,markov_chain_v1
 1765713464,2025-12-14 08:40:05,LOTO3,"[3, 4, 5]",23896,AUDITADO,0,0.0,8,consenso_meritocratico_v2
+1765713464,2025-12-14 08:52:41,LOTO,"[14, 18, 20, 23, 32, 33]",5360,AUDITADO,0,0.0,8,markov_chain_v1
 1765713484,2025-12-14 08:40:05,LOTO4,"[1, 11, 19, 23]",11500,AUDITADO,0,0.0,8,consenso_meritocratico_v2
 1765713504,2025-12-14 08:40:05,RACHA,"[2, 3, 5, 10, 11, 13, 14, 16, 19, 20]",10233,AUDITADO,6,15.0,8,consenso_meritocratico_v2
 1765713661,2025-12-14 08:52:41,LOTO3,"[0, 8, 9]",23896,AUDITADO,1,33.33,8,forense_biometrico_v1
@@ -5817,6 +5817,7 @@ id,fecha_generacion,juego,numeros,sorteo_objetivo,estado,aciertos,score_afinidad
 1766249902,2025-12-20 13:48:22,LOTO3,"[0, 1, 3]",23914,AUDITADO,0,0.0,13,forense_biometrico_v1
 1766250202,2025-12-20 13:48:22,LOTO4,"[5, 7, 14, 22]",11512,AUDITADO,1,6.25,13,forense_biometrico_v1
 1766250290,2025-12-20 13:48:22,LOTO4,"[2, 3, 6, 23]",11512,AUDITADO,1,6.25,13,oraculo_neural_v3
+1766250300,2025-12-20 14:05:00,LOTO3,"[9, 4, 3]",23915,PENDIENTE,0,0.0,14,oraculo_neural_v3
 1766250351,2025-12-20 13:48:22,LOTO,"[7, 9, 10, 17, 25, 33]",5363,AUDITADO,1,2.78,13,consenso_meritocratico_v2
 1766250381,2025-12-20 13:48:22,LOTO3,"[3, 4, 7]",23914,AUDITADO,1,33.33,13,consenso_meritocratico_v2
 1766250411,2025-12-20 13:48:22,LOTO4,"[2, 3, 6, 23]",11512,AUDITADO,1,6.25,13,consenso_meritocratico_v2
@@ -5960,7 +5961,6 @@ id,fecha_generacion,juego,numeros,sorteo_objetivo,estado,aciertos,score_afinidad
 1766265958,2025-12-20 18:20:55,LOTO,"[2, 21, 27, 29, 32, 40]",5363,AUDITADO,1,2.78,18,markov_chain_v1
 1766266255,2025-12-20 18:20:55,LOTO3,"[1, 8, 9]",23916,AUDITADO,0,0.0,18,forense_biometrico_v1
 1766266555,2025-12-20 18:20:55,LOTO4,"[4, 15, 17, 18]",11513,AUDITADO,0,0.0,18,forense_biometrico_v1
-1766266613,2025-12-20 18:20:55,LOTO3,"[4, 6, 8]",23916,AUDITADO,1,10.0,18,oraculo_neural_v3
 1766266643,2025-12-20 18:20:55,LOTO4,"[6, 9, 14, 21]",11513,AUDITADO,1,6.25,18,oraculo_neural_v3
 1766266704,2025-12-20 18:20:55,LOTO,"[3, 7, 10, 17, 25, 38]",5363,AUDITADO,1,2.78,18,consenso_meritocratico_v2
 1766266734,2025-12-20 18:20:55,LOTO3,"[1, 6, 7]",23916,AUDITADO,1,10.0,18,consenso_meritocratico_v2
@@ -5975,7 +5975,6 @@ id,fecha_generacion,juego,numeros,sorteo_objetivo,estado,aciertos,score_afinidad
 1766267578,2025-12-20 18:52:58,LOTO,"[6, 15, 21, 23, 24, 35]",5363,AUDITADO,1,2.78,18,forense_biometrico_v1
 1766267679,2025-12-20 18:52:58,LOTO,"[2, 5, 22, 24, 33, 40]",5363,AUDITADO,2,13.44,18,gaussiano_tactico_v1
 1766267698,2025-12-20 18:39:58,LOTO4,"[7, 8, 13, 15]",11513,AUDITADO,2,25.0,18,forense_biometrico_v1
-1766267756,2025-12-20 18:39:58,LOTO3,"[4, 6, 8]",23916,AUDITADO,1,10.0,18,oraculo_neural_v3
 1766267780,2025-12-20 18:52:58,LOTO,"[2, 15, 23, 24, 28, 32]",5363,AUDITADO,2,14.78,18,delta_tactico_v1
 1766267786,2025-12-20 18:39:58,LOTO4,"[6, 9, 14, 21]",11513,AUDITADO,1,6.25,18,oraculo_neural_v3
 1766267847,2025-12-20 18:39:58,LOTO,"[7, 10, 17, 25, 36, 38]",5363,AUDITADO,1,2.78,18,consenso_meritocratico_v2
@@ -5986,7 +5985,6 @@ id,fecha_generacion,juego,numeros,sorteo_objetivo,estado,aciertos,score_afinidad
 1766267998,2025-12-20 18:39:58,RACHA,"[2, 3, 4, 8, 10, 12, 13, 14, 17, 20]",10246,AUDITADO,7,40.0,18,forense_biometrico_v1
 1766268178,2025-12-20 18:52:58,LOTO3,"[0, 1, 6]",23916,AUDITADO,1,33.33,18,forense_biometrico_v1
 1766268478,2025-12-20 18:52:58,LOTO4,"[6, 7, 10, 21]",11513,AUDITADO,1,6.25,18,forense_biometrico_v1
-1766268536,2025-12-20 18:52:58,LOTO3,"[4, 6, 8]",23916,AUDITADO,1,10.0,18,oraculo_neural_v3
 1766268566,2025-12-20 18:52:58,LOTO4,"[6, 9, 14, 21]",11513,AUDITADO,1,6.25,18,oraculo_neural_v3
 1766268627,2025-12-20 18:52:58,LOTO,"[3, 18, 24, 25, 36, 38]",5363,AUDITADO,2,11.11,18,consenso_meritocratico_v2
 1766268657,2025-12-20 18:52:58,LOTO3,"[1, 2, 6]",23916,AUDITADO,1,33.33,18,consenso_meritocratico_v2
@@ -5999,7 +5997,6 @@ id,fecha_generacion,juego,numeros,sorteo_objetivo,estado,aciertos,score_afinidad
 1766269691,2025-12-20 19:23:08,LOTO,"[2, 21, 27, 29, 32, 40]",5363,AUDITADO,1,2.78,19,markov_chain_v1
 1766269988,2025-12-20 19:23:08,LOTO3,"[0, 2, 6]",23916,AUDITADO,1,33.33,19,forense_biometrico_v1
 1766270288,2025-12-20 19:23:08,LOTO4,"[5, 11, 16, 19]",11513,AUDITADO,0,0.0,19,forense_biometrico_v1
-1766270346,2025-12-20 19:23:08,LOTO3,"[4, 6, 8]",23916,AUDITADO,1,10.0,19,oraculo_neural_v3
 1766270376,2025-12-20 19:23:08,LOTO4,"[6, 9, 14, 21]",11513,AUDITADO,1,6.25,19,oraculo_neural_v3
 1766270437,2025-12-20 19:23:08,LOTO,"[7, 10, 21, 25, 36, 38]",5363,AUDITADO,1,2.78,19,consenso_meritocratico_v2
 1766270467,2025-12-20 19:23:08,LOTO3,"[0, 3, 6]",23916,AUDITADO,2,43.33,19,consenso_meritocratico_v2
@@ -6015,7 +6012,6 @@ id,fecha_generacion,juego,numeros,sorteo_objetivo,estado,aciertos,score_afinidad
 1766271424,2025-12-20 19:55:23,LOTO,"[11, 15, 16, 19, 24, 33]",5363,AUDITADO,2,13.44,19,gaussiano_tactico_v1
 1766271496,2025-12-20 19:43:16,LOTO4,"[1, 9, 14, 20]",11513,AUDITADO,0,0.0,19,forense_biometrico_v1
 1766271525,2025-12-20 19:55:23,LOTO,"[7, 17, 18, 23, 28, 29]",5363,AUDITADO,0,0.0,19,delta_tactico_v1
-1766271554,2025-12-20 19:43:16,LOTO3,"[4, 6, 8]",23916,AUDITADO,1,10.0,19,oraculo_neural_v3
 1766271584,2025-12-20 19:43:16,LOTO4,"[6, 9, 14, 21]",11513,AUDITADO,1,6.25,19,oraculo_neural_v3
 1766271626,2025-12-20 19:55:23,LOTO,"[2, 21, 27, 29, 32, 40]",5363,AUDITADO,1,2.78,19,markov_chain_v1
 1766271645,2025-12-20 19:43:16,LOTO,"[7, 10, 17, 25, 26, 38]",5363,AUDITADO,1,2.78,19,consenso_meritocratico_v2
@@ -6025,7 +6021,6 @@ id,fecha_generacion,juego,numeros,sorteo_objetivo,estado,aciertos,score_afinidad
 1766271796,2025-12-20 19:43:16,RACHA,"[1, 2, 5, 6, 10, 14, 15, 16, 17, 20]",10246,AUDITADO,4,15.0,19,forense_biometrico_v1
 1766271923,2025-12-20 19:55:23,LOTO3,"[2, 3, 5]",23916,AUDITADO,2,20.0,19,forense_biometrico_v1
 1766272223,2025-12-20 19:55:23,LOTO4,"[4, 9, 14, 23]",11513,AUDITADO,1,6.25,19,forense_biometrico_v1
-1766272281,2025-12-20 19:55:23,LOTO3,"[4, 6, 8]",23916,AUDITADO,1,10.0,19,oraculo_neural_v3
 1766272311,2025-12-20 19:55:23,LOTO4,"[6, 9, 14, 21]",11513,AUDITADO,1,6.25,19,oraculo_neural_v3
 1766272372,2025-12-20 19:55:23,LOTO,"[7, 17, 25, 29, 32, 36]",5363,AUDITADO,1,2.78,19,consenso_meritocratico_v2
 1766272402,2025-12-20 19:55:23,LOTO3,"[0, 4, 8]",23916,AUDITADO,0,0.0,19,consenso_meritocratico_v2
@@ -6038,7 +6033,6 @@ id,fecha_generacion,juego,numeros,sorteo_objetivo,estado,aciertos,score_afinidad
 1766273269,2025-12-20 20:22:46,LOTO,"[2, 21, 27, 29, 32, 40]",5363,AUDITADO,1,2.78,20,markov_chain_v1
 1766273566,2025-12-20 20:22:46,LOTO3,"[1, 2, 8]",23916,AUDITADO,0,0.0,20,forense_biometrico_v1
 1766273866,2025-12-20 20:22:46,LOTO4,"[1, 9, 13, 21]",11513,AUDITADO,2,25.0,20,forense_biometrico_v1
-1766273924,2025-12-20 20:22:46,LOTO3,"[4, 6, 8]",23916,AUDITADO,1,10.0,20,oraculo_neural_v3
 1766273954,2025-12-20 20:22:46,LOTO4,"[6, 9, 14, 21]",11513,AUDITADO,1,6.25,20,oraculo_neural_v3
 1766274015,2025-12-20 20:22:46,LOTO,"[7, 10, 17, 25, 27, 38]",5363,AUDITADO,1,2.78,20,consenso_meritocratico_v2
 1766274045,2025-12-20 20:22:46,LOTO3,"[4, 6, 8]",23916,AUDITADO,1,10.0,20,consenso_meritocratico_v2
@@ -6054,7 +6048,6 @@ id,fecha_generacion,juego,numeros,sorteo_objetivo,estado,aciertos,score_afinidad
 1766274898,2025-12-20 20:53:17,LOTO,"[7, 8, 12, 22, 33, 36]",5363,AUDITADO,1,2.78,20,gaussiano_tactico_v1
 1766274959,2025-12-20 20:40:59,LOTO4,"[5, 6, 12, 19]",11513,AUDITADO,0,0.0,20,forense_biometrico_v1
 1766274999,2025-12-20 20:53:17,LOTO,"[4, 16, 21, 22, 29, 36]",5363,AUDITADO,1,2.78,20,delta_tactico_v1
-1766275017,2025-12-20 20:40:59,LOTO3,"[4, 6, 8]",23916,AUDITADO,1,10.0,20,oraculo_neural_v3
 1766275047,2025-12-20 20:40:59,LOTO4,"[6, 9, 14, 21]",11513,AUDITADO,1,6.25,20,oraculo_neural_v3
 1766275100,2025-12-20 20:53:17,LOTO,"[2, 21, 27, 29, 32, 40]",5363,AUDITADO,1,2.78,20,markov_chain_v1
 1766275108,2025-12-20 20:40:59,LOTO,"[7, 14, 17, 25, 36, 38]",5363,AUDITADO,1,2.78,20,consenso_meritocratico_v2
@@ -6064,7 +6057,6 @@ id,fecha_generacion,juego,numeros,sorteo_objetivo,estado,aciertos,score_afinidad
 1766275259,2025-12-20 20:40:59,RACHA,"[1, 4, 7, 8, 11, 14, 15, 16, 19, 20]",10246,AUDITADO,5,5.0,20,forense_biometrico_v1
 1766275397,2025-12-20 20:53:17,LOTO3,"[0, 4, 5]",23916,AUDITADO,1,10.0,20,forense_biometrico_v1
 1766275697,2025-12-20 20:53:17,LOTO4,"[3, 5, 20, 23]",11513,AUDITADO,1,6.25,20,forense_biometrico_v1
-1766275755,2025-12-20 20:53:17,LOTO3,"[4, 6, 8]",23916,AUDITADO,1,10.0,20,oraculo_neural_v3
 1766275785,2025-12-20 20:53:17,LOTO4,"[6, 9, 14, 21]",11513,AUDITADO,1,6.25,20,oraculo_neural_v3
 1766275846,2025-12-20 20:53:17,LOTO,"[8, 10, 17, 25, 36, 38]",5363,AUDITADO,2,12.78,20,consenso_meritocratico_v2
 1766275876,2025-12-20 20:53:17,LOTO3,"[2, 5, 8]",23916,AUDITADO,1,33.33,20,consenso_meritocratico_v2
