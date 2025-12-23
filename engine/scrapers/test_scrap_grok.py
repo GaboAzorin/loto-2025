@@ -7,6 +7,7 @@ import subprocess
 from datetime import datetime
 
 from playwright.async_api import async_playwright
+from playwright_stealth import stealth_async
 
 # Instala si no tienes: pip install playwright playwright-extra playwright-extra-plugin-stealth
 # Luego: playwright install chromium
@@ -50,6 +51,7 @@ async def main():
             timezone_id="America/Santiago"
         )
         page = await context.new_page()
+        await stealth_async(page)
 
         print("🌐 Cargando página principal para obtener token CSRF...")
         await page.goto(BASE_URL, wait_until="networkidle")

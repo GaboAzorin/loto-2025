@@ -20,7 +20,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install playwright playwright-extra playwright-extra-plugin-stealth
+          pip install playwright playwright-stealth
           playwright install chromium --with-deps
 
       - name: Run test scraper
