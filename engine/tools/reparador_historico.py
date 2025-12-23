@@ -190,6 +190,6 @@ def reparar_historia_inteligente(juego):
 
 if __name__ == "__main__":
     # CONFIGURACIÓN
-    JUEGO_A_REPARAR = "LOTO3"
+    JUEGO_A_REPARAR = "LOTO4"
     
     reparar_historia_inteligente(JUEGO_A_REPARAR)
