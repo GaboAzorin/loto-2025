@@ -43,7 +43,6 @@ GAME_CONFIG = {
         "type": "POSITIONAL",
         "max": 9, "min_val": 0,
         "n_balls": 3,
-        # En Loto 3, n1 ES la posición 1. No hay distinción.
         "input_prefix": "n", 
         "target_prefix": "n"
     }
