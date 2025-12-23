@@ -39,12 +39,20 @@ def encontrar_punto_partida(juego):
     except: return None
 
 def guardar_prediccion(fila_dict):
-    """Función auxiliar para guardar en CSV de forma segura."""
+    """Guarda la fila y ORDENA el CSV cronológicamente por ID."""
     if os.path.exists(SIMULACIONES_FILE):
         df_final = pd.read_csv(SIMULACIONES_FILE)
+        # Concatenamos la nueva fila
         df_final = pd.concat([df_final, pd.DataFrame([fila_dict])], ignore_index=True)
     else:
         df_final = pd.DataFrame([fila_dict])
+    
+    # --- LA MAGIA DEL ORDENAMIENTO ---
+    # Convertimos ID a numérico por si acaso y ordenamos
+    df_final['id'] = pd.to_numeric(df_final['id'], errors='coerce')
+    df_final = df_final.sort_values(by='id', ascending=True)
+    # ---------------------------------
+
     df_final.to_csv(SIMULACIONES_FILE, index=False)
 
 def reparar_historia_inteligente(juego):
@@ -52,8 +60,8 @@ def reparar_historia_inteligente(juego):
     
     sorteo_inicio = encontrar_punto_partida(juego)
     if sorteo_inicio is None:
-        print(f"⚠️ No hay historial previo para {juego}. Se intentará predecir el futuro directamente.")
-        sorteo_inicio = 9999999 # Valor alto para saltar historia y ir al futuro
+        print(f"⚠️ No hay historial previo para {juego}. Saltando directo al futuro.")
+        sorteo_inicio = 9999999 
 
     archivo_maestro = os.path.join(DATA_DIR, MAESTROS[juego])
     if not os.path.exists(archivo_maestro): return
@@ -91,6 +99,8 @@ def reparar_historia_inteligente(juego):
                     fecha_simulada = fecha_target_dt - timedelta(days=2)
 
             fecha_sim_str = fecha_simulada.strftime('%Y-%m-%d %H:%M:%S')
+            
+            # ID Retroactivo basado en la fecha simulada
             id_retroactivo = int(fecha_simulada.timestamp())
 
             # Borrar anterior
@@ -109,7 +119,7 @@ def reparar_historia_inteligente(juego):
                 if prediccion:
                     print(f"✅ Pred: {prediccion}")
                     guardar_prediccion({
-                        'id': id_retroactivo,
+                        'id': id_retroactivo, # Se guardará en su posición correcta por fecha
                         'fecha_generacion': fecha_sim_str,
                         'juego': juego,
                         'numeros': str(prediccion),
@@ -122,19 +132,16 @@ def reparar_historia_inteligente(juego):
                 else: print("⚠️ Sin predicción.")
             except Exception as e: print(f"❌ Error: {e}")
 
-    # === FASE 2: PREDECIR EL FUTURO (EL SALTO) ===
+    # === FASE 2: PREDECIR EL FUTURO ===
     print(f"\n🚀 PROYECTANDO EL PRÓXIMO SORTEO (FUTURO INMEDIATO)...")
     
-    # Obtenemos el ÚLTIMO sorteo que realmente ocurrió
     if not df_maestro.empty:
         ultimo_sorteo_real = df_maestro.iloc[-1]
         id_ultimo = int(ultimo_sorteo_real['sorteo'])
         fecha_ultimo_str = ultimo_sorteo_real['fecha']
         
-        # El objetivo es el siguiente
         sorteo_futuro = id_ultimo + 1
         
-        # La fecha de generación es 5 minutos después del último sorteo real
         try:
             dt_ultimo = datetime.strptime(fecha_ultimo_str, '%Y-%m-%d %H:%M:%S')
             fecha_gen_futura = dt_ultimo + timedelta(minutes=5)
@@ -147,23 +154,17 @@ def reparar_historia_inteligente(juego):
         print(f"    🎯 Objetivo: Sorteo #{sorteo_futuro}")
         print(f"    🕒 Momento de Simulación: {fecha_gen_str}")
 
-        # Limpieza preventiva del futuro (por si había basura)
+        # Limpieza preventiva
         if os.path.exists(SIMULACIONES_FILE):
             df_sim = pd.read_csv(SIMULACIONES_FILE)
             filtro_borrar = (df_sim['juego'] == juego) & (df_sim['sorteo_objetivo'] == sorteo_futuro) & (df_sim['algoritmo'] == 'oraculo_neural_v3')
             if not df_sim[filtro_borrar].empty:
                 df_sim = df_sim[~filtro_borrar]
                 df_sim.to_csv(SIMULACIONES_FILE, index=False)
-                print("    ♻️  Se eliminó una predicción previa para este sorteo futuro.")
 
-        # Entrenamos con TODO lo que tenemos (sin limite, o limite = sorteo_futuro)
-        # Nota: sorteo_futuro no existe en el maestro, así que tomará todo el historial.
         print(f"    🧠 Entrenando con toda la historia disponible...")
         try:
             oraculo.entrenar(sorteo_limite=sorteo_futuro)
-            
-            # Predecimos para "ahora" (o la fecha estimada del sorteo futuro si quisiéramos ser precisos, 
-            # pero datetime.now() basta para definir día de semana si es inminente)
             prediccion_futura = oraculo.predecir(fecha_objetivo=datetime.now())
             
             if prediccion_futura:
@@ -179,7 +180,7 @@ def reparar_historia_inteligente(juego):
                     'hora_dia': fecha_gen_futura.hour,
                     'algoritmo': 'oraculo_neural_v3'
                 })
-                print("    ✅ Guardada y lista para jugar.")
+                print("    ✅ Guardada y ordenada en el CSV.")
             else:
                 print("    ⚠️ El oráculo no habló.")
         except Exception as e:
@@ -188,4 +189,7 @@ def reparar_historia_inteligente(juego):
     print(f"\n✨ PROCESO TERMINADO.")
 
 if __name__ == "__main__":
-    reparar_historia_inteligente("LOTO")
+    # CONFIGURACIÓN
+    JUEGO_A_REPARAR = "LOTO3" # Cambia a LOTO4 cuando termines este
+    
+    reparar_historia_inteligente(JUEGO_A_REPARAR)
