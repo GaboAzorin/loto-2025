@@ -23,7 +23,7 @@
     "RACHA": {
       "consenso_meritocratico_v2": 16.68,
       "forense_biometrico_v1": 15.75,
-      "oraculo_neural_v3": 15.06
+      "oraculo_neural_v3": 15.04
     }
   },
   "last_processed": {
@@ -63,7 +63,7 @@
     }
   },
   "metadata": {
-    "updated_at": "2025-12-24 05:18:59",
+    "updated_at": "2025-12-24 05:50:05",
     "mode": "FULL_LOBOTOMY_V2",
     "casos_estudiados": 7627
   }
