@@ -8895,4 +8895,4 @@ id,fecha_generacion,juego,numeros,sorteo_objetivo,estado,aciertos,score_afinidad
 1766693215,2025-12-25 16:47:56,RACHA,"[2, 3, 4, 8, 10, 12, 17, 18, 19, 20]",10256,PENDIENTE,0,0.0,16,consenso_meritocratico_v2
 1766692818,2025-12-24 21:05:00,LOTO3,"[6, 9, 7]",23929,AUDITADO,2,43.33,21,oraculo_neural_v3
 1766692923,2025-12-24 22:05:00,RACHA,"[2, 3, 5, 8, 9, 10, 12, 16, 17, 20]",10255,AUDITADO,5,5.0,22,oraculo_neural_v3
-1766693029,2025-12-24 21:05:00,LOTO4,"[4, 11, 12, 16]",11522,PENDIENTE,0,0.0,21,oraculo_neural_v3
+1766693029,2025-12-24 21:05:00,LOTO4,"[4, 11, 12, 16]",11522,AUDITADO,1,6.25,21,oraculo_neural_v3
