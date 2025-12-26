@@ -445,7 +445,6 @@
             </div>
             <div>
                 <span class="status-badge" id="last-update">Cargando datos...</span>
-                <a href="auditoria.html" class="nav-link" style="margin-left: 10px;">⚖️ Auditoría</a>
                 <a href="../index.html" class="nav-link" style="margin-left: 10px;">🏠 Inicio</a>
             </div>
         </header>
@@ -527,6 +526,7 @@
                 </div>
             </div>
         </div>
+
         <div class="kpi-grid" id="financial-panel" style="display:none; border-top: 1px solid var(--border); padding-top: 25px; margin-top:20px;">
             <div class="card money-card">
                 <h3>Inversión Hipotética</h3>
@@ -581,6 +581,17 @@
             </div>
             <div class="chart-container">
                 <canvas id="mainChart"></canvas>
+            </div>
+        </div>
+
+        <div class="card" style="margin-bottom: 2rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+                <h3 style="margin:0; color:var(--accent); display:flex; align-items:center; gap:10px;">
+                    <i data-lucide="activity"></i> Evolución Cognitiva de Algoritmos
+                </h3>
+            </div>
+            <div style="height: 300px; width: 100%;">
+                <canvas id="evolutionChart"></canvas>
             </div>
         </div>
 
@@ -1330,6 +1341,7 @@
             calculateFinance(data, selectedDraw);
 
             renderSafePlanLoto3();
+            updateEvolutionChart();
         }
 
         function getFilteredData() {
@@ -1792,6 +1804,168 @@
         }
 
         // Iniciar
+        loadAllData();
+
+        // --- VARIABLES GLOBALES PARA EL GRÁFICO ---
+        let rawSimulationData = [];
+        let evolutionChartInstance = null;
+
+        // 1. INICIADOR DEL TRANSPLANTE
+        // Agrega esta llamada al inicio, cuando cargues la página
+        function initLaboratorio() {
+            console.log("🔬 Iniciando protocolos del Laboratorio...");
+            loadSimulations();
+            lucide.createIcons();
+        }
+
+        // 2. CARGA DE DATOS (CSV DE SIMULACIONES)
+        function loadSimulations() {
+            Papa.parse('../data/LOTO_SIMULACIONES.csv', {
+                download: true,
+                header: true,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    rawSimulationData = results.data;
+                    console.log(`✅ Datos históricos cargados: ${rawSimulationData.length} registros.`);
+                    updateEvolutionChart(); // Render inicial
+                },
+                error: function(err) {
+                    console.error("❌ Error cargando simulaciones:", err);
+                }
+            });
+        }
+
+        // 3. LÓGICA DE PROCESAMIENTO Y RENDERIZADO
+        // =========================================================
+        // NUEVA LÓGICA INTEGRADA: GRÁFICO DE EVOLUCIÓN
+        // =========================================================
+
+        function updateEvolutionChart() {
+            const ctx = document.getElementById('evolutionChart').getContext('2d');
+            
+            // 1. Usar los datos YA CARGADOS (RAW_SIMULATIONS) y el UNIVERSO ACTUAL
+            // Filtramos solo los auditados del juego actual
+            const dataByGame = RAW_SIMULATIONS.filter(row => 
+                row.juego === CURRENT_UNIVERSE && 
+                row.estado === 'AUDITADO' &&
+                row.score !== undefined
+            );
+
+            if (dataByGame.length === 0) {
+                if (evolutionChartInstance) evolutionChartInstance.destroy();
+                return;
+            }
+
+            // 2. Agrupar por Algoritmo (Eje X: Sorteo, Eje Y: Score)
+            const algos = {};
+            dataByGame.forEach(row => {
+                // Limpieza del nombre del algoritmo
+                let algoKey = 'unknown';
+                if (row.algoritmo.includes('forense')) algoKey = 'forense';
+                else if (row.algoritmo.includes('gauss')) algoKey = 'gauss';
+                else if (row.algoritmo.includes('delta')) algoKey = 'delta';
+                else if (row.algoritmo.includes('markov')) algoKey = 'markov';
+                else if (row.algoritmo.includes('oraculo') || row.algoritmo.includes('rf')) algoKey = 'oraculo';
+                else if (row.algoritmo.includes('consenso')) algoKey = 'consenso';
+
+                const algoLabel = row.algoritmo.split('_')[0].toUpperCase(); 
+                
+                if (!algos[algoKey]) {
+                    algos[algoKey] = { label: algoLabel, points: [] };
+                }
+                
+                algos[algoKey].points.push({
+                    x: parseInt(row.objetivo), 
+                    y: row.score,
+                    // --- AQUI ESTA EL CAMBIO: Guardamos los números ---
+                    nums: row.numeros 
+                });
+            });
+
+            // 3. Preparar Datasets
+            const config = UNIVERSE_CONFIG[CURRENT_UNIVERSE] || UNIVERSE_CONFIG['LOTO'];
+            
+            const datasets = Object.keys(algos).map(key => {
+                const algoData = algos[key];
+                const confAlgo = config.algos.find(a => a.key === key);
+                const color = confAlgo ? confAlgo.color : '#8b949e';
+
+                return {
+                    label: algoData.label,
+                    data: algoData.points.sort((a,b) => a.x - b.x),
+                    borderColor: color,
+                    backgroundColor: color,
+                    borderWidth: 2,
+                    tension: 0.3, 
+                    pointRadius: 3,
+                    pointHoverRadius: 6, // Un poco más grande al pasar el mouse
+                    fill: false
+                };
+            });
+
+            // 4. Renderizar
+            if (evolutionChartInstance) evolutionChartInstance.destroy();
+
+            evolutionChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: { datasets: datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'nearest', // Cambiado a 'nearest' para facilitar ver puntos específicos
+                        axis: 'x',
+                        intersect: false,
+                    },
+                    plugins: {
+                        legend: { labels: { color: '#c9d1d9', usePointStyle: true } },
+                        tooltip: {
+                            backgroundColor: 'rgba(22, 27, 34, 0.95)',
+                            titleColor: '#fff',
+                            bodyColor: '#c9d1d9',
+                            borderColor: '#30363d',
+                            borderWidth: 1,
+                            padding: 10,
+                            bodyFont: { family: 'JetBrains Mono' }, // Fuente monoespaciada para los números
+                            callbacks: {
+                                title: (ctx) => `Sorteo #${ctx[0].parsed.x}`,
+                                label: (context) => {
+                                    let label = context.dataset.label || '';
+                                    if (label) label += ': ';
+                                    if (context.parsed.y !== null) label += context.parsed.y + '%';
+                                    return label;
+                                },
+                                // --- NUEVO: Mostrar la combinación jugada ---
+                                afterLabel: (context) => {
+                                    const raw = context.raw;
+                                    if (raw && raw.nums) {
+                                        // Limpiamos formato JSON: "[1, 2]" -> "1 - 2"
+                                        const clean = raw.nums.replace(/[\[\]"]/g, '').replace(/,/g, ' -');
+                                        return `   🎲 ${clean}`;
+                                    }
+                                    return '';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            title: { display: true, text: 'Nº Sorteo', color: '#8b949e' },
+                            grid: { color: '#30363d' },
+                            ticks: { color: '#8b949e', maxRotation: 0, autoSkip: true }
+                        },
+                        y: {
+                            title: { display: true, text: 'Afinidad %', color: '#8b949e' },
+                            grid: { color: '#30363d' },
+                            ticks: { color: '#8b949e' },
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
         loadAllData();
     </script>
 </body>
