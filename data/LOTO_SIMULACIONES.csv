@@ -8920,4 +8920,4 @@ id,fecha_generacion,juego,numeros,sorteo_objetivo,estado,aciertos,score_afinidad
 1766711581,2025-12-25 18:05:00,LOTO3,"[4, 6, 4]",23931,AUDITADO,1,10.0,18,oraculo_neural_v3
 1766711678,2025-12-25 15:05:00,RACHA,"[4, 5, 6, 7, 9, 12, 13, 17, 18, 20]",10256,AUDITADO,5,5.0,15,oraculo_neural_v3
 1766711705,2025-12-23 21:05:00,LOTO,"[1, 6, 18, 33, 34, 37]",5365,AUDITADO,2,13.78,21,oraculo_neural_v3
-1766711807,2025-12-25 14:05:00,LOTO4,"[2, 11, 13, 20]",11523,PENDIENTE,0,0.0,14,oraculo_neural_v3
+1766711807,2025-12-25 14:05:00,LOTO4,"[2, 11, 13, 20]",11523,AUDITADO,0,0.0,14,oraculo_neural_v3
