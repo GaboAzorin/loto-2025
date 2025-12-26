@@ -1878,7 +1878,7 @@
         function updateEvolutionChart() {
             const ctx = document.getElementById('evolutionChart').getContext('2d');
             
-            // 1. Filtrar datos del juego actual y auditados
+            // 1. Filtrar datos
             const dataByGame = RAW_SIMULATIONS.filter(row => 
                 row.juego === CURRENT_UNIVERSE && 
                 row.estado === 'AUDITADO' &&
@@ -1890,10 +1890,8 @@
                 return;
             }
 
-            // 2. AGRUPAR Y PROMEDIAR POR SORTEO
-            // Esto evita el "desorden". Si hay 5 sims para el sorteo 100, sacamos el promedio.
+            // 2. Agrupar y Promediar
             const algosRaw = {};
-            
             dataByGame.forEach(row => {
                 let algoKey = 'unknown';
                 if (row.algoritmo.includes('forense')) algoKey = 'forense';
@@ -1908,11 +1906,9 @@
 
                 if (!algosRaw[algoKey]) algosRaw[algoKey] = {};
                 if (!algosRaw[algoKey][target]) algosRaw[algoKey][target] = [];
-                
                 algosRaw[algoKey][target].push(score);
             });
 
-            // 3. CONSTRUIR PUNTOS PROMEDIO
             const algosProcessed = {};
             Object.keys(algosRaw).forEach(key => {
                 const targets = Object.keys(algosRaw[key]).map(Number).sort((a,b) => a-b);
@@ -1922,7 +1918,6 @@
                     return { x: t, y: avg };
                 });
                 
-                // Buscamos la etiqueta bonita
                 let label = key.toUpperCase();
                 const config = UNIVERSE_CONFIG[CURRENT_UNIVERSE] || UNIVERSE_CONFIG['LOTO'];
                 const confAlgo = config.algos.find(a => a.key === key);
@@ -1931,55 +1926,60 @@
                 algosProcessed[key] = { label: label, points: points, color: confAlgo ? confAlgo.color : '#888' };
             });
 
-            // 4. GENERAR DATASETS (LÍNEA CURVA + LÍNEA RECTA TENDENCIA)
+            // 3. Generar Datasets
             const datasets = [];
 
             Object.keys(algosProcessed).forEach(key => {
                 const item = algosProcessed[key];
                 
-                // A. Calcular Tendencia
+                // Calcular Tendencia
                 const regression = getLinearRegression(item.points);
                 let labelText = item.label;
                 
                 if (regression) {
-                    const symbol = regression.slope > 0 ? "▲" : "▼";
+                    const isPositive = regression.slope >= 0;
+                    // Usamos flechas distintas para mayor claridad visual
+                    const symbol = isPositive ? "▲" : "▼"; 
                     const slopeVal = (regression.slope).toFixed(3);
-                    labelText += ` (m:${slopeVal})`; // Solo mostramos pendiente en la etiqueta principal
+                    
+                    // La etiqueta lleva la información del diagnóstico
+                    // NOTA: Chart.js no permite colores parciales en texto, pero el símbolo ayuda.
+                    labelText += ` (m:${slopeVal} ${symbol})`;
 
-                    // Dataset Tendencia (Recta Punteada)
+                    // Dataset 1: TENDENCIA (Mantiene el color del algoritmo)
                     datasets.push({
-                        label: `Tendencia ${item.label}`, // Oculto en leyenda por filtro abajo si quieres
+                        label: `Tendencia ${item.label}`, // Se ocultará en leyenda
                         data: regression.points,
-                        borderColor: item.color,
+                        borderColor: item.color, // <--- VOLVEMOS AL COLOR ORIGINAL
                         borderWidth: 2,
-                        borderDash: [5, 5],
+                        borderDash: [4, 4], // Punteado fino
                         pointRadius: 0,
                         fill: false,
-                        tension: 0, // Recta total
-                        order: 1 // Al fondo
+                        tension: 0, 
+                        order: 1 
                     });
                 }
 
-                // B. Dataset Real (Línea Curva Suave)
+                // Dataset 2: DATOS REALES (Curva Suave + Relleno transparente)
                 datasets.push({
                     label: labelText,
                     data: item.points,
-                    borderColor: item.color, // Color sólido
+                    borderColor: item.color,
                     backgroundColor: hexToRgba(item.color, 0.1),
                     borderWidth: 2,
-                    tension: 0.4, // <--- ESTO HACE LA CURVA SUAVE (spline)
+                    tension: 0.4, 
                     pointRadius: 3,
                     pointHoverRadius: 6,
                     fill: false,
-                    order: 0 // Al frente
+                    order: 0 
                 });
             });
 
-            // 5. RENDERIZAR
+            // 4. Renderizar
             if (evolutionChartInstance) evolutionChartInstance.destroy();
 
             evolutionChartInstance = new Chart(ctx, {
-                type: 'line', // Usamos 'line' estándar ahora que los datos están ordenados
+                type: 'line',
                 data: { datasets: datasets },
                 options: {
                     responsive: true,
@@ -1993,9 +1993,13 @@
                             labels: { 
                                 color: '#c9d1d9', 
                                 usePointStyle: true,
-                                // Ocultar las líneas de "Tendencia" en la leyenda para no duplicar
                                 filter: function(item, chart) {
+                                    // Solo mostramos la etiqueta principal que contiene la pendiente
                                     return !item.text.includes('Tendencia');
+                                },
+                                font: {
+                                    family: "'JetBrains Mono', monospace", // Fuente mono para alinear números
+                                    size: 11
                                 }
                             } 
                         },
@@ -2005,19 +2009,21 @@
                             bodyColor: '#c9d1d9',
                             borderColor: '#30363d',
                             borderWidth: 1,
+                            padding: 10,
                             callbacks: {
                                 title: (ctx) => `Sorteo #${ctx[0].label}`,
                                 label: (context) => {
-                                    // Ignorar tooltips de la tendencia
                                     if (context.dataset.borderDash && context.dataset.borderDash.length > 0) return null;
-                                    return `${context.dataset.label.split('(')[0].trim()}: ${context.parsed.y.toFixed(2)}%`;
+                                    // Limpiamos la etiqueta para el tooltip (quitamos la pendiente)
+                                    const cleanLabel = context.dataset.label.split('(')[0].trim();
+                                    return `${cleanLabel}: ${context.parsed.y.toFixed(2)}%`;
                                 }
                             }
                         }
                     },
                     scales: {
                         x: {
-                            type: 'linear', // Lineal para respetar la distancia entre sorteos
+                            type: 'linear',
                             title: { display: true, text: 'Nº Sorteo', color: '#8b949e' },
                             grid: { color: '#30363d' },
                             ticks: { color: '#8b949e', maxRotation: 0, autoSkip: true }
