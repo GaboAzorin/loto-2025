@@ -1840,11 +1840,42 @@
         // NUEVA LÓGICA INTEGRADA: GRÁFICO DE EVOLUCIÓN
         // =========================================================
 
+        function getLinearRegression(dataPoints) {
+            const n = dataPoints.length;
+            if (n < 2) return null;
+
+            let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
+            let minX = Infinity, maxX = -Infinity;
+
+            dataPoints.forEach(p => {
+                sumX += p.x;
+                sumY += p.y;
+                sumXY += (p.x * p.y);
+                sumXX += (p.x * p.x);
+                if (p.x < minX) minX = p.x;
+                if (p.x > maxX) maxX = p.x;
+            });
+
+            const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+            const intercept = (sumY - slope * sumX) / n;
+
+            // Puntos de inicio y fin para dibujar la línea recta
+            const startY = slope * minX + intercept;
+            const endY = slope * maxX + intercept;
+
+            return {
+                slope: slope,
+                points: [{x: minX, y: startY}, {x: maxX, y: endY}]
+            };
+        }
+
+        // =========================================================
+        // GRÁFICO EVOLUTIVO (CON TENDENCIAS Y PENDIENTES)
+        // =========================================================
         function updateEvolutionChart() {
             const ctx = document.getElementById('evolutionChart').getContext('2d');
             
-            // 1. Usar los datos YA CARGADOS (RAW_SIMULATIONS) y el UNIVERSO ACTUAL
-            // Filtramos solo los auditados del juego actual
+            // 1. Filtrar datos
             const dataByGame = RAW_SIMULATIONS.filter(row => 
                 row.juego === CURRENT_UNIVERSE && 
                 row.estado === 'AUDITADO' &&
@@ -1856,11 +1887,11 @@
                 return;
             }
 
-            // 2. Agrupar por Algoritmo (Eje X: Sorteo, Eje Y: Score)
+            // 2. Agrupar
             const algos = {};
             dataByGame.forEach(row => {
-                // Limpieza del nombre del algoritmo
                 let algoKey = 'unknown';
+                // Normalización de nombres para colores
                 if (row.algoritmo.includes('forense')) algoKey = 'forense';
                 else if (row.algoritmo.includes('gauss')) algoKey = 'gauss';
                 else if (row.algoritmo.includes('delta')) algoKey = 'delta';
@@ -1868,57 +1899,92 @@
                 else if (row.algoritmo.includes('oraculo') || row.algoritmo.includes('rf')) algoKey = 'oraculo';
                 else if (row.algoritmo.includes('consenso')) algoKey = 'consenso';
 
-                const algoLabel = row.algoritmo.split('_')[0].toUpperCase(); 
+                const algoLabel = row.algoritmo.split('_')[0].toUpperCase();
                 
-                if (!algos[algoKey]) {
-                    algos[algoKey] = { label: algoLabel, points: [] };
+                if (!algos[algoKey]) algos[algoKey] = { label: algoLabel, points: [] };
+                
+                // IMPORTANTE: Convertimos a float para matemáticas
+                const xVal = parseInt(row.objetivo);
+                const yVal = parseFloat(row.score);
+
+                if (!isNaN(xVal) && !isNaN(yVal)) {
+                    algos[algoKey].points.push({ x: xVal, y: yVal, nums: row.numeros });
                 }
-                
-                algos[algoKey].points.push({
-                    x: parseInt(row.objetivo), 
-                    y: row.score,
-                    // --- AQUI ESTA EL CAMBIO: Guardamos los números ---
-                    nums: row.numeros 
-                });
             });
 
-            // 3. Preparar Datasets
+            // 3. Generar Datasets (Datos Reales + Líneas de Tendencia)
             const config = UNIVERSE_CONFIG[CURRENT_UNIVERSE] || UNIVERSE_CONFIG['LOTO'];
-            
-            const datasets = Object.keys(algos).map(key => {
+            const datasets = [];
+
+            Object.keys(algos).forEach(key => {
                 const algoData = algos[key];
+                // Ordenar puntos por eje X (cronológico)
+                algoData.points.sort((a,b) => a.x - b.x);
+
                 const confAlgo = config.algos.find(a => a.key === key);
                 const color = confAlgo ? confAlgo.color : '#8b949e';
 
-                return {
-                    label: algoData.label,
-                    data: algoData.points.sort((a,b) => a.x - b.x),
-                    borderColor: color,
+                // A. CALCULAR TENDENCIA
+                const regression = getLinearRegression(algoData.points);
+                let labelText = algoData.label;
+                
+                if (regression) {
+                    const symbol = regression.slope > 0 ? "📈" : "📉";
+                    const slopeVal = (regression.slope).toFixed(3);
+                    labelText += ` (m: ${slopeVal}) ${symbol}`;
+
+                    // --- DATASET 1: LÍNEA DE TENDENCIA (Punteada) ---
+                    datasets.push({
+                        label: `Tendencia ${algoData.label}`,
+                        data: regression.points,
+                        borderColor: color,
+                        borderWidth: 2,
+                        borderDash: [5, 5], // Línea punteada
+                        pointRadius: 0,     // Sin puntos
+                        fill: false,
+                        order: 1 // Dibujar al fondo
+                    });
+                }
+
+                // --- DATASET 2: DATOS REALES (Dispersión) ---
+                datasets.push({
+                    label: labelText,
+                    data: algoData.points,
+                    borderColor: hexToRgba(color, 0.4), // Un poco más transparente la línea real
                     backgroundColor: color,
-                    borderWidth: 2,
-                    tension: 0.3, 
+                    borderWidth: 1,
+                    showLine: false, // Solo mostrar puntos para reducir ruido visual (Scatter style)
                     pointRadius: 3,
-                    pointHoverRadius: 6, // Un poco más grande al pasar el mouse
-                    fill: false
-                };
+                    pointHoverRadius: 6,
+                    order: 0 // Dibujar encima
+                });
             });
 
             // 4. Renderizar
             if (evolutionChartInstance) evolutionChartInstance.destroy();
 
             evolutionChartInstance = new Chart(ctx, {
-                type: 'line',
+                type: 'scatter', // Cambiamos a Scatter para mejor manejo de puntos x/y
                 data: { datasets: datasets },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     interaction: {
-                        mode: 'nearest', // Cambiado a 'nearest' para facilitar ver puntos específicos
+                        mode: 'nearest',
                         axis: 'x',
-                        intersect: false,
+                        intersect: false
                     },
                     plugins: {
-                        legend: { labels: { color: '#c9d1d9', usePointStyle: true } },
+                        legend: { 
+                            labels: { 
+                                color: '#c9d1d9', 
+                                usePointStyle: true,
+                                // Filtrar leyendas: Solo mostrar las de datos reales (con slope), ocultar la palabra "Tendencia..."
+                                filter: function(item, chart) {
+                                    return !item.text.includes('Tendencia');
+                                }
+                            } 
+                        },
                         tooltip: {
                             backgroundColor: 'rgba(22, 27, 34, 0.95)',
                             titleColor: '#fff',
@@ -1926,20 +1992,21 @@
                             borderColor: '#30363d',
                             borderWidth: 1,
                             padding: 10,
-                            bodyFont: { family: 'JetBrains Mono' }, // Fuente monoespaciada para los números
                             callbacks: {
                                 title: (ctx) => `Sorteo #${ctx[0].parsed.x}`,
                                 label: (context) => {
-                                    let label = context.dataset.label || '';
+                                    // Si es línea de tendencia, no mostrar tooltip
+                                    if (context.dataset.borderDash) return null;
+                                    
+                                    let label = context.dataset.label.split('(')[0].trim() || '';
                                     if (label) label += ': ';
                                     if (context.parsed.y !== null) label += context.parsed.y + '%';
                                     return label;
                                 },
-                                // --- NUEVO: Mostrar la combinación jugada ---
                                 afterLabel: (context) => {
+                                    // Recuperar números jugados
                                     const raw = context.raw;
                                     if (raw && raw.nums) {
-                                        // Limpiamos formato JSON: "[1, 2]" -> "1 - 2"
                                         const clean = raw.nums.replace(/[\[\]"]/g, '').replace(/,/g, ' -');
                                         return `   🎲 ${clean}`;
                                     }
