@@ -26,6 +26,10 @@ jobs:
       run: |
         pip install pandas numpy
 
+    # 0. El consolidador
+    - name: 0. Consolidar Cola de Predicciones
+      run: python engine/tools/consolidar_cola.py
+
     # 1. AUDITORÍA: Revisa si ganamos algo con los datos nuevos
     - name: Ejecutar Juez Multiverso
       run: python engine/models/juez_implacable.py

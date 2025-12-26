@@ -333,25 +333,31 @@ def soñar():
                 print(f"   🤝 CONSENSO LOCAL: {top_consenso}")
         except: pass
 
-    # G. Guardado Seguro
-    if nuevas_filas:
-        cols = ['id', 'fecha_generacion', 'juego', 'numeros', 'sorteo_objetivo', 'estado', 'aciertos', 'score_afinidad', 'hora_dia', 'algoritmo']
-        try:
-            df_new = pd.DataFrame(nuevas_filas)
-            if os.path.exists(FILE_SIMULACIONES):
-                df_old = pd.read_csv(FILE_SIMULACIONES)
-                if 'juego' not in df_old.columns: df_old['juego'] = 'LOTO'
-                df_final = pd.concat([df_old, df_new], ignore_index=True)
-            else: df_final = df_new
+    # G. Guardado Asíncrono (QUEUE SYSTEM)
+        # En lugar de pelear por el CSV, guardamos un ticket único en la cola.
+        import uuid
+        
+        QUEUE_DIR = os.path.join(DATA_DIR, 'queue')
+        os.makedirs(QUEUE_DIR, exist_ok=True)
+
+        if nuevas_filas:
+            print(f"📦 Generando {len(nuevas_filas)} tickets para la cola de procesamiento...")
             
-            # Rellenar columnas faltantes con 0 o default
-            for c in cols: 
-                if c not in df_final.columns: df_final[c] = 0
+            for fila in nuevas_filas:
+                # Generamos un ID único para el archivo
+                file_id = str(uuid.uuid4())
+                filename = f"prediccion_{file_id}.json"
+                filepath = os.path.join(QUEUE_DIR, filename)
                 
-            df_final.to_csv(FILE_SIMULACIONES, index=False, columns=cols)
-            print(f"\n💾 Guardado exitoso: {len(nuevas_filas)} predicciones.")
-        except Exception as e:
-            print(f"❌ Error guardando CSV: {e}")
+                # Guardamos el JSON individual
+                try:
+                    with open(filepath, 'w', encoding='utf-8') as f:
+                        json.dump(fila, f, ensure_ascii=False, indent=2)
+                    print(f"   -> Ticket guardado: {filename}")
+                except Exception as e:
+                    print(f"   ❌ Error guardando ticket {filename}: {e}")
+
+        print("\n✨ PROCESO DEL SOÑADOR TERMINADO (Datos en cola).")
 
 if __name__ == "__main__":
     soñar()

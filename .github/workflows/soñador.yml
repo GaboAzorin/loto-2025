@@ -11,7 +11,7 @@ permissions:
 jobs:
   dream:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10 # Reducido a 10 para evitar procesos zombies
 
     steps:
     - name: Checkout repo
@@ -19,7 +19,7 @@ jobs:
       with:
         ref: main
 
-    - name: Sincronizar estado
+    - name: Sincronizar estado inicial
       run: |
         git config pull.rebase false
         git pull origin main || echo "Repositorio ya actualizado"
@@ -29,12 +29,22 @@ jobs:
       with:
         python-version: '3.11'
 
+    # --- OPTIMIZACIÓN: CACHÉ (Ahorra minutos de facturación) ---
+    - name: Cache pip packages
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
     # --- FASE 1: AUDITORÍA (El Pasado) ---
+    # Nota: Si el Juez modifica el CSV aquí, se guardará abajo.
     - name: 1. Ejecutar Juez Implacable
       run: python engine/models/juez_implacable.py
 
@@ -47,25 +57,33 @@ jobs:
       run: python engine/models/generador_biometrico.py
 
     # --- FASE 4: PREDICCIÓN (El Futuro) ---
+    # AHORA ESTO GENERA ARCHIVOS EN data/queue/ NO TOCA EL CSV DIRECTAMENTE
     - name: 4. Ejecutar Bot Dreamer
       run: python engine/models/bot_dreamer.py
 
-    # --- FASE 5: PERSISTENCIA ---
+    # --- FASE 5: PERSISTENCIA (CRÍTICO: GESTIÓN DE COLA) ---
     - name: Guardar Predicciones e Inteligencia
       run: |
         git config --global user.name 'LotoAI Bot'
         git config --global user.email 'bot@lotoai.com'
         git config --global http.postBuffer 524288000
         
-        # 1. PRIMERO Sincronizamos (Pull) para traer cambios remotos
+        # 1. Sincronización preventiva
         git pull origin main --rebase || echo "Nada que rebasar"
 
-        # 2. LUEGO Agregamos los archivos (Add)
-        git add data/LOTO_SIMULACIONES.csv || true
+        # 2. AGREGAR LA COLA (CRÍTICO PARA LA NUEVA ARQUITECTURA)
+        # Esto toma los JSONs generados por el bot_dreamer
+        git add data/queue/ || echo "La cola estaba vacía o no existe"
+
+        # 3. Agregar inteligencia y CSV (por si el Juez o Entrenador tocaron algo)
         git add data/loto_biometrics.json || true
         git add data/loto_genome.json || true
+        git add data/LOTO_SIMULACIONES.csv || true
         git add data/*.pkl || true
         
-        # 3. FINALMENTE Comiteamos y Subimos (Commit & Push)
-        git commit -m "🧠 Ciclo LotoAI: Auditoría > Aprendizaje > Predicción" || echo "Sin cambios estructurales"
+        # 4. Commit y Push
+        # Usamos [skip ci] solo si quieres que esto no dispare otros workflows, 
+        # pero como tienes el Juez escuchando cambios, mejor NO poner skip ci 
+        # para que el Juez se active y consolide la cola.
+        git commit -m "🔮 Nuevos Sueños en Cola + Actualización Neuronal" || echo "Sin cambios para subir"
         git push origin main
