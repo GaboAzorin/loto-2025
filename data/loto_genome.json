@@ -2,28 +2,28 @@
   "algo_ranking": {
     "LOTO": {
       "MASTER_PREMIUM_v1": 0.0,
-      "consenso_meritocratico_v2": 5.07,
+      "consenso_meritocratico_v2": 5.08,
       "consenso_v1": 4.37,
       "delta_tactico_v1": 4.36,
       "forense_biometrico_v1": 4.1,
       "gaussiano_tactico_v1": 4.52,
-      "markov_chain_v1": 4.4,
-      "oraculo_neural_v3": 3.3
+      "markov_chain_v1": 4.45,
+      "oraculo_neural_v3": 3.69
     },
     "LOTO3": {
-      "consenso_meritocratico_v2": 21.81,
+      "consenso_meritocratico_v2": 21.8,
       "forense_biometrico_v1": 17.71,
-      "oraculo_neural_v3": 17.04
+      "oraculo_neural_v3": 17.05
     },
     "LOTO4": {
       "consenso_meritocratico_v2": 5.51,
-      "forense_biometrico_v1": 6.21,
+      "forense_biometrico_v1": 6.2,
       "oraculo_neural_v3": 4.17
     },
     "RACHA": {
       "consenso_meritocratico_v2": 17.93,
       "forense_biometrico_v1": 15.69,
-      "oraculo_neural_v3": 11.45
+      "oraculo_neural_v3": 11.31
     }
   },
   "last_processed": {
@@ -63,7 +63,7 @@
     }
   },
   "metadata": {
-    "updated_at": "2025-12-26 00:58:59",
+    "updated_at": "2025-12-26 01:35:09",
     "mode": "FULL_LOBOTOMY_V2",
     "casos_estudiados": 8907
   }
