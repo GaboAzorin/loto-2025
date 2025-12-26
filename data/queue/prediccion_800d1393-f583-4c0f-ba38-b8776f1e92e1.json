@@ -1,0 +1,12 @@
+{
+  "id": 1766777285,
+  "fecha_generacion": "2025-12-26 16:26:24",
+  "juego": "LOTO",
+  "numeros": "[4, 5, 21, 25, 28, 35]",
+  "sorteo_objetivo": 5366,
+  "estado": "PENDIENTE",
+  "aciertos": 0,
+  "score_afinidad": 0.0,
+  "hora_dia": 16,
+  "algoritmo": "gaussiano_tactico_v1"
+}
