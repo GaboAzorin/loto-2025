@@ -1,0 +1,12 @@
+{
+  "id": 1766786305,
+  "fecha_generacion": "2025-12-26 18:40:56",
+  "juego": "LOTO",
+  "numeros": "[1, 6, 18, 30, 33, 37]",
+  "sorteo_objetivo": 5366,
+  "estado": "PENDIENTE",
+  "aciertos": 0,
+  "score_afinidad": 0.0,
+  "hora_dia": 18,
+  "algoritmo": "consenso_meritocratico_v2"
+}
