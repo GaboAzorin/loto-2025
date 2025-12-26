@@ -181,10 +181,14 @@ def reconstruir_linea_tiempo():
             if prediccion:
                 print(f"      🔮 Oráculo dice: {prediccion}")
                 
+                timestamp_simulado = int(fecha_simulada.timestamp())
+                import random
+                id_ficticio = int(f"{timestamp_simulado}{random.randint(10,99)}")
+
                 # 4. Guardamos la simulación "correcta"
                 nueva_fila = {
-                    'id': int(time.time()),
-                    'fecha_generacion': fecha_sim_str, # <--- USAMOS LA FECHA SIMULADA
+                    'id': id_ficticio,
+                    'fecha_generacion': fecha_sim_str,
                     'juego': juego,
                     'numeros': str(prediccion),
                     'sorteo_objetivo': sorteo_actual,
