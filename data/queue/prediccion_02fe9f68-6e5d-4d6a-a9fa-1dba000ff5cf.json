@@ -1,0 +1,12 @@
+{
+  "id": 1766848610,
+  "fecha_generacion": "2025-12-27 12:11:47",
+  "juego": "LOTO",
+  "numeros": "[2, 21, 27, 29, 32, 40]",
+  "sorteo_objetivo": 5366,
+  "estado": "PENDIENTE",
+  "aciertos": 0,
+  "score_afinidad": 0.0,
+  "hora_dia": 12,
+  "algoritmo": "markov_chain_v1"
+}
