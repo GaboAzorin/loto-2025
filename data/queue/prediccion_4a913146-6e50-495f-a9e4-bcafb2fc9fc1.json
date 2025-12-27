@@ -1,0 +1,12 @@
+{
+  "id": 1766804872,
+  "fecha_generacion": "2025-12-26 23:50:54",
+  "juego": "RACHA",
+  "numeros": "[1, 2, 4, 6, 8, 10, 11, 15, 19, 20]",
+  "sorteo_objetivo": 10259,
+  "estado": "PENDIENTE",
+  "aciertos": 0,
+  "score_afinidad": 0.0,
+  "hora_dia": 23,
+  "algoritmo": "oraculo_neural_v3"
+}
