@@ -1,0 +1,12 @@
+{
+  "id": 1766907246,
+  "fecha_generacion": "2025-12-28 04:14:06",
+  "juego": "RACHA",
+  "numeros": "[2, 5, 6, 7, 11, 12, 15, 16, 19, 20]",
+  "sorteo_objetivo": 10261,
+  "estado": "PENDIENTE",
+  "aciertos": 0,
+  "score_afinidad": 0.0,
+  "hora_dia": 4,
+  "algoritmo": "forense_biometrico_v1"
+}

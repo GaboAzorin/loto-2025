@@ -1,0 +1,12 @@
+{
+  "id": 1766907125,
+  "fecha_generacion": "2025-12-28 04:14:06",
+  "juego": "LOTO3",
+  "numeros": "[2, 6, 7]",
+  "sorteo_objetivo": 23938,
+  "estado": "PENDIENTE",
+  "aciertos": 0,
+  "score_afinidad": 0.0,
+  "hora_dia": 4,
+  "algoritmo": "consenso_meritocratico_v2"
+}
