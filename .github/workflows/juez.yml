@@ -54,6 +54,8 @@ jobs:
         
         # Agregamos los archivos de inteligencia actualizados
         git add data/*.json
+
+        git add -u data/queue/
         
         git commit -m "⚖️ Ciclo de Verdad: Auditoría y Aprendizaje completados tras carga" || echo "Sin cambios nuevos"
         git push
