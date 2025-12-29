@@ -6,22 +6,23 @@ import json
 import sys
 
 # --- GESTIÓN DE RUTAS ROBUSTA ---
-# Calculamos la carpeta donde vive ESTE archivo (engine/models)
 current_dir = os.path.dirname(os.path.abspath(__file__))
-
-# Agregamos esta carpeta al sistema para que encuentre a sus vecinos (Juez, Oráculo)
 if current_dir not in sys.path:
     sys.path.append(current_dir)
 
-# Ahora importamos sin miedo
+# Importamos sin miedo
 try:
     import juez_implacable
     import entrenador_cognitivo
-    from oraculo_neural import OraculoNeural
+    # OJO: OraculoNeural es opcional, si no está, el script no muere, pero avisa.
+    try:
+        from oraculo_neural import OraculoNeural
+    except ImportError:
+        OraculoNeural = None
+        print("⚠️ Advertencia: OraculoNeural no encontrado. El Time Travel será limitado.")
+
 except ImportError as e:
     print(f"❌ ERROR CRÍTICO EN RECONSTRUCTOR: No puedo importar mis dependencias.")
-    print(f"   Detalle del error: {e}")
-    # Relanzamos el error para que el Scraper sepa que algo grave pasó
     raise e 
 
 # --- CONFIGURACIÓN ---
@@ -30,7 +31,7 @@ DATA_DIR = os.path.join(BASE_DIR, '..', '..', 'data')
 GENOMA_FILE = os.path.join(DATA_DIR, "loto_genome.json")
 SIMULACIONES_FILE = os.path.join(DATA_DIR, "LOTO_SIMULACIONES.csv")
 
-# Definir qué archivos maestros leer
+# Mapeo de archivos maestros
 JUEGOS = {
     "LOTO3": "LOTO3_MAESTRO.csv",
     "RACHA": "RACHA_MAESTRO.csv",
@@ -39,41 +40,28 @@ JUEGOS = {
 }
 
 def obtener_ultimo_procesado(juego):
+    """Busca en el genoma hasta qué sorteo ya hemos 'viajado'."""
     if not os.path.exists(GENOMA_FILE): return 0
     try:
         with open(GENOMA_FILE, 'r') as f:
             data = json.load(f)
+            # Usamos un campo específico para tracking de reconstrucción
             return data.get("last_processed", {}).get(juego, 0)
     except: return 0
 
-def obtener_punto_partida_inteligente(juego):
-    """
-    Busca cuál es la primera simulación registrada para este juego.
-    Así evitamos recorrer 10 años de historia donde no jugamos nada.
-    """
-    if not os.path.exists(SIMULACIONES_FILE):
-        return 0
+def actualizar_ultimo_procesado(juego, sorteo_id):
+    """Guarda en el genoma que ya procesamos este hito temporal."""
+    data = {}
+    if os.path.exists(GENOMA_FILE):
+        try:
+            with open(GENOMA_FILE, 'r') as f: data = json.load(f)
+        except: pass
     
-    try:
-        df = pd.read_csv(SIMULACIONES_FILE)
-        # Filtramos por juego
-        df_juego = df[df['juego'] == juego]
-        
-        if df_juego.empty:
-            return 0
-            
-        # Encontramos el sorteo objetivo más antiguo que tenemos pendiente o auditado
-        primer_sorteo_registrado = df_juego['sorteo_objetivo'].min()
-        
-        if pd.isna(primer_sorteo_registrado):
-            return 0
-            
-        # Retornamos ese sorteo MENOS 10 (un buffer de seguridad para calentar motores)
-        return int(primer_sorteo_registrado) - 10
-        
-    except Exception as e:
-        print(f"⚠️ No se pudo calcular inicio inteligente: {e}")
-        return 0
+    if "last_processed" not in data: data["last_processed"] = {}
+    data["last_processed"][juego] = int(sorteo_id)
+    
+    with open(GENOMA_FILE, 'w') as f:
+        json.dump(data, f, indent=2)
 
 def reconstruir_linea_tiempo():
     print("⏳ INICIANDO RECONSTRUCCIÓN EXHAUSTIVA (MODO HOMOLOGACIÓN TOTAL)...")
@@ -82,136 +70,127 @@ def reconstruir_linea_tiempo():
         path = os.path.join(DATA_DIR, archivo)
         if not os.path.exists(path): continue
         
-        # 1. Leer sorteos reales disponibles
+        # 1. Leer historia real
         df_real = pd.read_csv(path)
         if 'sorteo' not in df_real.columns: continue
         
-        # Ordenar por sorteo (antiguo a nuevo) y RESETEAR INDICE para poder buscar el anterior por posición
+        # Ordenar cronológicamente
         df_real = df_real.sort_values('sorteo', ascending=True).reset_index(drop=True)
         todos_sorteos = df_real['sorteo'].unique()
         
-        # 2. LÓGICA DE SALTO TEMPORAL
+        # 2. Determinar punto de partida
         ultimo_procesado = obtener_ultimo_procesado(juego)
-        inicio_simulaciones = obtener_punto_partida_inteligente(juego)
         
-        # El punto de partida real es el MAYOR entre:
-        # A) Donde quedamos la última vez (si ya procesamos cosas)
-        # B) Donde empiezan mis simulaciones (para saltarnos la prehistoria)
-        punto_corte = max(ultimo_procesado, inicio_simulaciones)
-        
-        # 3. Identificar sorteos "nuevos" (futuro no procesado)
-        nuevos = [s for s in todos_sorteos if s > punto_corte]
+        # Filtramos solo lo nuevo
+        nuevos = [s for s in todos_sorteos if s > ultimo_procesado]
         
         if not nuevos:
-            # print(f"✅ {juego}: Todo al día.")
             continue
             
-        print(f"\n🚀 {juego}: Detectados {len(nuevos)} sorteos nuevos.")
+        print(f"\n🚀 {juego}: Detectados {len(nuevos)} sorteos nuevos para reconstruir.")
         print(f"   📅 Sincronizando desde sorteo #{min(nuevos)}...")
         
-        # Instanciamos el oráculo para este juego
-        oraculo = OraculoNeural(juego)
+        # Instanciamos el oráculo si existe
+        oraculo = OraculoNeural(juego) if OraculoNeural else None
 
-        # 4. BUCLE DE VIAJE EN EL TIEMPO
+        # 3. BUCLE DE VIAJE EN EL TIEMPO
         for sorteo_actual in nuevos:
             print(f"   >>> Procesando Sorteo #{sorteo_actual}...", end=" ")
 
-            # --- CÁLCULO DE FECHA SIMULADA (La lógica de los 5 minutos) ---
-            # Buscamos la fila actual
-            fila_actual_idx = df_real.index[df_real['sorteo'] == sorteo_actual].tolist()
+            # --- A. CÁLCULO DE FECHA SIMULADA ---
+            fila_actual = df_real[df_real['sorteo'] == sorteo_actual].iloc[0]
+            fecha_target_str = str(fila_actual['fecha'])
             
-            # Fecha por defecto (hoy) por si falla la lógica
-            fecha_simulada = datetime.now()
+            # Intentamos parsear la fecha real
             fecha_target_dt = datetime.now()
-
-            if fila_actual_idx:
-                idx = fila_actual_idx[0]
-                
-                # Obtener la fecha REAL del sorteo actual (para pasársela al Oráculo como target)
-                fecha_target_str = df_real.iloc[idx]['fecha']
-                try:
+            try:
+                # Soporte para dos formatos comunes
+                if 'T' in fecha_target_str:
+                    fecha_target_dt = datetime.strptime(fecha_target_str.split('.')[0], '%Y-%m-%d %H:%M:%S')
+                else:
                     fecha_target_dt = datetime.strptime(fecha_target_str, '%Y-%m-%d %H:%M:%S')
-                except: pass
-
-                # Calcular fecha de generación (Sorteo Anterior + 5 min)
-                if idx > 0:
-                    fila_anterior = df_real.iloc[idx - 1]
-                    fecha_anterior_str = fila_anterior['fecha']
-                    try:
-                        dt_anterior = datetime.strptime(fecha_anterior_str, '%Y-%m-%d %H:%M:%S')
-                        fecha_simulada = dt_anterior + timedelta(minutes=5)
-                    except ValueError:
-                        pass 
+            except: pass
             
-            fecha_sim_str = fecha_simulada.strftime('%Y-%m-%d %H:%M:%S')
-            print(f"[{fecha_sim_str}]")
-            # -------------------------------------------------------------
+            # Simulamos que estamos 5 minutos después del sorteo ANTERIOR (si existe)
+            # Esto es cosmético para la data, pero útil para análisis de horarios
+            fecha_simulada = fecha_target_dt - timedelta(hours=1) # Por defecto 1 hora antes
             
-            # A. FASE JUEZ (Actualiza estados de apuestas pasadas)
+            # --- B. FASE JUEZ (Sentencia sobre el pasado inmediato) ---
+            # El Juez evalúa las predicciones que hicimos para sorteos ANTERIORES a este.
+            # Al correr juzgar(), él mira todo lo pendiente en el CSV.
             juez_implacable.juzgar() 
             
-            # B. FASE ENTRENADOR (Actualiza heurísticos, pares, sumas)
-            entrenador_cognitivo.analizar_adn_ganador(juego_filtro=juego, sorteo_limite=sorteo_actual)
+            # --- C. FASE ENTRENADOR (Aprende de la sentencia) ---
+            # IMPORTANTE: Llamada sin argumentos, el entrenador es autónomo.
+            # Él buscará las filas recién auditadas por el Juez.
+            entrenador_cognitivo.analizar_adn_ganador()
             
-            # C. FASE ORÁCULO NEURAL (LA LÓGICA QUE PIDES)
-    
-            # 1. Verificamos si ya existe una predicción del Oráculo para este sorteo
-            df_sim = pd.read_csv(SIMULACIONES_FILE) if os.path.exists(SIMULACIONES_FILE) else pd.DataFrame()
-            
-            if not df_sim.empty and 'sorteo_objetivo' in df_sim.columns:
-                # Buscamos si el oráculo ya opinó sobre este sorteo
-                filtro = (df_sim['juego'] == juego) & \
-                         (df_sim['sorteo_objetivo'] == sorteo_actual) & \
-                         (df_sim['algoritmo'] == 'oraculo_neural_v3')
-                
-                if not df_sim[filtro].empty:
-                    # Borramos la anterior para garantizar que sea la "pura" generada con Time Travel
-                    df_sim = df_sim[~filtro] # Eliminamos la fila vieja
-                    df_sim.to_csv(SIMULACIONES_FILE, index=False)
-                    # print(f"      ♻️  Regenerando predicción...")
-
-            # 2. Entrenamos el Oráculo VIAJANDO AL PASADO (Sorteo Limite = Sorteo Actual)
-            # Esto asegura que el modelo NO vea los resultados del sorteo actual, solo los anteriores.
-            oraculo.entrenar(sorteo_limite=sorteo_actual)
-            
-            # 3. Predecimos "el futuro"
-            # Usamos la fecha target REAL para que el modelo sepa qué día de la semana es el objetivo
-            prediccion = oraculo.predecir(fecha_objetivo=fecha_target_dt) 
-            
-            if prediccion:
-                print(f"      🔮 Oráculo dice: {prediccion}")
-                
-                timestamp_simulado = int(fecha_simulada.timestamp())
-                import random
-                id_ficticio = int(f"{timestamp_simulado}{random.randint(10,99)}")
-
-                # 4. Guardamos la simulación "correcta"
-                nueva_fila = {
-                    'id': id_ficticio,
-                    'fecha_generacion': fecha_sim_str,
-                    'juego': juego,
-                    'numeros': str(prediccion),
-                    'sorteo_objetivo': sorteo_actual,
-                    'estado': 'PENDIENTE', 
-                    'aciertos': 0,
-                    'score_afinidad': 0.0,
-                    'hora_dia': fecha_simulada.hour, # <--- HORA SIMULADA
-                    'algoritmo': 'oraculo_neural_v3'
-                }
-                
-                # Re-cargamos por si hubo cambios concurrentes (paranoia de programador)
+            # --- D. FASE ORÁCULO NEURAL (Predicción del "Futuro Inmediato") ---
+            if oraculo:
+                # 1. Borrar predicción vieja si existe (para evitar duplicados sucios)
                 if os.path.exists(SIMULACIONES_FILE):
-                    df_final = pd.read_csv(SIMULACIONES_FILE)
-                    df_final = pd.concat([df_final, pd.DataFrame([nueva_fila])], ignore_index=True)
-                else:
-                    df_final = pd.DataFrame([nueva_fila])
+                    df_sim = pd.read_csv(SIMULACIONES_FILE)
+                    mask = (df_sim['juego'] == juego) & \
+                           (df_sim['sorteo_objetivo'] == sorteo_actual) & \
+                           (df_sim['algoritmo'] == 'oraculo_neural_v3')
+                    if mask.any():
+                        df_sim = df_sim[~mask]
+                        df_sim.to_csv(SIMULACIONES_FILE, index=False)
+
+                # 2. ENTRENAMIENTO "TIME TRAVEL"
+                # Le prohibimos al oráculo ver el futuro (sorteo_actual)
+                # Solo puede aprender de la historia hasta (sorteo_actual - 1)
+                try:
+                    oraculo.entrenar(sorteo_limite=sorteo_actual) # Asume que tu clase soporta este param
                     
-                df_final.to_csv(SIMULACIONES_FILE, index=False)
+                    # 3. PREDICCIÓN
+                    prediccion = oraculo.predecir(fecha_objetivo=fecha_target_dt)
+                    
+                    if prediccion:
+                        print(f"🔮 Oráculo: {prediccion}", end=" ")
+                        
+                        # 4. GUARDAR APUESTA SINTÉTICA
+                        timestamp_simulado = int(time.time())
+                        import random
+                        id_ficticio = int(f"{timestamp_simulado}{random.randint(10,99)}")
+
+                        nueva_fila = {
+                            'id': id_ficticio,
+                            'fecha_generacion': fecha_simulada.strftime('%Y-%m-%d %H:%M:%S'),
+                            'juego': juego,
+                            'numeros': str(sorted(prediccion)),
+                            'sorteo_objetivo': sorteo_actual,
+                            'estado': 'PENDIENTE', # Nace pendiente, el Juez la evaluará en la PRÓXIMA vuelta del bucle
+                            'aciertos': 0,
+                            'score_afinidad': 0.0,
+                            'hora_dia': fecha_simulada.hour,
+                            'algoritmo': 'oraculo_neural_v3'
+                        }
+                        
+                        # Append atómico (modo append 'a' es más seguro y rápido que leer/escribir todo)
+                        file_exists = os.path.exists(SIMULACIONES_FILE)
+                        mod = 'a' if file_exists else 'w'
+                        header = not file_exists
+                        
+                        keys = ['id', 'fecha_generacion', 'juego', 'numeros', 'sorteo_objetivo', 
+                                'estado', 'aciertos', 'score_afinidad', 'hora_dia', 'algoritmo']
+                        
+                        import csv
+                        with open(SIMULACIONES_FILE, mod, newline='', encoding='utf-8') as f:
+                            w = csv.DictWriter(f, fieldnames=keys)
+                            if header: w.writeheader()
+                            # Aseguramos que el dict tenga solo las llaves necesarias
+                            row_clean = {k: new_fila.get(k, '') for k in keys} # Typo fix: nueva_fila
+                            w.writerow({k: nueva_fila.get(k, '') for k in keys})
+
+                except Exception as e:
+                    print(f"⚠️ Fallo Oráculo: {e}", end=" ")
             
-            # Pausa técnica mínima
-            time.sleep(0.1)
-            
-    print("\n✨ RECONSTRUCCIÓN FINALIZADA. Todos los modelos están sincronizados al último sorteo.")
+            # --- E. MARCAR HITO ---
+            actualizar_ultimo_procesado(juego, sorteo_actual)
+            print("✅")
+
+    print("\n✨ RECONSTRUCCIÓN FINALIZADA.")
 
 if __name__ == "__main__":
     reconstruir_linea_tiempo()
