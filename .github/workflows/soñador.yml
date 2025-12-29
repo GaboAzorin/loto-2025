@@ -3,7 +3,7 @@ name: Soñador (Generador de Predicciones)
 on:
   schedule:
     - cron: '*/15 * * * *' # Ejecutar cada 15 minutos
-  workflow_dispatch: # Permite ejecución manual desde GitHub Actions
+  workflow_dispatch: # Permite ejecución manual
 
 permissions:
   contents: write
@@ -34,18 +34,14 @@ jobs:
         git config --global user.email 'bot@lotoai.com'
         
         # --- FASE 1: COMMIT LOCAL (Asegurar el trabajo) ---
-        # Primero guardamos lo que generó el bot en un commit local.
-        # Esto evita el error "cannot pull with rebase: You have unstaged changes".
         
-        git add data/queue/
-        git add data/loto_genome.json || true
-        git add data/loto_biometrics.json || true
-        git add data/*.pkl || true
-        git add data/LOTO_SIMULACIONES.csv || true
+        # CAMBIO CLAVE AQUÍ: Usamos 'git add .' para agregar TODO (nuevos, modificados, borrados).
+        # Esto evita que queden archivos "sueltos" (unstaged) que rompan el rebase.
+        git add .
         
-        # Verificamos si hay cambios reales antes de hacer commit
+        # Verificamos si hay cambios reales
         if git diff-index --quiet HEAD; then
-          echo "💤 Nada nuevo que guardar (el Bot no generó predicciones o no hubo cambios)."
+          echo "💤 Nada nuevo que guardar."
           exit 0
         else
           git commit -m "🧠 Bot: Predicción + Auto-ajuste"
@@ -68,16 +64,18 @@ jobs:
               SUCCESS=1
               break
             else
-              echo "⚠️ Push rechazado (alguien más subió cambios milisegundos antes). Reintentando..."
+              echo "⚠️ Push rechazado (race condition). Reintentando..."
             fi
             
           else
-            echo "⚠️ Conflicto en Pull/Rebase. Abortando rebase para limpiar y reintentar..."
-            # Si falla el rebase, hay que abortarlo para volver al estado del commit local y probar de nuevo
+            echo "⚠️ Conflicto en Pull/Rebase. Abortando rebase..."
             git rebase --abort
+            
+            # CRÍTICO: Si falla el rebase por algo raro, hacemos stash por si acaso
+            # (Aunque con el 'git add .' de arriba no debería ser necesario, es doble seguridad)
+            git stash || true
           fi
           
-          # Espera aleatoria entre 5 y 15 segundos para evitar colisiones repetidas
           sleep $((RANDOM % 10 + 5))
           COUNT=$((COUNT+1))
         done
