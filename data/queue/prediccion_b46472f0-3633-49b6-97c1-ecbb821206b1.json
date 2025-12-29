@@ -1,0 +1,12 @@
+{
+  "id": 1767007811,
+  "fecha_generacion": "2025-12-29 08:12:42",
+  "juego": "LOTO",
+  "numeros": "[1, 8, 24, 28, 29, 39]",
+  "sorteo_objetivo": 5367,
+  "estado": "PENDIENTE",
+  "aciertos": 0,
+  "score_afinidad": 0.0,
+  "hora_dia": 8,
+  "algoritmo": "consenso_meritocratico_v2"
+}
