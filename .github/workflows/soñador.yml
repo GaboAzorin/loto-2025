@@ -29,7 +29,7 @@ jobs:
       with:
         python-version: '3.11'
 
-    # --- OPTIMIZACIÓN: CACHÉ (Ahorra minutos de facturación) ---
+    # --- OPTIMIZACIÓN: CACHÉ ---
     - name: Cache pip packages
       uses: actions/cache@v3
       with:
@@ -43,8 +43,11 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
+    # --- FASE 0: PREPARACIÓN (MUEVE LA COLA AL CSV) ---
+    - name: 0. Consolidar Cola de Predicciones
+      run: python engine/tools/consolidar_cola.py
+
     # --- FASE 1: AUDITORÍA (El Pasado) ---
-    # Nota: Si el Juez modifica el CSV aquí, se guardará abajo.
     - name: 1. Ejecutar Juez Implacable
       run: python engine/models/juez_implacable.py
 
@@ -57,33 +60,54 @@ jobs:
       run: python engine/models/generador_biometrico.py
 
     # --- FASE 4: PREDICCIÓN (El Futuro) ---
-    # AHORA ESTO GENERA ARCHIVOS EN data/queue/ NO TOCA EL CSV DIRECTAMENTE
+    # Genera tickets JSON en data/queue/
     - name: 4. Ejecutar Bot Dreamer
       run: python engine/models/bot_dreamer.py
 
     # --- FASE 5: PERSISTENCIA (CRÍTICO: GESTIÓN DE COLA) ---
-    - name: Guardar Predicciones e Inteligencia
+    - name: Guardar Predicciones e Inteligencia (Concurrencia Segura)
       run: |
         git config --global user.name 'LotoAI Bot'
         git config --global user.email 'bot@lotoai.com'
-        git config --global http.postBuffer 524288000
         
-        # 1. Sincronización preventiva
-        git pull origin main --rebase || echo "Nada que rebasar"
-
-        # 2. AGREGAR LA COLA (CRÍTICO PARA LA NUEVA ARQUITECTURA)
-        # Esto toma los JSONs generados por el bot_dreamer
-        git add data/queue/ || echo "La cola estaba vacía o no existe"
-
-        # 3. Agregar inteligencia y CSV (por si el Juez o Entrenador tocaron algo)
-        git add data/loto_biometrics.json || true
-        git add data/loto_genome.json || true
-        git add data/LOTO_SIMULACIONES.csv || true
-        git add data/*.pkl || true
+        # Intentar hasta 5 veces la sincronización
+        MAX_RETRIES=5
+        COUNT=0
+        SUCCESS=0
         
-        # 4. Commit y Push
-        # Usamos [skip ci] solo si quieres que esto no dispare otros workflows, 
-        # pero como tienes el Juez escuchando cambios, mejor NO poner skip ci 
-        # para que el Juez se active y consolide la cola.
-        git commit -m "🔮 Nuevos Sueños en Cola + Actualización Neuronal" || echo "Sin cambios para subir"
-        git push origin main
+        while [ $COUNT -lt $MAX_RETRIES ]; do
+          # 1. Traer lo último del universo (Pull con Rebase es clave)
+          git pull origin main --rebase
+          
+          # 2. Agregar cambios
+          git add data/queue/
+          git add data/loto_genome.json || true
+          git add data/loto_biometrics.json || true  # <--- AGREGADO: Importante para la web
+          git add data/*.pkl || true
+          git add data/LOTO_SIMULACIONES.csv || true
+          
+          # 3. Commit (Si no hay cambios, esto falla y el script sale limpio)
+          if git commit -m "🧠 Bot: Predicción + Auto-ajuste [Try $COUNT]"; then
+            # 4. Intentar Push
+            if git push origin main; then
+              echo "✅ Sincronización exitosa."
+              SUCCESS=1
+              break
+            else
+              echo "⚠️ Push falló (alguien más subió cambios justo ahora). Reintentando..."
+            fi
+          else
+            echo "💤 Nada nuevo que guardar."
+            SUCCESS=1
+            break
+          fi
+          
+          # Esperar un poco antes de reintentar (backoff aleatorio)
+          sleep $((RANDOM % 10 + 5))
+          COUNT=$((COUNT+1))
+        done
+        
+        if [ $SUCCESS -eq 0 ]; then
+          echo "❌ Error crítico: No se pudo sincronizar después de $MAX_RETRIES intentos."
+          exit 1
+        fi
