@@ -1,0 +1,12 @@
+{
+  "id": 1766979250,
+  "fecha_generacion": "2025-12-29 00:16:41",
+  "juego": "LOTO",
+  "numeros": "[1, 4, 8, 24, 28, 36]",
+  "sorteo_objetivo": 5367,
+  "estado": "PENDIENTE",
+  "aciertos": 0,
+  "score_afinidad": 0.0,
+  "hora_dia": 0,
+  "algoritmo": "consenso_meritocratico_v2"
+}
