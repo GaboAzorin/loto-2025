@@ -3,8 +3,10 @@ name: Juez Implacable (Auditoría Multiverso)
 on:
   push:
     paths:
-      - 'data/*_MAESTRO.csv' # Se activa al subir nuevos resultados reales
+      - 'data/*_MAESTRO.csv' # Se activa solo si subes resultados nuevos (Loto, Racha, etc.)
   workflow_dispatch: # Botón manual
+  schedule:
+    - cron: '0 */6 * * *' # <--- NUEVO: Ejecutar cada 6 horas para limpieza automática (Conserje)
 
 permissions:
   contents: write
@@ -26,15 +28,15 @@ jobs:
       run: |
         pip install pandas numpy
 
-    # 0. El consolidador (Aquí se borran los 7.000 archivos del DISCO)
+    # 0. El consolidador (Aquí se borran los archivos JSON del DISCO tras unirse al CSV)
     - name: 0. Consolidar Cola de Predicciones
       run: python engine/tools/consolidar_cola.py
 
-    # 1. AUDITORÍA
+    # 1. AUDITORÍA: Revisa si ganamos algo con los datos nuevos
     - name: Ejecutar Juez Multiverso
       run: python engine/models/juez_implacable.py
 
-    # 2. APRENDIZAJE
+    # 2. APRENDIZAJE: Actualiza el Genoma y la Biometría al instante
     - name: Ejecutar Entrenador Cognitivo
       run: python engine/models/entrenador_cognitivo.py
 
@@ -48,20 +50,21 @@ jobs:
         git config --global user.email 'juez@lotoai.com'
         
         # --- FASE 1: COMMIT LOCAL ---
-        # 'git add .' es mágico:
-        # 1. Agrega el CSV modificado.
+        # 'git add .' es la clave:
+        # 1. Agrega el CSV modificado con las nuevas filas.
         # 2. Agrega los JSON de inteligencia actualizados.
-        # 3. ¡Registra la ELIMINACIÓN de los 7.000 archivos de la cola!
+        # 3. ¡Registra la ELIMINACIÓN de los archivos de la cola que borró Python!
         git add .
         
+        # Verificamos si hay algo que guardar
         if git diff-index --quiet HEAD; then
-          echo "⚖️ Todo en orden, no hubo cambios de auditoría."
+          echo "⚖️ Todo en orden, no hubo cambios de auditoría ni limpieza pendiente."
           exit 0
         else
           git commit -m "⚖️ Ciclo de Verdad: Auditoría y Limpieza completados"
         fi
 
-        # --- FASE 2: SINCRONIZACIÓN ROBUSTA ---
+        # --- FASE 2: SINCRONIZACIÓN ROBUSTA (El Bucle de la Perseverancia) ---
         MAX_RETRIES=10
         COUNT=0
         SUCCESS=0
@@ -69,7 +72,10 @@ jobs:
         while [ $COUNT -lt $MAX_RETRIES ]; do
           echo "🔄 Sincronizando Juez con el Multiverso (Intento $COUNT/$MAX_RETRIES)..."
           
+          # Intentamos traer cambios remotos (ej: predicciones nuevas del bot)
           if git pull origin main --rebase; then
+            
+            # Si entramos bien, intentamos subir nuestros cambios
             if git push origin main; then
               echo "✅ Veredicto dictado y guardado."
               SUCCESS=1
@@ -77,12 +83,15 @@ jobs:
             else
               echo "⚠️ Push rechazado. Reintentando..."
             fi
+            
           else
             echo "⚠️ Conflicto en Rebase. Reintentando..."
+            # Si falla el rebase, abortamos y protegemos cambios para intentar de nuevo
             git rebase --abort
-            git stash || true
+            git stash || true 
           fi
           
+          # Espera aleatoria para evitar colisiones constantes
           sleep $((RANDOM % 10 + 5))
           COUNT=$((COUNT+1))
         done
