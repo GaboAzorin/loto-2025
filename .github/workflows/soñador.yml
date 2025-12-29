@@ -1,9 +1,9 @@
-name: Bot Soñador (Multiverso)
+name: Soñador (Generador de Predicciones)
 
 on:
   schedule:
-    - cron: '*/15 * * * *' # Corre cada 15 minutos
-  workflow_dispatch: # Botón manual en GitHub
+    - cron: '*/15 * * * *' # Ejecutar cada 15 minutos
+  workflow_dispatch: # Permite ejecución manual desde GitHub Actions
 
 permissions:
   contents: write
@@ -11,103 +11,78 @@ permissions:
 jobs:
   dream:
     runs-on: ubuntu-latest
-    timeout-minutes: 10 # Reducido a 10 para evitar procesos zombies
-
+    
     steps:
     - name: Checkout repo
       uses: actions/checkout@v3
-      with:
-        ref: main
-
-    - name: Sincronizar estado inicial
-      run: |
-        git config pull.rebase false
-        git pull origin main || echo "Repositorio ya actualizado"
 
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.11'
 
-    # --- OPTIMIZACIÓN: CACHÉ ---
-    - name: Cache pip packages
-      uses: actions/cache@v3
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
-
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
+        pip install pandas numpy scikit-learn scipy
 
-    # --- FASE 0: PREPARACIÓN (MUEVE LA COLA AL CSV) ---
-    - name: 0. Consolidar Cola de Predicciones
-      run: python engine/tools/consolidar_cola.py
-
-    # --- FASE 1: AUDITORÍA (El Pasado) ---
-    - name: 1. Ejecutar Juez Implacable
-      run: python engine/models/juez_implacable.py
-
-    # --- FASE 2: APRENDIZAJE (La Retrospectiva) ---
-    - name: 2. Ejecutar Entrenador Cognitivo
-      run: python engine/models/entrenador_cognitivo.py
-
-    # --- FASE 3: BIOMETRÍA (El Presente) ---
-    - name: 3. Actualizar Biometría
-      run: python engine/models/generador_biometrico.py
-
-    # --- FASE 4: PREDICCIÓN (El Futuro) ---
-    # Genera tickets JSON en data/queue/
-    - name: 4. Ejecutar Bot Dreamer
+    - name: Ejecutar Bot Dreamer
       run: python engine/models/bot_dreamer.py
 
-    # --- FASE 5: PERSISTENCIA (CRÍTICO: GESTIÓN DE COLA) ---
-    - name: Guardar Predicciones e Inteligencia (Concurrencia Segura)
+    - name: Sincronizar y Guardar (Retry Logic Blindado)
       run: |
         git config --global user.name 'LotoAI Bot'
         git config --global user.email 'bot@lotoai.com'
         
-        # Intentar hasta 5 veces la sincronización
-        MAX_RETRIES=5
+        # --- FASE 1: COMMIT LOCAL (Asegurar el trabajo) ---
+        # Primero guardamos lo que generó el bot en un commit local.
+        # Esto evita el error "cannot pull with rebase: You have unstaged changes".
+        
+        git add data/queue/
+        git add data/loto_genome.json || true
+        git add data/loto_biometrics.json || true
+        git add data/*.pkl || true
+        git add data/LOTO_SIMULACIONES.csv || true
+        
+        # Verificamos si hay cambios reales antes de hacer commit
+        if git diff-index --quiet HEAD; then
+          echo "💤 Nada nuevo que guardar (el Bot no generó predicciones o no hubo cambios)."
+          exit 0
+        else
+          git commit -m "🧠 Bot: Predicción + Auto-ajuste"
+        fi
+
+        # --- FASE 2: SINCRONIZACIÓN (El Bucle de la Perseverancia) ---
+        MAX_RETRIES=10
         COUNT=0
         SUCCESS=0
         
         while [ $COUNT -lt $MAX_RETRIES ]; do
-          # 1. Traer lo último del universo (Pull con Rebase es clave)
-          git pull origin main --rebase
+          echo "🔄 Intento de sincronización $COUNT/$MAX_RETRIES..."
           
-          # 2. Agregar cambios
-          git add data/queue/
-          git add data/loto_genome.json || true
-          git add data/loto_biometrics.json || true  # <--- AGREGADO: Importante para la web
-          git add data/*.pkl || true
-          git add data/LOTO_SIMULACIONES.csv || true
-          
-          # 3. Commit (Si no hay cambios, esto falla y el script sale limpio)
-          if git commit -m "🧠 Bot: Predicción + Auto-ajuste [Try $COUNT]"; then
-            # 4. Intentar Push
+          # Intentamos traer cambios remotos y aplicar nuestro commit encima (Rebase)
+          if git pull origin main --rebase; then
+            
+            # Si el rebase funcionó, intentamos subir
             if git push origin main; then
-              echo "✅ Sincronización exitosa."
+              echo "✅ Éxito: Predicciones subidas al multiverso."
               SUCCESS=1
               break
             else
-              echo "⚠️ Push falló (alguien más subió cambios justo ahora). Reintentando..."
+              echo "⚠️ Push rechazado (alguien más subió cambios milisegundos antes). Reintentando..."
             fi
+            
           else
-            echo "💤 Nada nuevo que guardar."
-            SUCCESS=1
-            break
+            echo "⚠️ Conflicto en Pull/Rebase. Abortando rebase para limpiar y reintentar..."
+            # Si falla el rebase, hay que abortarlo para volver al estado del commit local y probar de nuevo
+            git rebase --abort
           fi
           
-          # Esperar un poco antes de reintentar (backoff aleatorio)
+          # Espera aleatoria entre 5 y 15 segundos para evitar colisiones repetidas
           sleep $((RANDOM % 10 + 5))
           COUNT=$((COUNT+1))
         done
         
         if [ $SUCCESS -eq 0 ]; then
-          echo "❌ Error crítico: No se pudo sincronizar después de $MAX_RETRIES intentos."
+          echo "❌ Error crítico: Imposible sincronizar tras $MAX_RETRIES intentos."
           exit 1
         fi
