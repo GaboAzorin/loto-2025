@@ -1,0 +1,12 @@
+{
+  "id": 1766997348,
+  "fecha_generacion": "2025-12-29 05:20:48",
+  "juego": "LOTO4",
+  "numeros": "[3, 9, 16, 17]",
+  "sorteo_objetivo": 11530,
+  "estado": "PENDIENTE",
+  "aciertos": 0,
+  "score_afinidad": 0.0,
+  "hora_dia": 5,
+  "algoritmo": "forense_biometrico_v1"
+}
