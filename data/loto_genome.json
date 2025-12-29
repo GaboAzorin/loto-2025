@@ -8,7 +8,7 @@
       "forense_biometrico_v1": 4.09,
       "gaussiano_tactico_v1": 4.47,
       "markov_chain_v1": 3.82,
-      "oraculo_neural_v3": 13.82
+      "oraculo_neural_v3": 13.83
     },
     "LOTO3": {
       "consenso_meritocratico_v2": 22.22,
@@ -63,7 +63,7 @@
     }
   },
   "metadata": {
-    "updated_at": "2025-12-29 07:15:37",
+    "updated_at": "2025-12-29 07:46:55",
     "mode": "FULL_LOBOTOMY_V2",
     "casos_estudiados": 11466
   }
