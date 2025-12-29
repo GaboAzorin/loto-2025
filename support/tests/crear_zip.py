@@ -143,7 +143,7 @@ def comprimir_para_gemini():
     
     texto_para_portapapeles = 'Arquitectura MLOps Serverless orientada a eventos ejecutada sobre GitHub Actions. El sistema implementa un pipeline ETL autónomo (Playwright) con reconstrucción temporal y manejo de concurrencia mediante colas asíncronas (UUID tickets) con consolidación batch para garantizar la integridad atómica de los datos (*_MAESTRO.csv).\nEl núcleo de inferencia opera mediante un ensamble dinámico (RandomForest, Cadenas de Markov, Heurísticas) orquestado por un algoritmo de votación ponderada (Consenso Meritocrático). Integra un ciclo de retroalimentación cerrado (RL-lite): el agente Juez calcula la función de pérdida sobre predicciones pasadas y el Entrenador ajusta los pesos sinápticos en loto_genome.json en tiempo de ejecución.'
     pyperclip.copy(texto_para_portapapeles)
-    print("Texto copiado al portapapeles.")
+    print(texto_para_portapapeles)
 
 if __name__ == "__main__":
     comprimir_para_gemini()
