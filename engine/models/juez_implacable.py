@@ -110,41 +110,23 @@ def calcular_afinidad(prediccion, realidad, juego):
         
         return score_pos + score_num
 
-    # --- REGLAS LOTO / LOTO 4 (Clásico) ---
+# --- REGLAS LOTO / LOTO 4 (Escala Logarítmica de Premio) ---
     else: 
-        # Aquí la lógica anterior estaba bien, pero podemos refinar la "Proximidad"
-        # para que no sea tan castigadora si fallamos por 1 número.
         aciertos = len(set(prediccion) & set(realidad))
-        total_bolas = len(realidad)
         
-        # Si aciertas todo, 100 pts
-        ratio = aciertos / total_bolas
-        if ratio == 1.0: return 100.0
+        # CASO ESPECIAL LOTO 4 (El Jackpot es 4, no 6)
+        if juego == "LOTO4" and aciertos == 4:
+             return 1000.0 # ¡JACKPOT LOTO 4!
+
+        # ESCALA GENERAL
+        if aciertos == 6: return 1000.0 # JACKPOT LOTO
+        if aciertos == 5: return 300.0  # Quina / Super Cuaterna
+        if aciertos == 4: return 100.0  # Cuaterna
+        if aciertos == 3: return 10.0   # Terna (Umbral mínimo de supervivencia)
         
-        # Cálculo base exponencial (para que 5 aciertos valga mucho más que 1)
-        base_score = (ratio ** 2) * 100 
-        
-        # Bonus de proximidad (Solo si tenemos al menos 2 aciertos, para afinar puntería)
-        proximity_score = 0
-        if aciertos >= 2:
-            try:
-                # Ordenamos para comparar menor con menor
-                p_sorted = sorted(prediccion)[:total_bolas]
-                r_sorted = sorted(realidad)[:total_bolas]
-                
-                diff_total = 0
-                for p, r in zip(p_sorted, r_sorted):
-                    diff_total += abs(p - r)
-                
-                # Promedio de distancia por bola
-                avg_diff = diff_total / total_bolas
-                
-                # Si el error promedio es bajo (ej. fallé por 1 o 2 números), doy puntos extra
-                if avg_diff < 5: 
-                    proximity_score = (5 - avg_diff) * 2 # Max 10 pts extra
-            except: pass
-            
-        return min(99.0, base_score + proximity_score)
+        # Todo lo demás es fracaso.
+        # Sin piedad. Sin puntos por "casi".
+        return 0.0
 
 def juzgar():
     print("⚖️ JUEZ MULTIVERSO EN SESIÓN...")

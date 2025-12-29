@@ -215,9 +215,10 @@ class OraculoNeural:
         
         # --- HIPERPARÁMETROS ADAPTATIVOS ---
         if samples < 2000: 
-            # Modo Loto (Pocos datos)
-            depth, est = 6, 100
-            print(f"   🛡️ Modo Táctico ({samples} muestras)")
+            # Antes: depth 6 (Muy poco). Ahora: 12 (Profundidad media)
+            # Aumentamos estimadores para reducir el ruido que genera la profundidad extra
+            depth, est = 12, 300 
+            print(f"   🔥 Modo Agresivo Loto ({samples} muestras)")
         elif samples < 8000:
             # Modo Loto4 (Datos medios)
             depth, est = 10, 150
