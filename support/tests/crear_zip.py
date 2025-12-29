@@ -3,6 +3,7 @@ import zipfile
 import tkinter as tk
 from tkinter import filedialog
 from datetime import datetime
+import pyperclip
 
 # --- CONFIGURACIÓN ESTRICTA GEMINI ---
 LIMITE_MB = 95             # Dejamos un margen de seguridad (Max es 100)
@@ -15,6 +16,7 @@ def comprimir_para_gemini():
 
     print("--- GENERADOR DE CONTEXTO (OPTIMIZADO PARA GEMINI) ---")
     print(f"Reglas: Máx {LIMITE_ARCHIVOS} archivos por ZIP o {LIMITE_MB} MB.")
+    print("Filtro activo: Solo los últimos 10 archivos 'prediccion_*.json'")
     
     ruta_seleccionada = filedialog.askdirectory(title="Selecciona tu carpeta de proyecto")
     
@@ -30,6 +32,7 @@ def comprimir_para_gemini():
     print(f"Analizando: {ruta_seleccionada} ...\n")
     
     archivos_para_zip = []
+    archivos_prediccion = [] # Lista temporal para las predicciones
 
     # 1. ESCANEO Y FILTRADO
     for carpeta_actual, subcarpetas, archivos in os.walk(ruta_seleccionada):
@@ -47,27 +50,48 @@ def comprimir_para_gemini():
                 continue
 
             ruta_completa = os.path.join(carpeta_actual, archivo)
-            peso = os.path.getsize(ruta_completa)
             ruta_relativa = os.path.relpath(ruta_completa, ruta_seleccionada)
-            
-            archivos_para_zip.append({
+            peso = os.path.getsize(ruta_completa)
+            mtime = os.path.getmtime(ruta_completa) # Necesario para ordenar por fecha
+
+            item_archivo = {
                 'ruta_completa': ruta_completa,
                 'ruta_relativa': ruta_relativa,
-                'peso': peso
-            })
+                'peso': peso,
+                'mtime': mtime
+            }
 
-    # Ordenamos por importancia (opcional, pero ayuda a que los archivos raíz queden en el zip 1)
-    # Ponemos primero los .py y .csv, luego el resto
+            # --- LÓGICA DE FILTRADO DE PREDICCIONES ---
+            # Si es una predicción json, la mandamos a la lista de espera
+            if archivo.startswith("prediccion_") and archivo.endswith(".json"):
+                archivos_prediccion.append(item_archivo)
+            else:
+                # Si es cualquier otro archivo, pasa directo
+                archivos_para_zip.append(item_archivo)
+
+    # 2. PROCESAMIENTO DE PREDICCIONES (SOLO LAS ÚLTIMAS 10)
+    if archivos_prediccion:
+        print(f"  -> Se encontraron {len(archivos_prediccion)} archivos de predicción.")
+        # Ordenamos por fecha de modificación descendente (el más nuevo primero)
+        archivos_prediccion.sort(key=lambda x: x['mtime'], reverse=True)
+        # Tomamos solo los primeros 10
+        top_10_predicciones = archivos_prediccion[:10]
+        print(f"  -> Se conservarán solo los {len(top_10_predicciones)} más recientes.")
+        # Los agregamos a la lista principal
+        archivos_para_zip.extend(top_10_predicciones)
+
+    # 3. ORDENAMIENTO FINAL
+    # Ordenamos por importancia: .py y .csv primero, luego el resto
     archivos_para_zip.sort(key=lambda x: (not x['ruta_relativa'].endswith('.py'), x['ruta_relativa']))
 
     total_archivos = len(archivos_para_zip)
-    print(f"Total archivos válidos encontrados: {total_archivos}")
+    print(f"Total archivos válidos finales a procesar: {total_archivos}")
     
     if total_archivos == 0:
         print("No hay archivos para procesar.")
         return
 
-    # 2. GENERACIÓN DE LOTES (BATCHING)
+    # 4. GENERACIÓN DE LOTES (BATCHING)
     numero_parte = 1
     
     # Contadores del lote actual
@@ -116,10 +140,11 @@ def comprimir_para_gemini():
     print("-" * 50)
 
     print("Además, ya está en tu portapapeles el texto de resumen del proyecto :)")
-    import pyperclip
+    
     texto_para_portapapeles = 'Arquitectura MLOps Serverless orientada a eventos ejecutada sobre GitHub Actions. El sistema implementa un pipeline ETL autónomo (Playwright) con reconstrucción temporal y manejo de concurrencia mediante colas asíncronas (UUID tickets) con consolidación batch para garantizar la integridad atómica de los datos (*_MAESTRO.csv).\nEl núcleo de inferencia opera mediante un ensamble dinámico (RandomForest, Cadenas de Markov, Heurísticas) orquestado por un algoritmo de votación ponderada (Consenso Meritocrático). Integra un ciclo de retroalimentación cerrado (RL-lite): el agente Juez calcula la función de pérdida sobre predicciones pasadas y el Entrenador ajusta los pesos sinápticos en loto_genome.json en tiempo de ejecución.'
     pyperclip.copy(texto_para_portapapeles)
-    print("No está demás dejarte aquí el texto por si acaso:\nArquitectura MLOps Serverless orientada a eventos ejecutada sobre GitHub Actions. El sistema implementa un pipeline ETL autónomo (Playwright) con reconstrucción temporal y manejo de concurrencia mediante colas asíncronas (UUID tickets) con consolidación batch para garantizar la integridad atómica de los datos (*_MAESTRO.csv).\nEl núcleo de inferencia opera mediante un ensamble dinámico (RandomForest, Cadenas de Markov, Heurísticas) orquestado por un algoritmo de votación ponderada (Consenso Meritocrático). Integra un ciclo de retroalimentación cerrado (RL-lite): el agente Juez calcula la función de pérdida sobre predicciones pasadas y el Entrenador ajusta los pesos sinápticos en loto_genome.json en tiempo de ejecución.")
+    print("Texto copiado al portapapeles.")
+
 if __name__ == "__main__":
     comprimir_para_gemini()
     input("\nPresiona Enter para salir...")
