@@ -59,42 +59,42 @@ def actualizar_ultimo_procesado(juego, sorteo_id):
         try:
             with open(GENOMA_FILE, 'r') as f: data = json.load(f)
         except: pass
-    
+
     if "last_processed" not in data: data["last_processed"] = {}
     data["last_processed"][juego] = int(sorteo_id)
-    
+
     with open(GENOMA_FILE, 'w') as f:
         json.dump(data, f, indent=2)
 
 def reconstruir_linea_tiempo():
     print("⏳ INICIANDO RECONSTRUCCIÓN EXHAUSTIVA (MODO HOMOLOGACIÓN TOTAL)...")
-    
+
     for juego, archivo in JUEGOS.items():
         path = os.path.join(DATA_DIR, archivo)
         if not os.path.exists(path): continue
-        
+
         # 1. Leer historia real
         try:
             df_real = pd.read_csv(path)
         except: continue
 
         if 'sorteo' not in df_real.columns: continue
-        
+
         # Ordenar cronológicamente
         df_real = df_real.sort_values('sorteo', ascending=True).reset_index(drop=True)
         todos_sorteos = df_real['sorteo'].unique()
-        
+
         # 2. Determinar punto de partida
         ultimo_procesado = obtener_ultimo_procesado(juego)
         nuevos = [s for s in todos_sorteos if s > ultimo_procesado]
-        
+
         if not nuevos:
             continue
-            
+
         total_a_procesar = len(nuevos)
         print(f"\n🚀 {juego}: Detectados {total_a_procesar} sorteos nuevos.")
         print(f"   📅 Sincronizando desde sorteo #{min(nuevos)}...")
-        
+
         oraculo = OraculoNeural(juego) if OraculoNeural else None
 
         # --- ⏱️ CRONÓMETRO GLOBAL ---
@@ -102,11 +102,21 @@ def reconstruir_linea_tiempo():
         procesados_count = 0
 
         # 3. BUCLE DE VIAJE EN EL TIEMPO
-        for sorteo_actual in nuevos:
+        for i, sorteo_actual in enumerate(nuevos):
             # --- ⏱️ CRONÓMETRO INDIVIDUAL ---
             inicio_iteracion = time.time()
-            
-            print(f"   >>> Sorteo #{sorteo_actual}...", end=" ")
+
+            # --- [BLOQUE VISUAL MEJORADO] ---
+            # Feedback de cierre del ciclo anterior (si no es el primero)
+            if i > 0:
+                print(f"   └── ✅ Ciclo completado. Preparando siguiente salto temporal...\n")
+
+            # Separador visual y encabezado del nuevo sorteo
+            print("═" * 70)
+            print(f"📅  NUEVO HITO TEMPORAL DETECTADO")
+            print(f"🎯  OBJETIVO: Sorteo Nº {sorteo_actual} ({juego})")
+            print("═" * 70)
+            # -------------------------------
 
             # [A] CÁLCULO DE FECHA (Lógica original intacta)
             try:
@@ -119,11 +129,13 @@ def reconstruir_linea_tiempo():
                 fecha_simulada = fecha_target_dt - timedelta(hours=1)
             except: 
                 fecha_target_dt = datetime.now(); fecha_simulada = datetime.now()
-            
+
             # [B] JUEZ Y ENTRENADOR (Lógica original intacta)
+            print(f"⚖️  JUEZ MULTIVERSO EN SESIÓN...", end=" ") # Ajuste visual menor para fluidez
             juez_implacable.juzgar() 
+            print("") # Salto de línea para separar output del Juez del Entrenador
             entrenador_cognitivo.analizar_adn_ganador()
-            
+
             # [C] ORÁCULO (Lógica original intacta)
             if oraculo:
                 if os.path.exists(SIMULACIONES_FILE):
@@ -144,11 +156,11 @@ def reconstruir_linea_tiempo():
                 try:
                     oraculo.entrenar(sorteo_limite=sorteo_actual)
                     prediccion = oraculo.predecir(fecha_objetivo=fecha_target_dt)
-                    
+
                     if prediccion:
                         # Log más compacto para ver los tiempos mejor
                         print(f"🔮 {prediccion}", end=" ") 
-                        
+
                         timestamp_simulado = int(time.time())
                         import random
                         id_ficticio = int(f"{timestamp_simulado}{random.randint(10,99)}")
@@ -164,12 +176,12 @@ def reconstruir_linea_tiempo():
                             'hora_dia': fecha_simulada.hour,
                             'algoritmo': 'oraculo_neural_v3'
                         }
-                        
+
                         file_exists = os.path.exists(SIMULACIONES_FILE)
                         mode = 'a' if file_exists else 'w'
                         keys = ['id', 'fecha_generacion', 'juego', 'numeros', 'sorteo_objetivo', 
                                 'estado', 'aciertos', 'score_afinidad', 'hora_dia', 'algoritmo']
-                        
+
                         with open(SIMULACIONES_FILE, mode, newline='', encoding='utf-8') as f:
                             w = csv.DictWriter(f, fieldnames=keys, extrasaction='ignore')
                             if not file_exists: w.writeheader()
@@ -177,20 +189,20 @@ def reconstruir_linea_tiempo():
 
                 except Exception as e:
                     print(f"⚠️ Err: {e}", end=" ")
-            
+
             # [D] MARCAR HITO
             actualizar_ultimo_procesado(juego, sorteo_actual)
 
             # --- ⏱️ CÁLCULOS DE TELEMETRÍA ---
             fin_iteracion = time.time()
             tiempo_ciclo = fin_iteracion - inicio_iteracion
-            
+
             procesados_count += 1
             tiempo_transcurrido = fin_iteracion - inicio_global
             velocidad_promedio = tiempo_transcurrido / procesados_count
             restantes = total_a_procesar - procesados_count
             eta_segundos = restantes * velocidad_promedio
-            
+
             # Formato visual: Tiempo ciclo | Transcurrido | Restante
             print(f"✅ [{tiempo_ciclo:.1f}s | T:{formato_hms(tiempo_transcurrido)} | Resta:{formato_hms(eta_segundos)}]")
 
