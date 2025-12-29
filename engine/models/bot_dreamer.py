@@ -154,7 +154,7 @@ def obtener_pesos_del_lobulo(game_id, genoma):
 
 def validar_cognitivamente(numeros, genoma, game_id):
     """
-    Filtra predicciones basándose en la morfología PENTADIMENSIONAL.
+    Filtro Pentadimensional V4: Ahora con Primos, Múltiplos y Deltas.
     """
     if not genoma or not numeros: return True
     
@@ -164,45 +164,52 @@ def validar_cognitivamente(numeros, genoma, game_id):
         
         nums = sorted(numeros)
         
-        # 1. Filtro de SUMA
-        rango_suma = morph.get('ideal_sum_range')
-        if rango_suma and isinstance(rango_suma, list):
-            suma = sum(nums)
-            # Tolerancia amplia (+- 15%)
-            if suma < (rango_suma[0] * 0.85) or suma > (rango_suma[1] * 1.15):
-                return False
-        
-        # Función auxiliar para validar conteos con tolerancia
+        # Helper para validación con tolerancia
         def validar_conteo(key, valor_real, tolerancia=1.2):
             ideal = morph.get(key, -1)
             if ideal == -1: return True
             return abs(valor_real - ideal) <= tolerancia
 
-        # 2. Filtro PARES
-        pares = len([n for n in nums if n % 2 == 0])
-        if not validar_conteo("ideal_even_count", pares, tolerancia=1.5): return False
+        # 1. Suma
+        rango_suma = morph.get('ideal_sum_range')
+        if rango_suma and isinstance(rango_suma, list):
+            suma = sum(nums)
+            if suma < (rango_suma[0] * 0.8) or suma > (rango_suma[1] * 1.2): return False
 
-        # 3. Filtro CONSECUTIVOS (Cluster)
-        cons = sum(1 for i in range(len(nums)-1) if nums[i+1] == nums[i] + 1)
-        # Tolerancia estricta aquí (no queremos filas seguidas tipo 1,2,3,4,5)
-        if not validar_conteo("ideal_consecutivos", cons, tolerancia=1.0): return False
-
-        # 4. Filtro BAJOS/ALTOS
-        limite = 21 # Ajustar según juego si es necesario
-        if game_id == "LOTO3": limite=5
-        bajos = len([n for n in nums if n <= limite])
-        if not validar_conteo("ideal_bajos_altos", bajos, tolerancia=1.5): return False
+        # 2. Métricas Clásicas
+        if not validar_conteo("ideal_even_count", len([n for n in nums if n % 2 == 0]), 1.5): return False
         
-        # 5. Filtro TERMINACIONES
+        cons = sum(1 for i in range(len(nums)-1) if nums[i+1] == nums[i] + 1)
+        if not validar_conteo("ideal_consecutivos", cons, 1.2): return False # Tolerancia estricta en cluster
+        
+        limite = 4 if game_id == "LOTO3" else (10 if game_id == "RACHA" else 21)
+        bajos = len([n for n in nums if n <= limite])
+        if not validar_conteo("ideal_bajos_altos", bajos, 1.5): return False
+        
         last_digits = len(set([n % 10 for n in nums]))
-        # Si el ideal es tener 5 terminaciones distintas y traes 2, rechazado.
-        if not validar_conteo("ideal_terminaciones", last_digits, tolerancia=1.2): return False
+        if not validar_conteo("ideal_terminaciones", last_digits, 1.2): return False
 
-        return True # Pasó todas las pruebas
+        # 3. MÉTRICAS NUEVAS (V4)
+        # A. Primos
+        PRIMOS = {2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41}
+        cnt_primos = len([n for n in nums if n in PRIMOS])
+        if not validar_conteo("ideal_primos", cnt_primos, 1.5): return False
 
-    except Exception as e:
-        # Si falla la validación por error de código, permitimos pasar (Fail-Open)
+        # B. Múltiplos de 3
+        cnt_mult3 = len([n for n in nums if n > 0 and n % 3 == 0])
+        if not validar_conteo("ideal_multiples_3", cnt_mult3, 1.5): return False
+
+        # C. Delta Promedio (Solo si hay más de 1 número)
+        if len(nums) > 1:
+            diffs = [nums[i+1] - nums[i] for i in range(len(nums)-1)]
+            avg_diff = sum(diffs) / len(diffs)
+            # Tolerancia un poco más amplia (2.5) porque la varianza es alta
+            if not validar_conteo("ideal_avg_delta", avg_diff, 2.5): return False
+
         return True
+
+    except Exception:
+        return True # Fail-open
 
 def soñar():
     print("💤 --- INICIANDO BOT SOÑADOR: LÓBULOS ESPECIALIZADOS v12.1 ---")
