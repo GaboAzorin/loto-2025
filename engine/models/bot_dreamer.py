@@ -5,6 +5,7 @@ import pytz
 import time
 import sys
 import numpy as np
+import math
 from datetime import datetime, timedelta
 
 try:
@@ -124,25 +125,31 @@ def cargar_genoma():
 
 def obtener_pesos_del_lobulo(game_id, genoma):
     """
-    Extrae los pesos de confianza del ranking específico de este juego.
-    Esto permite que el consenso se incline por el mejor algoritmo de CADA juego.
+    Extrae los pesos de confianza usando escala Logarítmica.
+    Evita que un solo golpe de suerte (score 1000) rompa la democracia.
     """
+    # Peso base mínimo para que todos tengan voz
     pesos = {'forense': 1.0, 'gaussiano': 1.0, 'delta': 1.0, 'markov': 1.0}
     
     if not genoma: return pesos
     
-    # Buscamos en el lóbulo de ranking específico (Estructura anidada)
     ranking_lobulo = genoma.get("algo_ranking", {}).get(game_id, {})
     
-    # Si encontramos ranking específico, ajustamos pesos
     if ranking_lobulo and isinstance(ranking_lobulo, dict):
         for algo_name, score in ranking_lobulo.items():
-            key = algo_name.split('_')[0] # ej: 'forense_biometrico_v1' -> 'forense'
+            key = algo_name.split('_')[0]
             if key in pesos:
-                # Convertimos score (0-100) en peso (0.2 - 3.0)
-                # Un score alto le da más votos en el consenso
-                pesos[key] = max(0.2, score / 8.0) 
-    
+                # --- CORRECCIÓN LOGARÍTMICA ---
+                # Score 0 -> log(1) = 0 -> Peso 0.5 (Mínimo)
+                # Score 10 -> log(11) ≈ 2.4 
+                # Score 100 -> log(101) ≈ 4.6
+                # Score 1000 -> log(1001) ≈ 6.9
+                # Esto comprime la escala: El mejor es 3x más fuerte que el promedio, no 100x.
+                peso_log = math.log(max(1, score) + 1)
+                
+                # Asignamos peso con un piso de 0.5 para no silenciar totalmente a nadie
+                pesos[key] = max(0.5, peso_log)
+                
     return pesos
 
 def validar_cognitivamente(numeros, genoma, game_id):

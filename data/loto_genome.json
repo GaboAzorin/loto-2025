@@ -1,70 +1,63 @@
 {
   "algo_ranking": {
     "LOTO": {
-      "MASTER_PREMIUM_v1": 0.0,
-      "consenso_meritocratico_v2": 6.04,
-      "consenso_v1": 4.37,
-      "delta_tactico_v1": 4.13,
-      "forense_biometrico_v1": 4.09,
-      "gaussiano_tactico_v1": 4.47,
-      "markov_chain_v1": 3.82,
-      "oraculo_neural_v3": 13.83
+      "consenso_meritocratico_v2": 6.05,
+      "consenso_v1": 4.36,
+      "delta_tactico_v1": 4.12,
+      "forense_biometrico_v1": 4.08,
+      "gaussiano_tactico_v1": 4.46,
+      "markov_chain_v1": 3.81,
+      "oraculo_neural_v3": 13.84
     },
     "LOTO3": {
-      "consenso_meritocratico_v2": 22.22,
-      "forense_biometrico_v1": 18.73,
-      "oraculo_neural_v3": 21.39
+      "consenso_meritocratico_v2": 22.21,
+      "forense_biometrico_v1": 18.74,
+      "oraculo_neural_v3": 21.4
     },
     "LOTO4": {
-      "consenso_meritocratico_v2": 5.18,
-      "forense_biometrico_v1": 6.15,
-      "oraculo_neural_v3": 2.88
+      "consenso_meritocratico_v2": 5.17,
+      "forense_biometrico_v1": 6.13,
+      "oraculo_neural_v3": 2.89
     },
     "RACHA": {
-      "consenso_meritocratico_v2": 17.21,
-      "forense_biometrico_v1": 15.67,
-      "oraculo_neural_v3": 10.82
+      "consenso_meritocratico_v2": 17.19,
+      "forense_biometrico_v1": 15.69,
+      "oraculo_neural_v3": 10.83
     }
   },
-  "last_processed": {
-    "LOTO3": 23940,
-    "RACHA": 10262,
-    "LOTO": 5366,
-    "LOTO4": 11529
+  "metadata": {
+    "updated_at": "2025-12-29 14:05:44",
+    "last_trained_id": 176695590048,
+    "total_casos_estudiados": 11466
   },
   "morphology": {
     "LOTO": {
       "ideal_sum_range": [
-        123,
-        123
+        24,
+        823
       ],
       "ideal_even_count": 3
     },
     "LOTO3": {
       "ideal_sum_range": [
-        9,
-        13
+        1,
+        802
       ],
       "ideal_even_count": 2
     },
     "LOTO4": {
       "ideal_sum_range": [
-        39,
-        52
+        7,
+        809
       ],
       "ideal_even_count": 1
     },
     "RACHA": {
       "ideal_sum_range": [
-        107,
-        116
+        21,
+        822
       ],
       "ideal_even_count": 6
     }
-  },
-  "metadata": {
-    "updated_at": "2025-12-29 11:47:22",
-    "mode": "FULL_LOBOTOMY_V2",
-    "casos_estudiados": 11466
   }
 }
