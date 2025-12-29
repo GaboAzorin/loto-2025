@@ -87,45 +87,89 @@ def analizar_adn_ganador():
         ranking_global[juego_id] = ranking_juego
         print(f"   📈 Ranking actualizado para {juego_id}")
 
-        # --- B. APRENDIZAJE MORFOLÓGICO (Estadística acumulativa) ---
-        # Nota: Para morfología, a veces es útil ver un poco más de historia, 
-        # pero para mantener coherencia, actualizamos con ventana móvil si es posible.
-        # Aquí mantendremos una lógica simple: miramos las exitosas recientes del lote.
-        
-        if "morphology" not in genoma: genoma["morphology"] = {}
-        memoria_morf = genoma["morphology"].get(juego_id, {"ideal_sum_range": [0, 999], "ideal_even_count": -1})
+        # --- B. APRENDIZAJE MORFOLÓGICO AVANZADO (V3) ---
+        # Inicializamos estructura con valores por defecto relajados
+        memoria_morf = genoma["morphology"].get(juego_id, {
+            "ideal_sum_range": [0, 999],
+            "ideal_even_count": -1,
+            "ideal_consecutivos": -1, # NUEVO
+            "ideal_bajos_altos": -1,  # NUEVO (Ratio: Cantidad de bajos)
+            "ideal_terminaciones": -1 # NUEVO (Cant. de terminaciones únicas)
+        })
 
+        # Filtramos jugadas exitosas (Score > 50) del lote actual
         exitosas = df_juego[df_juego['score_afinidad'] >= 50]
         
         if len(exitosas) > 0:
             sumas = []
             pares = []
+            consecutivos = []
+            bajos = []
+            terminaciones = []
+            
+            # Definir frontera bajo/alto (aprox mitad del tablero)
+            # Asumimos Loto clásico (41 bolas) -> Frontera 21
+            limite_bajo = 21 
+            if juego_id == "LOTO3": limite_bajo = 5
+            elif juego_id == "RACHA": limite_bajo = 10
+
             for _, row in exitosas.iterrows():
                 try:
-                    nums = json.loads(row['numeros'])
+                    nums = sorted(json.loads(row['numeros'])) # Importante: Ordenados
+                    if not nums: continue
+                    
+                    # 1. Suma
                     sumas.append(sum(nums))
+                    
+                    # 2. Pares
                     pares.append(len([n for n in nums if n % 2 == 0]))
-                except: pass
+                    
+                    # 3. Consecutivos (NUEVO)
+                    cons = 0
+                    for i in range(len(nums)-1):
+                        if nums[i+1] == nums[i] + 1:
+                            cons += 1
+                    consecutivos.append(cons)
+                    
+                    # 4. Bajos/Altos (NUEVO) - Contamos cuántos son "bajos"
+                    cnt_bajos = len([n for n in nums if n <= limite_bajo])
+                    bajos.append(cnt_bajos)
+                    
+                    # 5. Terminaciones (NUEVO) - Uniques last digits
+                    # Ej: 12, 22, 35 -> Terminaciones 2, 2, 5 -> Únicas: {2, 5} -> Count 2
+                    last_digits = len(set([n % 10 for n in nums]))
+                    terminaciones.append(last_digits)
+
+                except Exception as e: pass
             
-            # Actualización suave de morfología (Promedio ponderado simple con lo anterior)
+            # --- ACTUALIZACIÓN DE MEMORIA (Suavizado Exponencial) ---
+            def actualizar_promedio(clave, nuevos_datos):
+                if not nuevos_datos: return
+                new_avg = np.mean(nuevos_datos)
+                old_val = memoria_morf.get(clave, -1)
+                
+                if old_val == -1: 
+                    memoria_morf[clave] = float(round(new_avg, 2))
+                else:
+                    # 20% Novedad, 80% Historia
+                    memoria_morf[clave] = float(round((old_val * 0.8) + (new_avg * 0.2), 2))
+
+            # 1. Rango de Suma (Percentiles suavizados)
             if sumas:
-                # Calculamos percentiles actuales
-                p25_new, p75_new = np.percentile(sumas, 25), np.percentile(sumas, 75)
-                # Recuperamos rango anterior
-                old_range = memoria_morf.get("ideal_sum_range", [0, 999])
-                # Mezclamos (Suavizado)
-                new_min = int((old_range[0] * 0.8) + (p25_new * 0.2))
-                new_max = int((old_range[1] * 0.8) + (p75_new * 0.2))
+                p25, p75 = np.percentile(sumas, 25), np.percentile(sumas, 75)
+                old_min, old_max = memoria_morf.get("ideal_sum_range", [0, 999])
+                new_min = int((old_min * 0.8) + (p25 * 0.2))
+                new_max = int((old_max * 0.8) + (p75 * 0.2))
                 memoria_morf["ideal_sum_range"] = [new_min, new_max]
 
-            if pares:
-                new_avg = np.mean(pares)
-                old_val = memoria_morf.get("ideal_even_count", -1)
-                if old_val == -1: final_pares = new_avg
-                else: final_pares = (old_val * 0.8) + (new_avg * 0.2)
-                memoria_morf["ideal_even_count"] = int(round(final_pares))
+            # 2. Métricas de conteo
+            actualizar_promedio("ideal_even_count", pares)
+            actualizar_promedio("ideal_consecutivos", consecutivos)
+            actualizar_promedio("ideal_bajos_altos", bajos)
+            actualizar_promedio("ideal_terminaciones", terminaciones)
             
             genoma["morphology"][juego_id] = memoria_morf
+            print(f"   🧬 Morfología evolucionada para {juego_id}")
 
     # 4. Guardar Cerebro Actualizado
     max_id_procesado = int(df_nuevo['id'].max())

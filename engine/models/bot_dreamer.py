@@ -154,35 +154,54 @@ def obtener_pesos_del_lobulo(game_id, genoma):
 
 def validar_cognitivamente(numeros, genoma, game_id):
     """
-    Filtra predicciones basándose en la morfología específica del juego.
+    Filtra predicciones basándose en la morfología PENTADIMENSIONAL.
     """
-    if not genoma: return True
+    if not genoma or not numeros: return True
     
     try:
-        # Acceso por Lóbulo Específico
-        todas_morfologias = genoma.get('morphology', {})
-        morph = todas_morfologias.get(game_id, {})
-        
+        morph = genoma.get('morphology', {}).get(game_id, {})
         if not morph: return True
         
-        # 1. Filtro de Rango de Suma
+        nums = sorted(numeros)
+        
+        # 1. Filtro de SUMA
         rango_suma = morph.get('ideal_sum_range')
-        if rango_suma and isinstance(rango_suma, list) and len(rango_suma) == 2:
-            suma = sum(numeros)
-            # Margen de tolerancia (+- 5) para flexibilidad
-            if suma < (rango_suma[0] - 5) or suma > (rango_suma[1] + 5):
+        if rango_suma and isinstance(rango_suma, list):
+            suma = sum(nums)
+            # Tolerancia amplia (+- 15%)
+            if suma < (rango_suma[0] * 0.85) or suma > (rango_suma[1] * 1.15):
                 return False
         
-        # 2. Filtro de Paridad
-        ideal_pares = morph.get('ideal_even_count')
-        if ideal_pares is not None and isinstance(ideal_pares, int) and ideal_pares != -1:
-            pares = len([n for n in numeros if n % 2 == 0])
-            # Margen de tolerancia (+- 1)
-            if abs(pares - ideal_pares) > 1:
-                return False
-                
-        return True
-    except:
+        # Función auxiliar para validar conteos con tolerancia
+        def validar_conteo(key, valor_real, tolerancia=1.2):
+            ideal = morph.get(key, -1)
+            if ideal == -1: return True
+            return abs(valor_real - ideal) <= tolerancia
+
+        # 2. Filtro PARES
+        pares = len([n for n in nums if n % 2 == 0])
+        if not validar_conteo("ideal_even_count", pares, tolerancia=1.5): return False
+
+        # 3. Filtro CONSECUTIVOS (Cluster)
+        cons = sum(1 for i in range(len(nums)-1) if nums[i+1] == nums[i] + 1)
+        # Tolerancia estricta aquí (no queremos filas seguidas tipo 1,2,3,4,5)
+        if not validar_conteo("ideal_consecutivos", cons, tolerancia=1.0): return False
+
+        # 4. Filtro BAJOS/ALTOS
+        limite = 21 # Ajustar según juego si es necesario
+        if game_id == "LOTO3": limite=5
+        bajos = len([n for n in nums if n <= limite])
+        if not validar_conteo("ideal_bajos_altos", bajos, tolerancia=1.5): return False
+        
+        # 5. Filtro TERMINACIONES
+        last_digits = len(set([n % 10 for n in nums]))
+        # Si el ideal es tener 5 terminaciones distintas y traes 2, rechazado.
+        if not validar_conteo("ideal_terminaciones", last_digits, tolerancia=1.2): return False
+
+        return True # Pasó todas las pruebas
+
+    except Exception as e:
+        # Si falla la validación por error de código, permitimos pasar (Fail-Open)
         return True
 
 def soñar():
@@ -275,43 +294,43 @@ def soñar():
             except Exception as e:
                 print(f"   ⚠️ Error en {nombre}: {e}")
 
-# --- BLOQUE NUEVO: ORÁCULO NEURAL (MACHINE LEARNING) ---
+        # --- BLOQUE NUEVO: ORÁCULO NEURAL (MACHINE LEARNING) ---
         # Este bloque corre fuera del bucle estándar porque usa una lógica distinta (predecir vs generar)
+# --- BLOQUE: ORÁCULO NEURAL (MACHINE LEARNING) ---
         if OraculoNeural:
             try:
-                # 1. Instanciar el cerebro para este juego
                 oracle = OraculoNeural(game_id)
-                
-                # 2. Definir fecha objetivo (usamos 'ahora' ajustado al timezone para dar contexto de día)
                 fecha_target = datetime.now(TZ_CHILE)
-                
-                # 3. Obtener predicción pura (Ya viene ordenada y limpia desde la clase)
                 pred_ml = oracle.predecir(fecha_objetivo=fecha_target)
                 
-                # 4. Validar formato (que tenga la cantidad correcta de bolas)
+                # VALIDACIÓN: Chequeamos si el ML cumple las reglas de la casa
+                # Solo entramos si el formato es correcto Y pasa el filtro cognitivo
                 if pred_ml and len(pred_ml) == forense.rules['n']:
                     
-                    # 4.1 Guardar la jugada individual del ML
-                    nuevas_filas.append({
-                        'id': base_id + 888 + (len(nuevas_filas)*10), # ID distintivo
-                        'fecha_generacion': ahora.strftime('%Y-%m-%d %H:%M:%S'),
-                        'juego': game_id,
-                        'numeros': str(sorted(pred_ml)),
-                        'sorteo_objetivo': objetivo,
-                        'estado': 'PENDIENTE',
-                        'aciertos': 0, 'score_afinidad': 0.0,
-                        'hora_dia': hora_actual,
-                        'algoritmo': 'oraculo_neural_v3'
-                    })
-                    
-                    # 4.2 ¡VOTAR EN EL CONSENSO! 
-                    # Esto es vital: El ML aporta sus votos a la "Bolsa de Consenso"
-                    # Le damos un peso fijo alto (2.0) o dinámico si quisieras
-                    peso_ml = 2.0 
-                    for num in pred_ml:
-                         bolsa_pesos_consenso[num] = bolsa_pesos_consenso.get(num, 0) + peso_ml
-                         
-                    print(f"   🧠 ORÁCULO ML: {pred_ml}")
+                    if validar_cognitivamente(pred_ml, genoma, game_id): # <--- AGREGAR ESTO
+                        
+                        # 4.1 Guardar la jugada individual del ML
+                        nuevas_filas.append({
+                            'id': base_id + 888 + (len(nuevas_filas)*10),
+                            'fecha_generacion': ahora.strftime('%Y-%m-%d %H:%M:%S'),
+                            'juego': game_id,
+                            'numeros': str(sorted(pred_ml)),
+                            'sorteo_objetivo': objetivo,
+                            'estado': 'PENDIENTE',
+                            'aciertos': 0, 'score_afinidad': 0.0,
+                            'hora_dia': hora_actual,
+                            'algoritmo': 'oraculo_neural_v3'
+                        })
+                        
+                        # 4.2 Votar en el Consenso
+                        peso_ml = 2.0 
+                        for num in pred_ml:
+                             bolsa_pesos_consenso[num] = bolsa_pesos_consenso.get(num, 0) + peso_ml
+                             
+                        print(f"   🧠 ORÁCULO ML (Aprobado): {pred_ml}")
+                    else:
+                        print(f"   🚫 ORÁCULO ML (Rechazado por Morfología): {pred_ml}")
+
             except Exception as e:
                 print(f"   ⚠️ Fallo en ML: {e}")
         # -------------------------------------------------------
