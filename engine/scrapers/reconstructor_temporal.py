@@ -156,7 +156,7 @@ def reconstruir_linea_tiempo():
                     try:
                         # Instanciamos la versión correspondiente
                         oraculo_inst = OraculoNeural(juego, version=v_name)
-                        oraculo_inst.entrenar(sorteo_limite=sorteo_actual)
+                        oraculo_inst.entrenar(sorteo_limite=sorteo_actual -1)
                         prediccion = oraculo_inst.predecir(fecha_objetivo=fecha_target_dt)
 
                         if prediccion:

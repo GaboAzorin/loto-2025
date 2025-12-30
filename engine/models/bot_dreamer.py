@@ -125,31 +125,19 @@ def cargar_genoma():
 
 def obtener_pesos_del_lobulo(game_id, genoma):
     """
-    Extrae los pesos de confianza usando escala Logarítmica.
-    Evita que un solo golpe de suerte (score 1000) rompa la democracia.
+    Extrae los pesos reales del genoma. 
+    Si un algoritmo no existe, nace con peso 1.0 (Probatoria).
     """
-    # Peso base mínimo para que todos tengan voz
-    pesos = {'forense': 1.0, 'gaussiano': 1.0, 'delta': 1.0, 'markov': 1.0}
+    pesos = {}
+    ranking_juego = genoma.get("algo_ranking", {}).get(game_id, {})
     
-    if not genoma: return pesos
+    # Extraemos todos los algoritmos registrados para ese juego
+    if ranking_juego:
+        for algo_name, score in ranking_juego.items():
+            # Aplicamos escala logarítmica para evitar el 'Efecto Dictador'
+            # Score 1 -> Peso 0.7 | Score 10 -> Peso 2.4 | Score 50 -> Peso 3.9
+            pesos[algo_name] = max(0.5, math.log(max(1, score) + 1))
     
-    ranking_lobulo = genoma.get("algo_ranking", {}).get(game_id, {})
-    
-    if ranking_lobulo and isinstance(ranking_lobulo, dict):
-        for algo_name, score in ranking_lobulo.items():
-            key = algo_name.split('_')[0]
-            if key in pesos:
-                # --- CORRECCIÓN LOGARÍTMICA ---
-                # Score 0 -> log(1) = 0 -> Peso 0.5 (Mínimo)
-                # Score 10 -> log(11) ≈ 2.4 
-                # Score 100 -> log(101) ≈ 4.6
-                # Score 1000 -> log(1001) ≈ 6.9
-                # Esto comprime la escala: El mejor es 3x más fuerte que el promedio, no 100x.
-                peso_log = math.log(max(1, score) + 1)
-                
-                # Asignamos peso con un piso de 0.5 para no silenciar totalmente a nadie
-                pesos[key] = max(0.5, peso_log)
-                
     return pesos
 
 def validar_cognitivamente(numeros, genoma, game_id):
@@ -309,23 +297,39 @@ def soñar():
                 try:
                     oracle = OraculoNeural(game_id, version=v)
                     fecha_target = datetime.now(TZ_CHILE)
-                    pred_ml = oracle.predecir(fecha_objetivo=fecha_target)
                     
-                    if pred_ml and len(pred_ml) == forense.rules['n']:
-                        if validar_cognitivamente(pred_ml, genoma, game_id):
-                            nuevas_filas.append({
-                                'id': base_id + (444 if v=="v4" else 888) + (len(nuevas_filas)*10),
-                                'fecha_generacion': ahora.strftime('%Y-%m-%d %H:%M:%S'),
-                                'juego': game_id,
-                                'numeros': str(sorted(pred_ml)),
-                                'sorteo_objetivo': objetivo,
-                                'estado': 'PENDIENTE',
-                                'algoritmo': f'oraculo_neural_{v}' # Tag diferenciado para el Juez
-                            })
-                            # V4 tiene un voto inicial de confianza bajo hasta que demuestre mérito
-                            peso_voto = 2.0 if v == "v3" else 1.0 
-                            for num in pred_ml:
-                                bolsa_pesos_consenso[num] = bolsa_pesos_consenso.get(num, 0) + peso_voto
+                    intentos = 0
+                    max_intentos_ia = 30
+                    pred_ml = None
+                    
+                    # --- IGUALDAD DE OPORTUNIDADES: Bucle de Reintento ---
+                    while intentos < max_intentos_ia:
+                        # Usamos modo estocástico para que cada intento sea único
+                        candidato = oracle.predecir(fecha_objetivo=fecha_target, estocastico=True)
+                        if candidato and len(candidato) == forense.rules['n']:
+                            if validar_cognitivamente(candidato, genoma, game_id):
+                                pred_ml = candidato
+                                break
+                        intentos += 1
+                    
+                    if pred_ml:
+                        nuevas_filas.append({
+                            'id': base_id + (444 if v=="v4" else 888) + (len(nuevas_filas)*10),
+                            'fecha_generacion': ahora.strftime('%Y-%m-%d %H:%M:%S'),
+                            'juego': game_id,
+                            'numeros': str(sorted(pred_ml)),
+                            'sorteo_objetivo': objetivo,
+                            'estado': 'PENDIENTE',
+                            'algoritmo': f'oraculo_neural_{v}'
+                        })
+                        
+                        # --- ELIMINACIÓN DE HANDICAP ARBITRARIO ---
+                        # Ambos oráculos empiezan con el mismo peso base de voto (1.0).
+                        # El Entrenador decidirá quién merece más mediante el Genoma.
+                        peso_voto_ia = 1.0 
+                        for num in pred_ml:
+                            bolsa_pesos_consenso[num] = bolsa_pesos_consenso.get(num, 0) + peso_voto_ia
+                            
                 except Exception as e:
                     print(f"   ⚠️ Fallo en ML {v}: {e}")
         # -------------------------------------------------------
@@ -334,7 +338,6 @@ def soñar():
         try:
             if bolsa_pesos_consenso:
                 n = forense.rules['n']
-                # Ordenamos las bolas por peso total acumulado
                 ranking_bolas = sorted(bolsa_pesos_consenso, key=bolsa_pesos_consenso.get, reverse=True)
                 top_consenso = sorted(ranking_bolas[:n])
                 

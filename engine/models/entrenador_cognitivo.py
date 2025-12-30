@@ -2,183 +2,170 @@ import pandas as pd
 import json
 import os
 import numpy as np
+import ast
+import sys
 from datetime import datetime, timedelta
 
-# --- CONFIGURACIÓN ---
+# --- CONFIGURACIÓN DE RUTAS ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, '..', '..', 'data')
 SIMULACIONES_FILE = os.path.join(DATA_DIR, "LOTO_SIMULACIONES.csv")
 GENOMA_FILE = os.path.join(DATA_DIR, "loto_genome.json")
 
-# FACTOR DE OLVIDO (0.3 = El presente vale un 30%, la historia un 70%)
+# --- AJUSTE DE ESTABILIDAD (AUDITORÍA v4) ---
+# Bajamos ALPHA de 0.3 a 0.05 para exigir consistencia de largo plazo y evitar "golpes de suerte".
 ALPHA = 0.05 
 
-# Primos para V4
+# Set de Primos para validación morfológica (V4 expandida)
 PRIMOS_SET = {2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41}
 
 def cargar_genoma():
+    """Carga el estado actual de la inteligencia colectiva con manejo de excepciones."""
     if os.path.exists(GENOMA_FILE):
         try:
-            with open(GENOMA_FILE, 'r') as f:
-                return json.load(f)
-        except: pass
+            with open(GENOMA_FILE, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                # Validar estructura mínima
+                if "algo_ranking" not in data: data["algo_ranking"] = {}
+                if "morphology" not in data: data["morphology"] = {}
+                if "metadata" not in data: data["metadata"] = {}
+                return data
+        except Exception as e:
+            print(f"   ⚠️ Error leyendo genoma: {e}. Creando uno nuevo...")
+    
     return {"algo_ranking": {}, "metadata": {}, "morphology": {}}
 
 def analizar_adn_ganador():
     """
-    Entrena el cerebro usando APRENDIZAJE INCREMENTAL.
-    Solo mira las filas nuevas que ya han sido auditadas por el Juez.
+    Sincroniza el ranking de algoritmos y la morfología ideal basándose 
+    en los últimos sorteos auditados por el Juez (Aprendizaje Incremental).
     """
-    print(f"🧠 ENTRENADOR: Iniciando sesión de aprendizaje incremental...")
+    print("\n" + "="*60)
+    print("🧠 ENTRENADOR COGNITIVO v12.4: INICIANDO CICLO DE APRENDIZAJE")
+    print("="*60)
     
     if not os.path.exists(SIMULACIONES_FILE):
-        print("   ⚠️ No hay archivo de simulaciones.")
+        print("   ❌ CRÍTICO: No existe LOTO_SIMULACIONES.csv. El cerebro no tiene qué estudiar.")
         return
 
-    # 1. Cargar Cerebro y estado anterior
-    genoma = cargar_genoma()
-    ranking_global = genoma.get("algo_ranking", {})
-    metadata = genoma.get("metadata", {})
-    
-    # BLINDAJE 1: Asegurar que last_trained_id sea int
-    try:
-        last_trained_id = int(metadata.get("last_trained_id", -1))
-    except:
-        last_trained_id = -1
-        
-    print(f"   📅 Último ID aprendido: {last_trained_id}")
-
-    # 2. Cargar CSV y Filtrar Novedades
+    # 1. Carga de Datos
     try:
         df = pd.read_csv(SIMULACIONES_FILE)
     except Exception as e:
-        print(f"   ❌ Error leyendo CSV: {e}")
+        print(f"   ❌ Error al abrir simulaciones: {e}")
         return
 
-    if df.empty:
-        print("   💤 Archivo CSV vacío.")
-        return
-
-    # BLINDAJE 2: Forzar que la columna 'id' sea numérica
-    # Esto arregla el error '>' not supported between instances of 'str' and 'int'
-    df['id'] = pd.to_numeric(df['id'], errors='coerce')
-    df = df.dropna(subset=['id']) # Eliminamos filas con IDs corruptos
-
-    # FILTRO CRÍTICO: Solo AUDITADO y solo IDs nuevos
-    df_nuevo = df[
-        (df['estado'] == 'AUDITADO') & 
-        (df['id'] > last_trained_id)
-    ].copy()
+    genoma = cargar_genoma()
     
-    cantidad_nuevas = len(df_nuevo)
-    if cantidad_nuevas == 0:
-        print("   💤 No hay lecciones nuevas. El cerebro está al día.")
+    # Determinamos desde dónde retomar el entrenamiento (Checkpoint)
+    last_trained_id = genoma.get("metadata", {}).get("last_trained_id", 0)
+    
+    # Filtramos filas auditadas que el cerebro aún no ha procesado
+    df_nuevo = df[(df['estado'] == 'AUDITADO') & (df['id'] > last_trained_id)].copy()
+    
+    if df_nuevo.empty:
+        print(f"   💤 Checkpoint: {last_trained_id}. Sin casos nuevos para analizar.")
         return
 
-    print(f"   🤓 Procesando {cantidad_nuevas} nuevas lecciones...")
+    print(f"   📊 Analizando {len(df_nuevo)} nuevos hitos de rendimiento...")
 
-    # Identificamos qué juegos hay en el lote nuevo
+    ranking_global = genoma["algo_ranking"]
+    morph_global = genoma["morphology"]
     juegos_en_lote = df_nuevo['juego'].unique()
 
-    # 3. Ciclo de Aprendizaje
+    # 2. PROCESAMIENTO POR JUEGO
     for juego_id in juegos_en_lote:
+        print(f"\n   📍 Universo: {juego_id}")
         df_juego = df_nuevo[df_nuevo['juego'] == juego_id]
         
-        # --- A. APRENDIZAJE DE RANKING (EMA) ---
+        # --- [A] RANKING DE MÉRITO (EMA) ---
         performance_lote = df_juego.groupby('algoritmo')['score_afinidad'].mean().to_dict()
         ranking_juego = ranking_global.get(juego_id, {})
         
         for algo, score_lote in performance_lote.items():
-            score_antiguo = ranking_juego.get(algo, score_lote)
-            nuevo_valor = (score_antiguo * (1 - ALPHA)) + (score_lote * ALPHA)
-            ranking_juego[algo] = round(nuevo_valor, 2)
-        
-        ranking_global[juego_id] = ranking_juego
-        print(f"   📈 Ranking actualizado para {juego_id}")
-
-        # --- B. APRENDIZAJE MORFOLÓGICO AVANZADO (V4) ---
-        memoria_morf = genoma["morphology"].get(juego_id, {
-            "ideal_sum_range": [0, 999],
-            "ideal_even_count": -1,
-            "ideal_consecutivos": -1,
-            "ideal_bajos_altos": -1,
-            "ideal_terminaciones": -1,
-            "ideal_primos": -1,
-            "ideal_multiples_3": -1,
-            "ideal_avg_delta": -1
-        })
-
-        exitosas = df_juego[df_juego['score_afinidad'] >= 50]
-        
-        if len(exitosas) > 0:
-            sumas = []
-            pares = []
-            consecutivos = []
-            bajos = []
-            terminaciones = []
-            primos = []
-            multiples_3 = []
-            deltas = []
+            # CIRUGÍA #2: Inercia de Bienvenida (Starting Score = 1.0)
+            # Evita que un modelo nuevo herede un score alto por un solo acierto.
+            score_antiguo = ranking_juego.get(algo, 1.0) 
             
-            limite_bajo = 4 if juego_id == "LOTO3" else (10 if juego_id == "RACHA" else 21)
+            # Aplicación del suavizado exponencial (95% historia / 5% novedad)
+            nuevo_valor = (score_antiguo * (1 - ALPHA)) + (score_lote * ALPHA)
+            ranking_juego[algo] = round(float(nuevo_valor), 2)
+            
+            # Log de evolución (Solo si el cambio es significativo)
+            if abs(nuevo_valor - score_antiguo) > 0.1:
+                direction = "📈" if nuevo_valor > score_antiguo else "📉"
+                print(f"      {direction} {algo}: {score_antiguo} -> {ranking_juego[algo]}")
 
-            for _, row in exitosas.iterrows():
+        ranking_global[juego_id] = ranking_juego
+        
+        # --- [B] ESTUDIO MORFOLÓGICO (ADN GANADOR) ---
+        # Solo aprendemos morfología de los casos exitosos (aciertos >= 50%)
+        # Note: Lógica dinámica de umbral de éxito
+        df_exitos = df_juego[df_juego['aciertos'] >= 2] # Mínimo 2 para Loto/Racha
+        if juego_id == "LOTO3": df_exitos = df_juego[df_juego['aciertos'] >= 1]
+
+        if not df_exitos.empty:
+            memoria_morf = morph_global.get(juego_id, {})
+            
+            def suavizar_metrica(clave, lista_valores, factor_novedad=0.1):
+                if not lista_valores: return
+                avg_lote = np.mean(lista_valores)
+                val_old = memoria_morf.get(clave, -1)
+                if val_old == -1:
+                    memoria_morf[clave] = float(round(avg_lote, 2))
+                else:
+                    memoria_morf[clave] = float(round((val_old * (1 - factor_novedad)) + (avg_lote * factor_novedad), 2))
+
+            # Contenedores de métricas
+            pares, cons, bajos, terms, primos, mult3, deltas, sumas = [], [], [], [], [], [], [], []
+            
+            for _, row in df_exitos.iterrows():
                 try:
-                    nums = sorted(json.loads(row['numeros']))
-                    if not nums: continue
-                    
-                    # Cálculos
+                    nums = sorted(ast.literal_eval(row['numeros']))
                     sumas.append(sum(nums))
                     pares.append(len([n for n in nums if n % 2 == 0]))
-                    consecutivos.append(sum(1 for i in range(len(nums)-1) if nums[i+1] == nums[i] + 1))
-                    bajos.append(len([n for n in nums if n <= limite_bajo]))
-                    terminaciones.append(len(set([n % 10 for n in nums])))
-                    primos.append(len([n for n in nums if n in PRIMOS_SET]))
-                    multiples_3.append(len([n for n in nums if n > 0 and n % 3 == 0]))
+                    cons.append(sum(1 for i in range(len(nums)-1) if nums[i+1] == nums[i] + 1))
                     
-                    if len(nums) > 1:
-                        diffs = [nums[i+1] - nums[i] for i in range(len(nums)-1)]
-                        deltas.append(sum(diffs) / len(diffs))
+                    limit = 4 if juego_id == "LOTO3" else (10 if juego_id == "RACHA" else 21)
+                    bajos.append(len([n for n in nums if n <= limit]))
+                    terms.append(len(set([n % 10 for n in nums])))
+                    primos.append(len([n for n in nums if n in PRIMOS_SET]))
+                    mult3.append(len([n for n in nums if n % 3 == 0]))
+                    if len(nums) > 1: deltas.append(float(np.mean(np.diff(nums))))
+                except: continue
 
-                except Exception: pass
-            
-            # Helper de actualización
-            def actualizar_promedio(clave, nuevos_datos):
-                if not nuevos_datos: return
-                new_avg = np.mean(nuevos_datos)
-                old_val = memoria_morf.get(clave, -1)
-                memoria_morf[clave] = float(round(new_avg, 2)) if old_val == -1 else float(round((old_val * 0.8) + (new_avg * 0.2), 2))
-
+            # Actualización del Genoma
             if sumas:
-                p25, p75 = np.percentile(sumas, 25), np.percentile(sumas, 75)
-                old_range = memoria_morf.get("ideal_sum_range", [0, 999])
-                new_min = int((old_range[0] * 0.8) + (p25 * 0.2))
-                new_max = int((old_range[1] * 0.8) + (p75 * 0.2))
-                memoria_morf["ideal_sum_range"] = [new_min, new_max]
+                # Rango de suma ideal (Percentiles 25-75 corregidos)
+                p25, p75 = np.percentile(sumas, [25, 75])
+                old_range = memoria_morf.get("ideal_sum_range", [20, 200])
+                memoria_morf["ideal_sum_range"] = [
+                    int((old_range[0] * 0.9) + (p25 * 0.1)),
+                    int((old_range[1] * 0.9) + (p75 * 0.1))
+                ]
 
-            actualizar_promedio("ideal_even_count", pares)
-            actualizar_promedio("ideal_consecutivos", consecutivos)
-            actualizar_promedio("ideal_bajos_altos", bajos)
-            actualizar_promedio("ideal_terminaciones", terminaciones)
-            actualizar_promedio("ideal_primos", primos)
-            actualizar_promedio("ideal_multiples_3", multiples_3)
-            actualizar_promedio("ideal_avg_delta", deltas)
+            suavizar_metrica("ideal_even_count", pares)
+            suavizar_metrica("ideal_consecutivos", cons)
+            suavizar_metrica("ideal_bajos_altos", bajos)
+            suavizar_metrica("ideal_terminaciones", terms)
+            suavizar_metrica("ideal_primos", primos)
+            suavizar_metrica("ideal_multiples_3", mult3)
+            suavizar_metrica("ideal_avg_delta", deltas)
             
-            genoma["morphology"][juego_id] = memoria_morf
-            print(f"   🧬 Morfología V4 actualizada para {juego_id}")
+            morph_global[juego_id] = memoria_morf
+            print(f"      🧬 ADN Sincronizado para {juego_id}.")
 
-    # 4. Guardar Cerebro Actualizado
-    max_id_procesado = int(df_nuevo['id'].max())
-    
+    # 3. GUARDADO Y METADATA
+    max_id = int(df_nuevo['id'].max())
     genoma["metadata"]["updated_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    genoma["metadata"]["last_trained_id"] = max_id_procesado
-    genoma["metadata"]["total_casos_estudiados"] = metadata.get("total_casos_estudiados", 0) + cantidad_nuevas
-    genoma["algo_ranking"] = ranking_global
-    
+    genoma["metadata"]["last_trained_id"] = max_id
+    genoma["metadata"]["total_estudiados"] = genoma["metadata"].get("total_estudiados", 0) + len(df_nuevo)
+
     with open(GENOMA_FILE, 'w', encoding='utf-8') as f:
-        json.dump(genoma, f, indent=2)
+        json.dump(genoma, f, indent=2, ensure_ascii=False)
     
-    print(f"   💾 Cerebro guardado. Checkpoint ID: {max_id_procesado}")
+    print("\n✅ CEREBRO ACTUALIZADO (Checkpoint #" + str(max_id) + ")")
+    print("="*60 + "\n")
 
 if __name__ == "__main__":
     analizar_adn_ganador()
