@@ -1,9 +1,0 @@
-{
-  "id": 1767131441,
-  "fecha_generacion": "2025-12-30 18:41:57",
-  "juego": "LOTO3",
-  "numeros": "[0, 6, 8]",
-  "sorteo_objetivo": 23946,
-  "estado": "PENDIENTE",
-  "algoritmo": "oraculo_neural_v4"
-}
