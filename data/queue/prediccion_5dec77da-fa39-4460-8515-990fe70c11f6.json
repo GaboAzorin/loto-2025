@@ -1,0 +1,12 @@
+{
+  "id": 1767131055,
+  "fecha_generacion": "2025-12-30 18:24:56",
+  "juego": "RACHA",
+  "numeros": "[1, 3, 4, 5, 7, 14, 15, 16, 18, 19]",
+  "sorteo_objetivo": 10266,
+  "estado": "PENDIENTE",
+  "aciertos": 0,
+  "score_afinidad": 0.0,
+  "hora_dia": 18,
+  "algoritmo": "consenso_meritocratico_v2"
+}
