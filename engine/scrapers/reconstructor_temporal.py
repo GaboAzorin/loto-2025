@@ -209,7 +209,11 @@ def reconstruir_linea_tiempo():
     print("\n✨ RECONSTRUCCIÓN FINALIZADA.")
 
     try:
-        from tools import comparar_modelos
+        try:
+            import comparar_modelos
+            comparar_modelos.generar_reporte_markdown()
+        except ImportError:
+            print("⚠️ No se encontró el script comparar_modelos en el path.")
         print("📝 Generando reporte comparativo v3 vs v4...")
         comparar_modelos.generar_reporte_markdown()
         print("✅ Reporte 'COMPARATIVA_MODELOS.md' actualizado.")

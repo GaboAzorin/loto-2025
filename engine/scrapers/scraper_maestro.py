@@ -17,6 +17,9 @@ from playwright.async_api import async_playwright
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, '..', '..', 'data')
 MODELS_DIR = os.path.join(BASE_DIR, '..', 'models')
+TOOLS_DIR = os.path.normpath(os.path.join(BASE_DIR, '..', 'tools'))
+if TOOLS_DIR not in sys.path:
+    sys.path.append(TOOLS_DIR)
 os.makedirs(DATA_DIR, exist_ok=True)
 
 # Vital: Agregamos 'models' al path para poder invocar al cerebro luego
