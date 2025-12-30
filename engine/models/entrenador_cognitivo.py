@@ -11,7 +11,7 @@ SIMULACIONES_FILE = os.path.join(DATA_DIR, "LOTO_SIMULACIONES.csv")
 GENOMA_FILE = os.path.join(DATA_DIR, "loto_genome.json")
 
 # FACTOR DE OLVIDO (0.3 = El presente vale un 30%, la historia un 70%)
-ALPHA = 0.3 
+ALPHA = 0.05 
 
 # Primos para V4
 PRIMOS_SET = {2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41}

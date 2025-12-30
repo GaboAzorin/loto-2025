@@ -49,23 +49,27 @@ GAME_CONFIG = {
 }
 
 class OraculoNeural:
-    def __init__(self, game_id="LOTO"):
+    def __init__(self, game_id="LOTO", version="v3"):
         self.game_id = game_id
+        self.version = version
         self.config = GAME_CONFIG.get(game_id, GAME_CONFIG["LOTO"])
         
-        # Rutas de Archivos
-        self.model_file = os.path.join(DATA_DIR, f'{game_id.lower()}_rf_model.pkl')
+        # Archivos de modelo separados por versión
+        self.model_file = os.path.join(DATA_DIR, f'{game_id.lower()}_rf_{version}.pkl')
         self._set_maestro_path()
 
-        self.window_size = 3 # Memoria de corto plazo (últimos 3 sorteos)
+        # CONFIGURACIÓN DIFERENCIADA (Problema 2 corregido en v4)
+        if version == "v4":
+            self.window_size = 12  # Memoria extendida para buscar "Física"
+            self.max_depth = 8     # Regularización estricta contra el ruido
+        else:
+            self.window_size = 3   # V3 original
+            self.max_depth = 12    # V3 original
+
         self.model = None
-        
-        # Carga segura del modelo
         if os.path.exists(self.model_file):
-            try:
-                self.model = joblib.load(self.model_file)
-            except Exception:
-                self.model = None # Si falla (versión distinta), se re-entrena
+            try: self.model = joblib.load(self.model_file)
+            except: self.model = None
 
     def _set_maestro_path(self):
         """Resuelve la inconsistencia de nombres de archivos"""

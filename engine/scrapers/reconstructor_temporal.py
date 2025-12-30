@@ -95,8 +95,6 @@ def reconstruir_linea_tiempo():
         print(f"\n🚀 {juego}: Detectados {total_a_procesar} sorteos nuevos.")
         print(f"   📅 Sincronizando desde sorteo #{min(nuevos)}...")
 
-        oraculo = OraculoNeural(juego) if OraculoNeural else None
-
         # --- ⏱️ CRONÓMETRO GLOBAL ---
         inicio_global = time.time()
         procesados_count = 0
@@ -107,18 +105,15 @@ def reconstruir_linea_tiempo():
             inicio_iteracion = time.time()
 
             # --- [BLOQUE VISUAL MEJORADO] ---
-            # Feedback de cierre del ciclo anterior (si no es el primero)
             if i > 0:
                 print(f"   └── ✅ Ciclo completado. Preparando siguiente salto temporal...\n")
 
-            # Separador visual y encabezado del nuevo sorteo
             print("═" * 70)
             print(f"📅  NUEVO HITO TEMPORAL DETECTADO")
             print(f"🎯  OBJETIVO: Sorteo Nº {sorteo_actual} ({juego})")
             print("═" * 70)
-            # -------------------------------
 
-            # [A] CÁLCULO DE FECHA (Lógica original intacta)
+            # [A] CÁLCULO DE FECHA
             try:
                 fila_actual = df_real[df_real['sorteo'] == sorteo_actual].iloc[0]
                 fecha_target_str = str(fila_actual['fecha'])
@@ -130,65 +125,71 @@ def reconstruir_linea_tiempo():
             except: 
                 fecha_target_dt = datetime.now(); fecha_simulada = datetime.now()
 
-            # [B] JUEZ Y ENTRENADOR (Lógica original intacta)
-            print(f"⚖️  JUEZ MULTIVERSO EN SESIÓN...", end=" ") # Ajuste visual menor para fluidez
+            # [B] JUEZ Y ENTRENADOR
+            print(f"⚖️  JUEZ MULTIVERSO EN SESIÓN...", end=" ")
             juez_implacable.juzgar() 
-            print("") # Salto de línea para separar output del Juez del Entrenador
+            print("") 
             entrenador_cognitivo.analizar_adn_ganador()
 
-            # [C] ORÁCULO (Lógica original intacta)
-            if oraculo:
-                if os.path.exists(SIMULACIONES_FILE):
+            # [C] ORÁCULO (CAMBIO: COEXISTENCIA V3 y V4)
+            if OraculoNeural:
+                for v_name in ["v3", "v4"]:
+                    algo_tag = f"oraculo_neural_{v_name}"
+                    
+                    # 1. Limpieza de duplicados para esta versión específica
+                    if os.path.exists(SIMULACIONES_FILE):
+                        try:
+                            df_sim = pd.read_csv(SIMULACIONES_FILE, usecols=['juego', 'sorteo_objetivo', 'algoritmo'])
+                            hay_duplicado = ((df_sim['juego'] == juego) & 
+                                             (df_sim['sorteo_objetivo'] == sorteo_actual) & 
+                                             (df_sim['algoritmo'] == algo_tag)).any()
+                            if hay_duplicado:
+                                df_full = pd.read_csv(SIMULACIONES_FILE)
+                                mask = (df_full['juego'] == juego) & \
+                                       (df_full['sorteo_objetivo'] == sorteo_actual) & \
+                                       (df_full['algoritmo'] == algo_tag)
+                                df_full = df_full[~mask]
+                                df_full.to_csv(SIMULACIONES_FILE, index=False)
+                        except: pass
+
+                    # 2. Entrenamiento y Predicción
                     try:
-                        df_sim = pd.read_csv(SIMULACIONES_FILE, usecols=['juego', 'sorteo_objetivo', 'algoritmo'])
-                        hay_duplicado = ((df_sim['juego'] == juego) & 
-                                         (df_sim['sorteo_objetivo'] == sorteo_actual) & 
-                                         (df_sim['algoritmo'] == 'oraculo_neural_v3')).any()
-                        if hay_duplicado:
-                            df_full = pd.read_csv(SIMULACIONES_FILE)
-                            mask = (df_full['juego'] == juego) & \
-                                   (df_full['sorteo_objetivo'] == sorteo_actual) & \
-                                   (df_full['algoritmo'] == 'oraculo_neural_v3')
-                            df_full = df_full[~mask]
-                            df_full.to_csv(SIMULACIONES_FILE, index=False)
-                    except: pass
+                        # Instanciamos la versión correspondiente
+                        oraculo_inst = OraculoNeural(juego, version=v_name)
+                        oraculo_inst.entrenar(sorteo_limite=sorteo_actual)
+                        prediccion = oraculo_inst.predecir(fecha_objetivo=fecha_target_dt)
 
-                try:
-                    oraculo.entrenar(sorteo_limite=sorteo_actual)
-                    prediccion = oraculo.predecir(fecha_objetivo=fecha_target_dt)
+                        if prediccion:
+                            print(f"🔮 {v_name.upper()}: {prediccion}", end=" ") 
 
-                    if prediccion:
-                        # Log más compacto para ver los tiempos mejor
-                        print(f"🔮 {prediccion}", end=" ") 
+                            timestamp_simulado = int(time.time())
+                            import random
+                            id_ficticio = int(f"{timestamp_simulado}{random.randint(100,999)}")
 
-                        timestamp_simulado = int(time.time())
-                        import random
-                        id_ficticio = int(f"{timestamp_simulado}{random.randint(10,99)}")
+                            nueva_fila = {
+                                'id': id_ficticio,
+                                'fecha_generacion': fecha_simulada.strftime('%Y-%m-%d %H:%M:%S'),
+                                'juego': juego,
+                                'numeros': str(sorted(prediccion)),
+                                'sorteo_objetivo': sorteo_actual,
+                                'estado': 'PENDIENTE', 
+                                'aciertos': 0, 'score_afinidad': 0.0,
+                                'hora_dia': fecha_simulada.hour,
+                                'algoritmo': algo_tag
+                            }
 
-                        nueva_fila = {
-                            'id': id_ficticio,
-                            'fecha_generacion': fecha_simulada.strftime('%Y-%m-%d %H:%M:%S'),
-                            'juego': juego,
-                            'numeros': str(sorted(prediccion)),
-                            'sorteo_objetivo': sorteo_actual,
-                            'estado': 'PENDIENTE', 
-                            'aciertos': 0, 'score_afinidad': 0.0,
-                            'hora_dia': fecha_simulada.hour,
-                            'algoritmo': 'oraculo_neural_v3'
-                        }
+                            file_exists = os.path.exists(SIMULACIONES_FILE)
+                            mode = 'a' if file_exists else 'w'
+                            keys = ['id', 'fecha_generacion', 'juego', 'numeros', 'sorteo_objetivo', 
+                                    'estado', 'aciertos', 'score_afinidad', 'hora_dia', 'algoritmo']
 
-                        file_exists = os.path.exists(SIMULACIONES_FILE)
-                        mode = 'a' if file_exists else 'w'
-                        keys = ['id', 'fecha_generacion', 'juego', 'numeros', 'sorteo_objetivo', 
-                                'estado', 'aciertos', 'score_afinidad', 'hora_dia', 'algoritmo']
+                            with open(SIMULACIONES_FILE, mode, newline='', encoding='utf-8') as f:
+                                w = csv.DictWriter(f, fieldnames=keys, extrasaction='ignore')
+                                if not file_exists: w.writeheader()
+                                w.writerow(nueva_fila)
 
-                        with open(SIMULACIONES_FILE, mode, newline='', encoding='utf-8') as f:
-                            w = csv.DictWriter(f, fieldnames=keys, extrasaction='ignore')
-                            if not file_exists: w.writeheader()
-                            w.writerow(nueva_fila)
-
-                except Exception as e:
-                    print(f"⚠️ Err: {e}", end=" ")
+                    except Exception as e:
+                        print(f"⚠️ Err {v_name}: {e}", end=" ")
 
             # [D] MARCAR HITO
             actualizar_ultimo_procesado(juego, sorteo_actual)
@@ -203,10 +204,17 @@ def reconstruir_linea_tiempo():
             restantes = total_a_procesar - procesados_count
             eta_segundos = restantes * velocidad_promedio
 
-            # Formato visual: Tiempo ciclo | Transcurrido | Restante
             print(f"✅ [{tiempo_ciclo:.1f}s | T:{formato_hms(tiempo_transcurrido)} | Resta:{formato_hms(eta_segundos)}]")
 
     print("\n✨ RECONSTRUCCIÓN FINALIZADA.")
+
+    try:
+        from tools import comparar_modelos
+        print("📝 Generando reporte comparativo v3 vs v4...")
+        comparar_modelos.generar_reporte_markdown()
+        print("✅ Reporte 'COMPARATIVA_MODELOS.md' actualizado.")
+    except Exception as e:
+        print(f"⚠️ No se pudo generar el reporte: {e}")
 
 if __name__ == "__main__":
     reconstruir_linea_tiempo()
