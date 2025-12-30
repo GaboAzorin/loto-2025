@@ -70,5 +70,11 @@
       "ideal_multiples_3": 3.07,
       "ideal_avg_delta": 1.99
     }
+  },
+  "last_processed": {
+    "LOTO3": 23943,
+    "LOTO4": 11531,
+    "LOTO": 5366,
+    "RACHA": 10264
   }
 }
