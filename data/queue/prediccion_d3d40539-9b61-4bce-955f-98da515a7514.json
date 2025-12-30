@@ -1,0 +1,9 @@
+{
+  "id": 1767132581,
+  "fecha_generacion": "2025-12-30 18:53:03",
+  "juego": "LOTO4",
+  "numeros": "[5, 10, 11, 20]",
+  "sorteo_objetivo": 11533,
+  "estado": "PENDIENTE",
+  "algoritmo": "oraculo_neural_v3"
+}
