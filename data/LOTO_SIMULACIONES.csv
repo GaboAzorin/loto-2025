@@ -11930,12 +11930,9 @@ id,fecha_generacion,juego,numeros,sorteo_objetivo,estado,aciertos,score_afinidad
 1767095166,2025-12-30 08:41:03,LOTO,"[7, 18, 21, 29, 31, 37]",5367.0,PENDIENTE,0.0,0.0,8.0,markov_chain_v1
 1767096591,2025-12-30 08:52:02,LOTO3,"[1, 2, 5]",23944.0,PENDIENTE,0.0,0.0,8.0,consenso_meritocratico_v2
 1767095623,2025-12-30 08:52:02,LOTO,"[10, 17, 24, 27, 28, 34]",5367.0,PENDIENTE,0.0,0.0,8.0,gaussiano_tactico_v1
-1767095841,2025-12-30 08:41:03,LOTO4,"[6, 9, 15, 22]",11532.0,PENDIENTE,0.0,0.0,8.0,oraculo_neural_v3
 1767094863,2025-12-30 08:41:03,LOTO,"[6, 7, 20, 22, 31, 36]",5367.0,PENDIENTE,0.0,0.0,8.0,forense_biometrico_v1
-1767096500,2025-12-30 08:52:02,LOTO4,"[6, 9, 15, 22]",11532.0,PENDIENTE,0.0,0.0,8.0,oraculo_neural_v3
 1767095992,2025-12-30 08:41:03,RACHA,"[2, 4, 8, 9, 10, 12, 13, 14, 15, 20]",10265.0,PENDIENTE,0.0,0.0,8.0,consenso_meritocratico_v2
 1767095825,2025-12-30 08:52:02,LOTO,"[7, 18, 21, 29, 31, 37]",5367.0,PENDIENTE,0.0,0.0,8.0,markov_chain_v1
-1767096470,2025-12-30 08:52:02,LOTO3,"[0, 1, 7]",23944.0,PENDIENTE,0.0,0.0,8.0,oraculo_neural_v3
 1767096621,2025-12-30 08:52:02,LOTO4,"[6, 9, 15, 22]",11532.0,PENDIENTE,0.0,0.0,8.0,consenso_meritocratico_v2
 1767095663,2025-12-30 08:41:03,LOTO4,"[4, 5, 19, 23]",11532.0,PENDIENTE,0.0,0.0,8.0,forense_biometrico_v1
 1767095932,2025-12-30 08:41:03,LOTO3,"[1, 2, 7]",23944.0,PENDIENTE,0.0,0.0,8.0,consenso_meritocratico_v2
@@ -11944,5 +11941,6 @@ id,fecha_generacion,juego,numeros,sorteo_objetivo,estado,aciertos,score_afinidad
 1767095963,2025-12-30 08:41:03,RACHA,"[2, 5, 9, 10, 11, 12, 14, 15, 16, 19]",10265.0,PENDIENTE,0.0,0.0,8.0,forense_biometrico_v1
 1767095902,2025-12-30 08:41:03,LOTO,"[7, 13, 14, 15, 24, 36]",5367.0,PENDIENTE,0.0,0.0,8.0,consenso_meritocratico_v2
 1767095724,2025-12-30 08:52:02,LOTO,"[6, 11, 13, 30, 32, 34]",5367.0,PENDIENTE,0.0,0.0,8.0,delta_tactico_v1
-1767095811,2025-12-30 08:41:03,LOTO3,"[0, 1, 7]",23944.0,PENDIENTE,0.0,0.0,8.0,oraculo_neural_v3
 1767095363,2025-12-30 08:41:03,LOTO3,"[0, 1, 6]",23944.0,PENDIENTE,0.0,0.0,8.0,forense_biometrico_v1
+176711534851,2025-12-30 13:00:00,LOTO3,"[3, 4, 7]",23944.0,PENDIENTE,0.0,0.0,13.0,oraculo_neural_v3
+176711548537,2025-12-30 13:00:00,LOTO4,"[5, 10, 15, 17]",11532,PENDIENTE,0,0.0,13,oraculo_neural_v3
