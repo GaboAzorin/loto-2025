@@ -1,0 +1,12 @@
+{
+  "id": 1767217943,
+  "fecha_generacion": "2025-12-31 18:40:43",
+  "juego": "LOTO3",
+  "numeros": "[3, 5, 6]",
+  "sorteo_objetivo": 23949,
+  "estado": "PENDIENTE",
+  "aciertos": 0,
+  "score_afinidad": 0.0,
+  "hora_dia": 18,
+  "algoritmo": "forense_biometrico_v1"
+}
