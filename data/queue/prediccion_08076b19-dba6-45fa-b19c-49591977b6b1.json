@@ -1,0 +1,12 @@
+{
+  "id": 1767203859,
+  "fecha_generacion": "2025-12-31 14:42:11",
+  "juego": "LOTO",
+  "numeros": "[4, 11, 29, 32, 37, 38]",
+  "sorteo_objetivo": 5368,
+  "estado": "PENDIENTE",
+  "aciertos": 0,
+  "score_afinidad": 0.0,
+  "hora_dia": 14,
+  "algoritmo": "oraculo_neural_v3"
+}
