@@ -1,0 +1,12 @@
+{
+  "id": 1767193989,
+  "fecha_generacion": "2025-12-31 11:56:21",
+  "juego": "LOTO4",
+  "numeros": "[9, 12, 13, 21]",
+  "sorteo_objetivo": 11534,
+  "estado": "PENDIENTE",
+  "aciertos": 0,
+  "score_afinidad": 0.0,
+  "hora_dia": 11,
+  "algoritmo": "oraculo_neural_v3"
+}
