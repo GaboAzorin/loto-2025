@@ -7,28 +7,33 @@
       "forense_biometrico_v1": 0.26,
       "gaussiano_tactico_v1": 0.66,
       "markov_chain_v1": 0.51,
-      "oraculo_neural_v3": 0.0
+      "oraculo_neural_v3": 0.0,
+      "oraculo_neural_v4": 0.95
     },
     "LOTO3": {
       "consenso_meritocratico_v2": 22.35,
       "forense_biometrico_v1": 18.9,
-      "oraculo_neural_v3": 22.59
+      "oraculo_neural_v3": 21.63,
+      "oraculo_neural_v4": 1.45
     },
     "LOTO4": {
       "consenso_meritocratico_v2": 0.04,
       "forense_biometrico_v1": 0.05,
-      "oraculo_neural_v3": 0.0
+      "oraculo_neural_v3": 0.0,
+      "oraculo_neural_v4": 0.95
     },
     "RACHA": {
       "consenso_meritocratico_v2": 17.19,
       "forense_biometrico_v1": 15.69,
-      "oraculo_neural_v3": 10.83
+      "oraculo_neural_v3": 12.79,
+      "oraculo_neural_v4": 1.7
     }
   },
   "metadata": {
-    "updated_at": "2025-12-30 00:52:21",
-    "last_trained_id": 176703409837,
-    "total_casos_estudiados": 11889
+    "updated_at": "2025-12-31 06:18:24",
+    "last_trained_id": 1767144842616,
+    "total_casos_estudiados": 11889,
+    "total_estudiados": 13
   },
   "morphology": {
     "LOTO": {
@@ -46,28 +51,28 @@
     },
     "LOTO3": {
       "ideal_sum_range": [
-        1,
-        802
+        2,
+        723
       ],
-      "ideal_even_count": 1.86,
-      "ideal_consecutivos": 0.6,
-      "ideal_bajos_altos": 1.78,
-      "ideal_terminaciones": 2.83,
-      "ideal_primos": 1.17,
-      "ideal_multiples_3": 0.82,
-      "ideal_avg_delta": 2.39
+      "ideal_even_count": 1.77,
+      "ideal_consecutivos": 0.64,
+      "ideal_bajos_altos": 1.74,
+      "ideal_terminaciones": 2.85,
+      "ideal_primos": 1.22,
+      "ideal_multiples_3": 0.8,
+      "ideal_avg_delta": 2.38
     },
     "RACHA": {
       "ideal_sum_range": [
-        21,
-        822
+        27,
+        749
       ],
-      "ideal_even_count": 5.52,
-      "ideal_consecutivos": 4.69,
-      "ideal_bajos_altos": 4.52,
-      "ideal_terminaciones": 7.38,
-      "ideal_primos": 3.48,
-      "ideal_multiples_3": 3.07,
+      "ideal_even_count": 5.37,
+      "ideal_consecutivos": 4.65,
+      "ideal_bajos_altos": 4.63,
+      "ideal_terminaciones": 7.28,
+      "ideal_primos": 3.67,
+      "ideal_multiples_3": 3.0,
       "ideal_avg_delta": 1.99
     }
   },
