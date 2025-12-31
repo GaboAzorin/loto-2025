@@ -79,7 +79,6 @@ def calcular_proximo_sorteo_real(game_id, csv_name):
         
     except:
         # Si no hay datos, asumimos sorteo #0 y empezamos a buscar desde ayer
-        # print(f"   ⚠️ Sin historial para {game_id}. Iniciando desde cero.")
         cursor_tiempo = ahora - timedelta(days=1)
         cursor_id = 0
 
@@ -135,72 +134,67 @@ def obtener_pesos_del_lobulo(game_id, genoma):
     if ranking_juego:
         for algo_name, score in ranking_juego.items():
             # Aplicamos escala logarítmica para evitar el 'Efecto Dictador'
-            # Score 1 -> Peso 0.7 | Score 10 -> Peso 2.4 | Score 50 -> Peso 3.9
             pesos[algo_name] = max(0.5, math.log(max(1, score) + 1))
     
     return pesos
 
-def validar_cognitivamente(numeros, genoma, game_id):
+def validar_cognitivamente(numeros, genoma, game_id, factor_tolerancia=1.0):
     """
-    Filtro Pentadimensional V4: Ahora con Primos, Múltiplos y Deltas.
+    Filtro Pentadimensional con Tolerancia Dinámica.
+    factor_tolerancia: 1.0 para normal, >1.0 para permitir modelos experimentales.
     """
-    if not genoma or not numeros: return True
+    if not genoma or not numeros: return True, "OK"
     
     try:
         morph = genoma.get('morphology', {}).get(game_id, {})
-        if not morph: return True
+        if not morph: return True, "OK"
         
         nums = sorted(numeros)
         
-        # Helper para validación con tolerancia
-        def validar_conteo(key, valor_real, tolerancia=1.2):
+        # Helper con tolerancia expandible
+        def validar_conteo(key, valor_real, tol_base=1.2):
             ideal = morph.get(key, -1)
             if ideal == -1: return True
-            return abs(valor_real - ideal) <= tolerancia
+            return abs(valor_real - ideal) <= (tol_base * factor_tolerancia)
 
-        # 1. Suma
+        # 1. Suma (Relajamos los límites un 20% extra si el factor es > 1)
         rango_suma = morph.get('ideal_sum_range')
         if rango_suma and isinstance(rango_suma, list):
             suma = sum(nums)
-            if suma < (rango_suma[0] * 0.8) or suma > (rango_suma[1] * 1.2): return False
+            mult_inf = 0.8 / factor_tolerancia
+            mult_sup = 1.2 * factor_tolerancia
+            if suma < (rango_suma[0] * mult_inf) or suma > (rango_suma[1] * mult_sup):
+                return False, "SUMA"
 
-        # 2. Métricas Clásicas
-        if not validar_conteo("ideal_even_count", len([n for n in nums if n % 2 == 0]), 1.5): return False
+        # 2. Métricas
+        if not validar_conteo("ideal_even_count", len([n for n in nums if n % 2 == 0]), 1.5): return False, "PARES"
         
         cons = sum(1 for i in range(len(nums)-1) if nums[i+1] == nums[i] + 1)
-        if not validar_conteo("ideal_consecutivos", cons, 1.2): return False # Tolerancia estricta en cluster
+        if not validar_conteo("ideal_consecutivos", cons, 1.2): return False, "CONSEC"
         
         limite = 4 if game_id == "LOTO3" else (10 if game_id == "RACHA" else 21)
         bajos = len([n for n in nums if n <= limite])
-        if not validar_conteo("ideal_bajos_altos", bajos, 1.5): return False
+        if not validar_conteo("ideal_bajos_altos", bajos, 1.5): return False, "BAJOS"
         
         last_digits = len(set([n % 10 for n in nums]))
-        if not validar_conteo("ideal_terminaciones", last_digits, 1.2): return False
+        if not validar_conteo("ideal_terminaciones", last_digits, 1.2): return False, "TERM"
 
-        # 3. MÉTRICAS NUEVAS (V4)
-        # A. Primos
+        # 3. Métricas V4
         PRIMOS = {2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41}
         cnt_primos = len([n for n in nums if n in PRIMOS])
-        if not validar_conteo("ideal_primos", cnt_primos, 1.5): return False
+        if not validar_conteo("ideal_primos", cnt_primos, 1.5): return False, "PRIMOS"
 
-        # B. Múltiplos de 3
-        cnt_mult3 = len([n for n in nums if n > 0 and n % 3 == 0])
-        if not validar_conteo("ideal_multiples_3", cnt_mult3, 1.5): return False
-
-        # C. Delta Promedio (Solo si hay más de 1 número)
         if len(nums) > 1:
-            diffs = [nums[i+1] - nums[i] for i in range(len(nums)-1)]
-            avg_diff = sum(diffs) / len(diffs)
-            # Tolerancia un poco más amplia (2.5) porque la varianza es alta
-            if not validar_conteo("ideal_avg_delta", avg_diff, 2.5): return False
+            avg_diff = sum([nums[i+1] - nums[i] for i in range(len(nums)-1)]) / (len(nums)-1)
+            if not validar_conteo("ideal_avg_delta", avg_diff, 2.5): return False, "DELTA"
 
-        return True
+        return True, "OK"
 
     except Exception:
-        return True # Fail-open
+        return True, "FAIL_SAFE"
 
 def soñar():
-    print("💤 --- INICIANDO BOT SOÑADOR: LÓBULOS ESPECIALIZADOS v12.1 ---")
+    print("💤 --- INICIANDO BOT SOÑADOR: LÓBULOS ESPECIALIZADOS v12.4 ---")
     
     if LotoForense is None:
         print("❌ CRÍTICO: No se pudo importar LotoForense. Abortando.")
@@ -220,7 +214,7 @@ def soñar():
     for game_id, config in MULTIVERSO_CONFIG.items():
         print(f"🌌 Universo: {game_id}")
         
-        # A. Obtener pesos específicos para este juego (Ranking Local)
+        # A. Obtener pesos reales para este juego (Ranking Local)
         pesos_voto = obtener_pesos_del_lobulo(game_id, genoma)
         print(f"   ⚖️ Pesos de confianza (basado en mérito local): {pesos_voto}")
 
@@ -254,11 +248,14 @@ def soñar():
                 pred = funcion()
                 
                 while intentos < max_intentos:
-                    if validar_cognitivamente(pred, genoma, game_id): break 
+                    # FIX: Desempaquetar la tupla para evitar la trampa del booleano
+                    ok, _ = validar_cognitivamente(pred, genoma, game_id)
+                    if ok: break 
                     pred = funcion()
                     intentos += 1
                 
                 # Registrar Predicción Individual
+                alg_name_trad = f"{nombre}_v1"
                 nuevas_filas.append({
                     'id': base_id + i + (len(nuevas_filas)*100),
                     'fecha_generacion': ahora.strftime('%Y-%m-%d %H:%M:%S'),
@@ -268,19 +265,19 @@ def soñar():
                     'estado': 'PENDIENTE',
                     'aciertos': 0, 'score_afinidad': 0.0,
                     'hora_dia': hora_actual,
-                    'algoritmo': f"{nombre}_v1"
+                    'algoritmo': alg_name_trad
                 })
                 print(f"   🔹 {nombre}: {pred}")
                 
-                # E. Voto para el Consenso (Ponderado por Ranking Local)
-                key_algo = nombre.split('_')[0]
-                peso = pesos_voto.get(key_algo, 1.0)
+                # E. Voto para el Consenso (Ponderado por Ranking Local real)
+                peso = pesos_voto.get(alg_name_trad, 1.0)
                 
                 # Simulamos N veces para robustecer el consenso
                 validas = 0; reintentos = 0
                 while validas < 5 and reintentos < 30:
                     sim = funcion()
-                    if validar_cognitivamente(sim, genoma, game_id):
+                    ok_sim, _ = validar_cognitivamente(sim, genoma, game_id)
+                    if ok_sim:
                         for num in sim:
                             bolsa_pesos_consenso[num] = bolsa_pesos_consenso.get(num, 0) + peso
                         validas += 1
@@ -289,30 +286,30 @@ def soñar():
             except Exception as e:
                 print(f"   ⚠️ Error en {nombre}: {e}")
 
-        # --- BLOQUE NUEVO: ORÁCULO NEURAL (MACHINE LEARNING) ---
-        # Este bloque corre fuera del bucle estándar porque usa una lógica distinta (predecir vs generar)
         # --- BLOQUE: ORÁCULO NEURAL (MACHINE LEARNING) ---
         if OraculoNeural:
             for v in ["v3", "v4"]:
                 try:
                     oracle = OraculoNeural(game_id, version=v)
-                    fecha_target = datetime.now(TZ_CHILE)
+                    # La v4 recibe un "Permiso de Innovación" (50% más de tolerancia)
+                    f_tol = 1.5 if v == "v4" else 1.0 
                     
-                    intentos = 0
-                    max_intentos_ia = 30
-                    pred_ml = None
-                    
-                    # --- IGUALDAD DE OPORTUNIDADES: Bucle de Reintento ---
-                    while intentos < max_intentos_ia:
-                        # Usamos modo estocástico para que cada intento sea único
-                        candidato = oracle.predecir(fecha_objetivo=fecha_target, estocastico=True)
+                    intentos = 0; pred_ml = None
+                    reproches = {} # Para saber por qué falla (Trazabilidad)
+
+                    while intentos < 30:
+                        candidato = oracle.predecir(fecha_objetivo=datetime.now(TZ_CHILE), estocastico=True)
                         if candidato and len(candidato) == forense.rules['n']:
-                            if validar_cognitivamente(candidato, genoma, game_id):
+                            ok, motivo = validar_cognitivamente(candidato, genoma, game_id, factor_tolerancia=f_tol)
+                            if ok:
                                 pred_ml = candidato
                                 break
+                            else:
+                                reproches[motivo] = reproches.get(motivo, 0) + 1
                         intentos += 1
                     
                     if pred_ml:
+                        alg_name_ml = f'oraculo_neural_{v}'
                         nuevas_filas.append({
                             'id': base_id + (444 if v=="v4" else 888) + (len(nuevas_filas)*10),
                             'fecha_generacion': ahora.strftime('%Y-%m-%d %H:%M:%S'),
@@ -320,16 +317,20 @@ def soñar():
                             'numeros': str(sorted(pred_ml)),
                             'sorteo_objetivo': objetivo,
                             'estado': 'PENDIENTE',
-                            'algoritmo': f'oraculo_neural_{v}'
+                            'aciertos': 0, 'score_afinidad': 0.0,
+                            'hora_dia': hora_actual,
+                            'algoritmo': alg_name_ml
                         })
                         
-                        # --- ELIMINACIÓN DE HANDICAP ARBITRARIO ---
-                        # Ambos oráculos empiezan con el mismo peso base de voto (1.0).
-                        # El Entrenador decidirá quién merece más mediante el Genoma.
-                        peso_voto_ia = 1.0 
+                        # FIX: Sincronización con el mérito real del Genoma
+                        peso_ia = pesos_voto.get(alg_name_ml, 1.0) 
                         for num in pred_ml:
-                            bolsa_pesos_consenso[num] = bolsa_pesos_consenso.get(num, 0) + peso_voto_ia
-                            
+                            bolsa_pesos_consenso[num] = bolsa_pesos_consenso.get(num, 0) + peso_ia
+                        
+                        print(f"   🔹 {alg_name_ml}: {pred_ml} (OK tras {intentos} intentos)")
+                    else:
+                        print(f"   ❌ {v} SILENCIADO. Motivos: {reproches}")
+
                 except Exception as e:
                     print(f"   ⚠️ Fallo en ML {v}: {e}")
         # -------------------------------------------------------
@@ -338,6 +339,7 @@ def soñar():
         try:
             if bolsa_pesos_consenso:
                 n = forense.rules['n']
+                # Ordenamos las bolas por peso total acumulado
                 ranking_bolas = sorted(bolsa_pesos_consenso, key=bolsa_pesos_consenso.get, reverse=True)
                 top_consenso = sorted(ranking_bolas[:n])
                 
@@ -358,30 +360,26 @@ def soñar():
         except: pass
 
     # G. Guardado Asíncrono (QUEUE SYSTEM)
-        # En lugar de pelear por el CSV, guardamos un ticket único en la cola.
-        import uuid
+    import uuid
+    QUEUE_DIR = os.path.join(DATA_DIR, 'queue')
+    os.makedirs(QUEUE_DIR, exist_ok=True)
+
+    if nuevas_filas:
+        print(f"📦 Generando {len(nuevas_filas)} tickets para la cola de procesamiento...")
         
-        QUEUE_DIR = os.path.join(DATA_DIR, 'queue')
-        os.makedirs(QUEUE_DIR, exist_ok=True)
-
-        if nuevas_filas:
-            print(f"📦 Generando {len(nuevas_filas)} tickets para la cola de procesamiento...")
+        for fila in nuevas_filas:
+            file_id = str(uuid.uuid4())
+            filename = f"prediccion_{file_id}.json"
+            filepath = os.path.join(QUEUE_DIR, filename)
             
-            for fila in nuevas_filas:
-                # Generamos un ID único para el archivo
-                file_id = str(uuid.uuid4())
-                filename = f"prediccion_{file_id}.json"
-                filepath = os.path.join(QUEUE_DIR, filename)
-                
-                # Guardamos el JSON individual
-                try:
-                    with open(filepath, 'w', encoding='utf-8') as f:
-                        json.dump(fila, f, ensure_ascii=False, indent=2)
-                    print(f"   -> Ticket guardado: {filename}")
-                except Exception as e:
-                    print(f"   ❌ Error guardando ticket {filename}: {e}")
+            try:
+                with open(filepath, 'w', encoding='utf-8') as f:
+                    json.dump(fila, f, ensure_ascii=False, indent=2)
+                # print(f"   -> Ticket guardado: {filename}")
+            except Exception as e:
+                print(f"   ❌ Error guardando ticket {filename}: {e}")
 
-        print("\n✨ PROCESO DEL SOÑADOR TERMINADO (Datos en cola).")
+    print("\n✨ PROCESO DEL SOÑADOR TERMINADO (Datos en cola).")
 
 if __name__ == "__main__":
     soñar()
