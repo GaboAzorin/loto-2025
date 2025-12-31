@@ -1,0 +1,12 @@
+{
+  "id": 1767226266,
+  "fecha_generacion": "2025-12-31 20:52:07",
+  "juego": "LOTO4",
+  "numeros": "[11, 12, 19, 20]",
+  "sorteo_objetivo": 11535,
+  "estado": "PENDIENTE",
+  "aciertos": 0,
+  "score_afinidad": 0.0,
+  "hora_dia": 20,
+  "algoritmo": "consenso_meritocratico_v2"
+}
