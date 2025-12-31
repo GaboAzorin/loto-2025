@@ -41,7 +41,7 @@ def cargar_maestros():
                             numeros.append(int(row[col]))
                     
                     if numeros:
-                        sorteo_id = str(row['sorteo']) # Usar string para evitar problemas de tipos
+                        sorteo_id = str(int(float(row['sorteo'])))
                         mapa_sorteos[sorteo_id] = sorted(numeros)
                 except: continue
             
@@ -153,7 +153,7 @@ def juzgar():
         # Para eficiencia, juzgamos todo lo que no tenga score perfecto o esté pendiente
         
         juego = row['juego']
-        target_id = str(row['sorteo_objetivo'])
+        target_id = str(int(float(row['sorteo_objetivo'])))
         
         # Verificar si tenemos los resultados oficiales para ese juego y sorteo
         if juego in maestros and target_id in maestros[juego]:
