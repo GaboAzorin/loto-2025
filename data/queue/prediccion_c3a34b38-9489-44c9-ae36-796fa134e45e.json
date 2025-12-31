@@ -1,9 +1,0 @@
-{
-  "id": 1767134223,
-  "fecha_generacion": "2025-12-30 19:21:35",
-  "juego": "LOTO",
-  "numeros": "[2, 8, 14, 21, 33, 37]",
-  "sorteo_objetivo": 5367,
-  "estado": "PENDIENTE",
-  "algoritmo": "oraculo_neural_v3"
-}
