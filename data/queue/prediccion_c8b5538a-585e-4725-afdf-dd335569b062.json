@@ -1,0 +1,12 @@
+{
+  "id": 1767206073,
+  "fecha_generacion": "2025-12-31 15:31:11",
+  "juego": "LOTO",
+  "numeros": "[1, 7, 10, 23, 33, 36]",
+  "sorteo_objetivo": 5368,
+  "estado": "PENDIENTE",
+  "aciertos": 0,
+  "score_afinidad": 0.0,
+  "hora_dia": 15,
+  "algoritmo": "delta_tactico_v1"
+}
