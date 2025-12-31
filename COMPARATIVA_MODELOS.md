@@ -1,5 +1,5 @@
 # 📊 Auditoría de Modelos: v3 vs v4
-Actualizado el: 2025-12-31 12:20:58
+Actualizado el: 2025-12-31 13:54:42
 
 ## 🌡️ Alerta de Silenciamiento (Salud del Filtro)
 - ⚠️ **LOTO**: v4 está siendo 'silenciado'. Solo el 1% de sus ideas pasan el filtro cognitivo.
@@ -22,13 +22,13 @@ Actualizado el: 2025-12-31 12:20:58
 ## 🏆 Top 5 Mejores Aciertos (Histórico)
 | juego   | algoritmo         |   sorteo_objetivo |   score_afinidad |   aciertos |
 |:--------|:------------------|------------------:|-----------------:|-----------:|
-| LOTO3   | oraculo_neural_v3 |             23928 |            66.67 |          2 |
+| LOTO3   | oraculo_neural_v3 |             23934 |            66.67 |          2 |
+| LOTO3   | oraculo_neural_v3 |             23941 |            66.67 |          2 |
+| LOTO3   | oraculo_neural_v3 |             23934 |            66.67 |          2 |
 | LOTO3   | oraculo_neural_v3 |             23941 |            66.67 |          2 |
 | LOTO3   | oraculo_neural_v3 |             23941 |            66.67 |          2 |
-| LOTO3   | oraculo_neural_v3 |             23941 |            66.67 |          2 |
-| LOTO3   | oraculo_neural_v3 |             23941 |            66.67 |          2 |
-| LOTO3   | oraculo_neural_v3 |             23941 |            66.67 |          2 |
-| LOTO3   | oraculo_neural_v3 |             23941 |            66.67 |          2 |
+| LOTO3   | oraculo_neural_v3 |             23934 |            66.67 |          2 |
+| LOTO3   | oraculo_neural_v3 |             23934 |            66.67 |          2 |
 | LOTO3   | oraculo_neural_v3 |             23934 |            66.67 |          2 |
 | LOTO3   | oraculo_neural_v3 |             23934 |            66.67 |          2 |
 | LOTO3   | oraculo_neural_v3 |             23941 |            66.67 |          2 |
