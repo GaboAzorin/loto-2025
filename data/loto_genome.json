@@ -13,8 +13,8 @@
     "LOTO3": {
       "consenso_meritocratico_v2": 22.35,
       "forense_biometrico_v1": 18.9,
-      "oraculo_neural_v3": 21.11,
-      "oraculo_neural_v4": 9.66
+      "oraculo_neural_v3": 20.05,
+      "oraculo_neural_v4": 10.84
     },
     "LOTO4": {
       "consenso_meritocratico_v2": 0.04,
@@ -25,15 +25,15 @@
     "RACHA": {
       "consenso_meritocratico_v2": 17.19,
       "forense_biometrico_v1": 15.69,
-      "oraculo_neural_v3": 15.14,
-      "oraculo_neural_v4": 2.5
+      "oraculo_neural_v3": 14.63,
+      "oraculo_neural_v4": 2.62
     }
   },
   "metadata": {
-    "updated_at": "2026-01-01 03:26:08",
-    "last_trained_id": 1767237884297,
+    "updated_at": "2026-01-01 16:44:46",
+    "last_trained_id": 1767296683959,
     "total_casos_estudiados": 11889,
-    "total_estudiados": 27
+    "total_estudiados": 31
   },
   "morphology": {
     "LOTO": {
@@ -51,35 +51,35 @@
     },
     "LOTO3": {
       "ideal_sum_range": [
-        3,
-        529
+        4,
+        477
       ],
-      "ideal_even_count": 1.69,
-      "ideal_consecutivos": 0.56,
-      "ideal_bajos_altos": 1.67,
-      "ideal_terminaciones": 2.88,
-      "ideal_primos": 1.29,
+      "ideal_even_count": 1.72,
+      "ideal_consecutivos": 0.6,
+      "ideal_bajos_altos": 1.6,
+      "ideal_terminaciones": 2.89,
+      "ideal_primos": 1.26,
       "ideal_multiples_3": 1.01,
-      "ideal_avg_delta": 2.62
+      "ideal_avg_delta": 2.76
     },
     "RACHA": {
       "ideal_sum_range": [
-        37,
-        623
+        43,
+        571
       ],
-      "ideal_even_count": 5.16,
+      "ideal_even_count": 5.14,
       "ideal_consecutivos": 4.52,
-      "ideal_bajos_altos": 4.88,
-      "ideal_terminaciones": 7.27,
-      "ideal_primos": 3.87,
-      "ideal_multiples_3": 2.95,
-      "ideal_avg_delta": 1.99
+      "ideal_bajos_altos": 4.84,
+      "ideal_terminaciones": 7.24,
+      "ideal_primos": 3.88,
+      "ideal_multiples_3": 2.9,
+      "ideal_avg_delta": 2.0
     }
   },
   "last_processed": {
-    "LOTO3": 23949,
-    "LOTO4": 11535,
+    "LOTO3": 23950,
+    "LOTO4": 11536,
     "LOTO": 5367,
-    "RACHA": 10268
+    "RACHA": 10269
   }
 }
