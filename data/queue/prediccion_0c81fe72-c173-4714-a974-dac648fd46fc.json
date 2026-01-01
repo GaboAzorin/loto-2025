@@ -1,0 +1,12 @@
+{
+  "id": 1767257199,
+  "fecha_generacion": "2026-01-01 05:31:11",
+  "juego": "LOTO",
+  "numeros": "[1, 14, 18, 20, 23, 37]",
+  "sorteo_objetivo": 5368,
+  "estado": "PENDIENTE",
+  "aciertos": 0,
+  "score_afinidad": 0.0,
+  "hora_dia": 5,
+  "algoritmo": "oraculo_neural_v3"
+}
