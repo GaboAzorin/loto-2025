@@ -1,0 +1,12 @@
+{
+  "id": 1767268738,
+  "fecha_generacion": "2026-01-01 08:41:19",
+  "juego": "LOTO",
+  "numeros": "[11, 22, 28, 30, 35, 38]",
+  "sorteo_objetivo": 5368,
+  "estado": "PENDIENTE",
+  "aciertos": 0,
+  "score_afinidad": 0.0,
+  "hora_dia": 8,
+  "algoritmo": "consenso_meritocratico_v2"
+}
