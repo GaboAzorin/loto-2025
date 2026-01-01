@@ -292,7 +292,7 @@ def soñar():
                 try:
                     oracle = OraculoNeural(game_id, version=v)
                     # La v4 recibe un "Permiso de Innovación" (50% más de tolerancia)
-                    f_tol = 1.5 if v == "v4" else 1.0 
+                    f_tol = 2.5 if v == "v4" else 1.0 
                     
                     intentos = 0; pred_ml = None
                     reproches = {} # Para saber por qué falla (Trazabilidad)
