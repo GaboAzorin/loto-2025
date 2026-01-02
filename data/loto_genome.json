@@ -13,8 +13,8 @@
     "LOTO3": {
       "consenso_meritocratico_v2": 22.35,
       "forense_biometrico_v1": 18.9,
-      "oraculo_neural_v3": 19.76,
-      "oraculo_neural_v4": 11.45
+      "oraculo_neural_v3": 20.44,
+      "oraculo_neural_v4": 12.54
     },
     "LOTO4": {
       "consenso_meritocratico_v2": 0.04,
@@ -30,10 +30,10 @@
     }
   },
   "metadata": {
-    "updated_at": "2026-01-02 01:19:05",
-    "last_trained_id": 1767316637946,
+    "updated_at": "2026-01-02 14:37:49",
+    "last_trained_id": 1767375465671,
     "total_casos_estudiados": 11889,
-    "total_estudiados": 43
+    "total_estudiados": 45
   },
   "morphology": {
     "LOTO": {
@@ -52,15 +52,15 @@
     "LOTO3": {
       "ideal_sum_range": [
         5,
-        430
+        388
       ],
-      "ideal_even_count": 1.65,
+      "ideal_even_count": 1.54,
       "ideal_consecutivos": 0.54,
-      "ideal_bajos_altos": 1.49,
-      "ideal_terminaciones": 2.8,
-      "ideal_primos": 1.38,
-      "ideal_multiples_3": 0.91,
-      "ideal_avg_delta": 2.63
+      "ideal_bajos_altos": 1.44,
+      "ideal_terminaciones": 2.82,
+      "ideal_primos": 1.39,
+      "ideal_multiples_3": 0.92,
+      "ideal_avg_delta": 2.59
     },
     "RACHA": {
       "ideal_sum_range": [
@@ -77,8 +77,8 @@
     }
   },
   "last_processed": {
-    "LOTO3": 23952,
-    "LOTO4": 11537,
+    "LOTO3": 23953,
+    "LOTO4": 11538,
     "LOTO": 5368,
     "RACHA": 10270
   }
