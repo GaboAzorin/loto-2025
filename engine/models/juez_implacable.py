@@ -10,9 +10,9 @@ DATA_DIR = os.path.join(BASE_DIR, '..', '..', 'data')
 
 FILE_SIMULACIONES = os.path.join(DATA_DIR, "LOTO_SIMULACIONES.csv")
 
-# Mapeo de archivos maestros
+# Mapeo de archivos maestros (Añadimos referencia al Comodín para LOTO)
 MAESTROS_CONFIG = {
-    "LOTO":   {"file": "LOTO_HISTORIAL_MAESTRO.csv", "cols": ["LOTO_n1","LOTO_n2","LOTO_n3","LOTO_n4","LOTO_n5","LOTO_n6"]},
+    "LOTO":   {"file": "LOTO_HISTORIAL_MAESTRO.csv", "cols": ["LOTO_n1","LOTO_n2","LOTO_n3","LOTO_n4","LOTO_n5","LOTO_n6"], "comodin": "LOTO_comodin"},
     "LOTO3":  {"file": "LOTO3_MAESTRO.csv",          "cols": ["n1","n2","n3"]},
     "LOTO4":  {"file": "LOTO4_MAESTRO.csv",          "cols": ["n1","n2","n3","n4"]},
     "RACHA":  {"file": "RACHA_MAESTRO.csv",          "cols": ["n1","n2","n3","n4","n5","n6","n7","n8","n9","n10"]}
@@ -30,7 +30,6 @@ def cargar_maestros():
             
         try:
             df = pd.read_csv(path)
-            # Crear mapa: { '1234': [1, 2, 3...] } (Sorteo -> Números)
             mapa_sorteos = {}
             for _, row in df.iterrows():
                 try:
@@ -40,9 +39,19 @@ def cargar_maestros():
                         if col in row and not pd.isna(row[col]):
                             numeros.append(int(row[col]))
                     
+                    # --- NUEVO: Extraer Comodín si existe ---
+                    comodin = None
+                    if "comodin" in config and config["comodin"] in row:
+                        val = row[config["comodin"]]
+                        comodin = int(val) if not pd.isna(val) else None
+
                     if numeros:
                         sorteo_id = str(int(float(row['sorteo'])))
-                        mapa_sorteos[sorteo_id] = sorted(numeros)
+                        # Ahora guardamos un diccionario con números y comodín
+                        mapa_sorteos[sorteo_id] = {
+                            "numeros": sorted(numeros),
+                            "comodin": comodin
+                        }
                 except: continue
             
             memoria[juego] = mapa_sorteos
@@ -53,80 +62,67 @@ def cargar_maestros():
             
     return memoria
 
-def calcular_afinidad(prediccion, realidad, juego):
+def calcular_afinidad(prediccion, realidad_obj, juego):
     """Calcula score 0-100 dependiendo de las reglas del juego."""
-    if not prediccion or not realidad: return 0.0
+    if not prediccion or not realidad_obj: return 0.0
+    
+    # Extraemos los datos del objeto realidad
+    realidad = realidad_obj["numeros"]
+    comodin_real = realidad_obj.get("comodin")
     
     # --- REGLAS RACHA (Curva de Aprendizaje en V) ---
     if juego == "RACHA":
-        # Usamos sets porque en Racha no importa el orden, solo estar dentro o fuera
         aciertos = len(set(prediccion) & set(realidad))
-        
-        # Premios Reales (Estado final)
         if aciertos >= 10 or aciertos <= 0: return 100.0
         if aciertos == 9 or aciertos == 1: return 85.0
         if aciertos == 8 or aciertos == 2: return 60.0
         if aciertos == 7 or aciertos == 3: return 40.0
-        
-        # --- CORRECCIÓN CRÍTICA PARA LA IA ---
-        # Si tengo 4, 5 o 6 aciertos, NO debo devolver 0 absoluto.
-        # Debo devolver un puntaje bajo pero que indique dirección.
-        # 5 es el peor estado (máxima entropía/azar). 4 y 6 son un poco mejores.
-        if aciertos == 4 or aciertos == 6: return 15.0 # Casi ganas algo
-        if aciertos == 5: return 5.0 # El peor resultado posible (ni cerca de 0 ni de 10)
-        
+        if aciertos == 4 or aciertos == 6: return 15.0 
+        if aciertos == 5: return 5.0 
         return 0.0 
 
     # --- REGLAS LOTO 3 (Precisión Posicional Estricta) ---
     elif juego == "LOTO3":
-        # Asumimos que Loto 3 requiere ORDEN EXACTO (Posición 1, 2 y 3)
-        # Si predigo [1, 2, 3] y sale [1, 2, 3] -> 3 ptos
-        # Si predigo [3, 2, 1] y sale [1, 2, 3] -> 1 pto (solo el 2 coincide en posición)
-        
         match_posicional = 0
-        match_numerico = 0 # Para consuelo si acertó el número pero no la posición
-        
-        # Copia para no destruir la lista original al contar numéricos
+        match_numerico = 0 
         real_temp = list(realidad)
-        
-        # 1. Análisis Posicional (Lo que más vale)
         for i in range(min(len(prediccion), len(realidad))):
             if prediccion[i] == realidad[i]:
                 match_posicional += 1
-        
-        # 2. Análisis Numérico (Premio de consuelo)
-        # Esto ayuda a la IA a saber que "tenía los números correctos" aunque desordenados
         for n in prediccion:
             if n in real_temp:
                 match_numerico += 1
                 real_temp.remove(n)
-        
-        # CÁLCULO DE SCORE
-        if match_posicional == 3: return 100.0 # ¡Exacta!
-        
-        # Ponderamos: 70% Posición, 30% Tenencia
+        if match_posicional == 3: return 100.0
         score_pos = (match_posicional / 3) * 70
         score_num = (match_numerico / 3) * 30
-        
         return score_pos + score_num
 
-# --- REGLAS LOTO / LOTO 4 (Escala Logarítmica de Premio) ---
+    # --- REGLAS LOTO / LOTO 4 (Escala de Mérito Normalizada) ---
     else: 
         aciertos = len(set(prediccion) & set(realidad))
         
-        # CASO ESPECIAL LOTO 4 (El Jackpot es 4, no 6)
-        if juego == "LOTO4" and aciertos == 4:
-             return 1000.0 # ¡JACKPOT LOTO 4!
+        # CASO ESPECIAL LOTO 4 (Normalizado a 100)
+        if juego == "LOTO4":
+            if aciertos == 4: return 100.0
+            if aciertos == 3: return 50.0
+            if aciertos == 2: return 20.0
+            return 0.0
 
-        # ESCALA GENERAL
-        if aciertos == 6: return 1000.0 # JACKPOT LOTO
-        if aciertos == 5: return 300.0  # Quina / Super Cuaterna
-        if aciertos == 4: return 100.0  # Cuaterna
-        if aciertos == 3: return 10.0   # Terna (Umbral mínimo de supervivencia)
+        # --- NUEVA ESCALA LOTO 41 (Basada en Categorías Reales) ---
+        tiene_comodin = (comodin_real is not None) and (comodin_real in prediccion)
         
-        # Todo lo demás es fracaso.
-        # Sin piedad. Sin puntos por "casi".
-        return 0.0
+        if aciertos == 6: return 100.0                    # Loto (Jackpot)
+        if aciertos == 5 and tiene_comodin: return 85.0     # Súper Quina
+        if aciertos == 5: return 70.0                    # Quina
+        if aciertos == 4 and tiene_comodin: return 55.0     # Súper Cuaterna
+        if aciertos == 4: return 40.0                    # Cuaterna
+        if aciertos == 3 and tiene_comodin: return 25.0     # Súper Terna
+        if aciertos == 3: return 15.0                    # Terna
+        if aciertos == 2 and tiene_comodin: return 10.0     # Súper Dupla
+        
+        # Pequeño mérito basal para orientar a la IA (máx 5%)
+        return (aciertos / 6) * 5
 
 def juzgar():
     print("⚖️ JUEZ MULTIVERSO EN SESIÓN...")
@@ -141,7 +137,6 @@ def juzgar():
     # 2. Leer Jugadas
     df_sim = pd.read_csv(FILE_SIMULACIONES)
     
-    # Migración: Si no existe columna juego, asumir LOTO
     if 'juego' not in df_sim.columns:
         df_sim['juego'] = 'LOTO'
     
@@ -149,35 +144,26 @@ def juzgar():
     
     # 3. Iterar y Juzgar
     for index, row in df_sim.iterrows():
-        # Solo juzgar si está pendiente o si queremos re-auditar todo (opcional)
-        # Para eficiencia, juzgamos todo lo que no tenga score perfecto o esté pendiente
-        
         juego = row['juego']
         target_id = str(int(float(row['sorteo_objetivo'])))
         
-        # Verificar si tenemos los resultados oficiales para ese juego y sorteo
         if juego in maestros and target_id in maestros[juego]:
-            nums_real = maestros[juego][target_id]
+            # Realidad ahora es un dict con {"numeros": [...], "comodin": X}
+            realidad_obj = maestros[juego][target_id]
+            nums_real = realidad_obj["numeros"]
             
             try:
-                # Parsear predicción que viene como string "[1, 2, 3]"
-                # Manejo robusto por si viene sucio
                 raw_nums = row['numeros']
                 if isinstance(raw_nums, str):
                     nums_pred = ast.literal_eval(raw_nums)
                 else:
-                    nums_pred = raw_nums # Ya era lista
+                    nums_pred = raw_nums
                 
                 if not isinstance(nums_pred, list): continue
-
-            except Exception as e:
-                # print(f"Error parseando fila {index}: {e}")
-                continue
+            except: continue
             
-            # Calcular Métricas
-            # Aciertos simples para mostrar al usuario
+            # Calcular Aciertos para display (Lógica original)
             if juego == "LOTO3":
-                 # Logica especial para contar aciertos con repetidos
                  aciertos_display = 0
                  r_cp = list(nums_real)
                  for n in nums_pred:
@@ -187,27 +173,25 @@ def juzgar():
             else:
                 aciertos_display = len(set(nums_pred) & set(nums_real))
 
-            # Score interno para el algoritmo
-            score_final = calcular_afinidad(nums_pred, nums_real, juego)
+            # Score interno (NUEVA ESCALA)
+            score_final = calcular_afinidad(nums_pred, realidad_obj, juego)
             
-            # 4. Actualizar si hubo cambios
-            # (Actualizamos si estaba PENDIENTE o si el score cambió por ajuste de fórmula)
             old_score = float(row['score_afinidad']) if not pd.isna(row['score_afinidad']) else -1.0
             
+            # Actualizamos si cambió el score (importante para recalibrar el histórico)
             if row['estado'] != 'AUDITADO' or abs(score_final - old_score) > 0.01:
                 df_sim.at[index, 'aciertos'] = aciertos_display
                 df_sim.at[index, 'score_afinidad'] = round(score_final, 2)
                 df_sim.at[index, 'estado'] = 'AUDITADO'
                 cambios += 1
                 
-                # Feedback visual
                 if cambios % 10 == 0:
-                    print(f"   🔨 Sentencia dictada para {juego} #{target_id}. Score: {score_final:.1f}")
+                    print(f"    🔨 Sentencia dictada para {juego} #{target_id}. Score: {score_final:.1f}%")
 
     # 5. Guardar
     if cambios > 0:
         df_sim.to_csv(FILE_SIMULACIONES, index=False)
-        print(f"✅ {cambios} veredictos actualizados en el archivo de simulaciones.")
+        print(f"✅ {cambios} veredictos actualizados y normalizados.")
     else:
         print("💤 La corte no encontró casos nuevos para juzgar.")
 
