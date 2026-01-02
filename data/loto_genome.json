@@ -25,15 +25,15 @@
     "RACHA": {
       "consenso_meritocratico_v2": 17.19,
       "forense_biometrico_v1": 15.69,
-      "oraculo_neural_v3": 14.65,
-      "oraculo_neural_v4": 3.24
+      "oraculo_neural_v3": 14.67,
+      "oraculo_neural_v4": 3.83
     }
   },
   "metadata": {
-    "updated_at": "2026-01-02 18:15:17",
-    "last_trained_id": 1767388515608,
+    "updated_at": "2026-01-02 21:18:21",
+    "last_trained_id": 1767388631430,
     "total_casos_estudiados": 11889,
-    "total_estudiados": 49
+    "total_estudiados": 51
   },
   "morphology": {
     "LOTO": {
@@ -64,16 +64,16 @@
     },
     "RACHA": {
       "ideal_sum_range": [
-        48,
-        524
+        51,
+        480
       ],
-      "ideal_even_count": 5.23,
-      "ideal_consecutivos": 4.47,
-      "ideal_bajos_altos": 4.86,
-      "ideal_terminaciones": 7.32,
-      "ideal_primos": 3.79,
-      "ideal_multiples_3": 3.01,
-      "ideal_avg_delta": 2.01
+      "ideal_even_count": 5.11,
+      "ideal_consecutivos": 4.52,
+      "ideal_bajos_altos": 4.97,
+      "ideal_terminaciones": 7.29,
+      "ideal_primos": 3.96,
+      "ideal_multiples_3": 2.91,
+      "ideal_avg_delta": 2.0
     }
   },
   "last_processed": {
