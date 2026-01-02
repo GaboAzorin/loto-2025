@@ -32,7 +32,8 @@
             --gauss-color: #f1e05a; 
             --delta-color: #20b2aa; 
             --markov-color: #ff69b4; 
-            --oracle-color: #be58ff; /* NUEVO: Púrpura Oráculo */
+            --v3-color: #8e44ad;
+            --v4-color: #be58ff;
             --consenso-color: #ffffff; 
         }
 
@@ -369,9 +370,8 @@
         .algo-gauss { color: var(--gauss-color); border-color: rgba(241, 224, 90, 0.3); background: rgba(241, 224, 90, 0.1); }
         .algo-delta { color: var(--delta-color); border-color: rgba(32, 178, 170, 0.3); background: rgba(32, 178, 170, 0.1); }
         .algo-markov { color: var(--markov-color); border-color: rgba(255, 105, 180, 0.3); background: rgba(255, 105, 180, 0.1); } 
-        /* NUEVO: ESTILO PARA ORÁCULO NEURAL */
-        .algo-oracle { color: var(--oracle-color); border-color: rgba(190, 88, 255, 0.3); background: rgba(190, 88, 255, 0.1); }
-        
+        .algo-v3 { color: var(--v3-color); border-color: rgba(142, 68, 173, 0.3); background: rgba(142, 68, 173, 0.1); }
+        .algo-v4 { color: var(--v4-color); border-color: rgba(190, 88, 255, 0.3); background: rgba(190, 88, 255, 0.1); }
         .algo-consenso { color: var(--consenso-color); border-color: rgba(255, 255, 255, 0.3); background: rgba(255, 255, 255, 0.1); }
 
         /* HIGHLIGHTS DE ACIERTOS */
@@ -616,7 +616,8 @@
                         <option value="gaussiano">📐 Gaussiano</option>
                         <option value="delta">📈 Delta</option>
                         <option value="markov">🔗 Markov</option>
-                        <option value="oraculo">🧠 Oráculo Neural</option>
+                        <option value="oraculo_neural_v3">🧠 Oráculo V3 (Reglamento)</option>
+                        <option value="oraculo_neural_v4">⚡ Oráculo V4 (Física)</option>
                         <option value="consenso">🤝 Consenso</option>
                     </select>
                 </div>
@@ -712,7 +713,8 @@
                     {key: 'gauss', label: 'Gauss', color: '#f1e05a'},
                     {key: 'delta', label: 'Delta', color: '#20b2aa'},
                     {key: 'markov', label: 'Markov', color: '#ff69b4'},
-                    {key: 'oraculo', label: 'Oráculo', color: '#be58ff'}, /* NUEVO */
+                    {key: 'oraculo_neural_v3', label: 'Oráculo V3', color: '#8e44ad'},
+                    {key: 'oraculo_neural_v4', label: 'Oráculo V4', color: '#be58ff'},
                     {key: 'consenso', label: 'Consenso', color: '#ffffff'}
                 ],
                 hits: [6, 5, 4, 3, 2, 1],
@@ -721,7 +723,8 @@
             'LOTO3': {
                 algos: [
                     {key: 'forense', label: 'Bio', color: '#58a6ff'},
-                    {key: 'oraculo', label: 'Oráculo', color: '#be58ff'}, /* NUEVO */
+                    {key: 'oraculo_neural_v3', label: 'Oráculo V3', color: '#8e44ad'},
+                    {key: 'oraculo_neural_v4', label: 'Oráculo V4', color: '#be58ff'},
                     {key: 'consenso', label: 'Consenso', color: '#ffffff'}
                 ],
                 hits: [3, 2, 1],
@@ -730,7 +733,8 @@
             'LOTO4': {
                 algos: [
                     {key: 'forense', label: 'Bio', color: '#58a6ff'},
-                    {key: 'oraculo', label: 'Oráculo', color: '#be58ff'}, /* NUEVO */
+                    {key: 'oraculo_neural_v3', label: 'Oráculo V3', color: '#8e44ad'},
+                    {key: 'oraculo_neural_v4', label: 'Oráculo V4', color: '#be58ff'},
                     {key: 'consenso', label: 'Consenso', color: '#ffffff'}
                 ],
                 hits: [4, 3, 2, 1],
@@ -739,7 +743,8 @@
             'RACHA': {
                 algos: [
                     {key: 'forense', label: 'Bio', color: '#58a6ff'},
-                    {key: 'oraculo', label: 'Oráculo', color: '#be58ff'}, /* NUEVO */
+                    {key: 'oraculo_neural_v3', label: 'Oráculo V3', color: '#8e44ad'},
+                    {key: 'oraculo_neural_v4', label: 'Oráculo V4', color: '#be58ff'},
                     {key: 'consenso', label: 'Consenso', color: '#ffffff'}
                 ],
                 hits: [10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0],
@@ -1354,7 +1359,7 @@
                 if (fSorteo !== 'ALL' && d.objetivo !== fSorteo) return false;
                 // --- FILTRO DE ALGORITMO ACTUALIZADO PARA ORÁCULO ---
                 if (fAlgo !== 'ALL') {
-                    if (fAlgo === 'oraculo' && (d.algoritmo.includes('oraculo') || d.algoritmo.includes('rf'))) return true;
+                    if (d.algoritmo === fAlgo) return true;
                     if (!d.algoritmo.includes(fAlgo)) return false;
                 }
                 if (fDia !== 'ALL' && d.dateObj.getDay().toString() !== fDia) return false;
@@ -1399,7 +1404,8 @@
                 else if(row.algoritmo.includes('gauss')) algoClass += ' algo-gauss';
                 else if(row.algoritmo.includes('delta')) algoClass += ' algo-delta';
                 else if(row.algoritmo.includes('markov')) algoClass += ' algo-markov'; 
-                else if(row.algoritmo.includes('oraculo') || row.algoritmo.includes('rf')) algoClass += ' algo-oracle'; /* NUEVO */
+                else if(row.algoritmo.includes('oraculo_neural_v3')) algoClass += ' algo-v3';
+                else if(row.algoritmo.includes('oraculo_neural_v4')) algoClass += ' algo-v4';
                 else if(row.algoritmo.includes('consenso')) algoClass += ' algo-consenso';
                 
                 const realNums = MASTERS[CURRENT_UNIVERSE] ? MASTERS[CURRENT_UNIVERSE][row.objetivo] : [];
@@ -1462,11 +1468,10 @@
                     
                     if (d.estado === 'AUDITADO') {
                         g.scores.push(d.score);
+                        // --- CAMBIO AQUÍ: Comparación estricta de la llave completa ---
                         gameConfig.algos.forEach(a => { 
-                            if(a.key === 'oraculo') {
-                                if(d.algoritmo && (d.algoritmo.includes('oraculo') || d.algoritmo.includes('rf'))) g.algoScores[a.key].push(d.score); 
-                            } else {
-                                if(d.algoritmo && d.algoritmo.includes(a.key)) g.algoScores[a.key].push(d.score); 
+                            if(d.algoritmo === a.key) {
+                                g.algoScores[a.key].push(d.score); 
                             }
                         });
                         if (d.score > g.maxScore) { g.maxScore = d.score; g.bestRow = d; }
@@ -1591,11 +1596,7 @@
                     g.sims.forEach(s => {
                         let algoKey = null;
                         gameConfig.algos.forEach(a => {
-                            if (a.key === 'oraculo') {
-                                if(s.algoritmo && (s.algoritmo.includes('oraculo') || s.algoritmo.includes('rf'))) algoKey = a.key;
-                            } else {
-                                if(s.algoritmo && s.algoritmo.includes(a.key)) algoKey = a.key;
-                            }
+                            if(s.algoritmo === a.key) algoKey = a.key;
                         });
 
                         drawInvest += costPerSim;
@@ -1673,28 +1674,152 @@
 
         function updateDashboardCharts(data) {
             const ctx = document.getElementById('mainChart').getContext('2d');
+            
+            // Destruir gráfico previo si existe para evitar superposiciones
             if(window.myChart) window.myChart.destroy();
+            
+            // Filtrar solo los datos que ya tienen veredicto del Juez
             const auditados = data.filter(d => d.estado === 'AUDITADO');
             const gameConfig = UNIVERSE_CONFIG[CURRENT_UNIVERSE] || UNIVERSE_CONFIG['LOTO'];
-            let labels = []; let buckets = {}; 
+            
+            let labels = []; 
+            let buckets = {}; 
+
+            // 1. CONFIGURAR ETIQUETAS Y CUBETAS SEGÚN EL MODO (HORA/DÍA/MES)
             if (CURRENT_CHART_MODE === 'hour') {
-                labels = Array.from({length: 24}, (_, i) => `${i}:00`); labels.forEach((_, i) => buckets[i] = {});
-                auditados.forEach(d => { let h = d.hora; if (isNaN(h)) h = d.dateObj.getHours(); if (buckets[h]) { gameConfig.algos.forEach(a => { if(d.algoritmo.includes(a.key) || (a.key === 'oraculo' && d.algoritmo.includes('rf'))) { if(!buckets[h][a.key]) buckets[h][a.key] = []; buckets[h][a.key].push(d.score); } }); } });
+                labels = Array.from({length: 24}, (_, i) => `${i}:00`);
+                labels.forEach((_, i) => buckets[i] = {});
+                
+                auditados.forEach(d => {
+                    let h = d.hora;
+                    if (isNaN(h)) h = d.dateObj.getHours();
+                    if (buckets[h]) {
+                        gameConfig.algos.forEach(a => {
+                            // CRÍTICO: Match exacto para diferenciar v3 de v4
+                            if(d.algoritmo === a.key) {
+                                if(!buckets[h][a.key]) buckets[h][a.key] = [];
+                                buckets[h][a.key].push(d.score);
+                            }
+                        });
+                    }
+                });
             } else if (CURRENT_CHART_MODE === 'day') {
-                labels = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb']; labels.forEach((_, i) => buckets[i] = {});
-                auditados.forEach(d => { let day = d.dateObj.getDay(); if (buckets[day]) { gameConfig.algos.forEach(a => { if(d.algoritmo.includes(a.key) || (a.key === 'oraculo' && d.algoritmo.includes('rf'))) { if(!buckets[day][a.key]) buckets[day][a.key] = []; buckets[day][a.key].push(d.score); } }); } });
+                labels = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+                labels.forEach((_, i) => buckets[i] = {});
+                
+                auditados.forEach(d => {
+                    let day = d.dateObj.getDay();
+                    if (buckets[day]) {
+                        gameConfig.algos.forEach(a => {
+                            if(d.algoritmo === a.key) {
+                                if(!buckets[day][a.key]) buckets[day][a.key] = [];
+                                buckets[day][a.key].push(d.score);
+                            }
+                        });
+                    }
+                });
             } else if (CURRENT_CHART_MODE === 'month') {
-                labels = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']; labels.forEach((_, i) => buckets[i] = {});
-                auditados.forEach(d => { let m = d.dateObj.getMonth(); if (buckets[m]) { gameConfig.algos.forEach(a => { if(d.algoritmo.includes(a.key) || (a.key === 'oraculo' && d.algoritmo.includes('rf'))) { if(!buckets[m][a.key]) buckets[m][a.key] = []; buckets[m][a.key].push(d.score); } }); } });
+                labels = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+                labels.forEach((_, i) => buckets[i] = {});
+                
+                auditados.forEach(d => {
+                    let m = d.dateObj.getMonth();
+                    if (buckets[m]) {
+                        gameConfig.algos.forEach(a => {
+                            if(d.algoritmo === a.key) {
+                                if(!buckets[m][a.key]) buckets[m][a.key] = [];
+                                buckets[m][a.key].push(d.score);
+                            }
+                        });
+                    }
+                });
             }
+
+            // 2. TRANSFORMAR DATOS DE CUBETAS A DATASETS DE CHART.JS
             let datasets = gameConfig.algos.map(a => {
-                let dataPoints = labels.map((_, i) => { let scores = buckets[i] ? buckets[i][a.key] : []; return scores && scores.length ? (scores.reduce((sum, val) => sum + val, 0) / scores.length).toFixed(1) : 0; });
-                return { label: a.label, data: dataPoints, borderColor: a.color, backgroundColor: hexToRgba(a.color, 0.5), borderWidth: a.label === 'Consenso' ? 2 : 1, tension: 0.4, pointRadius: 3, pointHoverRadius: 5, counts: labels.map((_, i) => buckets[i] && buckets[i][a.key] ? buckets[i][a.key].length : 0) };
+                let dataPoints = labels.map((_, i) => {
+                    let scores = buckets[i] ? buckets[i][a.key] : [];
+                    // Calculamos el promedio de afinidad por cada punto
+                    return scores && scores.length ? (scores.reduce((sum, val) => sum + val, 0) / scores.length).toFixed(1) : 0;
+                });
+
+                return {
+                    label: a.label,
+                    data: dataPoints,
+                    borderColor: a.color,
+                    backgroundColor: hexToRgba(a.color, 0.2),
+                    borderWidth: a.key.includes('consenso') ? 3 : 2,
+                    tension: 0.4,
+                    pointRadius: 3,
+                    pointHoverRadius: 6,
+                    // Telemetría extra: guardamos cuántas simulaciones hay por punto para el tooltip
+                    counts: labels.map((_, i) => buckets[i] && buckets[i][a.key] ? buckets[i][a.key].length : 0)
+                };
             });
-            let maxVal = 0, bestLbl = '--'; const consensusDS = datasets.find(d => d.label === 'Consenso') || datasets[0]; if(consensusDS) { consensusDS.data.forEach((v, i) => { if(parseFloat(v) > maxVal) { maxVal = parseFloat(v); bestLbl = labels[i]; } }); }
+
+            // 3. ACTUALIZAR KPI DE "MEJOR MOMENTO" (Usando el Consenso como referencia)
+            let maxVal = 0, bestLbl = '--';
+            const referenceDS = datasets.find(d => d.label.includes('Consenso')) || datasets[0];
+            if(referenceDS) {
+                referenceDS.data.forEach((v, i) => {
+                    if(parseFloat(v) > maxVal) {
+                        maxVal = parseFloat(v);
+                        bestLbl = labels[i];
+                    }
+                });
+            }
             document.getElementById('best-moment').textContent = bestLbl;
-            window.myChart = new Chart(ctx, { type: 'line', data: { labels: labels, datasets: datasets }, options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false, }, scales: { y: { beginAtZero: true, max: 100, grid: { color: '#30363d' } }, x: { grid: { display: false } } }, plugins: { legend: { labels: { color: '#c9d1d9' } }, tooltip: { itemSort: function(a, b) { return b.parsed.y - a.parsed.y; }, backgroundColor: 'rgba(22, 27, 34, 0.95)', titleColor: '#fff', bodyColor: '#c9d1d9', borderColor: '#30363d', borderWidth: 1, padding: 10, callbacks: { label: function(context) { let label = context.dataset.label || ''; if (label) label += ': '; if (context.parsed.y !== null) label += context.parsed.y + '%'; const count = context.dataset.counts[context.dataIndex]; if (count > 0) label += ` (${count} sims)`; return label; } } } } } });
+
+            // 4. INSTANCIAR EL GRÁFICO FINAL
+            window.myChart = new Chart(ctx, {
+                type: 'line',
+                data: { labels: labels, datasets: datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    scales: {
+                        y: { 
+                            beginAtZero: true, 
+                            max: 100, 
+                            grid: { color: '#30363d' },
+                            ticks: { color: '#8b949e', callback: value => value + '%' }
+                        },
+                        x: { 
+                            grid: { display: false },
+                            ticks: { color: '#8b949e' }
+                        }
+                    },
+                    plugins: {
+                        legend: { 
+                            labels: { 
+                                color: '#c9d1d9', 
+                                font: { family: "'JetBrains Mono', monospace", size: 11 } 
+                            } 
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(22, 27, 34, 0.95)',
+                            titleColor: '#fff',
+                            bodyColor: '#c9d1d9',
+                            borderColor: '#30363d',
+                            borderWidth: 1,
+                            padding: 12,
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) label += ': ';
+                                    if (context.parsed.y !== null) label += context.parsed.y + '%';
+                                    const count = context.dataset.counts[context.dataIndex];
+                                    if (count > 0) label += ` (${count} sims)`;
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
         }
+
         function resetFilters() { document.getElementById('f-sorteo').value = 'ALL'; document.getElementById('f-algo').value = 'ALL'; applyFilters(); }
         function sortLogs(col) { LOGS_SORT_COL = col; LOGS_SORT_DIR = LOGS_SORT_DIR === 'asc' ? 'desc' : 'asc'; applyFilters(); }
         function sortAggregate(col) { SORT_COL = col; SORT_DIR = SORT_DIR === 'asc' ? 'desc' : 'asc'; applyFilters(); }
@@ -1877,8 +2002,7 @@
 
         function updateEvolutionChart() {
             const ctx = document.getElementById('evolutionChart').getContext('2d');
-            
-            // 1. Filtrar datos
+
             const dataByGame = RAW_SIMULATIONS.filter(row => 
                 row.juego === CURRENT_UNIVERSE && 
                 row.estado === 'AUDITADO' &&
@@ -1890,15 +2014,16 @@
                 return;
             }
 
-            // 2. Agrupar y Promediar
             const algosRaw = {};
             dataByGame.forEach(row => {
+                // --- CAMBIO AQUÍ: Categorización explícita ---
                 let algoKey = 'unknown';
-                if (row.algoritmo.includes('forense')) algoKey = 'forense';
+                if (row.algoritmo === 'oraculo_neural_v3') algoKey = 'oraculo_neural_v3';
+                else if (row.algoritmo === 'oraculo_neural_v4') algoKey = 'oraculo_neural_v4';
+                else if (row.algoritmo.includes('forense')) algoKey = 'forense';
                 else if (row.algoritmo.includes('gauss')) algoKey = 'gauss';
                 else if (row.algoritmo.includes('delta')) algoKey = 'delta';
                 else if (row.algoritmo.includes('markov')) algoKey = 'markov';
-                else if (row.algoritmo.includes('oraculo') || row.algoritmo.includes('rf')) algoKey = 'oraculo';
                 else if (row.algoritmo.includes('consenso')) algoKey = 'consenso';
 
                 const target = parseInt(row.objetivo);
