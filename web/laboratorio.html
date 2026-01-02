@@ -1468,9 +1468,9 @@
                     
                     if (d.estado === 'AUDITADO') {
                         g.scores.push(d.score);
-                        // --- CAMBIO AQUÍ: Comparación estricta de la llave completa ---
+
                         gameConfig.algos.forEach(a => { 
-                            if(d.algoritmo === a.key) {
+                            if(d.algoritmo.includes(a.key)) {
                                 g.algoScores[a.key].push(d.score); 
                             }
                         });
@@ -1596,7 +1596,7 @@
                     g.sims.forEach(s => {
                         let algoKey = null;
                         gameConfig.algos.forEach(a => {
-                            if(s.algoritmo === a.key) algoKey = a.key;
+                            if(s.algoritmo.includes(a.key)) algoKey = a.key;
                         });
 
                         drawInvest += costPerSim;
@@ -1695,8 +1695,7 @@
                     if (isNaN(h)) h = d.dateObj.getHours();
                     if (buckets[h]) {
                         gameConfig.algos.forEach(a => {
-                            // CRÍTICO: Match exacto para diferenciar v3 de v4
-                            if(d.algoritmo === a.key) {
+                            if(d.algoritmo.includes(a.key)) {
                                 if(!buckets[h][a.key]) buckets[h][a.key] = [];
                                 buckets[h][a.key].push(d.score);
                             }
@@ -1711,7 +1710,7 @@
                     let day = d.dateObj.getDay();
                     if (buckets[day]) {
                         gameConfig.algos.forEach(a => {
-                            if(d.algoritmo === a.key) {
+                            if(d.algoritmo.includes(a.key)) {
                                 if(!buckets[day][a.key]) buckets[day][a.key] = [];
                                 buckets[day][a.key].push(d.score);
                             }
@@ -1726,7 +1725,7 @@
                     let m = d.dateObj.getMonth();
                     if (buckets[m]) {
                         gameConfig.algos.forEach(a => {
-                            if(d.algoritmo === a.key) {
+                            if(d.algoritmo.includes(a.key)) {
                                 if(!buckets[m][a.key]) buckets[m][a.key] = [];
                                 buckets[m][a.key].push(d.score);
                             }
