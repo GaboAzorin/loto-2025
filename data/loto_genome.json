@@ -13,8 +13,8 @@
     "LOTO3": {
       "consenso_meritocratico_v2": 22.35,
       "forense_biometrico_v1": 18.9,
-      "oraculo_neural_v3": 22.26,
-      "oraculo_neural_v4": 14.49
+      "oraculo_neural_v3": 22.81,
+      "oraculo_neural_v4": 14.27
     },
     "LOTO4": {
       "consenso_meritocratico_v2": 0.04,
@@ -25,15 +25,15 @@
     "RACHA": {
       "consenso_meritocratico_v2": 17.19,
       "forense_biometrico_v1": 15.69,
-      "oraculo_neural_v3": 14.19,
-      "oraculo_neural_v4": 5.64
+      "oraculo_neural_v3": 14.23,
+      "oraculo_neural_v4": 6.11
     }
   },
   "metadata": {
-    "updated_at": "2026-01-03 03:00:55",
-    "last_trained_id": 1767409169603,
+    "updated_at": "2026-01-03 16:06:59",
+    "last_trained_id": 1767467217942,
     "total_casos_estudiados": 11889,
-    "total_estudiados": 57
+    "total_estudiados": 61
   },
   "morphology": {
     "LOTO": {
@@ -51,35 +51,35 @@
     },
     "LOTO3": {
       "ideal_sum_range": [
-        6,
-        316
+        7,
+        286
       ],
-      "ideal_even_count": 1.59,
+      "ideal_even_count": 1.58,
       "ideal_consecutivos": 0.49,
-      "ideal_bajos_altos": 1.5,
-      "ideal_terminaciones": 2.76,
-      "ideal_primos": 1.27,
-      "ideal_multiples_3": 1.14,
-      "ideal_avg_delta": 2.5
+      "ideal_bajos_altos": 1.35,
+      "ideal_terminaciones": 2.73,
+      "ideal_primos": 1.29,
+      "ideal_multiples_3": 1.08,
+      "ideal_avg_delta": 2.4
     },
     "RACHA": {
       "ideal_sum_range": [
-        57,
-        444
+        61,
+        410
       ],
-      "ideal_even_count": 5.1,
-      "ideal_consecutivos": 4.52,
-      "ideal_bajos_altos": 4.82,
-      "ideal_terminaciones": 7.31,
-      "ideal_primos": 3.96,
-      "ideal_multiples_3": 2.97,
-      "ideal_avg_delta": 2.0
+      "ideal_even_count": 4.99,
+      "ideal_consecutivos": 4.47,
+      "ideal_bajos_altos": 4.79,
+      "ideal_terminaciones": 7.23,
+      "ideal_primos": 4.01,
+      "ideal_multiples_3": 3.02,
+      "ideal_avg_delta": 1.99
     }
   },
   "last_processed": {
-    "LOTO3": 23955,
-    "LOTO4": 11539,
+    "LOTO3": 23956,
+    "LOTO4": 11540,
     "LOTO": 5368,
-    "RACHA": 10272
+    "RACHA": 10273
   }
 }
