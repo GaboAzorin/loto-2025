@@ -1,0 +1,12 @@
+{
+  "id": 1767417058,
+  "fecha_generacion": "2026-01-03 01:45:58",
+  "juego": "RACHA",
+  "numeros": "[2, 3, 6, 8, 9, 10, 13, 14, 15, 18]",
+  "sorteo_objetivo": 10273,
+  "estado": "PENDIENTE",
+  "aciertos": 0,
+  "score_afinidad": 0.0,
+  "hora_dia": 1,
+  "algoritmo": "forense_biometrico_v1"
+}
