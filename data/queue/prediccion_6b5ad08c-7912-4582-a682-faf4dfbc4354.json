@@ -1,0 +1,12 @@
+{
+  "id": 1767516805,
+  "fecha_generacion": "2026-01-04 05:51:44",
+  "juego": "LOTO",
+  "numeros": "[7, 8, 12, 32, 37, 40]",
+  "sorteo_objetivo": 5369,
+  "estado": "PENDIENTE",
+  "aciertos": 0,
+  "score_afinidad": 0.0,
+  "hora_dia": 5,
+  "algoritmo": "gaussiano_tactico_v1"
+}
