@@ -1,0 +1,12 @@
+{
+  "id": 1767492075,
+  "fecha_generacion": "2026-01-03 22:57:53",
+  "juego": "LOTO",
+  "numeros": "[1, 11, 18, 36, 38, 40]",
+  "sorteo_objetivo": 5369,
+  "estado": "PENDIENTE",
+  "aciertos": 0,
+  "score_afinidad": 0.0,
+  "hora_dia": 22,
+  "algoritmo": "delta_tactico_v1"
+}
