@@ -1,0 +1,12 @@
+{
+  "id": 1767499240,
+  "fecha_generacion": "2026-01-04 00:55:37",
+  "juego": "LOTO",
+  "numeros": "[14, 18, 20, 23, 32, 33]",
+  "sorteo_objetivo": 5369,
+  "estado": "PENDIENTE",
+  "aciertos": 0,
+  "score_afinidad": 0.0,
+  "hora_dia": 0,
+  "algoritmo": "markov_chain_v1"
+}
