@@ -1,0 +1,12 @@
+{
+  "id": 1767602200,
+  "fecha_generacion": "2026-01-05 05:18:20",
+  "juego": "LOTO4",
+  "numeros": "[8, 16, 17, 20]",
+  "sorteo_objetivo": 11544,
+  "estado": "PENDIENTE",
+  "aciertos": 0,
+  "score_afinidad": 0.0,
+  "hora_dia": 5,
+  "algoritmo": "forense_biometrico_v1"
+}
