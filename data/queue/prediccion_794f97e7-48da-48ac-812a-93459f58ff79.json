@@ -1,0 +1,12 @@
+{
+  "id": 1767622133,
+  "fecha_generacion": "2026-01-05 10:51:14",
+  "juego": "LOTO",
+  "numeros": "[12, 13, 18, 27, 34, 36]",
+  "sorteo_objetivo": 5370,
+  "estado": "PENDIENTE",
+  "aciertos": 0,
+  "score_afinidad": 0.0,
+  "hora_dia": 10,
+  "algoritmo": "consenso_meritocratico_v2"
+}
