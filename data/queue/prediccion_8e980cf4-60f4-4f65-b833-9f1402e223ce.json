@@ -1,0 +1,12 @@
+{
+  "id": 1767646041,
+  "fecha_generacion": "2026-01-05 17:29:02",
+  "juego": "LOTO3",
+  "numeros": "[1, 6, 8]",
+  "sorteo_objetivo": 23963,
+  "estado": "PENDIENTE",
+  "aciertos": 0,
+  "score_afinidad": 0.0,
+  "hora_dia": 17,
+  "algoritmo": "consenso_meritocratico_v2"
+}
