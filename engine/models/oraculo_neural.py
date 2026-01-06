@@ -223,22 +223,28 @@ class OraculoNeural:
         samples = len(X)
         
         # --- HIPERPARÁMETROS ADAPTATIVOS ---
-        if self.max_depth_override:
-            depth, est = self.max_depth_override, 200
-        elif samples < 2000: 
-            depth, est = 12, 300 
-            print(f"   🔥 Modo Agresivo ({samples} muestras)")
-        elif samples < 8000:
-            depth, est = 10, 150
-            print(f"   ⚖️ Modo Estratégico ({samples} muestras)")
-        else: 
-            depth, est = 14, 150 
-            print(f"   🚀 Modo Big Data ({samples} muestras)")
+        #if self.max_depth_override:
+        #    depth, est = self.max_depth_override, 200
+        #elif samples < 2000: 
+        #    depth, est = 12, 300 
+        #    print(f"   🔥 Modo Agresivo ({samples} muestras)")
+        #elif samples < 8000:
+        #    depth, est = 10, 150
+        #    print(f"   ⚖️ Modo Estratégico ({samples} muestras)")
+        #else: 
+        #    depth, est = 14, 150 
+        #    print(f"   🚀 Modo Big Data ({samples} muestras)")
+        depth = 10 
+        est = 100
+        min_leaf = 5
+
+        print(f"   ⚖️  Modo Optimizado (Samples: {samples} | Depth: {depth} | Est: {est})")
 
         # Configuración del Bosque
         rf = RandomForestClassifier(
             n_estimators=est,
             max_depth=depth,
+            min_samples_leaf=min_leaf,
             class_weight='balanced' if (self.version == "v3" and self.config['type'] == 'SET') else None,
             n_jobs=-1,
             random_state=42
