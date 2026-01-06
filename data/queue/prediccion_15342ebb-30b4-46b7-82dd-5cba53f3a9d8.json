@@ -1,0 +1,12 @@
+{
+  "id": 1767695697,
+  "fecha_generacion": "2026-01-06 07:23:17",
+  "juego": "LOTO3",
+  "numeros": "[3, 4, 9]",
+  "sorteo_objetivo": 23965,
+  "estado": "PENDIENTE",
+  "aciertos": 0,
+  "score_afinidad": 0.0,
+  "hora_dia": 7,
+  "algoritmo": "forense_biometrico_v1"
+}
