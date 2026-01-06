@@ -1,0 +1,12 @@
+{
+  "id": 1767737573,
+  "fecha_generacion": "2026-01-06 18:53:54",
+  "juego": "LOTO4",
+  "numeros": "[2, 5, 11, 21]",
+  "sorteo_objetivo": 11547,
+  "estado": "PENDIENTE",
+  "aciertos": 0,
+  "score_afinidad": 0.0,
+  "hora_dia": 18,
+  "algoritmo": "consenso_meritocratico_v2"
+}
