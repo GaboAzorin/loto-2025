@@ -1,0 +1,12 @@
+{
+  "id": 1767775264,
+  "fecha_generacion": "2026-01-07 05:37:42",
+  "juego": "LOTO",
+  "numeros": "[8, 11, 16, 24, 27, 30]",
+  "sorteo_objetivo": 5371,
+  "estado": "PENDIENTE",
+  "aciertos": 0,
+  "score_afinidad": 0.0,
+  "hora_dia": 5,
+  "algoritmo": "delta_tactico_v1"
+}
