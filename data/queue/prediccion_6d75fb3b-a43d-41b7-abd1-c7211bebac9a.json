@@ -1,0 +1,12 @@
+{
+  "id": 1767772442,
+  "fecha_generacion": "2026-01-07 04:48:59",
+  "juego": "LOTO",
+  "numeros": "[11, 12, 20, 28, 34, 41]",
+  "sorteo_objetivo": 5371,
+  "estado": "PENDIENTE",
+  "aciertos": 0,
+  "score_afinidad": 0.0,
+  "hora_dia": 4,
+  "algoritmo": "markov_chain_v1"
+}
