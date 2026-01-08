@@ -1,0 +1,12 @@
+{
+  "id": 1767869985,
+  "fecha_generacion": "2026-01-08 07:58:04",
+  "juego": "LOTO",
+  "numeros": "[4, 5, 8, 27, 32, 40]",
+  "sorteo_objetivo": 5371,
+  "estado": "PENDIENTE",
+  "aciertos": 0,
+  "score_afinidad": 0.0,
+  "hora_dia": 7,
+  "algoritmo": "gaussiano_tactico_v1"
+}
