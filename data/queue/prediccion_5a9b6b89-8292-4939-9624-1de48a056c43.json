@@ -1,0 +1,12 @@
+{
+  "id": 1767859592,
+  "fecha_generacion": "2026-01-08 04:47:03",
+  "juego": "RACHA",
+  "numeros": "[1, 2, 6, 7, 11, 13, 14, 15, 16, 17]",
+  "sorteo_objetivo": 10283,
+  "estado": "PENDIENTE",
+  "aciertos": 0,
+  "score_afinidad": 0.0,
+  "hora_dia": 4,
+  "algoritmo": "consenso_meritocratico_v2"
+}
