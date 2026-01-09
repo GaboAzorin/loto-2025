@@ -78,25 +78,43 @@ def analizar_adn_ganador():
         print(f"\n   📍 Universo: {juego_id}")
         df_juego = df_nuevo[df_nuevo['juego'] == juego_id]
         
-        # --- [A] RANKING DE MÉRITO (EMA) ---
+        # --- [A.1] RANKING GLOBAL (EMA) ---
         performance_lote = df_juego.groupby('algoritmo')['score_afinidad'].mean().to_dict()
         ranking_juego = ranking_global.get(juego_id, {})
         
         for algo, score_lote in performance_lote.items():
-            # CIRUGÍA #2: Inercia de Bienvenida (Starting Score = 1.0)
-            # Evita que un modelo nuevo herede un score alto por un solo acierto.
             score_antiguo = ranking_juego.get(algo, 1.0) 
-            
-            # Aplicación del suavizado exponencial (95% historia / 5% novedad)
             nuevo_valor = (score_antiguo * (1 - ALPHA)) + (score_lote * ALPHA)
             ranking_juego[algo] = round(float(nuevo_valor), 2)
-            
-            # Log de evolución (Solo si el cambio es significativo)
-            if abs(nuevo_valor - score_antiguo) > 0.1:
-                direction = "📈" if nuevo_valor > score_antiguo else "📉"
-                print(f"      {direction} {algo}: {score_antiguo} -> {ranking_juego[algo]}")
-
         ranking_global[juego_id] = ranking_juego
+
+        # --- [A.2] RANKING HORARIO (NIVEL 2: Sensibilidad Horaria) ---
+        # Inicializamos la estructura si no existe en el genoma
+        if "algo_ranking_hourly" not in genoma: genoma["algo_ranking_hourly"] = {}
+        
+        # Agrupamos los nuevos datos por hora y algoritmo
+        perf_horaria = df_juego.groupby(['hora_dia', 'algoritmo'])['score_afinidad'].mean().unstack(fill_value=0).to_dict('index')
+        
+        rank_horario_juego = genoma["algo_ranking_hourly"].get(juego_id, {})
+
+        for h, algos_en_hora in perf_horaria.items():
+            h_key = str(h)
+            ranking_h = rank_horario_juego.get(h_key, {})
+            
+            for algo, score_lote in algos_en_hora.items():
+                if score_lote == 0: continue
+                val_old = ranking_h.get(algo, 1.0)
+                # Aplicamos el mismo ALPHA (0.05) para estabilidad de largo plazo
+                val_new = (val_old * (1 - ALPHA)) + (score_lote * ALPHA)
+                ranking_h[algo] = round(float(val_new), 2)
+                
+                # Reporte de "Especialización Horaria"
+                if abs(val_new - val_old) > 0.2:
+                    print(f"      🕒 Especialidad {h_key}h | {algo}: {ranking_h[algo]}")
+            
+            rank_horario_juego[h_key] = ranking_h
+        
+        genoma["algo_ranking_hourly"][juego_id] = rank_horario_juego
         
         # --- [B] ESTUDIO MORFOLÓGICO (ADN GANADOR) ---
         # Solo aprendemos morfología de los casos exitosos (aciertos >= 50%)

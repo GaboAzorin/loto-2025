@@ -6,7 +6,7 @@ import random
 from datetime import datetime
 
 class LotoForense:
-    def __init__(self, game_id="LOTO", target_csv=None, target_day=None):
+    def __init__(self, game_id="LOTO", target_csv=None, target_day=None, genoma=None):
         """
         game_id: "LOTO", "LOTO3", "LOTO4", "RACHA"
         target_day: 0=Lunes, 6=Domingo (Si es None, usa todo el historial)
@@ -19,6 +19,8 @@ class LotoForense:
             "RACHA":  {"n": 10, "min": 1, "max": 20, "replace": False, "col_prefix": "n"}
         }
         
+        self.genoma = genoma or {}
+        self.morph = self.genoma.get('morphology', {}).get(game_id, {})
         self.game_id = game_id
         self.rules = self.configs.get(game_id, self.configs["LOTO"])
         self.target_day = target_day
@@ -160,61 +162,62 @@ class LotoForense:
         
         return sorted(prediction)
 
-    def predict_gaussian(self):
-        """RECUPERADO: Predicción estadística estricta"""
-        # Si no es Loto normal, usamos weighted por defecto
-        if self.game_id != "LOTO": return self.predict_weighted()
+    def predict_smart_gaussian(self):
+        """Predicción estadística que respeta el ADN del genoma"""
+        if not self.morph: return self.predict_weighted()
 
+        # Extraemos métricas del ADN ganador
+        rango_suma = self.morph.get('ideal_sum_range', [100, 150])
+        ideal_pares = self.morph.get('ideal_even_count', 3)
+        
         attempts = 0
         while attempts < 5000:
             attempts += 1
-            # Generar candidato al azar
-            nums = sorted(random.sample(range(1, 42), 6))
+            # Generar candidato respetando los límites físicos del juego
+            nums = sorted(random.sample(range(self.rules['min'], self.rules['max'] + 1), self.rules['n']))
             
-            # 1. Filtro Suma (Típico entre 100 y 150)
+            # FILTRO 1: Suma Dinámica
             suma = sum(nums)
-            if suma < 100 or suma > 150: continue
+            if suma < rango_suma[0] or suma > rango_suma[1]: continue
             
-            # 2. Filtro Paridad (2 a 4 pares)
+            # FILTRO 2: Paridad Dinámica (Tolerancia de +/- 1)
             evens = len([x for x in nums if x % 2 == 0])
-            if evens < 2 or evens > 4: continue
+            if abs(evens - ideal_pares) > 1.5: continue
             
-            # 3. Filtro Historia (No repetir jugada pasada)
-            if tuple(nums) in self.past_combinations: continue
-            
-            # 4. Filtro Consecutivos (Max 1 par consecutivo)
-            consecutivos = 0
-            for i in range(len(nums)-1):
-                if nums[i+1] == nums[i] + 1: consecutivos += 1
-            if consecutivos > 1: continue
+            # FILTRO 3: Historia (Solo Loto)
+            if self.game_id == "LOTO" and tuple(nums) in self.past_combinations: continue
                 
             return nums
-            
-        return self.predict_weighted() # Fallback
+        return self.predict_weighted()
 
-    def predict_delta(self):
-        """RECUPERADO: Predicción basada en distancias"""
-        if self.game_id != "LOTO" or not self.delta_distribution: 
-            return self.predict_weighted()
-
-        for _ in range(100):
+    def predict_dna_delta(self):
+        """Generación basada en la 'velocidad' (distancia) ideal entre números"""
+        avg_delta_target = self.morph.get('ideal_avg_delta', 6.0)
+        
+        for _ in range(200):
             prediction = []
-            current_val = 0
+            current_val = self.rules['min']
             
-            for i in range(6):
-                deltas = self.delta_distribution.get(i, [5])
-                if not deltas: deltas = [5]
-                chosen_delta = random.choice(deltas)
+            for i in range(self.rules['n']):
+                # Obtenemos deltas reales observados para esta posición
+                deltas_reales = self.delta_distribution.get(i, [int(avg_delta_target)])
+                # Sesgamos la elección hacia el delta ideal del genoma
+                chosen_delta = random.choice(deltas_reales)
+                
+                # Ajuste fino: si nos alejamos mucho del promedio ideal, compensamos
+                if i > 0:
+                    current_avg = (sum(np.diff(prediction)) + chosen_delta) / len(prediction)
+                    if current_avg > avg_delta_target: chosen_delta = max(1, chosen_delta - 1)
+                
                 next_val = current_val + chosen_delta
                 prediction.append(next_val)
                 current_val = next_val
             
-            # Validaciones básicas
-            if any(x > 41 for x in prediction) or any(x < 1 for x in prediction): continue
-            if len(set(prediction)) != 6: continue
+            # Validación de salida
+            if any(x > self.rules['max'] for x in prediction): continue
+            if len(set(prediction)) != self.rules['n']: continue
             
             return sorted(prediction)
-        
         return self.predict_weighted()
 
     def predict_markov(self):

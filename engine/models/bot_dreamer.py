@@ -24,6 +24,12 @@ except ImportError:
     LotoForense = None
     print("⚠️ ADVERTENCIA: No se pudo importar LotoForense. El bot funcionará a media capacidad.")
 
+try:
+    from meta_learner import MetaLearner
+except ImportError:
+    MetaLearner = None
+    print("⚠️ MetaLearner no disponible. Usando pesos lineales.")
+
 # --- CONFIGURACIÓN ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, '..', '..', 'data')
@@ -122,79 +128,96 @@ def cargar_genoma():
         except: pass
     return {}
 
-def obtener_pesos_del_lobulo(game_id, genoma):
+def obtener_pesos_del_lobulo(game_id, genoma, hora=None):
     """
-    Extrae los pesos reales del genoma. 
-    Si un algoritmo no existe, nace con peso 1.0 (Probatoria).
+    NIVEL 2: Sensibilidad Horaria.
+    Busca rankings específicos para la hora actual; si no existen, usa el ranking global.
     """
     pesos = {}
-    ranking_juego = genoma.get("algo_ranking", {}).get(game_id, {})
     
-    # Extraemos todos los algoritmos registrados para ese juego
+    # Intentamos obtener el ranking específico de la hora (ej: "21")
+    # Si no existe la llave 'algo_ranking_hourly', cae al ranking global por defecto
+    ranking_juego = genoma.get("algo_ranking_hourly", {}).get(game_id, {}).get(str(hora), {})
+    
+    if not ranking_juego:
+        # Fallback al ranking global si no hay datos horarios aún
+        ranking_juego = genoma.get("algo_ranking", {}).get(game_id, {})
+    
     if ranking_juego:
         for algo_name, score in ranking_juego.items():
-            # Aplicamos escala logarítmica para evitar el 'Efecto Dictador'
+            # Escala logarítmica para suavizar diferencias
             pesos[algo_name] = max(0.5, math.log(max(1, score) + 1))
     
     return pesos
 
 def validar_cognitivamente(numeros, genoma, game_id, factor_tolerancia=1.0):
     """
-    Filtro Pentadimensional con Tolerancia Dinámica.
-    factor_tolerancia: 1.0 para normal, >1.0 para permitir modelos experimentales.
+    CURADOR MORFOLÓGICO: Calcula la desviación de ADN de una jugada.
+    Retorna: (pasa_filtro_basico, score_desviacion, motivo)
     """
-    if not genoma or not numeros: return True, "OK"
+    if not genoma or not numeros: return True, 0.0, "OK"
     
     try:
         morph = genoma.get('morphology', {}).get(game_id, {})
-        if not morph: return True, "OK"
+        if not morph: return True, 0.0, "OK"
         
         nums = sorted(numeros)
+        desviacion_acumulada = 0.0
         
-        # Helper con tolerancia expandible
-        def validar_conteo(key, valor_real, tol_base=1.2):
-            ideal = morph.get(key, -1)
-            if ideal == -1: return True
-            return abs(valor_real - ideal) <= (tol_base * factor_tolerancia)
+        # 1. Validación de Suma (Penalización por distancia al rango)
+        rango_suma = morph.get('ideal_sum_range', [0, 999])
+        suma_actual = sum(nums)
+        if suma_actual < rango_suma[0]:
+            desviacion_acumulada += (rango_suma[0] - suma_actual) * 2
+        elif suma_actual > rango_suma[1]:
+            desviacion_acumulada += (suma_actual - rango_suma[1]) * 2
 
-        # 1. Suma (Relajamos los límites un 20% extra si el factor es > 1)
-        rango_suma = morph.get('ideal_sum_range')
-        if rango_suma and isinstance(rango_suma, list):
-            suma = sum(nums)
-            mult_inf = 0.8 / factor_tolerancia
-            mult_sup = 1.2 * factor_tolerancia
-            if suma < (rango_suma[0] * mult_inf) or suma > (rango_suma[1] * mult_sup):
-                return False, "SUMA"
+        # 2. Métricas de Proporción (Diferencia absoluta vs Ideal)
+        metricas = {
+            "ideal_even_count": len([n for n in nums if n % 2 == 0]),
+            "ideal_consecutivos": sum(1 for i in range(len(nums)-1) if nums[i+1] == nums[i] + 1),
+            "ideal_terminaciones": len(set([n % 10 for n in nums])),
+            "ideal_primos": len([n for n in nums if n in {2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41}])
+        }
 
-        # 2. Métricas
-        if not validar_conteo("ideal_even_count", len([n for n in nums if n % 2 == 0]), 1.5): return False, "PARES"
-        
-        cons = sum(1 for i in range(len(nums)-1) if nums[i+1] == nums[i] + 1)
-        if not validar_conteo("ideal_consecutivos", cons, 1.2): return False, "CONSEC"
-        
-        limite = 4 if game_id == "LOTO3" else (10 if game_id == "RACHA" else 21)
-        bajos = len([n for n in nums if n <= limite])
-        if not validar_conteo("ideal_bajos_altos", bajos, 1.5): return False, "BAJOS"
-        
-        last_digits = len(set([n % 10 for n in nums]))
-        if not validar_conteo("ideal_terminaciones", last_digits, 1.2): return False, "TERM"
+        for clave, valor_real in metricas.items():
+            ideal = morph.get(clave, -1)
+            if ideal != -1:
+                desviacion_acumulada += abs(valor_real - ideal)
 
-        # 3. Métricas V4
-        PRIMOS = {2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41}
-        cnt_primos = len([n for n in nums if n in PRIMOS])
-        if not validar_conteo("ideal_primos", cnt_primos, 1.5): return False, "PRIMOS"
+        # 3. Filtro de Veto (Si la desviación es obscena, se marca como False)
+        # Un LOTO con 500 de desviación de suma es ruido puro.
+        umbral_veto = 50 * factor_tolerancia
+        pasa_filtro = desviacion_acumulada < umbral_veto
 
-        if len(nums) > 1:
-            avg_diff = sum([nums[i+1] - nums[i] for i in range(len(nums)-1)]) / (len(nums)-1)
-            if not validar_conteo("ideal_avg_delta", avg_diff, 2.5): return False, "DELTA"
+        return pasa_filtro, round(desviacion_acumulada, 2), "OK"
 
-        return True, "OK"
+    except Exception as e:
+        return True, 999.0, f"ERROR: {e}"
 
-    except Exception:
-        return True, "FAIL_SAFE"
+def calcular_nivel_confianza(bolsa_pesos, n_objetivo):
+    """
+    NIVEL 1: Filtro de Confianza.
+    Mide la fuerza del consenso basado en la concentración de votos.
+    """
+    if not bolsa_pesos: return 0.0
+    
+    # Sumamos todos los pesos entregados por los algoritmos
+    total_pesos_repartidos = sum(bolsa_pesos.values())
+    
+    # Obtenemos los pesos de los 'n' números más votados (el top del consenso)
+    ranking_pesos = sorted(bolsa_pesos.values(), reverse=True)
+    pesos_consenso_top = sum(ranking_pesos[:n_objetivo])
+    
+    # La confianza es el % de votos que se concentraron en los números ganadores
+    confianza = (pesos_consenso_top / total_pesos_repartidos) * 100
+    return round(confianza, 2)
 
 def soñar():
     print("💤 --- INICIANDO BOT SOÑADOR: LÓBULOS ESPECIALIZADOS v12.4 ---")
+
+    # --- NIVEL 4: Instanciar Meta-Learner ---
+    meta_cerebro = MetaLearner() if MetaLearner else None
     
     if LotoForense is None:
         print("❌ CRÍTICO: No se pudo importar LotoForense. Abortando.")
@@ -214,8 +237,8 @@ def soñar():
     for game_id, config in MULTIVERSO_CONFIG.items():
         print(f"🌌 Universo: {game_id}")
         
-        # A. Obtener pesos reales para este juego (Ranking Local)
-        pesos_voto = obtener_pesos_del_lobulo(game_id, genoma)
+        # A. Obtener pesos reales (Contextual Awareness: Sensibilidad Horaria)
+        pesos_voto = obtener_pesos_del_lobulo(game_id, genoma, hora=hora_actual)
         print(f"   ⚖️ Pesos de confianza (basado en mérito local): {pesos_voto}")
 
         # B. Calcular Objetivo Crononauta (Lógica Completa)
@@ -224,35 +247,43 @@ def soñar():
         
         # C. Instanciar Algoritmos
         try: 
-            forense = LotoForense(game_id=game_id, target_day=dia_semana)
+            forense = LotoForense(game_id=game_id, target_day=dia_semana, genoma=genoma)
         except Exception as e:
             print(f"   ⚠️ Error instanciando Forense: {e}")
             continue
 
+        # D. Usar los nuevos motores con Conciencia de ADN
         mis_algoritmos = [('forense_biometrico', forense.predict_weighted)]
         if config['algos_extra']:
             mis_algoritmos.extend([
-                ('gaussiano_tactico', forense.predict_gaussian),
-                ('delta_tactico',     forense.predict_delta),
-                ('markov_chain',      forense.predict_markov)
+                ('gaussiano_inteligente', forense.predict_smart_gaussian), # Nombre nuevo
+                ('delta_dna',             forense.predict_dna_delta),      # Nombre nuevo
+                ('markov_chain',          forense.predict_markov)
             ])
 
-        # D. Ejecución de Algoritmos Individuales
+        # E. Ejecución de Algoritmos Individuales
         bolsa_pesos_consenso = {} 
 
         for i, (nombre, funcion) in enumerate(mis_algoritmos):
             try:
-                # Reintentos Cognitivos (Rejection Sampling)
-                intentos = 0
-                max_intentos = 30 
-                pred = funcion()
+                # --- CURADOR DE ÉLITE (Algoritmos Tradicionales) ---
+                pool_alg = []
+                for _ in range(50): 
+                    candidato = funcion()
+                    pasa, score_adn, _ = validar_cognitivamente(candidato, genoma, game_id)
+                    if pasa:
+                        pool_alg.append({'nums': candidato, 'score': score_adn})
                 
-                while intentos < max_intentos:
-                    # FIX: Desempaquetar la tupla para evitar la trampa del booleano
-                    ok, _ = validar_cognitivamente(pred, genoma, game_id)
-                    if ok: break 
-                    pred = funcion()
-                    intentos += 1
+                adn_info = ""
+                if pool_alg:
+                    ganador_alg = sorted(pool_alg, key=lambda x: x['score'])[0]
+                    pred = ganador_alg['nums']
+                    # Guardamos el score para el log (opcional)
+                    adn_info = f"[Score ADN: {ganador_alg['score']}]"
+                else:
+                    # Si el algoritmo solo genera ruido, pasamos al siguiente
+                    print(f"   ⚠️ {nombre}: Ningún candidato superó el filtro. Saltando.")
+                    continue
                 
                 # Registrar Predicción Individual
                 alg_name_trad = f"{nombre}_v1"
@@ -267,10 +298,18 @@ def soñar():
                     'hora_dia': hora_actual,
                     'algoritmo': alg_name_trad
                 })
-                print(f"   🔹 {nombre}: {pred}")
+                print(f"   🔹 {nombre}: {pred} {adn_info if 'adn_info' in locals() else ''}")
                 
                 # E. Voto para el Consenso (Ponderado por Ranking Local real)
                 peso = pesos_voto.get(alg_name_trad, 1.0)
+
+                # NIVEL 4: El Meta-Learner ajusta el peso si el modelo existe
+                if meta_cerebro:
+                    # El Meta-Learner evalúa qué tan creíble es este algoritmo ahora
+                    multiplicador = meta_cerebro.predecir_confianza_real(
+                        game_id, alg_name_trad, hora_actual, ganador_alg['score']
+                    )
+                    peso *= multiplicador
                 
                 # Simulamos N veces para robustecer el consenso
                 validas = 0; reintentos = 0
@@ -291,25 +330,27 @@ def soñar():
             for v in ["v3", "v4"]:
                 try:
                     oracle = OraculoNeural(game_id, version=v)
-                    # La v4 recibe un "Permiso de Innovación" (50% más de tolerancia)
                     f_tol = 2.5 if v == "v4" else 1.0 
                     
-                    intentos = 0; pred_ml = None
-                    reproches = {} # Para saber por qué falla (Trazabilidad)
+                    pool_ml = []
+                    reproches = {} 
+                    intentos_totales = 100
 
-                    while intentos < 30:
-                        candidato = oracle.predecir(fecha_objetivo=datetime.now(TZ_CHILE), estocastico=True)
+                    for _ in range(intentos_totales):
+                        candidato = oracle.predecir(fecha_objetivo=ahora, estocastico=True)
                         if candidato and len(candidato) == forense.rules['n']:
-                            ok, motivo = validar_cognitivamente(candidato, genoma, game_id, factor_tolerancia=f_tol)
-                            if ok:
-                                pred_ml = candidato
-                                break
+                            pasa, score_adn, motivo = validar_cognitivamente(candidato, genoma, game_id, factor_tolerancia=f_tol)
+                            if pasa:
+                                pool_ml.append({'nums': candidato, 'score': score_adn})
                             else:
                                 reproches[motivo] = reproches.get(motivo, 0) + 1
-                        intentos += 1
                     
-                    if pred_ml:
+                    if pool_ml:
+                        ganador_ml = sorted(pool_ml, key=lambda x: x['score'])[0]
+                        pred_ml = ganador_ml['nums']
                         alg_name_ml = f'oraculo_neural_{v}'
+                        
+                        # Guardamos en la lista de nuevas filas
                         nuevas_filas.append({
                             'id': base_id + (444 if v=="v4" else 888) + (len(nuevas_filas)*10),
                             'fecha_generacion': ahora.strftime('%Y-%m-%d %H:%M:%S'),
@@ -322,28 +363,41 @@ def soñar():
                             'algoritmo': alg_name_ml
                         })
                         
-                        # FIX: Sincronización con el mérito real del Genoma
+                        # Voto para el Consenso (Ajustado por Meta-Learner)
                         peso_ia = pesos_voto.get(alg_name_ml, 1.0) 
+                        if meta_cerebro:
+                            multiplicador_ml = meta_cerebro.predecir_confianza_real(
+                                game_id, alg_name_ml, hora_actual, ganador_ml['score']
+                            )
+                            peso_ia *= multiplicador_ml
                         for num in pred_ml:
-                            bolsa_pesos_consenso[num] = bolsa_pesos_consenso.get(num, 0) + peso_ia
+                            bolsa_pesos_consenso[num] = bolsa_pesos_consenso.get(num, 0) + (peso_ia * 5)
                         
-                        print(f"   🔹 {alg_name_ml}: {pred_ml} (OK tras {intentos} intentos)")
+                        print(f"   🔹 {alg_name_ml} (Pool: {len(pool_ml)}): {pred_ml} [Score ADN: {ganador_ml['score']}]")
                     else:
+                        pred_ml = None
                         print(f"   ❌ {v} SILENCIADO. Motivos: {reproches}")
 
                 except Exception as e:
                     print(f"   ⚠️ Fallo en ML {v}: {e}")
         # -------------------------------------------------------
 
-        # F. Generar Consenso Meritocrático
+        # F. Generar Consenso Meritocrático con Filtro de Confianza
         try:
             if bolsa_pesos_consenso:
                 n = forense.rules['n']
+                
+                # Calculamos el Nivel de Confianza antes de generar el ticket
+                score_confianza = calcular_nivel_confianza(bolsa_pesos_consenso, n)
+                
                 # Ordenamos las bolas por peso total acumulado
                 ranking_bolas = sorted(bolsa_pesos_consenso, key=bolsa_pesos_consenso.get, reverse=True)
                 top_consenso = sorted(ranking_bolas[:n])
                 
                 if game_id != "LOTO3": top_consenso.sort()
+                
+                # Determinamos si la jugada es fértil o es ruido blanco
+                alerta = "🔥 ALTA CONFIANZA" if score_confianza > 25 else "⚠️ BAJA CONFIANZA (RUIDO)"
                 
                 nuevas_filas.append({
                     'id': base_id + 999 + (len(nuevas_filas)*10),
@@ -352,11 +406,12 @@ def soñar():
                     'numeros': str(top_consenso),
                     'sorteo_objetivo': objetivo,
                     'estado': 'PENDIENTE',
-                    'aciertos': 0, 'score_afinidad': 0.0,
+                    'aciertos': 0, 
+                    'score_afinidad': score_confianza, # Guardamos la confianza aquí para Looker Studio
                     'hora_dia': hora_actual,
                     'algoritmo': 'consenso_meritocratico_v2'
                 })
-                print(f"   🤝 CONSENSO LOCAL: {top_consenso}")
+                print(f"   🤝 CONSENSO LOCAL: {top_consenso} | {alerta} ({score_confianza}%)")
         except: pass
 
     # G. Guardado Asíncrono (QUEUE SYSTEM)
