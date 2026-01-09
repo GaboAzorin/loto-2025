@@ -1,0 +1,12 @@
+{
+  "id": 1767953779,
+  "fecha_generacion": "2026-01-09 06:58:40",
+  "juego": "LOTO",
+  "numeros": "[7, 10, 19, 23, 29, 36]",
+  "sorteo_objetivo": 5372,
+  "estado": "PENDIENTE",
+  "aciertos": 0,
+  "score_afinidad": 30.75,
+  "hora_dia": 6,
+  "algoritmo": "consenso_meritocratico_v2"
+}
