@@ -1,0 +1,12 @@
+{
+  "id": 1768002969,
+  "fecha_generacion": "2026-01-09 20:52:47",
+  "juego": "LOTO",
+  "numeros": "[2, 8, 9, 11, 14, 21]",
+  "sorteo_objetivo": 5372,
+  "estado": "PENDIENTE",
+  "aciertos": 0,
+  "score_afinidad": 0.0,
+  "hora_dia": 20,
+  "algoritmo": "delta_dna_v1"
+}
