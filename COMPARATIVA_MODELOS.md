@@ -1,10 +1,10 @@
 # 📊 Auditoría de Modelos: v3 vs v4
-Actualizado el: 2026-01-08 22:15:50
+Actualizado el: 2026-01-09 01:17:14
 
 ## 🌡️ Alerta de Silenciamiento (Salud del Filtro)
 - ⚠️ **LOTO**: v4 está siendo 'silenciado'. Solo el 3% de sus ideas pasan el filtro cognitivo.
 - ⚠️ **LOTO3**: v4 está siendo 'silenciado'. Solo el 27% de sus ideas pasan el filtro cognitivo.
-- ⚠️ **LOTO4**: v4 está siendo 'silenciado'. Solo el 20% de sus ideas pasan el filtro cognitivo.
+- ⚠️ **LOTO4**: v4 está siendo 'silenciado'. Solo el 21% de sus ideas pasan el filtro cognitivo.
 - ⚠️ **RACHA**: v4 está siendo 'silenciado'. Solo el 9% de sus ideas pasan el filtro cognitivo.
 
 ## 📈 Resumen de Rendimiento
@@ -14,8 +14,8 @@ Actualizado el: 2026-01-08 22:15:50
 | ('LOTO', 'oraculo_neural_v4')  |                        0.498 |                        0.83 |                             5 |                  0.6   |
 | ('LOTO3', 'oraculo_neural_v3') |                       24.968 |                       66.67 |                           269 |                  0.866 |
 | ('LOTO3', 'oraculo_neural_v4') |                       19.074 |                      100    |                            72 |                  0.806 |
-| ('LOTO4', 'oraculo_neural_v3') |                        0.769 |                       50    |                           247 |                  0.474 |
-| ('LOTO4', 'oraculo_neural_v4') |                       11.4   |                       50    |                            50 |                  1.18  |
+| ('LOTO4', 'oraculo_neural_v3') |                        0.766 |                       50    |                           248 |                  0.476 |
+| ('LOTO4', 'oraculo_neural_v4') |                       11.176 |                       50    |                            51 |                  1.157 |
 | ('RACHA', 'oraculo_neural_v3') |                       11.415 |                       60    |                           205 |                  4.839 |
 | ('RACHA', 'oraculo_neural_v4') |                       13.947 |                       40    |                            19 |                  5.211 |
 
@@ -29,6 +29,6 @@ Actualizado el: 2026-01-08 22:15:50
 | LOTO3   | oraculo_neural_v3 |             23941 |            66.67 |          2 |
 | LOTO3   | oraculo_neural_v3 |             23941 |            66.67 |          2 |
 | LOTO3   | oraculo_neural_v3 |             23941 |            66.67 |          2 |
-| LOTO3   | oraculo_neural_v4 |             23954 |            66.67 |          2 |
+| LOTO3   | oraculo_neural_v3 |             23934 |            66.67 |          2 |
 | LOTO3   | oraculo_neural_v3 |             23941 |            66.67 |          2 |
-| LOTO3   | oraculo_neural_v4 |             23954 |            66.67 |          2 |
+| LOTO3   | oraculo_neural_v3 |             23934 |            66.67 |          2 |
