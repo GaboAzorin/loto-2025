@@ -225,7 +225,7 @@ class LotoForense:
         if self.df is None or self.df.empty: return self.predict_weighted()
         
         cols = [f"{self.rules['col_prefix']}{i}" for i in range(1, self.rules['n'] + 1)]
-        last_draw = self.df.iloc[-1][cols].fillna(-1).astype(int).tolist()
+        last_draw = self.df.iloc[-1][cols].fillna(-1).infer_objects(copy=False).astype(int).tolist()
         
         pool = []
         for num in last_draw:

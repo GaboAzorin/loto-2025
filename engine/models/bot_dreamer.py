@@ -315,7 +315,7 @@ def soñar():
                 validas = 0; reintentos = 0
                 while validas < 5 and reintentos < 30:
                     sim = funcion()
-                    ok_sim, _ = validar_cognitivamente(sim, genoma, game_id)
+                    ok_sim, _, _ = validar_cognitivamente(sim, genoma, game_id)
                     if ok_sim:
                         for num in sim:
                             bolsa_pesos_consenso[num] = bolsa_pesos_consenso.get(num, 0) + peso
