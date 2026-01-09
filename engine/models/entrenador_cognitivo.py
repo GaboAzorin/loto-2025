@@ -185,5 +185,13 @@ def analizar_adn_ganador():
     print("\n✅ CEREBRO ACTUALIZADO (Checkpoint #" + str(max_id) + ")")
     print("="*60 + "\n")
 
+    # --- NIVEL 4: Actualización del Meta-Learner ---
+    try:
+        from meta_learner import MetaLearner
+        ml = MetaLearner()
+        ml.entrenar() 
+    except Exception as e:
+        print(f"   ⚠️ No se pudo actualizar el Meta-Learner: {e}")
+
 if __name__ == "__main__":
     analizar_adn_ganador()
