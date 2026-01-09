@@ -1,0 +1,12 @@
+{
+  "id": 1767969270,
+  "fecha_generacion": "2026-01-09 11:34:30",
+  "juego": "LOTO",
+  "numeros": "[3, 12, 16, 18, 19, 33]",
+  "sorteo_objetivo": 5372,
+  "estado": "PENDIENTE",
+  "aciertos": 0,
+  "score_afinidad": 0.0,
+  "hora_dia": 11,
+  "algoritmo": "forense_biometrico_v1"
+}
