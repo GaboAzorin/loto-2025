@@ -1,0 +1,12 @@
+{
+  "id": 1768146330,
+  "fecha_generacion": "2026-01-11 12:42:08",
+  "juego": "LOTO",
+  "numeros": "[2, 3, 15, 25, 30, 36]",
+  "sorteo_objetivo": 5372,
+  "estado": "PENDIENTE",
+  "aciertos": 0,
+  "score_afinidad": 0.0,
+  "hora_dia": 12,
+  "algoritmo": "delta_dna_v1"
+}
