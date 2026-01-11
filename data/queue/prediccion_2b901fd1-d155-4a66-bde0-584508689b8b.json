@@ -1,0 +1,12 @@
+{
+  "id": 1768139466,
+  "fecha_generacion": "2026-01-11 10:47:44",
+  "juego": "LOTO",
+  "numeros": "[14, 19, 22, 23, 36, 39]",
+  "sorteo_objetivo": 5372,
+  "estado": "PENDIENTE",
+  "aciertos": 0,
+  "score_afinidad": 0.0,
+  "hora_dia": 10,
+  "algoritmo": "delta_dna_v1"
+}
