@@ -1,0 +1,12 @@
+{
+  "id": 1768117646,
+  "fecha_generacion": "2026-01-11 04:29:47",
+  "juego": "LOTO",
+  "numeros": "[7, 11, 18, 33, 36, 41]",
+  "sorteo_objetivo": 5372,
+  "estado": "PENDIENTE",
+  "aciertos": 0,
+  "score_afinidad": 32.8,
+  "hora_dia": 4,
+  "algoritmo": "consenso_meritocratico_v2"
+}
