@@ -2,29 +2,25 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Loto Lab v12.4 - Dashboard de Inferencia</title>
+    <title>Loto Lab v12.4 - Loto & Loto 3 Exclusive</title>
     <style>
         body { font-family: 'Inter', sans-serif; background: #0f172a; color: #f8fafc; margin: 0; }
         h1 { padding-top: 2rem; color: #f1f5f9; text-transform: uppercase; letter-spacing: 3px; }
         
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem; padding: 2rem; }
         
-        /* Estilos Base de Card */
+        /* Estilos de Card */
         .card { 
             background: #1e293b; 
             border-radius: 12px; 
             padding: 1.5rem; 
             border: 1px solid #334155; 
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            transition: transform 0.2s ease;
             position: relative;
-            overflow: hidden;
         }
-        .card:hover { transform: translateY(-5px); }
-
-        /* Estado: Alta Confianza (Verde) */
+        
         .high-conf { border-color: #10b981; box-shadow: 0 0 15px rgba(16, 185, 129, 0.15); }
         
-        /* Estado: Disidencia (Rojo/Neón) */
         .disident-card { 
             border: 2px solid #f43f5e; 
             box-shadow: 0 0 20px rgba(244, 63, 94, 0.25); 
@@ -38,89 +34,62 @@
             100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0); }
         }
 
-        /* Elementos Internos */
-        .confidence-bar { height: 8px; background: #334155; border-radius: 4px; margin: 12px 0; }
-        .confidence-fill { height: 100%; background: #38bdf8; border-radius: 4px; transition: width 1s ease-out; }
-        
-        .numbers { font-size: 1.7rem; font-weight: 800; color: #fbbf24; letter-spacing: 2px; margin: 15px 0; text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+        .numbers { font-size: 1.7rem; font-weight: 800; color: #fbbf24; letter-spacing: 2px; margin: 15px 0; }
         .tag { font-size: 0.75rem; font-weight: 600; padding: 4px 10px; border-radius: 6px; background: #0ea5e9; color: white; }
         .badge-disidencia { background: #f43f5e; color: white; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: 5px; }
 
-        .status-text { font-weight: bold; font-size: 0.85rem; }
+        .confidence-bar { height: 8px; background: #334155; border-radius: 4px; margin: 12px 0; }
+        .confidence-fill { height: 100%; background: #38bdf8; border-radius: 4px; }
+        
         .footer-info { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 10px; }
     </style>
 </head>
 <body>
-    <h1 style="text-align:center">🧠 Laboratorio de Sueños Colectivos</h1>
-    <p style="text-align:center; color: #94a3b8; margin-top: -15px;">Inferencia Multi-Modelo y Rescate de Disidencia v12.4</p>
+    <h1 style="text-align:center">🧠 Laboratorio de Sueños</h1>
+    <p style="text-align:center; color: #94a3b8; margin-top: -15px;">Solo LOTO y LOTO 3 (Filtrado Activo)</p>
     
-    <div class="grid" id="predictions-grid">
-        </div>
+    <div class="grid" id="predictions-grid"></div>
 
     <script>
-        /**
-         * Simulación de carga: Aquí es donde el sistema leería 
-         * los archivos JSON de la carpeta /data/queue/
-         */
+        // CONFIGURACIÓN: Juegos permitidos
+        const JUEGOS_PERMITIDOS = ["LOTO", "LOTO3"];
+
         async function loadPredictions() {
-            const predictions = [
-                {
-                    juego: "LOTO",
-                    numeros: [4, 12, 19, 25, 33, 41],
-                    score_afinidad: 32.5,
-                    algoritmo: "consenso_meritocratico_v2",
-                    sorteo_objetivo: 5373,
-                    nota_especial: "NORMAL"
-                },
-                {
-                    juego: "LOTO",
-                    numeros: [7, 14, 21, 28, 35, 40],
-                    score_afinidad: 12.8,
-                    algoritmo: "oraculo_neural_v4",
-                    sorteo_objetivo: 5373,
-                    nota_especial: "ALERTA_DISIDENCIA" // <--- Activa el estilo neón
-                },
-                {
-                    juego: "LOTO3",
-                    numeros: [9, 4, 1],
-                    score_afinidad: 88.2,
-                    algoritmo: "oraculo_neural_v3",
-                    sorteo_objetivo: 23986,
-                    nota_especial: "NORMAL"
-                }
+            // Simulamos datos que vienen de la carpeta queue (incluyendo Loto 4 y Racha para probar el filtro)
+            const rawData = [
+                { juego: "LOTO", numeros: [4, 12, 19, 25, 33, 41], score_afinidad: 32.5, algoritmo: "consenso_v2", sorteo_objetivo: 5373, nota_especial: "NORMAL" },
+                { juego: "LOTO4", numeros: [1, 5, 10, 20], score_afinidad: 5.2, algoritmo: "neural_v3", sorteo_objetivo: 11560, nota_especial: "NORMAL" }, // SERÁ FILTRADO
+                { juego: "LOTO3", numeros: [9, 4, 1], score_afinidad: 88.2, algoritmo: "neural_v3", sorteo_objetivo: 23986, nota_especial: "NORMAL" },
+                { juego: "RACHA", numeros: [1,2,3,4,5,6,7,8,9,10], score_afinidad: 15.0, algoritmo: "consenso_v2", sorteo_objetivo: 10293, nota_especial: "NORMAL" }, // SERÁ FILTRADO
+                { juego: "LOTO", numeros: [7, 14, 21, 28, 35, 40], score_afinidad: 12.8, algoritmo: "neural_v4", sorteo_objetivo: 5373, nota_especial: "ALERTA_DISIDENCIA" }
             ];
             
-            // Limpiar grid antes de cargar
             document.getElementById('predictions-grid').innerHTML = '';
-            predictions.forEach(renderCard);
+
+            // APLICACIÓN DEL FILTRO
+            const filteredData = rawData.filter(item => JUEGOS_PERMITIDOS.includes(item.juego));
+            
+            filteredData.forEach(renderCard);
         }
 
         function renderCard(data) {
             const isDisident = data.nota_especial === 'ALERTA_DISIDENCIA';
             const isHigh = data.score_afinidad > 25 && !isDisident;
             
-            // Lógica de clases CSS
             let cardClass = "card";
             if (isDisident) cardClass += " disident-card";
             else if (isHigh) cardClass += " high-conf";
-
-            // Lógica de Etiquetas de Estado
-            let statusLabel = "";
-            if (isDisident) {
-                statusLabel = `<span class="status-text" style="color:#fb7185">🚀 DISIDENCIA</span>`;
-            } else {
-                statusLabel = `<span class="status-text" style="color:${isHigh ? '#10b981' : '#64748b'}">
-                    ${isHigh ? '🔥 ALTA' : '⚠️ RUIDO'}</span>`;
-            }
 
             const html = `
                 <div class="${cardClass}">
                     <div style="display:flex; justify-content:space-between; align-items:center">
                         <div>
                             <span class="tag">${data.juego} #${data.sorteo_objetivo}</span>
-                            ${isDisident ? '<span class="badge-disidencia">V4 RESCUE</span>' : ''}
+                            ${isDisident ? '<span class="badge-disidencia">RESCUE V4</span>' : ''}
                         </div>
-                        ${statusLabel}
+                        <span style="font-weight:bold; font-size:0.8rem; color:${isDisident ? '#f43f5e' : (isHigh ? '#10b981' : '#64748b')}">
+                            ${isDisident ? '🚀 DISIDENCIA' : (isHigh ? '🔥 ALTA' : '⚠️ RUIDO')}
+                        </span>
                     </div>
 
                     <p class="numbers">${data.numeros.join(' - ')}</p>
@@ -131,12 +100,12 @@
 
                     <div class="footer-info">
                         <div>
-                            <small style="color:#94a3b8; display:block">Confianza Meta-Learner</small>
+                            <small style="color:#94a3b8; display:block">Confianza</small>
                             <span style="font-weight:bold; color:#f1f5f9">${data.score_afinidad}%</span>
                         </div>
                         <div style="text-align:right">
-                            <small style="color:#64748b; font-size: 0.65rem">MOTOR</small>
-                            <small style="color:#94a3b8; display:block; font-weight: 500">${data.algoritmo}</small>
+                            <small style="color:#64748b; font-size: 0.65rem">ALGORITMO</small>
+                            <small style="color:#94a3b8; display:block">${data.algoritmo}</small>
                         </div>
                     </div>
                 </div>
@@ -144,7 +113,6 @@
             document.getElementById('predictions-grid').innerHTML += html;
         }
 
-        // Ejecutar carga inicial
         loadPredictions();
     </script>
 </body>
