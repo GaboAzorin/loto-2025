@@ -322,7 +322,7 @@ def soñar():
             except Exception as e:
                 print(f"   ⚠️ Error en {nombre}: {e}")
 
-        # --- BLOQUE: ORÁCULO NEURAL (MACHINE LEARNING) ---
+        # --- BLOQUE: ORÁCULO NEURAL (MACHINE LEARNING) CON RESCATE DE DISIDENCIA ---
         if OraculoNeural:
             for v in ["v3", "v4"]:
                 try:
@@ -337,17 +337,37 @@ def soñar():
                         candidato = oracle.predecir(fecha_objetivo=ahora, estocastico=True)
                         if candidato and len(candidato) == forense.rules['n']:
                             pasa, score_adn, motivo = validar_cognitivamente(candidato, genoma, game_id, factor_tolerancia=f_tol)
-                            if pasa:
-                                pool_ml.append({'nums': candidato, 'score': score_adn})
+                            
+                            # --- 🚀 MEJORA: DETECTOR DE DISIDENCIA (Solo para v4) ---
+                            es_disidente = False
+                            if not pasa and v == "v4" and meta_cerebro:
+                                # Consultamos al Meta-Learner si este modelo tiene "luz verde" por mérito real
+                                multiplicador_ml = meta_cerebro.predecir_confianza_real(
+                                    game_id, f'oraculo_neural_{v}', hora_actual, score_adn
+                                )
+                                # Si la confianza es > 2.5, es un "Genio Incomprendido" (rompe reglas pero acierta)
+                                if multiplicador_ml > 2.5:
+                                    es_disidente = True
+                            
+                            if pasa or es_disidente:
+                                pool_ml.append({
+                                    'nums': candidato, 
+                                    'score': score_adn,
+                                    'estado_adn': "OK" if pasa else "DISIDENTE"
+                                })
                             else:
                                 reproches[motivo] = reproches.get(motivo, 0) + 1
                     
                     if pool_ml:
+                        # Seleccionamos el mejor del pool (el de menor desviación ADN)
                         ganador_ml = sorted(pool_ml, key=lambda x: x['score'])[0]
                         pred_ml = ganador_ml['nums']
                         alg_name_ml = f'oraculo_neural_{v}'
                         
-                        # Guardamos en la lista de nuevas filas
+                        # Marcamos nota especial para el Laboratorio HTML
+                        nota = "ALERTA_DISIDENCIA" if ganador_ml['estado_adn'] == "DISIDENTE" else "NORMAL"
+                        
+                        # Guardamos en la lista de nuevas filas con metadata extendida
                         nuevas_filas.append({
                             'id': base_id + (444 if v=="v4" else 888) + (len(nuevas_filas)*10),
                             'fecha_generacion': ahora.strftime('%Y-%m-%d %H:%M:%S'),
@@ -355,22 +375,29 @@ def soñar():
                             'numeros': str(sorted(pred_ml)),
                             'sorteo_objetivo': objetivo,
                             'estado': 'PENDIENTE',
-                            'aciertos': 0, 'score_afinidad': 0.0,
+                            'aciertos': 0, 
+                            'score_afinidad': 0.0,
                             'hora_dia': hora_actual,
-                            'algoritmo': alg_name_ml
+                            'algoritmo': alg_name_ml,
+                            'nota_especial': nota  # <--- Crucial para tu Dashboard
                         })
                         
                         # Voto para el Consenso (Ajustado por Meta-Learner)
                         peso_ia = pesos_voto.get(alg_name_ml, 1.0) 
                         if meta_cerebro:
-                            multiplicador_ml = meta_cerebro.predecir_confianza_real(
+                            confianza_real = meta_cerebro.predecir_confianza_real(
                                 game_id, alg_name_ml, hora_actual, ganador_ml['score']
                             )
-                            peso_ia *= multiplicador_ml
-                        for num in pred_ml:
-                            bolsa_pesos_consenso[num] = bolsa_pesos_consenso.get(num, 0) + (peso_ia * 5)
+                            peso_ia *= confianza_real
                         
-                        print(f"   🔹 {alg_name_ml} (Pool: {len(pool_ml)}): {pred_ml} [Score ADN: {ganador_ml['score']}]")
+                        # Si es disidente, aumentamos su peso en la bolsa para forzar presencia
+                        multiplicador_voto = 5 if nota == "NORMAL" else 8
+                        
+                        for num in pred_ml:
+                            bolsa_pesos_consenso[num] = bolsa_pesos_consenso.get(num, 0) + (peso_ia * multiplicador_voto)
+                        
+                        label_status = f"[{ganador_ml['estado_adn']}]"
+                        print(f"   🔹 {alg_name_ml} (Pool: {len(pool_ml)}): {pred_ml} {label_status} [Score ADN: {ganador_ml['score']}]")
                     else:
                         pred_ml = None
                         print(f"   ❌ {v} SILENCIADO. Motivos: {reproches}")
