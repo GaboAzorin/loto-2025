@@ -1,0 +1,12 @@
+{
+  "id": 1768276297,
+  "fecha_generacion": "2026-01-13 00:48:15",
+  "juego": "LOTO",
+  "numeros": "[3, 7, 8, 16, 19, 22]",
+  "sorteo_objetivo": 5373,
+  "estado": "PENDIENTE",
+  "aciertos": 0,
+  "score_afinidad": 0.0,
+  "hora_dia": 0,
+  "algoritmo": "delta_dna_v1"
+}
