@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Loto Lab v12.4 - Dashboard de Inferencia</title>
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #0f172a; color: #f8fafc; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; padding: 2rem; }
+        .card { background: #1e293b; border-radius: 12px; padding: 1.5rem; border: 1px solid #334155; }
+        .confidence-bar { height: 8px; background: #334155; border-radius: 4px; margin: 10px 0; }
+        .confidence-fill { height: 100%; background: #38bdf8; border-radius: 4px; }
+        .numbers { font-size: 1.5rem; font-weight: bold; color: #fbbf24; letter-spacing: 2px; }
+        .tag { font-size: 0.7rem; padding: 4px 8px; border-radius: 4px; background: #0ea5e9; }
+        .high-conf { border-color: #10b981; box-shadow: 0 0 15px rgba(16, 185, 129, 0.2); }
+    </style>
+</head>
+<body>
+    <h1 style="text-align:center">🧠 Laboratorio de Sueños Colectivos</h1>
+    <div class="grid" id="predictions-grid">
+        </div>
+
+    <script>
+        // Simulación de carga de datos desde el sistema de colas
+        async function loadPredictions() {
+            // Aquí conectarías con tu backend o cargarías los JSONs generados por UUID
+            const sampleData = {
+                juego: "LOTO",
+                numeros: [4, 12, 19, 25, 33, 41],
+                score_afinidad: 32.5,
+                algoritmo: "consenso_meritocratico_v2",
+                sorteo_objetivo: 5373
+            };
+            
+            renderCard(sampleData);
+        }
+
+        function renderCard(data) {
+            const isHigh = data.score_afinidad > 25;
+            const html = `
+                <div class="card ${isHigh ? 'high-conf' : ''}">
+                    <div style="display:flex; justify-content:space-between">
+                        <span class="tag">${data.juego} #${data.sorteo_objetivo}</span>
+                        <span style="color:${isHigh ? '#10b981' : '#64748b'}">${isHigh ? '🔥 ALTA' : '⚠️ RUIDO'}</span>
+                    </div>
+                    <p class="numbers">${data.numeros.join(' - ')}</p>
+                    <div class="confidence-bar">
+                        <div class="confidence-fill" style="width: ${data.score_afinidad}%"></div>
+                    </div>
+                    <small>Confianza Meta-Learner: ${data.score_afinidad}%</small><br>
+                    <small style="color:#94a3b8">Motor: ${data.algoritmo}</small>
+                </div>
+            `;
+            document.getElementById('predictions-grid').innerHTML += html;
+        }
+        loadPredictions();
+    </script>
+</body>
+</html>
