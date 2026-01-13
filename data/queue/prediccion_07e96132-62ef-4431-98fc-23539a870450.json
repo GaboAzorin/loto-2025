@@ -1,0 +1,13 @@
+{
+  "id": 1768336909,
+  "fecha_generacion": "2026-01-13 17:33:05",
+  "juego": "LOTO3",
+  "numeros": "[3, 4, 5]",
+  "sorteo_objetivo": 23987,
+  "estado": "PENDIENTE",
+  "aciertos": 0,
+  "score_afinidad": 0.0,
+  "hora_dia": 17,
+  "algoritmo": "oraculo_neural_v4",
+  "nota_especial": "NORMAL"
+}
