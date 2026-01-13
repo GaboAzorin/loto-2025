@@ -1,0 +1,12 @@
+{
+  "id": 1768325680,
+  "fecha_generacion": "2026-01-13 14:32:59",
+  "juego": "LOTO",
+  "numeros": "[14, 16, 19, 36, 37, 41]",
+  "sorteo_objetivo": 5373,
+  "estado": "PENDIENTE",
+  "aciertos": 0,
+  "score_afinidad": 0.0,
+  "hora_dia": 14,
+  "algoritmo": "gaussiano_inteligente_v1"
+}
