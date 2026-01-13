@@ -1,5 +1,5 @@
 # 📊 Auditoría de Modelos: v3 vs v4
-Actualizado el: 2026-01-12 23:08:02
+Actualizado el: 2026-01-13 02:11:47
 
 ## 🌡️ Alerta de Silenciamiento (Salud del Filtro)
 - ⚠️ **LOTO**: v4 está siendo 'silenciado'. Solo el 4% de sus ideas pasan el filtro cognitivo.
@@ -14,8 +14,8 @@ Actualizado el: 2026-01-12 23:08:02
 | ('LOTO', 'oraculo_neural_v4')  |                        0.693 |                        1.67 |                             6 |                  0.833 |
 | ('LOTO3', 'oraculo_neural_v3') |                       25.124 |                       66.67 |                           281 |                  0.868 |
 | ('LOTO3', 'oraculo_neural_v4') |                       19.762 |                      100    |                            84 |                  0.81  |
-| ('LOTO4', 'oraculo_neural_v3') |                        0.824 |                       50    |                           255 |                  0.482 |
-| ('LOTO4', 'oraculo_neural_v4') |                       10.172 |                       50    |                            58 |                  1.103 |
+| ('LOTO4', 'oraculo_neural_v3') |                        0.82  |                       50    |                           256 |                  0.48  |
+| ('LOTO4', 'oraculo_neural_v4') |                       10     |                       50    |                            59 |                  1.102 |
 | ('RACHA', 'oraculo_neural_v3') |                       11.643 |                       60    |                           213 |                  4.822 |
 | ('RACHA', 'oraculo_neural_v4') |                       14.63  |                       40    |                            27 |                  5.296 |
 
@@ -23,13 +23,12 @@ Actualizado el: 2026-01-12 23:08:02
 | juego   | algoritmo         |   sorteo_objetivo |   score_afinidad |   aciertos |
 |:--------|:------------------|------------------:|-----------------:|-----------:|
 | LOTO3   | oraculo_neural_v4 |             23948 |           100    |          3 |
-| LOTO3   | oraculo_neural_v3 |             23928 |            66.67 |          2 |
-| LOTO3   | oraculo_neural_v3 |             23941 |            66.67 |          2 |
-| LOTO3   | oraculo_neural_v3 |             23941 |            66.67 |          2 |
-| LOTO3   | oraculo_neural_v3 |             23941 |            66.67 |          2 |
+| LOTO3   | oraculo_neural_v3 |             23934 |            66.67 |          2 |
 | LOTO3   | oraculo_neural_v4 |             23954 |            66.67 |          2 |
 | LOTO3   | oraculo_neural_v3 |             23941 |            66.67 |          2 |
 | LOTO3   | oraculo_neural_v3 |             23941 |            66.67 |          2 |
 | LOTO3   | oraculo_neural_v4 |             23954 |            66.67 |          2 |
-| LOTO3   | oraculo_neural_v3 |             23941 |            66.67 |          2 |
-| LOTO3   | oraculo_neural_v3 |             23941 |            66.67 |          2 |
+| LOTO3   | oraculo_neural_v4 |             23954 |            66.67 |          2 |
+| LOTO3   | oraculo_neural_v3 |             23955 |            66.67 |          2 |
+| LOTO3   | oraculo_neural_v3 |             23934 |            66.67 |          2 |
+| LOTO3   | oraculo_neural_v3 |             23934 |            66.67 |          2 |

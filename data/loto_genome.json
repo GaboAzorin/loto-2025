@@ -19,8 +19,8 @@
     "LOTO4": {
       "consenso_meritocratico_v2": 0.04,
       "forense_biometrico_v1": 0.05,
-      "oraculo_neural_v3": 1.34,
-      "oraculo_neural_v4": 1.48
+      "oraculo_neural_v3": 1.27,
+      "oraculo_neural_v4": 1.41
     },
     "RACHA": {
       "consenso_meritocratico_v2": 17.19,
@@ -30,10 +30,10 @@
     }
   },
   "metadata": {
-    "updated_at": "2026-01-12 23:06:32",
-    "last_trained_id": 1768269987134,
+    "updated_at": "2026-01-13 02:11:46",
+    "last_trained_id": 1768270082845,
     "total_casos_estudiados": 11889,
-    "total_estudiados": 203
+    "total_estudiados": 205
   },
   "morphology": {
     "LOTO": {
