@@ -151,10 +151,6 @@ def obtener_pesos_del_lobulo(game_id, genoma, hora=None):
     return pesos
 
 def validar_cognitivamente(numeros, genoma, game_id, factor_tolerancia=1.0):
-    """
-    CURADOR MORFOLÓGICO: Calcula la desviación de ADN de una jugada.
-    Retorna: (pasa_filtro_basico, score_desviacion, motivo)
-    """
     if not genoma or not numeros: return True, 0.0, "OK"
     
     try:
@@ -164,34 +160,35 @@ def validar_cognitivamente(numeros, genoma, game_id, factor_tolerancia=1.0):
         nums = sorted(numeros)
         desviacion_acumulada = 0.0
         
-        # 1. Validación de Suma (Penalización por distancia al rango)
+        # 1. Validación de Suma (Diferencia cuadrática para penalizar extremos)
         rango_suma = morph.get('ideal_sum_range', [0, 999])
         suma_actual = sum(nums)
         if suma_actual < rango_suma[0]:
-            desviacion_acumulada += (rango_suma[0] - suma_actual) * 2
+            desviacion_acumulada += (rango_suma[0] - suma_actual) * 3 # Penalización agresiva
         elif suma_actual > rango_suma[1]:
-            desviacion_acumulada += (suma_actual - rango_suma[1]) * 2
+            desviacion_acumulada += (suma_actual - rango_suma[1]) * 3
 
-        # 2. Métricas de Proporción (Diferencia absoluta vs Ideal)
+        # 2. Métricas de Proporción
         metricas = {
             "ideal_even_count": len([n for n in nums if n % 2 == 0]),
             "ideal_consecutivos": sum(1 for i in range(len(nums)-1) if nums[i+1] == nums[i] + 1),
-            "ideal_terminaciones": len(set([n % 10 for n in nums])),
             "ideal_primos": len([n for n in nums if n in {2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41}])
         }
 
         for clave, valor_real in metricas.items():
             ideal = morph.get(clave, -1)
             if ideal != -1:
-                desviacion_acumulada += abs(valor_real - ideal)
+                desviacion_acumulada += abs(valor_real - ideal) * 5 # Peso alto a la morfología
 
-        # 3. Filtro de Veto (Si la desviación es obscena, se marca como False)
-        # Un LOTO con 500 de desviación de suma es ruido puro.
-        umbral_veto = 50 * factor_tolerancia
+        # --- 🟢 MEJORA: Umbral dinámico por juego ---
+        # LOTO3 necesita rigor (umbral 10), LOTO puede ser más flexible (umbral 40)
+        umbrales = {"LOTO3": 8, "LOTO4": 20, "RACHA": 30, "LOTO": 40}
+        umbral_base = umbrales.get(game_id, 30)
+        
+        umbral_veto = umbral_base * factor_tolerancia
         pasa_filtro = desviacion_acumulada < umbral_veto
 
         return pasa_filtro, round(desviacion_acumulada, 2), "OK"
-
     except Exception as e:
         return True, 999.0, f"ERROR: {e}"
 
@@ -382,37 +379,73 @@ def soñar():
                     print(f"   ⚠️ Fallo en ML {v}: {e}")
         # -------------------------------------------------------
 
-        # F. Generar Consenso Meritocrático con Filtro de Confianza
+        # F. Generar Consenso Meritocrático con Filtro de Curación
         try:
             if bolsa_pesos_consenso:
-                n = forense.rules['n']
+                n_balls = forense.rules['n']
+                objetivo_sorteo = objetivo
                 
-                # Calculamos el Nivel de Confianza antes de generar el ticket
-                score_confianza = calcular_nivel_confianza(bolsa_pesos_consenso, n)
+                # --- 🟢 ESTRATEGIA: SUEÑO CURADO ---
+                top_consenso = []
+                confianza_final = 0.0
+                es_valida = False
+                intentos_muestreo = 0
                 
-                # Ordenamos las bolas por peso total acumulado
+                # 1. Intento Determinista (Top N directo)
                 ranking_bolas = sorted(bolsa_pesos_consenso, key=bolsa_pesos_consenso.get, reverse=True)
-                top_consenso = sorted(ranking_bolas[:n])
+                candidato_top = sorted(ranking_bolas[:n_balls])
+                pasa, score_adn, _ = validar_cognitivamente(candidato_top, genoma, game_id)
                 
-                if game_id != "LOTO3": top_consenso.sort()
-                
-                # Determinamos si la jugada es fértil o es ruido blanco
-                alerta = "🔥 ALTA CONFIANZA" if score_confianza > 25 else "⚠️ BAJA CONFIANZA (RUIDO)"
+                if pasa:
+                    top_consenso = candidato_top
+                    es_valida = True
+                    print(f"   ✅ Consenso Determinista validado (Score ADN: {score_adn})")
+                else:
+                    print(f"   ⚠️ Consenso Top-N rechazado por morfología. Iniciando Muestreo Estocástico...")
+                    
+                    # 2. Muestreo Estocástico: Elegimos números basados en su peso acumulado
+                    # Preparamos probabilidades para np.random.choice
+                    bolas_list = list(bolsa_pesos_consenso.keys())
+                    pesos_list = np.array(list(bolsa_pesos_consenso.values()))
+                    probabilidades = pesos_list / pesos_list.sum()
+
+                    while intentos_muestreo < 200:
+                        # Muestreamos n bolas sin repetición
+                        muestreo = np.random.choice(bolas_list, size=n_balls, replace=False, p=probabilidades)
+                        muestreo = sorted([int(x) for x in muestreo])
+                        
+                        pasa_m, score_m, _ = validar_cognitivamente(muestreo, genoma, game_id)
+                        if pasa_m:
+                            top_consenso = muestreo
+                            es_valida = True
+                            print(f"   ✨ Muestreo exitoso tras {intentos_muestreo} intentos (Score ADN: {score_m})")
+                            break
+                        intentos_muestreo += 1
+
+                if not es_valida:
+                    # Fallback al top si nada funcionó, pero marcamos como BAJA CONFIANZA
+                    top_consenso = candidato_top
+                    print(f"   🚨 ADVERTENCIA: No se halló combinación ideal. Usando fallback.")
+
+                # Cálculo de confianza final
+                confianza_final = calcular_nivel_confianza(bolsa_pesos_consenso, n_balls)
+                alerta = "🔥 ALTA CONFIANZA" if (confianza_final > 25 and es_valida) else "⚠️ RUIDO DETECTADO"
                 
                 nuevas_filas.append({
                     'id': base_id + 999 + (len(nuevas_filas)*10),
                     'fecha_generacion': ahora.strftime('%Y-%m-%d %H:%M:%S'),
                     'juego': game_id,
                     'numeros': str(top_consenso),
-                    'sorteo_objetivo': objetivo,
+                    'sorteo_objetivo': objetivo_sorteo,
                     'estado': 'PENDIENTE',
                     'aciertos': 0, 
-                    'score_afinidad': score_confianza, # Guardamos la confianza aquí para Looker Studio
+                    'score_afinidad': confianza_final,
                     'hora_dia': hora_actual,
                     'algoritmo': 'consenso_meritocratico_v2'
                 })
-                print(f"   🤝 CONSENSO LOCAL: {top_consenso} | {alerta} ({score_confianza}%)")
-        except: pass
+                print(f"   🤝 TICKET FINAL: {top_consenso} | {alerta} ({confianza_final}%)")
+        except Exception as e:
+            print(f"   ❌ Error en fase de consenso: {e}")
 
     # G. Guardado Asíncrono (QUEUE SYSTEM)
     import uuid
