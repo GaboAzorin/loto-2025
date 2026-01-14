@@ -13,8 +13,8 @@
     "LOTO3": {
       "consenso_meritocratico_v2": 22.35,
       "forense_biometrico_v1": 18.9,
-      "oraculo_neural_v3": 22.35,
-      "oraculo_neural_v4": 18.98
+      "oraculo_neural_v3": 21.23,
+      "oraculo_neural_v4": 18.03
     },
     "LOTO4": {
       "consenso_meritocratico_v2": 0.04,
@@ -25,15 +25,15 @@
     "RACHA": {
       "consenso_meritocratico_v2": 17.19,
       "forense_biometrico_v1": 15.69,
-      "oraculo_neural_v3": 17.5,
-      "oraculo_neural_v4": 11.23
+      "oraculo_neural_v3": 17.38,
+      "oraculo_neural_v4": 10.92
     }
   },
   "metadata": {
-    "updated_at": "2026-01-13 23:00:20",
-    "last_trained_id": 1768356017855,
+    "updated_at": "2026-01-14 15:06:37",
+    "last_trained_id": 1768413995613,
     "total_casos_estudiados": 11889,
-    "total_estudiados": 219
+    "total_estudiados": 223
   },
   "morphology": {
     "LOTO": {
@@ -65,15 +65,15 @@
     "RACHA": {
       "ideal_sum_range": [
         89,
-        131
+        127
       ],
-      "ideal_even_count": 4.75,
-      "ideal_consecutivos": 4.55,
-      "ideal_bajos_altos": 5.29,
-      "ideal_terminaciones": 7.71,
-      "ideal_primos": 4.46,
-      "ideal_multiples_3": 2.81,
-      "ideal_avg_delta": 1.95
+      "ideal_even_count": 4.68,
+      "ideal_consecutivos": 4.54,
+      "ideal_bajos_altos": 5.31,
+      "ideal_terminaciones": 7.74,
+      "ideal_primos": 4.51,
+      "ideal_multiples_3": 2.78,
+      "ideal_avg_delta": 1.94
     },
     "LOTO4": {
       "ideal_sum_range": [
@@ -90,10 +90,10 @@
     }
   },
   "last_processed": {
-    "LOTO3": 23988,
-    "LOTO4": 11561,
+    "LOTO3": 23989,
+    "LOTO4": 11562,
     "LOTO": 5373,
-    "RACHA": 10294
+    "RACHA": 10295
   },
   "algo_ranking_hourly": {
     "LOTO3": {
@@ -108,7 +108,8 @@
       "20.0": {
         "oraculo_neural_v3": 7.01,
         "oraculo_neural_v4": 7.11
-      }
+      },
+      "13": {}
     },
     "RACHA": {
       "14.0": {
@@ -118,6 +119,10 @@
       "21.0": {
         "oraculo_neural_v3": 4.91,
         "oraculo_neural_v4": 4.95
+      },
+      "14": {
+        "oraculo_neural_v3": 1.7,
+        "oraculo_neural_v4": 1.2
       }
     },
     "LOTO4": {
