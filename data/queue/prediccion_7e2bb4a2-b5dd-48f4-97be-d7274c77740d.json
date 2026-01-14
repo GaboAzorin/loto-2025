@@ -1,0 +1,13 @@
+{
+  "id": 1768417579,
+  "fecha_generacion": "2026-01-14 16:06:19",
+  "fecha_lanzamiento": "15/01/2026 21:00",
+  "juego": "LOTO",
+  "numeros": "[2, 11, 14, 19, 35, 36]",
+  "sorteo_objetivo": 5374,
+  "estado": "PENDIENTE",
+  "aciertos": 0,
+  "score_afinidad": 0.0,
+  "hora_dia": 16,
+  "algoritmo": "forense_biometrico_v1"
+}
