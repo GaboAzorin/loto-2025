@@ -210,6 +210,17 @@ def calcular_nivel_confianza(bolsa_pesos, n_objetivo):
     confianza = (pesos_consenso_top / total_pesos_repartidos) * 100
     return round(confianza, 2)
 
+def actualizar_dashboard_laboratorio(predicciones):
+    """Consolida las predicciones generadas en un solo punto de acceso para el HTML"""
+    DASHBOARD_FILE = os.path.join(DATA_DIR, "..", "dashboard_data.json")
+    try:
+        # Guardamos la lista completa de predicciones del ciclo actual
+        with open(DASHBOARD_FILE, 'w', encoding='utf-8') as f:
+            json.dump(predicciones, f, indent=2, ensure_ascii=False)
+        print(f"📊 Dashboard del laboratorio actualizado con {len(predicciones)} entradas.")
+    except Exception as e:
+        print(f"❌ Error actualizando dashboard_data.json: {e}")
+
 def soñar():
     print("💤 --- INICIANDO BOT SOÑADOR: LÓBULOS ESPECIALIZADOS v12.4 ---")
 
@@ -359,15 +370,23 @@ def soñar():
                                 reproches[motivo] = reproches.get(motivo, 0) + 1
                     
                     if pool_ml:
-                        # Seleccionamos el mejor del pool (el de menor desviación ADN)
+                        # 1. Selección del mejor candidato del pool basado en ADN
                         ganador_ml = sorted(pool_ml, key=lambda x: x['score'])[0]
                         pred_ml = ganador_ml['nums']
                         alg_name_ml = f'oraculo_neural_{v}'
                         
-                        # Marcamos nota especial para el Laboratorio HTML
+                        # 2. Cálculo de Confianza Real vía Meta-Learner
+                        # Obtenemos el multiplicador de esperanza de éxito histórico
+                        confianza_ml_individual = 1.0
+                        if meta_cerebro:
+                            confianza_ml_individual = meta_cerebro.predecir_confianza_real(
+                                game_id, alg_name_ml, hora_actual, ganador_ml['score']
+                            )
+                        
+                        # 3. Clasificación para el Dashboard (Rescate de Disidencia)
                         nota = "ALERTA_DISIDENCIA" if ganador_ml['estado_adn'] == "DISIDENTE" else "NORMAL"
                         
-                        # Guardamos en la lista de nuevas filas con metadata extendida
+                        # 4. Inserción en la cola con Metadata enriquecida
                         nuevas_filas.append({
                             'id': base_id + (444 if v=="v4" else 888) + (len(nuevas_filas)*10),
                             'fecha_generacion': ahora.strftime('%Y-%m-%d %H:%M:%S'),
@@ -376,28 +395,28 @@ def soñar():
                             'sorteo_objetivo': objetivo,
                             'estado': 'PENDIENTE',
                             'aciertos': 0, 
-                            'score_afinidad': 0.0,
+                            # Convertimos el multiplicador a escala base 10 para visualización HTML (ej: 3.2x -> 32.0%)
+                            'score_afinidad': round(confianza_ml_individual * 10, 2),
                             'hora_dia': hora_actual,
                             'algoritmo': alg_name_ml,
-                            'nota_especial': nota  # <--- Crucial para tu Dashboard
+                            'nota_especial': nota
                         })
                         
-                        # Voto para el Consenso (Ajustado por Meta-Learner)
+                        # 5. Voto Ponderado para el Consenso Meritocrático
+                        # El Meta-Learner decide cuánto peso real tiene esta opinión hoy
                         peso_ia = pesos_voto.get(alg_name_ml, 1.0) 
                         if meta_cerebro:
-                            confianza_real = meta_cerebro.predecir_confianza_real(
-                                game_id, alg_name_ml, hora_actual, ganador_ml['score']
-                            )
-                            peso_ia *= confianza_real
+                            peso_ia *= confianza_ml_individual
                         
-                        # Si es disidente, aumentamos su peso en la bolsa para forzar presencia
+                        # Los disidentes (v4) reciben un impulso extra de presencia si son validados por el Meta-Learner
                         multiplicador_voto = 5 if nota == "NORMAL" else 8
                         
                         for num in pred_ml:
                             bolsa_pesos_consenso[num] = bolsa_pesos_consenso.get(num, 0) + (peso_ia * multiplicador_voto)
                         
                         label_status = f"[{ganador_ml['estado_adn']}]"
-                        print(f"   🔹 {alg_name_ml} (Pool: {len(pool_ml)}): {pred_ml} {label_status} [Score ADN: {ganador_ml['score']}]")
+                        print(f"   🔹 {alg_name_ml} (Pool: {len(pool_ml)}): {pred_ml} {label_status} [Confianza: {round(confianza_ml_individual, 2)}x]")
+                    
                     else:
                         pred_ml = None
                         print(f"   ❌ {v} SILENCIADO. Motivos: {reproches}")
@@ -480,6 +499,8 @@ def soñar():
     os.makedirs(QUEUE_DIR, exist_ok=True)
 
     if nuevas_filas:
+        actualizar_dashboard_laboratorio(nuevas_filas)
+        print("\n✨ PROCESO DEL SOÑADOR TERMINADO (Datos en cola y dashboard listo).")
         print(f"📦 Generando {len(nuevas_filas)} tickets para la cola de procesamiento...")
         
         for fila in nuevas_filas:

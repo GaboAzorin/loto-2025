@@ -54,22 +54,35 @@
         // CONFIGURACIÓN: Juegos permitidos
         const JUEGOS_PERMITIDOS = ["LOTO", "LOTO3"];
 
+        // Ahora cargamos los datos REALES del archivo consolidado
         async function loadPredictions() {
-            // Simulamos datos que vienen de la carpeta queue (incluyendo Loto 4 y Racha para probar el filtro)
-            const rawData = [
-                { juego: "LOTO", numeros: [4, 12, 19, 25, 33, 41], score_afinidad: 32.5, algoritmo: "consenso_v2", sorteo_objetivo: 5373, nota_especial: "NORMAL" },
-                { juego: "LOTO4", numeros: [1, 5, 10, 20], score_afinidad: 5.2, algoritmo: "neural_v3", sorteo_objetivo: 11560, nota_especial: "NORMAL" }, // SERÁ FILTRADO
-                { juego: "LOTO3", numeros: [9, 4, 1], score_afinidad: 88.2, algoritmo: "neural_v3", sorteo_objetivo: 23986, nota_especial: "NORMAL" },
-                { juego: "RACHA", numeros: [1,2,3,4,5,6,7,8,9,10], score_afinidad: 15.0, algoritmo: "consenso_v2", sorteo_objetivo: 10293, nota_especial: "NORMAL" }, // SERÁ FILTRADO
-                { juego: "LOTO", numeros: [7, 14, 21, 28, 35, 40], score_afinidad: 12.8, algoritmo: "neural_v4", sorteo_objetivo: 5373, nota_especial: "ALERTA_DISIDENCIA" }
-            ];
-            
-            document.getElementById('predictions-grid').innerHTML = '';
+            try {
+                // El archivo dashboard_data.json es generado por tu pipeline de Python
+                const response = await fetch('dashboard_data.json');
+                const rawData = await response.json();
+                
+                // Limpiamos el grid
+                document.getElementById('predictions-grid').innerHTML = '';
 
-            // APLICACIÓN DEL FILTRO
-            const filteredData = rawData.filter(item => JUEGOS_PERMITIDOS.includes(item.juego));
-            
-            filteredData.forEach(renderCard);
+                // Aplicamos el filtro para mostrar solo LOTO y LOTO3
+                const filteredData = rawData.filter(item => JUEGOS_PERMITIDOS.includes(item.juego));
+                
+                // Ordenamos por sorteo_objetivo de forma descendente
+                filteredData.sort((a, b) => b.sorteo_objetivo - a.sorteo_objetivo);
+
+                if (filteredData.length === 0) {
+                    document.getElementById('predictions-grid').innerHTML = 
+                        '<p style="text-align:center; color:#64748b">No hay predicciones pendientes para Loto o Loto 3.</p>';
+                    return;
+                }
+
+                filteredData.forEach(renderCard);
+                
+            } catch (error) {
+                console.error("Error cargando predicciones:", error);
+                document.getElementById('predictions-grid').innerHTML = 
+                    '<p style="text-align:center; color:#ef4444">Error al cargar datos. ¿Se ha generado dashboard_data.json?</p>';
+            }
         }
 
         function renderCard(data) {
