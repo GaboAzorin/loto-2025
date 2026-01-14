@@ -58,7 +58,7 @@
         async function loadPredictions() {
             try {
                 // El archivo dashboard_data.json es generado por tu pipeline de Python
-                const response = await fetch('dashboard_data.json');
+                const response = await fetch('../dashboard_data.json');
                 const rawData = await response.json();
                 
                 // Limpiamos el grid
