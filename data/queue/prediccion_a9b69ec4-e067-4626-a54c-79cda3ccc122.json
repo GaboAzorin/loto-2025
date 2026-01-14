@@ -1,0 +1,18 @@
+{
+  "id": 1768367525,
+  "fecha_generacion": "2026-01-14 01:55:27",
+  "juego": "LOTO4",
+  "numeros": [
+    10,
+    11,
+    15,
+    17
+  ],
+  "sorteo_objetivo": 11562,
+  "estado": "PENDIENTE",
+  "aciertos": 0,
+  "score_afinidad": 50.0,
+  "hora_dia": 1,
+  "algoritmo": "oraculo_neural_v3",
+  "nota_especial": "NORMAL"
+}
