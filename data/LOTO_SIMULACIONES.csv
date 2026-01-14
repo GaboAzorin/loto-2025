@@ -234,7 +234,7 @@ id,fecha_generacion,juego,numeros,sorteo_objetivo,estado,aciertos,score_afinidad
 1768411290,2026-01-14 14:03:51,LOTO,"[1, 11, 12, 17, 33, 34]",5374,PENDIENTE,0,32.63,14,consenso_meritocratico_v2,
 1768398072,2026-01-14 10:41:12,LOTO,"[2, 16, 17, 20, 35, 41]",5374,PENDIENTE,0,0.0,10,forense_biometrico_v1,
 1768406711,2026-01-14 12:56:27,LOTO3,"[0, 2, 5]",23989,AUDITADO,1,33.33,12,oraculo_neural_v4,NORMAL
-1768413734,2026-01-14 14:44:05,LOTO3,"[0, 4, 5]",23990,PENDIENTE,0,59.29,14,consenso_meritocratico_v2,
+1768413734,2026-01-14 14:44:05,LOTO3,"[0, 4, 5]",23990,AUDITADO,1,33.33,14,consenso_meritocratico_v2,
 1768403283,2026-01-14 11:44:43,RACHA,"[1, 2, 6, 7, 12, 13, 15, 16, 18, 19]",10295,AUDITADO,5,5.0,11,forense_biometrico_v1,
 1768414103,2026-01-14 14:58:19,RACHA,"[1, 2, 3, 7, 12, 13, 14, 17, 18, 20]",10296,PENDIENTE,0,110.04,14,oraculo_neural_v4,NORMAL
 1768407187,2026-01-14 12:56:27,LOTO4,"[5, 13, 20, 21]",11562,AUDITADO,0,0.0,12,forense_biometrico_v1,
@@ -251,7 +251,6 @@ id,fecha_generacion,juego,numeros,sorteo_objetivo,estado,aciertos,score_afinidad
 1768400411,2026-01-14 11:02:02,LOTO3,"[0, 3, 6]",23989,AUDITADO,1,10.0,11,consenso_meritocratico_v2,
 1768402972,2026-01-14 11:44:43,LOTO3,"[1, 6, 7]",23989,AUDITADO,0,0.0,11,consenso_meritocratico_v2,
 1768407246,2026-01-14 12:56:27,LOTO,"[1, 7, 11, 17, 29, 33]",5374,PENDIENTE,0,28.62,12,consenso_meritocratico_v2,
-1768413169,2026-01-14 14:44:05,LOTO3,"[0, 2, 5]",23990,PENDIENTE,0,31.83,14,oraculo_neural_v4,NORMAL
 1768411231,2026-01-14 14:03:51,LOTO4,"[4, 5, 23, 27]",11563,PENDIENTE,0,0.0,14,forense_biometrico_v1,
 1768398173,2026-01-14 10:41:12,LOTO,"[4, 7, 14, 17, 18, 31]",5374,PENDIENTE,0,0.0,10,gaussiano_inteligente_v1,
 1768403468,2026-01-14 12:01:44,LOTO4,"[8, 16, 20, 22]",11562,AUDITADO,0,0.0,12,oraculo_neural_v4,NORMAL
@@ -260,7 +259,6 @@ id,fecha_generacion,juego,numeros,sorteo_objetivo,estado,aciertos,score_afinidad
 1768399110,2026-01-14 10:41:12,RACHA,"[3, 4, 6, 8, 9, 10, 13, 17, 18, 19]",10295,AUDITADO,4,15.0,10,oraculo_neural_v3,NORMAL
 1768403832,2026-01-14 12:01:44,LOTO,"[2, 7, 13, 14, 16, 21]",5374,PENDIENTE,0,50.0,12,oraculo_neural_v3,NORMAL
 1768399000,2026-01-14 10:41:12,LOTO,"[2, 7, 26, 34, 35, 41]",5374,PENDIENTE,0,50.0,10,oraculo_neural_v3,NORMAL
-1768410755,2026-01-14 14:03:51,LOTO3,"[0, 2, 5]",23990,PENDIENTE,0,31.83,14,oraculo_neural_v4,NORMAL
 1768413701,2026-01-14 14:58:19,LOTO,"[4, 5, 7, 20, 35, 41]",5374,PENDIENTE,0,0.0,14,delta_dna_v1,
 1768395495,2026-01-14 09:48:51,LOTO4,"[8, 16, 20, 22]",11562,AUDITADO,0,0.0,9,oraculo_neural_v4,NORMAL
 1768400250,2026-01-14 11:02:02,LOTO,"[11, 28, 29, 31, 34, 40]",5374,PENDIENTE,0,50.0,11,oraculo_neural_v3,NORMAL
@@ -304,7 +302,7 @@ id,fecha_generacion,juego,numeros,sorteo_objetivo,estado,aciertos,score_afinidad
 1768414427,2026-01-14 14:58:19,LOTO,"[14, 16, 17, 23, 29, 40]",5374,PENDIENTE,0,50.0,14,oraculo_neural_v3,NORMAL
 1768400360,2026-01-14 11:02:02,RACHA,"[2, 5, 6, 8, 9, 10, 11, 15, 19, 20]",10295,AUDITADO,4,15.0,11,oraculo_neural_v3,NORMAL
 1768403428,2026-01-14 12:01:44,LOTO3,"[0, 2, 5]",23989,AUDITADO,1,33.33,12,oraculo_neural_v4,NORMAL
-1768411320,2026-01-14 14:03:51,LOTO3,"[0, 3, 9]",23990,PENDIENTE,0,53.36,14,consenso_meritocratico_v2,
+1768411320,2026-01-14 14:03:51,LOTO3,"[0, 3, 9]",23990,AUDITADO,1,10.0,14,consenso_meritocratico_v2,
 1768408854,2026-01-14 13:35:51,LOTO,"[11, 12, 20, 28, 34, 41]",5374,PENDIENTE,0,0.0,13,markov_chain_v1,
 1768413993,2026-01-14 14:58:19,LOTO,"[1, 7, 17, 33, 37, 40]",5374,PENDIENTE,0,70.0,14,oraculo_neural_v4,NORMAL
 1768404033,2026-01-14 12:01:44,LOTO4,"[2, 8, 11, 16]",11562,AUDITADO,1,0.0,12,consenso_meritocratico_v2,
@@ -313,7 +311,7 @@ id,fecha_generacion,juego,numeros,sorteo_objetivo,estado,aciertos,score_afinidad
 1768399072,2026-01-14 10:41:12,LOTO4,"[5, 15, 17, 18]",11562,AUDITADO,1,0.0,10,forense_biometrico_v1,
 1768405807,2026-01-14 12:38:27,LOTO3,"[3, 4, 6]",23989,AUDITADO,2,66.67,12,forense_biometrico_v1,
 1768406187,2026-01-14 12:56:27,LOTO,"[5, 6, 20, 29, 32, 41]",5374,PENDIENTE,0,0.0,12,forense_biometrico_v1,
-1768413345,2026-01-14 14:44:05,LOTO3,"[0, 3, 4]",23990,PENDIENTE,0,0.0,14,forense_biometrico_v1,
+1768413345,2026-01-14 14:44:05,LOTO3,"[0, 3, 4]",23990,AUDITADO,2,20.0,14,forense_biometrico_v1,
 1768403508,2026-01-14 12:01:44,RACHA,"[1, 2, 3, 7, 12, 13, 14, 17, 18, 20]",10295,AUDITADO,4,15.0,12,oraculo_neural_v4,NORMAL
 1768399524,2026-01-14 11:02:02,LOTO,"[4, 5, 7, 18, 31, 34]",5374,PENDIENTE,0,0.0,11,delta_dna_v1,
 1768402883,2026-01-14 11:44:43,LOTO4,"[5, 6, 11, 21]",11562,AUDITADO,1,0.0,11,forense_biometrico_v1,
@@ -331,13 +329,12 @@ id,fecha_generacion,juego,numeros,sorteo_objetivo,estado,aciertos,score_afinidad
 1768406389,2026-01-14 12:56:27,LOTO,"[2, 3, 11, 21, 34, 36]",5374,PENDIENTE,0,0.0,12,delta_dna_v1,
 1768406288,2026-01-14 12:56:27,LOTO,"[5, 26, 29, 31, 32, 34]",5374,PENDIENTE,0,0.0,12,gaussiano_inteligente_v1,
 1768410534,2026-01-14 14:03:51,LOTO,"[11, 12, 20, 28, 34, 41]",5374,PENDIENTE,0,0.0,14,markov_chain_v1,
-1768414023,2026-01-14 14:58:19,LOTO3,"[0, 2, 5]",23990,PENDIENTE,0,31.83,14,oraculo_neural_v4,NORMAL
 1768403207,2026-01-14 12:01:44,LOTO,"[11, 12, 20, 28, 34, 41]",5374,PENDIENTE,0,0.0,12,markov_chain_v1,
 1768405631,2026-01-14 12:38:27,LOTO3,"[0, 2, 5]",23989,AUDITADO,1,33.33,12,oraculo_neural_v4,NORMAL
 1768399161,2026-01-14 10:41:12,LOTO3,"[0, 5, 8]",23989,AUDITADO,1,10.0,10,consenso_meritocratico_v2,
 1768396331,2026-01-14 09:48:51,RACHA,"[4, 5, 6, 9, 11, 12, 14, 17, 18, 19]",10295,AUDITADO,5,5.0,9,forense_biometrico_v1,
 1768400491,2026-01-14 11:02:02,RACHA,"[2, 6, 7, 8, 9, 10, 15, 17, 18, 20]",10295,AUDITADO,4,15.0,11,consenso_meritocratico_v2,
-1768414199,2026-01-14 14:58:19,LOTO3,"[1, 2, 6]",23990,PENDIENTE,0,0.0,14,forense_biometrico_v1,
+1768414199,2026-01-14 14:58:19,LOTO3,"[1, 2, 6]",23990,AUDITADO,0,0.0,14,forense_biometrico_v1,
 1768403106,2026-01-14 12:01:44,LOTO,"[5, 7, 10, 11, 18, 30]",5374,PENDIENTE,0,0.0,12,delta_dna_v1,
 1768414558,2026-01-14 14:58:19,LOTO,"[17, 20, 23, 33, 37, 40]",5374,PENDIENTE,0,33.09,14,consenso_meritocratico_v2,
 1768410795,2026-01-14 14:03:51,LOTO4,"[8, 16, 20, 22]",11563,PENDIENTE,0,50.0,14,oraculo_neural_v4,NORMAL
@@ -345,7 +342,7 @@ id,fecha_generacion,juego,numeros,sorteo_objetivo,estado,aciertos,score_afinidad
 1768413499,2026-01-14 14:58:19,LOTO,"[10, 13, 18, 19, 31, 34]",5374,PENDIENTE,0,0.0,14,forense_biometrico_v1,
 1768400451,2026-01-14 11:02:02,LOTO4,"[6, 8, 22, 23]",11562,AUDITADO,0,0.0,11,consenso_meritocratico_v2,
 1768406887,2026-01-14 12:56:27,LOTO3,"[1, 2, 6]",23989,AUDITADO,0,0.0,12,forense_biometrico_v1,
-1768414588,2026-01-14 14:58:19,LOTO3,"[0, 5, 8]",23990,PENDIENTE,0,50.03,14,consenso_meritocratico_v2,
+1768414588,2026-01-14 14:58:19,LOTO3,"[0, 5, 8]",23990,AUDITADO,1,33.33,14,consenso_meritocratico_v2,
 1768396020,2026-01-14 09:48:51,LOTO3,"[0, 7, 9]",23989,AUDITADO,0,0.0,9,consenso_meritocratico_v2,
 1768403012,2026-01-14 11:44:43,LOTO4,"[7, 8, 16, 20]",11562,AUDITADO,0,0.0,11,consenso_meritocratico_v2,
 1768406791,2026-01-14 12:56:27,RACHA,"[1, 2, 3, 7, 12, 13, 14, 17, 18, 20]",10295,AUDITADO,4,15.0,12,oraculo_neural_v4,NORMAL
@@ -393,7 +390,7 @@ id,fecha_generacion,juego,numeros,sorteo_objetivo,estado,aciertos,score_afinidad
 1768413802,2026-01-14 14:58:19,LOTO,"[11, 12, 20, 28, 34, 41]",5374,PENDIENTE,0,0.0,14,markov_chain_v1,
 1768398636,2026-01-14 10:41:12,LOTO4,"[8, 16, 20, 22]",11562,AUDITADO,0,0.0,10,oraculo_neural_v4,NORMAL
 1768412645,2026-01-14 14:44:05,LOTO,"[2, 14, 19, 20, 35, 37]",5374,PENDIENTE,0,0.0,14,forense_biometrico_v1,
-1768410931,2026-01-14 14:03:51,LOTO3,"[4, 5, 8]",23990,PENDIENTE,0,0.0,14,forense_biometrico_v1,
+1768410931,2026-01-14 14:03:51,LOTO3,"[4, 5, 8]",23990,AUDITADO,2,43.33,14,forense_biometrico_v1,
 1768406507,2026-01-14 12:38:27,RACHA,"[1, 2, 5, 6, 9, 10, 13, 18, 19, 20]",10295,AUDITADO,4,15.0,12,forense_biometrico_v1,
 1768399201,2026-01-14 10:41:12,LOTO4,"[8, 19, 20, 22]",11562,AUDITADO,1,0.0,10,consenso_meritocratico_v2,
 1768407185,2026-01-14 12:56:27,LOTO4,"[3, 13, 21, 22]",11562,AUDITADO,0,0.0,12,oraculo_neural_v3,NORMAL
@@ -424,3 +421,5 @@ id,fecha_generacion,juego,numeros,sorteo_objetivo,estado,aciertos,score_afinidad
 1768402921,2026-01-14 11:44:43,RACHA,"[2, 5, 9, 13, 14, 15, 16, 17, 18, 20]",10295,AUDITADO,6,15.0,11,oraculo_neural_v3,NORMAL
 1768403963,2026-01-14 12:01:44,LOTO,"[2, 7, 11, 14, 17, 37]",5374,PENDIENTE,0,31.66,12,consenso_meritocratico_v2,
 1768413774,2026-01-14 14:44:05,LOTO4,"[7, 8, 20, 22]",11563,PENDIENTE,0,44.68,14,consenso_meritocratico_v2,
+1768426606323,2026-01-14 17:00:00,LOTO3,"[7, 8, 9]",23990,PENDIENTE,0,0.0,17,oraculo_neural_v3,
+1768426617367,2026-01-14 17:00:00,LOTO3,"[0, 4, 5]",23990,PENDIENTE,0,0.0,17,oraculo_neural_v4
