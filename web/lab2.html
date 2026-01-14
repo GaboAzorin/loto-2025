@@ -63,31 +63,41 @@
                 const response = await fetch('../dashboard_data.json');
                 const rawData = await response.json();
                 
-                // Limpiamos los contenedores
+                // Limpiar contenedores
                 document.getElementById('grid-LOTO').innerHTML = '';
                 document.getElementById('grid-LOTO3').innerHTML = '';
 
-                // Ordenar por sorteo (más nuevos primero)
+                // 1. ORDENAMIENTO DE ÉLITE: 
+                // Primero por sorteo (más nuevos) y luego por score (más probables)
                 rawData.sort((a, b) => {
-                    // Primero por número de sorteo (descendente)
                     if (b.sorteo_objetivo !== a.sorteo_objetivo) {
                         return b.sorteo_objetivo - a.sorteo_objetivo;
                     }
-                    // Si es el mismo sorteo, la de mayor confianza primero
                     return b.score_afinidad - a.score_afinidad;
                 });
 
-                rawData.forEach(item => {
-                    if (item.juego === "LOTO") renderCard(item, 'grid-LOTO');
-                    if (item.juego === "LOTO3") renderCard(item, 'grid-LOTO3');
+                // 2. FILTRADO Y LÍMITE:
+                // Filtramos solo LOTO y LOTO3, y tomamos las 10 mejores/más recientes en TOTAL
+                const filteredData = rawData
+                    .filter(item => JUEGOS_PERMITIDOS.includes(item.juego))
+                    .slice(0, 10); // <--- AQUÍ ESTÁ EL LÍMITE MAGNÉTICO
+
+                let counts = { LOTO: 0, LOTO3: 0 };
+
+                filteredData.forEach(item => {
+                    renderCard(item, `grid-${item.juego}`);
+                    counts[item.juego]++;
                 });
 
-                // Si una sección está vacía
-                if (!document.getElementById('grid-LOTO').innerHTML) document.getElementById('grid-LOTO').innerHTML = "<p>Sin predicciones para Loto.</p>";
-                if (!document.getElementById('grid-LOTO3').innerHTML) document.getElementById('grid-LOTO3').innerHTML = "<p>Sin predicciones para Loto 3.</p>";
+                // Mensajes de vacío si no hay datos tras el límite
+                if (counts.LOTO === 0) document.getElementById('grid-LOTO').innerHTML = '<p class="empty-msg">No hay predicciones top para Loto.</p>';
+                if (counts.LOTO3 === 0) document.getElementById('grid-LOTO3').innerHTML = '<p class="empty-msg">No hay predicciones top para Loto 3.</p>';
 
             } catch (error) {
-                console.error("Error cargando predicciones:", error);
+                console.error("Error:", error);
+                const errHtml = `<p style="padding:2rem; color:#f43f5e">⚠️ Error al conectar con el servidor de datos.</p>`;
+                document.getElementById('grid-LOTO').innerHTML = errHtml;
+                document.getElementById('grid-LOTO3').innerHTML = errHtml;
             }
         }
 
