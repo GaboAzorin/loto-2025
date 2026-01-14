@@ -1,0 +1,18 @@
+{
+  "id": 1768428102,
+  "fecha_generacion": "2026-01-14 18:52:58",
+  "fecha_lanzamiento": "14/01/2026 21:00",
+  "juego": "LOTO3",
+  "numeros": [
+    0,
+    4,
+    5
+  ],
+  "sorteo_objetivo": 23991,
+  "estado": "PENDIENTE",
+  "aciertos": 0,
+  "score_afinidad": 31.83,
+  "hora_dia": 18,
+  "algoritmo": "oraculo_neural_v4",
+  "nota_especial": "NORMAL"
+}
