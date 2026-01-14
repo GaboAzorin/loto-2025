@@ -1,0 +1,12 @@
+{
+  "id": 1768401883,
+  "fecha_generacion": "2026-01-14 11:44:43",
+  "juego": "LOTO",
+  "numeros": "[7, 18, 24, 28, 29, 37]",
+  "sorteo_objetivo": 5374,
+  "estado": "PENDIENTE",
+  "aciertos": 0,
+  "score_afinidad": 0.0,
+  "hora_dia": 11,
+  "algoritmo": "forense_biometrico_v1"
+}
