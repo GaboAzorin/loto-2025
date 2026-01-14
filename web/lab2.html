@@ -168,13 +168,16 @@
                             <span class="time-label">📅 Lanzamiento:</span>
                             <span class="time-value">${data.fecha_lanzamiento || 'Pendiente'}</span>
                         </div>
+                        <div class="generation-info">
+                            🤖 <strong>Soñado el:</strong> ${data.fecha_generacion}
+                        </div>
                     </div>
 
                     <p class="numbers">${numerosArr.join(' - ')}</p>
 
                     <div class="confidence-bar">
                         <div class="confidence-fill" 
-                             style="width: ${Math.min(data.score_afinidad, 100)}%; background-color: ${status.color}">
+                            style="width: ${Math.min(data.score_afinidad, 100)}%; background-color: ${status.color}">
                         </div>
                     </div>
 
