@@ -2,14 +2,20 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Loto Lab v12.5 - Centro de Inferencia</title>
+    <title>Loto Lab v12.6 - Dashboard Multiverso</title>
     <style>
         body { font-family: 'Inter', sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding-bottom: 50px; }
         .header-main { text-align: center; padding: 2rem 0; background: #1e293b; border-bottom: 1px solid #334155; }
         h1 { margin: 0; text-transform: uppercase; letter-spacing: 3px; font-size: 1.5rem; color: #f1f5f9; }
         
-        .section-title { padding: 2rem 2rem 0 2rem; color: #38bdf8; text-transform: uppercase; letter-spacing: 2px; display: flex; align-items: center; gap: 10px; }
+        .section-title { padding: 2rem 2rem 0 2rem; text-transform: uppercase; letter-spacing: 2px; display: flex; align-items: center; gap: 10px; }
         .section-title::after { content: ""; height: 2px; flex-grow: 1; background: #334155; }
+        
+        /* Colores por Juego */
+        .title-LOTO { color: #38bdf8; }  /* Azul */
+        .title-LOTO3 { color: #fbbf24; } /* Amarillo */
+        .title-LOTO4 { color: #4ade80; } /* Verde */
+        .title-RACHA { color: #a78bfa; } /* Morado */
 
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 1.5rem; padding: 1.5rem 2rem; }
         
@@ -29,7 +35,7 @@
             100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0); }
         }
 
-        .numbers { font-size: 1.8rem; font-weight: 800; color: #fbbf24; letter-spacing: 2px; margin: 15px 0; text-align: center; }
+        .numbers { font-size: 1.6rem; font-weight: 800; color: #fbbf24; letter-spacing: 1px; margin: 15px 0; text-align: center; line-break: anywhere; }
         .tag { font-size: 0.7rem; font-weight: 600; padding: 4px 8px; border-radius: 4px; background: #0ea5e9; color: white; }
         .badge-disidencia { background: #f43f5e; color: white; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: 5px; }
 
@@ -50,30 +56,38 @@
         <h1>🔬 Laboratorio de Sueños Colectivos</h1>
     </div>
 
-    <h2 class="section-title">🔵 Predicciones LOTO (Top 10)</h2>
+    <h2 class="section-title title-LOTO">🔵 Predicciones LOTO (Top 10)</h2>
     <div class="grid" id="grid-LOTO"></div>
 
-    <h2 class="section-title">🟡 Predicciones LOTO 3 (Top 10)</h2>
+    <h2 class="section-title title-LOTO3">🟡 Predicciones LOTO 3 (Top 10)</h2>
     <div class="grid" id="grid-LOTO3"></div>
 
+    <h2 class="section-title title-LOTO4">🟢 Predicciones LOTO 4 (Top 10)</h2>
+    <div class="grid" id="grid-LOTO4"></div>
+
+    <h2 class="section-title title-RACHA">🟣 Predicciones RACHA (Top 10)</h2>
+    <div class="grid" id="grid-RACHA"></div>
+
     <script>
+        // Configuración de los juegos a mostrar
+        const CONFIG_JUEGOS = ["LOTO", "LOTO3", "LOTO4", "RACHA"];
+
         async function loadPredictions() {
             try {
                 const response = await fetch('../dashboard_data.json');
                 const rawData = await response.json();
                 
-                // Limpiar contenedores
-                document.getElementById('grid-LOTO').innerHTML = '';
-                document.getElementById('grid-LOTO3').innerHTML = '';
+                // Limpiar todos los contenedores
+                CONFIG_JUEGOS.forEach(j => {
+                    document.getElementById(`grid-${j}`).innerHTML = '';
+                });
 
                 if (!rawData || rawData.length === 0) {
-                    const msg = '<p class="empty-msg">No hay datos en la cola.</p>';
-                    document.getElementById('grid-LOTO').innerHTML = msg;
-                    document.getElementById('grid-LOTO3').innerHTML = msg;
+                    alert("El dashboard está vacío. Corre el bot_dreamer.");
                     return;
                 }
 
-                // 1. ORDENAMIENTO DE CALIDAD
+                // 1. ORDENAMIENTO DE CALIDAD (Sorteo nuevo primero, luego Confianza)
                 rawData.sort((a, b) => {
                     if (b.sorteo_objetivo !== a.sorteo_objetivo) {
                         return b.sorteo_objetivo - a.sorteo_objetivo;
@@ -81,54 +95,39 @@
                     return b.score_afinidad - a.score_afinidad;
                 });
 
-                // 2. FILTRADO CON NORMALIZACIÓN (Blindado contra espacios o minúsculas)
-                const dataLoto = rawData.filter(item => 
-                    item.juego && item.juego.toString().trim().toUpperCase() === "LOTO"
-                ).slice(0, 10);
+                // 2. FILTRADO, RECORTE (SLICE 10) Y RENDERIZADO POR JUEGO
+                CONFIG_JUEGOS.forEach(gameKey => {
+                    const container = document.getElementById(`grid-${gameKey}`);
+                    
+                    const filtered = rawData.filter(item => 
+                        item.juego && item.juego.toString().trim().toUpperCase() === gameKey
+                    ).slice(0, 10);
 
-                const dataLoto3 = rawData.filter(item => 
-                    item.juego && item.juego.toString().trim().toUpperCase() === "LOTO3"
-                ).slice(0, 10);
-
-                // 3. RENDERIZADO CON TRY-CATCH INDIVIDUAL (Si falla un ticket, los otros se ven)
-                if (dataLoto.length > 0) {
-                    dataLoto.forEach(item => {
-                        try { renderCard(item, 'grid-LOTO'); } catch(e) { console.error("Error en card LOTO:", e); }
-                    });
-                } else {
-                    document.getElementById('grid-LOTO').innerHTML = '<p class="empty-msg">No se hallaron tickets válidos para Loto.</p>';
-                }
-
-                if (dataLoto3.length > 0) {
-                    dataLoto3.forEach(item => {
-                        try { renderCard(item, 'grid-LOTO3'); } catch(e) { console.error("Error en card LOTO3:", e); }
-                    });
-                } else {
-                    document.getElementById('grid-LOTO3').innerHTML = '<p class="empty-msg">No se hallaron tickets válidos para Loto 3.</p>';
-                }
+                    if (filtered.length > 0) {
+                        filtered.forEach(item => {
+                            try { renderCard(item, `grid-${gameKey}`); } 
+                            catch(e) { console.error(`Error en ticket ${gameKey}:`, e); }
+                        });
+                    } else {
+                        container.innerHTML = `<p class="empty-msg">No hay predicciones activas para ${gameKey}.</p>`;
+                    }
+                });
 
             } catch (error) {
-                console.error("Error cargando predicciones:", error);
-                const errMsg = `<p class="empty-msg" style="color:#f43f5e">⚠️ Error crítico al cargar datos: ${error.message}</p>`;
-                document.getElementById('grid-LOTO').innerHTML = errMsg;
-                document.getElementById('grid-LOTO3').innerHTML = errMsg;
+                console.error("Error crítico:", error);
             }
         }
 
         function renderCard(data, containerId) {
-            // MANEJO DE NÚMEROS ULTRA-ROBUSTO
+            // MANEJO DE NÚMEROS (Array o String de Python)
             let numerosArr = [];
             try {
                 if (Array.isArray(data.numeros)) {
                     numerosArr = data.numeros;
                 } else if (typeof data.numeros === 'string') {
-                    // Limpia posibles comillas simples de Python y parsea
                     numerosArr = JSON.parse(data.numeros.replace(/'/g, '"'));
                 }
-            } catch (e) {
-                console.warn("Fallo al parsear números del ticket:", data.id);
-                numerosArr = ["Error"];
-            }
+            } catch (e) { numerosArr = ["Error"]; }
 
             const isDisident = data.nota_especial === 'ALERTA_DISIDENCIA';
             const isHigh = data.score_afinidad > 25 && !isDisident;
@@ -154,7 +153,7 @@
                             <span class="time-label">📅 Lanzamiento:</span>
                             <span class="time-value">${data.fecha_lanzamiento || 'Pendiente'}</span>
                         </div>
-                        <div class="time-row" style="font-size:0.7rem; opacity:0.7;">
+                        <div class="time-row" style="font-size:0.65rem; opacity:0.6;">
                             <span class="time-label">🤖 Soñado el:</span>
                             <span>${data.fecha_generacion}</span>
                         </div>
