@@ -117,7 +117,7 @@ def calcular_proximo_sorteo_real(game_id, csv_name):
             
             if encontrado_siguiente: break
     
-    return cursor_id
+    return cursor_id, cursor_tiempo
 
 def cargar_genoma():
     """Carga el archivo JSON del cerebro"""
@@ -250,7 +250,7 @@ def soñar():
         print(f"   ⚖️ Pesos de confianza (basado en mérito local): {pesos_voto}")
 
         # B. Calcular Objetivo Crononauta (Lógica Completa)
-        objetivo = calcular_proximo_sorteo_real(game_id, config['csv'])
+        objetivo, fecha_sorteo = calcular_proximo_sorteo_real(game_id, config['csv'])
         print(f"   🎯 Objetivo Crononauta: #{objetivo}")
         
         # C. Instanciar Algoritmos
@@ -298,6 +298,7 @@ def soñar():
                 nuevas_filas.append({
                     'id': base_id + i + (len(nuevas_filas)*100),
                     'fecha_generacion': ahora.strftime('%Y-%m-%d %H:%M:%S'),
+                    'fecha_lanzamiento': fecha_sorteo.strftime('%d/%m/%Y %H:%M'),
                     'juego': game_id,
                     'numeros': str(pred),
                     'sorteo_objetivo': objetivo,
@@ -390,6 +391,7 @@ def soñar():
                         nuevas_filas.append({
                             'id': base_id + (444 if v=="v4" else 888) + (len(nuevas_filas)*10),
                             'fecha_generacion': ahora.strftime('%Y-%m-%d %H:%M:%S'),
+                            'fecha_lanzamiento': fecha_sorteo.strftime('%d/%m/%Y %H:%M'),
                             'juego': game_id,
                             'numeros': sorted(pred_ml),
                             'sorteo_objetivo': objetivo,
@@ -480,6 +482,7 @@ def soñar():
                 nuevas_filas.append({
                     'id': base_id + 999 + (len(nuevas_filas)*10),
                     'fecha_generacion': ahora.strftime('%Y-%m-%d %H:%M:%S'),
+                    'fecha_lanzamiento': fecha_sorteo.strftime('%d/%m/%Y %H:%M'),
                     'juego': game_id,
                     'numeros': top_consenso,
                     'sorteo_objetivo': objetivo_sorteo,
