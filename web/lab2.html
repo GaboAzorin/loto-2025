@@ -8,13 +8,14 @@
         .header-main { text-align: center; padding: 2rem 0; background: #1e293b; border-bottom: 1px solid #334155; }
         h1 { margin: 0; text-transform: uppercase; letter-spacing: 3px; font-size: 1.5rem; color: #f1f5f9; }
         
-        /* Headers de sección */
         .section-title { padding: 2rem 2rem 0 2rem; color: #38bdf8; text-transform: uppercase; letter-spacing: 2px; display: flex; align-items: center; gap: 10px; }
         .section-title::after { content: ""; height: 2px; flex-grow: 1; background: #334155; }
 
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 1.5rem; padding: 1.5rem 2rem; }
         
-        .card { background: #1e293b; border-radius: 12px; padding: 1.5rem; border: 1px solid #334155; position: relative; }
+        .card { background: #1e293b; border-radius: 12px; padding: 1.5rem; border: 1px solid #334155; position: relative; transition: transform 0.2s; }
+        .card:hover { transform: translateY(-3px); border-color: #475569; }
+        
         .high-conf { border-color: #10b981; box-shadow: 0 0 15px rgba(16, 185, 129, 0.15); }
         .disident-card { 
             border: 2px solid #f43f5e; box-shadow: 0 0 20px rgba(244, 63, 94, 0.25); 
@@ -32,15 +33,15 @@
         .tag { font-size: 0.7rem; font-weight: 600; padding: 4px 8px; border-radius: 4px; background: #0ea5e9; color: white; }
         .badge-disidencia { background: #f43f5e; color: white; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: 5px; }
 
-        /* Estilos de tiempo */
         .time-box { background: rgba(0,0,0,0.2); border-radius: 6px; padding: 8px; margin-bottom: 10px; font-size: 0.8rem; }
         .time-row { display: flex; justify-content: space-between; margin: 2px 0; }
         .time-label { color: #94a3b8; }
         .time-value { color: #f1f5f9; font-weight: bold; }
 
         .confidence-bar { height: 8px; background: #334155; border-radius: 4px; margin: 12px 0; }
-        .confidence-fill { height: 100%; background: #38bdf8; border-radius: 4px; }
+        .confidence-fill { height: 100%; background: #38bdf8; border-radius: 4px; transition: width 1s; }
         .footer-info { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 10px; border-top: 1px solid #334155; padding-top: 10px; }
+        .empty-msg { color: #64748b; font-style: italic; grid-column: 1/-1; text-align: center; padding: 2rem; }
     </style>
 </head>
 <body>
@@ -49,26 +50,23 @@
         <h1>🔬 Laboratorio de Sueños Colectivos</h1>
     </div>
 
-    <h2 class="section-title">🔵 Predicciones LOTO</h2>
+    <h2 class="section-title">🔵 Predicciones LOTO (Top 10)</h2>
     <div class="grid" id="grid-LOTO"></div>
 
-    <h2 class="section-title">🟡 Predicciones LOTO 3</h2>
+    <h2 class="section-title">🟡 Predicciones LOTO 3 (Top 10)</h2>
     <div class="grid" id="grid-LOTO3"></div>
 
     <script>
-        const JUEGOS_PERMITIDOS = ["LOTO", "LOTO3"];
-
         async function loadPredictions() {
             try {
                 const response = await fetch('../dashboard_data.json');
                 const rawData = await response.json();
                 
-                // Limpiar contenedores
                 document.getElementById('grid-LOTO').innerHTML = '';
                 document.getElementById('grid-LOTO3').innerHTML = '';
 
-                // 1. ORDENAMIENTO DE ÉLITE: 
-                // Primero por sorteo (más nuevos) y luego por score (más probables)
+                // 1. ORDENAMIENTO GLOBAL DE INTELIGENCIA
+                // Primero por sorteo (más nuevos arriba) y luego por confianza (más probables arriba)
                 rawData.sort((a, b) => {
                     if (b.sorteo_objetivo !== a.sorteo_objetivo) {
                         return b.sorteo_objetivo - a.sorteo_objetivo;
@@ -76,32 +74,33 @@
                     return b.score_afinidad - a.score_afinidad;
                 });
 
-                // 2. FILTRADO Y LÍMITE:
-                // Filtramos solo LOTO y LOTO3, y tomamos las 10 mejores/más recientes en TOTAL
-                const filteredData = rawData
-                    .filter(item => JUEGOS_PERMITIDOS.includes(item.juego))
-                    .slice(0, 10); // <--- AQUÍ ESTÁ EL LÍMITE MAGNÉTICO
+                // 2. FILTRADO Y LÍMITE INDEPENDIENTE POR JUEGO
+                const dataLoto = rawData.filter(item => item.juego === "LOTO").slice(0, 10);
+                const dataLoto3 = rawData.filter(item => item.juego === "LOTO3").slice(0, 10);
 
-                let counts = { LOTO: 0, LOTO3: 0 };
+                // 3. RENDERIZADO
+                if (dataLoto.length > 0) {
+                    dataLoto.forEach(item => renderCard(item, 'grid-LOTO'));
+                } else {
+                    document.getElementById('grid-LOTO').innerHTML = '<p class="empty-msg">No hay predicciones activas para Loto.</p>';
+                }
 
-                filteredData.forEach(item => {
-                    renderCard(item, `grid-${item.juego}`);
-                    counts[item.juego]++;
-                });
-
-                // Mensajes de vacío si no hay datos tras el límite
-                if (counts.LOTO === 0) document.getElementById('grid-LOTO').innerHTML = '<p class="empty-msg">No hay predicciones top para Loto.</p>';
-                if (counts.LOTO3 === 0) document.getElementById('grid-LOTO3').innerHTML = '<p class="empty-msg">No hay predicciones top para Loto 3.</p>';
+                if (dataLoto3.length > 0) {
+                    dataLoto3.forEach(item => renderCard(item, 'grid-LOTO3'));
+                } else {
+                    document.getElementById('grid-LOTO3').innerHTML = '<p class="empty-msg">No hay predicciones activas para Loto 3.</p>';
+                }
 
             } catch (error) {
-                console.error("Error:", error);
-                const errHtml = `<p style="padding:2rem; color:#f43f5e">⚠️ Error al conectar con el servidor de datos.</p>`;
-                document.getElementById('grid-LOTO').innerHTML = errHtml;
-                document.getElementById('grid-LOTO3').innerHTML = errHtml;
+                console.error("Error cargando predicciones:", error);
+                const errMsg = '<p class="empty-msg" style="color:#f43f5e">⚠️ Error crítico: No se pudo cargar el archivo de datos.</p>';
+                document.getElementById('grid-LOTO').innerHTML = errMsg;
+                document.getElementById('grid-LOTO3').innerHTML = errMsg;
             }
         }
 
         function renderCard(data, containerId) {
+            // Manejo robusto de números
             let numerosArr = Array.isArray(data.numeros) ? data.numeros : JSON.parse(data.numeros.replace(/'/g, '"'));
 
             const isDisident = data.nota_especial === 'ALERTA_DISIDENCIA';
@@ -126,7 +125,7 @@
                     <div class="time-box">
                         <div class="time-row">
                             <span class="time-label">📅 Lanzamiento:</span>
-                            <span class="time-value">${data.fecha_lanzamiento || 'Cargando...'}</span>
+                            <span class="time-value">${data.fecha_lanzamiento || 'Pendiente'}</span>
                         </div>
                         <div class="time-row" style="font-size:0.7rem; opacity:0.7;">
                             <span class="time-label">🤖 Soñado el:</span>
@@ -137,7 +136,7 @@
                     <p class="numbers">${numerosArr.join(' - ')}</p>
 
                     <div class="confidence-bar">
-                        <div class="confidence-fill" style="width: ${data.score_afinidad}%"></div>
+                        <div class="confidence-fill" style="width: ${Math.min(data.score_afinidad, 100)}%"></div>
                     </div>
 
                     <div class="footer-info">
