@@ -68,7 +68,14 @@
                 document.getElementById('grid-LOTO3').innerHTML = '';
 
                 // Ordenar por sorteo (más nuevos primero)
-                rawData.sort((a, b) => b.sorteo_objetivo - a.sorteo_objetivo);
+                rawData.sort((a, b) => {
+                    // Primero por número de sorteo (descendente)
+                    if (b.sorteo_objetivo !== a.sorteo_objetivo) {
+                        return b.sorteo_objetivo - a.sorteo_objetivo;
+                    }
+                    // Si es el mismo sorteo, la de mayor confianza primero
+                    return b.score_afinidad - a.score_afinidad;
+                });
 
                 rawData.forEach(item => {
                     if (item.juego === "LOTO") renderCard(item, 'grid-LOTO');
