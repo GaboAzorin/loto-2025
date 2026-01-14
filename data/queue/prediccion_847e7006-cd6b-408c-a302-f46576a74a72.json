@@ -1,0 +1,19 @@
+{
+  "id": 1768389372,
+  "fecha_generacion": "2026-01-14 07:58:33",
+  "juego": "LOTO",
+  "numeros": [
+    4,
+    5,
+    11,
+    17,
+    33,
+    37
+  ],
+  "sorteo_objetivo": 5374,
+  "estado": "PENDIENTE",
+  "aciertos": 0,
+  "score_afinidad": 30.75,
+  "hora_dia": 7,
+  "algoritmo": "consenso_meritocratico_v2"
+}
