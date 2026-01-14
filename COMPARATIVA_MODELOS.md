@@ -1,5 +1,5 @@
 # 📊 Auditoría de Modelos: v3 vs v4
-Actualizado el: 2026-01-14 18:18:38
+Actualizado el: 2026-01-14 17:00:43
 
 ## 🌡️ Alerta de Silenciamiento (Salud del Filtro)
 - ✅ **LOTO3**: v4 tiene una tasa de aceptación saludable.
@@ -28,4 +28,4 @@ Actualizado el: 2026-01-14 18:18:38
 | LOTO3   | oraculo_neural_v4 |             23989 |            33.33 |          1 |
 | LOTO3   | oraculo_neural_v4 |             23989 |            33.33 |          1 |
 | LOTO3   | oraculo_neural_v4 |             23989 |            33.33 |          1 |
-| RACHA   | oraculo_neural_v3 |             10295 |            15    |          4 |
+| RACHA   | oraculo_neural_v4 |             10295 |            15    |          4 |
