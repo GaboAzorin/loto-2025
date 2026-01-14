@@ -62,11 +62,18 @@
                 const response = await fetch('../dashboard_data.json');
                 const rawData = await response.json();
                 
+                // Limpiar contenedores
                 document.getElementById('grid-LOTO').innerHTML = '';
                 document.getElementById('grid-LOTO3').innerHTML = '';
 
-                // 1. ORDENAMIENTO GLOBAL DE INTELIGENCIA
-                // Primero por sorteo (más nuevos arriba) y luego por confianza (más probables arriba)
+                if (!rawData || rawData.length === 0) {
+                    const msg = '<p class="empty-msg">No hay datos en la cola.</p>';
+                    document.getElementById('grid-LOTO').innerHTML = msg;
+                    document.getElementById('grid-LOTO3').innerHTML = msg;
+                    return;
+                }
+
+                // 1. ORDENAMIENTO DE CALIDAD
                 rawData.sort((a, b) => {
                     if (b.sorteo_objetivo !== a.sorteo_objetivo) {
                         return b.sorteo_objetivo - a.sorteo_objetivo;
@@ -74,34 +81,54 @@
                     return b.score_afinidad - a.score_afinidad;
                 });
 
-                // 2. FILTRADO Y LÍMITE INDEPENDIENTE POR JUEGO
-                const dataLoto = rawData.filter(item => item.juego === "LOTO").slice(0, 10);
-                const dataLoto3 = rawData.filter(item => item.juego === "LOTO3").slice(0, 10);
+                // 2. FILTRADO CON NORMALIZACIÓN (Blindado contra espacios o minúsculas)
+                const dataLoto = rawData.filter(item => 
+                    item.juego && item.juego.toString().trim().toUpperCase() === "LOTO"
+                ).slice(0, 10);
 
-                // 3. RENDERIZADO
+                const dataLoto3 = rawData.filter(item => 
+                    item.juego && item.juego.toString().trim().toUpperCase() === "LOTO3"
+                ).slice(0, 10);
+
+                // 3. RENDERIZADO CON TRY-CATCH INDIVIDUAL (Si falla un ticket, los otros se ven)
                 if (dataLoto.length > 0) {
-                    dataLoto.forEach(item => renderCard(item, 'grid-LOTO'));
+                    dataLoto.forEach(item => {
+                        try { renderCard(item, 'grid-LOTO'); } catch(e) { console.error("Error en card LOTO:", e); }
+                    });
                 } else {
-                    document.getElementById('grid-LOTO').innerHTML = '<p class="empty-msg">No hay predicciones activas para Loto.</p>';
+                    document.getElementById('grid-LOTO').innerHTML = '<p class="empty-msg">No se hallaron tickets válidos para Loto.</p>';
                 }
 
                 if (dataLoto3.length > 0) {
-                    dataLoto3.forEach(item => renderCard(item, 'grid-LOTO3'));
+                    dataLoto3.forEach(item => {
+                        try { renderCard(item, 'grid-LOTO3'); } catch(e) { console.error("Error en card LOTO3:", e); }
+                    });
                 } else {
-                    document.getElementById('grid-LOTO3').innerHTML = '<p class="empty-msg">No hay predicciones activas para Loto 3.</p>';
+                    document.getElementById('grid-LOTO3').innerHTML = '<p class="empty-msg">No se hallaron tickets válidos para Loto 3.</p>';
                 }
 
             } catch (error) {
                 console.error("Error cargando predicciones:", error);
-                const errMsg = '<p class="empty-msg" style="color:#f43f5e">⚠️ Error crítico: No se pudo cargar el archivo de datos.</p>';
+                const errMsg = `<p class="empty-msg" style="color:#f43f5e">⚠️ Error crítico al cargar datos: ${error.message}</p>`;
                 document.getElementById('grid-LOTO').innerHTML = errMsg;
                 document.getElementById('grid-LOTO3').innerHTML = errMsg;
             }
         }
 
         function renderCard(data, containerId) {
-            // Manejo robusto de números
-            let numerosArr = Array.isArray(data.numeros) ? data.numeros : JSON.parse(data.numeros.replace(/'/g, '"'));
+            // MANEJO DE NÚMEROS ULTRA-ROBUSTO
+            let numerosArr = [];
+            try {
+                if (Array.isArray(data.numeros)) {
+                    numerosArr = data.numeros;
+                } else if (typeof data.numeros === 'string') {
+                    // Limpia posibles comillas simples de Python y parsea
+                    numerosArr = JSON.parse(data.numeros.replace(/'/g, '"'));
+                }
+            } catch (e) {
+                console.warn("Fallo al parsear números del ticket:", data.id);
+                numerosArr = ["Error"];
+            }
 
             const isDisident = data.nota_especial === 'ALERTA_DISIDENCIA';
             const isHigh = data.score_afinidad > 25 && !isDisident;
