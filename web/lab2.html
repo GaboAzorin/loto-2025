@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Loto Lab v12.6 - Dashboard Multiverso</title>
+    <title>Loto Lab v12.7 - Semáforo de Inferencia</title>
     <style>
         body { font-family: 'Inter', sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding-bottom: 50px; }
         .header-main { text-align: center; padding: 2rem 0; background: #1e293b; border-bottom: 1px solid #334155; }
@@ -11,11 +11,11 @@
         .section-title { padding: 2rem 2rem 0 2rem; text-transform: uppercase; letter-spacing: 2px; display: flex; align-items: center; gap: 10px; }
         .section-title::after { content: ""; height: 2px; flex-grow: 1; background: #334155; }
         
-        /* Colores por Juego */
-        .title-LOTO { color: #38bdf8; }  /* Azul */
-        .title-LOTO3 { color: #fbbf24; } /* Amarillo */
-        .title-LOTO4 { color: #4ade80; } /* Verde */
-        .title-RACHA { color: #a78bfa; } /* Morado */
+        /* Colores de Headers */
+        .title-LOTO { color: #38bdf8; } 
+        .title-LOTO3 { color: #fbbf24; } 
+        .title-LOTO4 { color: #4ade80; } 
+        .title-RACHA { color: #a78bfa; } 
 
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 1.5rem; padding: 1.5rem 2rem; }
         
@@ -36,16 +36,17 @@
         }
 
         .numbers { font-size: 1.6rem; font-weight: 800; color: #fbbf24; letter-spacing: 1px; margin: 15px 0; text-align: center; line-break: anywhere; }
-        .tag { font-size: 0.7rem; font-weight: 600; padding: 4px 8px; border-radius: 4px; background: #0ea5e9; color: white; }
-        .badge-disidencia { background: #f43f5e; color: white; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: 5px; }
+        .tag { font-size: 0.7rem; font-weight: 600; padding: 4px 8px; border-radius: 4px; background: #334155; color: white; }
 
         .time-box { background: rgba(0,0,0,0.2); border-radius: 6px; padding: 8px; margin-bottom: 10px; font-size: 0.8rem; }
         .time-row { display: flex; justify-content: space-between; margin: 2px 0; }
         .time-label { color: #94a3b8; }
         .time-value { color: #f1f5f9; font-weight: bold; }
 
-        .confidence-bar { height: 8px; background: #334155; border-radius: 4px; margin: 12px 0; }
-        .confidence-fill { height: 100%; background: #38bdf8; border-radius: 4px; transition: width 1s; }
+        /* Semáforo de Confianza */
+        .confidence-bar { height: 8px; background: #0f172a; border-radius: 4px; margin: 12px 0; border: 1px solid #334155; }
+        .confidence-fill { height: 100%; border-radius: 4px; transition: width 1s, background-color 1s; }
+        
         .footer-info { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 10px; border-top: 1px solid #334155; padding-top: 10px; }
         .empty-msg { color: #64748b; font-style: italic; grid-column: 1/-1; text-align: center; padding: 2rem; }
     </style>
@@ -56,20 +57,19 @@
         <h1>🔬 Laboratorio de Sueños Colectivos</h1>
     </div>
 
-    <h2 class="section-title title-LOTO">🔵 Predicciones LOTO (Top 10)</h2>
+    <h2 class="section-title title-LOTO">🔵 LOTO (Top 10)</h2>
     <div class="grid" id="grid-LOTO"></div>
 
-    <h2 class="section-title title-LOTO3">🟡 Predicciones LOTO 3 (Top 10)</h2>
+    <h2 class="section-title title-LOTO3">🟡 LOTO 3 (Top 10)</h2>
     <div class="grid" id="grid-LOTO3"></div>
 
-    <h2 class="section-title title-LOTO4">🟢 Predicciones LOTO 4 (Top 10)</h2>
+    <h2 class="section-title title-LOTO4">🟢 LOTO 4 (Top 10)</h2>
     <div class="grid" id="grid-LOTO4"></div>
 
-    <h2 class="section-title title-RACHA">🟣 Predicciones RACHA (Top 10)</h2>
+    <h2 class="section-title title-RACHA">🟣 RACHA (Top 10)</h2>
     <div class="grid" id="grid-RACHA"></div>
 
     <script>
-        // Configuración de los juegos a mostrar
         const CONFIG_JUEGOS = ["LOTO", "LOTO3", "LOTO4", "RACHA"];
 
         async function loadPredictions() {
@@ -77,74 +77,58 @@
                 const response = await fetch('../dashboard_data.json');
                 const rawData = await response.json();
                 
-                // Limpiar todos los contenedores
-                CONFIG_JUEGOS.forEach(j => {
-                    document.getElementById(`grid-${j}`).innerHTML = '';
-                });
+                CONFIG_JUEGOS.forEach(j => { document.getElementById(`grid-${j}`).innerHTML = ''; });
 
-                if (!rawData || rawData.length === 0) {
-                    alert("El dashboard está vacío. Corre el bot_dreamer.");
-                    return;
-                }
+                if (!rawData || rawData.length === 0) return;
 
-                // 1. ORDENAMIENTO DE CALIDAD (Sorteo nuevo primero, luego Confianza)
+                // Ordenar por sorteo y luego por confianza
                 rawData.sort((a, b) => {
-                    if (b.sorteo_objetivo !== a.sorteo_objetivo) {
-                        return b.sorteo_objetivo - a.sorteo_objetivo;
-                    }
+                    if (b.sorteo_objetivo !== a.sorteo_objetivo) return b.sorteo_objetivo - a.sorteo_objetivo;
                     return b.score_afinidad - a.score_afinidad;
                 });
 
-                // 2. FILTRADO, RECORTE (SLICE 10) Y RENDERIZADO POR JUEGO
                 CONFIG_JUEGOS.forEach(gameKey => {
                     const container = document.getElementById(`grid-${gameKey}`);
-                    
                     const filtered = rawData.filter(item => 
                         item.juego && item.juego.toString().trim().toUpperCase() === gameKey
                     ).slice(0, 10);
 
                     if (filtered.length > 0) {
-                        filtered.forEach(item => {
-                            try { renderCard(item, `grid-${gameKey}`); } 
-                            catch(e) { console.error(`Error en ticket ${gameKey}:`, e); }
-                        });
+                        filtered.forEach(item => { renderCard(item, `grid-${gameKey}`); });
                     } else {
-                        container.innerHTML = `<p class="empty-msg">No hay predicciones activas para ${gameKey}.</p>`;
+                        container.innerHTML = `<p class="empty-msg">No hay señales para ${gameKey}.</p>`;
                     }
                 });
 
-            } catch (error) {
-                console.error("Error crítico:", error);
-            }
+            } catch (error) { console.error("Error:", error); }
+        }
+
+        // --- 🚥 LÓGICA DEL SEMÁFORO ---
+        function getStatusInfo(score, isDisident) {
+            if (isDisident) return { color: "#f43f5e", label: "🚀 DISIDENCIA" };
+            if (score > 60) return { color: "#10b981", label: "🔥 ALTA" };
+            if (score > 25) return { color: "#facc15", label: "⚖️ MEDIA" };
+            return { color: "#ef4444", label: "⚠️ RUIDO" };
         }
 
         function renderCard(data, containerId) {
-            // MANEJO DE NÚMEROS (Array o String de Python)
-            let numerosArr = [];
-            try {
-                if (Array.isArray(data.numeros)) {
-                    numerosArr = data.numeros;
-                } else if (typeof data.numeros === 'string') {
-                    numerosArr = JSON.parse(data.numeros.replace(/'/g, '"'));
-                }
-            } catch (e) { numerosArr = ["Error"]; }
-
+            let numerosArr = Array.isArray(data.numeros) ? data.numeros : JSON.parse(data.numeros.replace(/'/g, '"'));
+            
             const isDisident = data.nota_especial === 'ALERTA_DISIDENCIA';
-            const isHigh = data.score_afinidad > 25 && !isDisident;
+            const status = getStatusInfo(data.score_afinidad, isDisident);
             
             let cardClass = "card";
             if (isDisident) cardClass += " disident-card";
-            else if (isHigh) cardClass += " high-conf";
+            else if (data.score_afinidad > 60) cardClass += " high-conf";
 
             const html = `
                 <div class="${cardClass}">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                         <div>
-                            <span class="tag">SORTEO #${data.sorteo_objetivo}</span>
-                            ${isDisident ? '<span class="badge-disidencia">V4 RESCUE</span>' : ''}
+                            <span class="tag" style="background:${status.color}">SORTEO #${data.sorteo_objetivo}</span>
                         </div>
-                        <span style="font-weight:bold; font-size:0.75rem; color:${isDisident ? '#f43f5e' : (isHigh ? '#10b981' : '#64748b')}">
-                            ${isDisident ? '🚀 DISIDENCIA' : (isHigh ? '🔥 ALTA' : '⚖️ NORMAL')}
+                        <span style="font-weight:bold; font-size:0.75rem; color:${status.color}">
+                            ${status.label}
                         </span>
                     </div>
 
@@ -153,22 +137,20 @@
                             <span class="time-label">📅 Lanzamiento:</span>
                             <span class="time-value">${data.fecha_lanzamiento || 'Pendiente'}</span>
                         </div>
-                        <div class="time-row" style="font-size:0.65rem; opacity:0.6;">
-                            <span class="time-label">🤖 Soñado el:</span>
-                            <span>${data.fecha_generacion}</span>
-                        </div>
                     </div>
 
                     <p class="numbers">${numerosArr.join(' - ')}</p>
 
                     <div class="confidence-bar">
-                        <div class="confidence-fill" style="width: ${Math.min(data.score_afinidad, 100)}%"></div>
+                        <div class="confidence-fill" 
+                             style="width: ${Math.min(data.score_afinidad, 100)}%; background-color: ${status.color}">
+                        </div>
                     </div>
 
                     <div class="footer-info">
                         <div>
                             <small style="color:#94a3b8; display:block; font-size:0.6rem;">CONFIANZA ML</small>
-                            <span style="font-weight:bold; color:#f1f5f9">${data.score_afinidad}%</span>
+                            <span style="font-weight:bold; color:${status.color}">${data.score_afinidad}%</span>
                         </div>
                         <div style="text-align:right">
                             <small style="color:#64748b; font-size: 0.6rem;">ALGORITMO</small>
