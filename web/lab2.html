@@ -86,6 +86,18 @@
         }
 
         function renderCard(data) {
+            // 1. Verificación de seguridad: si los números vienen como string "[1, 2...]", los convertimos a lista
+            let numerosArr = data.numeros;
+            if (typeof data.numeros === 'string') {
+                try {
+                    // Reemplaza comillas simples por dobles si existen y parsea
+                    numerosArr = JSON.parse(data.numeros.replace(/'/g, '"'));
+                } catch (e) {
+                    console.error("Error parseando números:", e);
+                    numerosArr = [];
+                }
+            }
+
             const isDisident = data.nota_especial === 'ALERTA_DISIDENCIA';
             const isHigh = data.score_afinidad > 25 && !isDisident;
             
@@ -93,6 +105,7 @@
             if (isDisident) cardClass += " disident-card";
             else if (isHigh) cardClass += " high-conf";
 
+            // Usamos el array procesado numerosArr
             const html = `
                 <div class="${cardClass}">
                     <div style="display:flex; justify-content:space-between; align-items:center">
@@ -105,7 +118,7 @@
                         </span>
                     </div>
 
-                    <p class="numbers">${data.numeros.join(' - ')}</p>
+                    <p class="numbers">${numerosArr.join(' - ')}</p>
 
                     <div class="confidence-bar">
                         <div class="confidence-fill" style="width: ${data.score_afinidad}%"></div>
