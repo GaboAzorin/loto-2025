@@ -38,10 +38,41 @@
         .numbers { font-size: 1.6rem; font-weight: 800; color: #fbbf24; letter-spacing: 1px; margin: 15px 0; text-align: center; line-break: anywhere; }
         .tag { font-size: 0.7rem; font-weight: 600; padding: 4px 8px; border-radius: 4px; background: #334155; color: white; }
 
-        .time-box { background: rgba(0,0,0,0.2); border-radius: 6px; padding: 8px; margin-bottom: 10px; font-size: 0.8rem; }
-        .time-row { display: flex; justify-content: space-between; margin: 2px 0; }
-        .time-label { color: #94a3b8; }
-        .time-value { color: #f1f5f9; font-weight: bold; }
+        /* Estilos de tiempo optimizados para Mobile */
+        .time-box { 
+            background: rgba(15, 23, 42, 0.5); /* Fondo un poco más oscuro para resaltar texto */
+            border-radius: 8px; 
+            padding: 10px; 
+            margin-bottom: 12px; 
+        }
+
+        .time-row { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            margin: 4px 0; 
+        }
+
+        .time-label { 
+            color: #94a3b8; 
+            font-size: 0.75rem; /* ~12px: El mínimo para legibilidad móvil */
+        }
+
+        .time-value { 
+            color: #f1f5f9; 
+            font-weight: bold; 
+            font-size: 0.8rem;
+        }
+
+        /* Específico para la fecha de generación (el "Soñado el") */
+        .generation-info {
+            border-top: 1px solid rgba(51, 65, 85, 0.5);
+            margin-top: 6px;
+            padding-top: 6px;
+            color: #cbd5e1; /* Color más claro para que se vea bien en mobile */
+            font-size: 0.7rem;
+            display: block; /* Asegura que tome su propia línea */
+        }
 
         /* Semáforo de Confianza */
         .confidence-bar { height: 8px; background: #0f172a; border-radius: 4px; margin: 12px 0; border: 1px solid #334155; }
