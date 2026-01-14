@@ -1,5 +1,5 @@
 # 📊 Auditoría de Modelos: v3 vs v4
-Actualizado el: 2026-01-13 18:19:16
+Actualizado el: 2026-01-14 00:55:44
 
 ## 🌡️ Alerta de Silenciamiento (Salud del Filtro)
 - ⚠️ **LOTO**: v4 está siendo 'silenciado'. Solo el 4% de sus ideas pasan el filtro cognitivo.
