@@ -211,37 +211,6 @@ def calcular_nivel_confianza(bolsa_pesos, n_objetivo):
     confianza = (pesos_consenso_top / total_pesos_repartidos) * 100
     return round(confianza, 2)
 
-def actualizar_dashboard_laboratorio(nuevas_filas_actuales):
-    """
-    Escanea la carpeta 'queue' para mostrar TODAS las predicciones 
-    pendientes de sorteo, no solo las de esta ejecución.
-    """
-    DASHBOARD_FILE = os.path.join(DATA_DIR, "..", "dashboard_data.json")
-    QUEUE_DIR = os.path.join(DATA_DIR, 'queue')
-    
-    todas_las_predicciones = []
-
-    # 1. Buscamos todos los archivos JSON en la cola (pendientes de auditoría)
-    archivos_en_cola = glob.glob(os.path.join(QUEUE_DIR, "prediccion_*.json"))
-    
-    for archivo in archivos_en_cola:
-        try:
-            with open(archivo, 'r', encoding='utf-8') as f:
-                pred = json.load(f)
-                # Solo agregamos si el estado es PENDIENTE (seguridad extra)
-                if pred.get('estado') == 'PENDIENTE':
-                    todas_las_predicciones.append(pred)
-        except Exception as e:
-            print(f"⚠️ Error leyendo archivo de cola {archivo}: {e}")
-
-    # 2. Guardamos la consolidación total
-    try:
-        with open(DASHBOARD_FILE, 'w', encoding='utf-8') as f:
-            json.dump(todas_las_predicciones, f, indent=2, ensure_ascii=False)
-        print(f"📊 Dashboard actualizado: {len(todas_las_predicciones)} predicciones en vivo (históricas + actuales).")
-    except Exception as e:
-        print(f"❌ Error crítico escribiendo dashboard_data.json: {e}")
-
 def soñar():
     print("💤 --- INICIANDO BOT SOÑADOR: LÓBULOS ESPECIALIZADOS v12.4 ---")
 
@@ -523,23 +492,22 @@ def soñar():
     os.makedirs(QUEUE_DIR, exist_ok=True)
 
     if nuevas_filas:
-        actualizar_dashboard_laboratorio(nuevas_filas)
-        print("\n✨ PROCESO DEL SOÑADOR TERMINADO (Datos en cola y dashboard listo).")
-        print(f"📦 Generando {len(nuevas_filas)} tickets para la cola de procesamiento...")
-        
+        # 1. Guardar los tickets individuales en la queue
         for fila in nuevas_filas:
             file_id = str(uuid.uuid4())
-            filename = f"prediccion_{file_id}.json"
-            filepath = os.path.join(QUEUE_DIR, filename)
-            
-            try:
-                with open(filepath, 'w', encoding='utf-8') as f:
-                    json.dump(fila, f, ensure_ascii=False, indent=2)
-                # print(f"   -> Ticket guardado: {filename}")
-            except Exception as e:
-                print(f"   ❌ Error guardando ticket {filename}: {e}")
+            filepath = os.path.join(QUEUE_DIR, f"prediccion_{file_id}.json")
+            with open(filepath, 'w', encoding='utf-8') as f:
+                json.dump(fila, f, ensure_ascii=False, indent=2)
 
-    print("\n✨ PROCESO DEL SOÑADOR TERMINADO (Datos en cola).")
+        # 2. ¡EL CIERRE DEL CÍRCULO! 
+        # Importamos y ejecutamos la consolidación híbrida inmediatamente
+        try:
+            from consolidar_laboratorio import ejecutar_consolidacion_hibrida
+            ejecutar_consolidacion_hibrida()
+        except ImportError:
+            print("⚠️ No se pudo importar el consolidador.")
+
+    print("\n✨ PROCESO DEL SOÑADOR TERMINADO.")
 
 if __name__ == "__main__":
     soñar()
