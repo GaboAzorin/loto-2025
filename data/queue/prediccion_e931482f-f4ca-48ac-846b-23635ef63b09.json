@@ -1,0 +1,13 @@
+{
+  "id": 1768470485,
+  "fecha_generacion": "2026-01-15 06:43:02",
+  "fecha_lanzamiento": "15/01/2026 21:00",
+  "juego": "LOTO",
+  "numeros": "[7, 15, 19, 22, 28, 41]",
+  "sorteo_objetivo": 5374,
+  "estado": "PENDIENTE",
+  "aciertos": 0,
+  "score_afinidad": 0.0,
+  "hora_dia": 6,
+  "algoritmo": "markov_chain_v1"
+}
