@@ -244,6 +244,9 @@ def soñar():
 
     for game_id, config in MULTIVERSO_CONFIG.items():
         print(f"🌌 Universo: {game_id}")
+        bolsa_pesos_consenso = {}
+        top_consenso = []
+        objetivo = None
         
         # A. Obtener pesos reales (Contextual Awareness: Sensibilidad Horaria)
         pesos_voto = obtener_pesos_del_lobulo(game_id, genoma, hora=hora_actual)
@@ -268,9 +271,6 @@ def soñar():
                 ('delta_dna',             forense.predict_dna_delta),      # Nombre nuevo
                 ('markov_chain',          forense.predict_markov)
             ])
-
-        # E. Ejecución de Algoritmos Individuales
-        bolsa_pesos_consenso = {} 
 
         for i, (nombre, funcion) in enumerate(mis_algoritmos):
             try:
@@ -429,8 +429,15 @@ def soñar():
 
         # F. Generar Consenso Meritocrático con Filtro de Curación
         try:
-            if bolsa_pesos_consenso:
+            if bolsa_pesos_consenso and objetivo: # Cambiar esta condición
                 n_balls = forense.rules['n']
+                
+                # Reiniciamos variables locales del consenso
+                ranking_bolas = sorted(bolsa_pesos_consenso, key=bolsa_pesos_consenso.get, reverse=True)
+                candidato_top = sorted(ranking_bolas[:n_balls])
+                
+                # Importante: top_consenso debe partir vacío o con el candidato actual
+                top_consenso = candidato_top
                 objetivo_sorteo = objetivo
                 
                 # --- 🟢 ESTRATEGIA: SUEÑO CURADO ---
