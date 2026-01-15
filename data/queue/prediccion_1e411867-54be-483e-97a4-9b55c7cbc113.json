@@ -1,6 +1,6 @@
 {
-  "id": 1768439947,
-  "fecha_generacion": "2026-01-14 22:14:04",
+  "id": 1768444138,
+  "fecha_generacion": "2026-01-14 23:23:55",
   "fecha_lanzamiento": "15/01/2026 21:00",
   "juego": "LOTO",
   "numeros": "[11, 12, 20, 28, 34, 41]",
@@ -8,6 +8,6 @@
   "estado": "PENDIENTE",
   "aciertos": 0,
   "score_afinidad": 0.0,
-  "hora_dia": 22,
+  "hora_dia": 23,
   "algoritmo": "markov_chain_v1"
 }
