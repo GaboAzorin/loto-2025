@@ -1,0 +1,18 @@
+{
+  "id": 1768494143,
+  "fecha_generacion": "2026-01-15 13:04:34",
+  "fecha_lanzamiento": "15/01/2026 14:00",
+  "juego": "LOTO3",
+  "numeros": [
+    2,
+    6,
+    7
+  ],
+  "sorteo_objetivo": 23992,
+  "estado": "PENDIENTE",
+  "aciertos": 0,
+  "score_afinidad": 85.4,
+  "hora_dia": 13,
+  "algoritmo": "consenso_meritocratico_v2",
+  "nota_especial": "🔥 ALTA CONFIANZA"
+}
