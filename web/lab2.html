@@ -120,9 +120,11 @@
 
                 CONFIG_JUEGOS.forEach(gameKey => {
                     const container = document.getElementById(`grid-${gameKey}`);
-                    const filtered = rawData.filter(item => 
-                        item.juego && item.juego.toString().trim().toUpperCase() === gameKey
-                    ).slice(0, 10);
+                    const filtered = rawData.filter(item => {
+                        if (!item.juego) return false;
+                        // Esto acepta "LOTO", "loto", " LOTO " y hasta "LOTO_HISTORIAL"
+                        return item.juego.toString().toUpperCase().includes(gameKey);
+                    }).slice(0, 10);
 
                     if (filtered.length > 0) {
                         filtered.forEach(item => { renderCard(item, `grid-${gameKey}`); });

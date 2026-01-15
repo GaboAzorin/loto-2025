@@ -15,6 +15,16 @@ except ImportError:
     OraculoNeural = None
     print("⚠️ Módulo OraculoNeural no disponible (¿Falta sklearn?).")
 
+def clean_for_json(obj):
+    """Sustituye NaNs por None para generar un JSON válido"""
+    if isinstance(obj, dict):
+        return {k: clean_for_json(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [clean_for_json(i) for i in obj]
+    elif isinstance(obj, float) and (math.isnan(obj) or math.isinf(obj)):
+        return None
+    return obj
+
 # Aseguramos que Python encuentre el módulo analizador_forense
 current_dir = os.path.dirname(os.path.abspath(__file__))
 if current_dir not in sys.path: sys.path.append(current_dir)
@@ -290,12 +300,13 @@ def soñar():
                     'fecha_generacion': ahora.strftime('%Y-%m-%d %H:%M:%S'),
                     'fecha_lanzamiento': fecha_sorteo.strftime('%d/%m/%Y %H:%M'),
                     'juego': game_id,
-                    'numeros': str(pred),
+                    'numeros': list(pred), # Cambio: de str(pred) a list(pred)
                     'sorteo_objetivo': objetivo,
                     'estado': 'PENDIENTE',
                     'aciertos': 0, 'score_afinidad': 0.0,
                     'hora_dia': hora_actual,
-                    'algoritmo': alg_name_trad
+                    'algoritmo': alg_name_trad,
+                    'nota_especial': 'NORMAL' # Nueva línea: evita NaNs al consolidar
                 })
                 print(f"   🔹 {nombre}: {pred} {adn_info if 'adn_info' in locals() else ''}")
                 
@@ -379,19 +390,18 @@ def soñar():
                         
                         # 4. Inserción en la cola con Metadata enriquecida
                         nuevas_filas.append({
-                            'id': base_id + (444 if v=="v4" else 888) + (len(nuevas_filas)*10),
+                            'id': base_id + 999 + (len(nuevas_filas)*10),
                             'fecha_generacion': ahora.strftime('%Y-%m-%d %H:%M:%S'),
                             'fecha_lanzamiento': fecha_sorteo.strftime('%d/%m/%Y %H:%M'),
                             'juego': game_id,
-                            'numeros': sorted(pred_ml),
-                            'sorteo_objetivo': objetivo,
+                            'numeros': list(top_consenso), # Asegurar lista
+                            'sorteo_objetivo': objetivo_sorteo,
                             'estado': 'PENDIENTE',
                             'aciertos': 0, 
-                            # Convertimos el multiplicador a escala base 10 para visualización HTML (ej: 3.2x -> 32.0%)
-                            'score_afinidad': round(confianza_ml_individual * 10, 2),
+                            'score_afinidad': confianza_final,
                             'hora_dia': hora_actual,
-                            'algoritmo': alg_name_ml,
-                            'nota_especial': nota
+                            'algoritmo': 'consenso_meritocratico_v2',
+                            'nota_especial': 'NORMAL' # Nueva línea: evita NaNs al consolidar
                         })
                         
                         # 5. Voto Ponderado para el Consenso Meritocrático
@@ -480,7 +490,8 @@ def soñar():
                     'aciertos': 0, 
                     'score_afinidad': confianza_final,
                     'hora_dia': hora_actual,
-                    'algoritmo': 'consenso_meritocratico_v2'
+                    'algoritmo': 'consenso_meritocratico_v2',
+                    'nota_especial': alerta
                 })
                 print(f"   🤝 TICKET FINAL: {top_consenso} | {alerta} ({confianza_final}%)")
         except Exception as e:
@@ -494,10 +505,11 @@ def soñar():
     if nuevas_filas:
         # 1. Guardar los tickets individuales en la queue
         for fila in nuevas_filas:
+            fila_limpia = clean_for_json(fila) # Sanitización final
             file_id = str(uuid.uuid4())
             filepath = os.path.join(QUEUE_DIR, f"prediccion_{file_id}.json")
             with open(filepath, 'w', encoding='utf-8') as f:
-                json.dump(fila, f, ensure_ascii=False, indent=2)
+                json.dump(fila_limpia, f, ensure_ascii=False, indent=2)
 
         # 2. ¡EL CIERRE DEL CÍRCULO! 
         # Importamos y ejecutamos la consolidación híbrida inmediatamente
