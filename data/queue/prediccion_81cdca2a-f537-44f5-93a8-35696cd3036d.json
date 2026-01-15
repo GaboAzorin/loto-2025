@@ -1,0 +1,20 @@
+{
+  "id": 1768453166,
+  "fecha_generacion": "2026-01-15 01:41:47",
+  "fecha_lanzamiento": "15/01/2026 21:00",
+  "juego": "LOTO",
+  "numeros": [
+    1,
+    7,
+    15,
+    17,
+    28,
+    41
+  ],
+  "sorteo_objetivo": 5374,
+  "estado": "PENDIENTE",
+  "aciertos": 0,
+  "score_afinidad": 32.16,
+  "hora_dia": 1,
+  "algoritmo": "consenso_meritocratico_v2"
+}
