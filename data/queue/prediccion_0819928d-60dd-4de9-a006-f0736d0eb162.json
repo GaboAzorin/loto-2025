@@ -1,0 +1,19 @@
+{
+  "id": 1768573926,
+  "fecha_generacion": "2026-01-16 11:18:46",
+  "fecha_lanzamiento": "16/01/2026 14:00",
+  "juego": "LOTO4",
+  "numeros": [
+    5,
+    6,
+    19,
+    22
+  ],
+  "sorteo_objetivo": 11566,
+  "estado": "PENDIENTE",
+  "aciertos": 0,
+  "score_afinidad": 0.0,
+  "hora_dia": 11,
+  "algoritmo": "forense_biometrico_v1",
+  "nota_especial": "NORMAL"
+}
