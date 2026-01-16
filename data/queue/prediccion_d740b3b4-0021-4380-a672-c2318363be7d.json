@@ -1,0 +1,21 @@
+{
+  "id": 1768603894,
+  "fecha_generacion": "2026-01-16 19:51:34",
+  "fecha_lanzamiento": "18/01/2026 21:00",
+  "juego": "LOTO",
+  "numeros": [
+    2,
+    8,
+    9,
+    17,
+    31,
+    34
+  ],
+  "sorteo_objetivo": 5375,
+  "estado": "PENDIENTE",
+  "aciertos": 0,
+  "score_afinidad": 0.0,
+  "hora_dia": 19,
+  "algoritmo": "forense_biometrico_v1",
+  "nota_especial": "NORMAL"
+}
