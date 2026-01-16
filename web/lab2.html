@@ -145,14 +145,39 @@
         }
 
         function renderCard(data, containerId) {
-            let numerosArr = Array.isArray(data.numeros) ? data.numeros : JSON.parse(data.numeros.replace(/'/g, '"'));
-            
+            // --- INICIO DE LA REPARACIÓN DE DATOS ---
+            let numerosArr;
+            try {
+                // Caso 1: Python lo guardó como lista real (Array)
+                if (Array.isArray(data.numeros)) {
+                    numerosArr = data.numeros;
+                } 
+                // Caso 2: Python lo guardó como Texto (String)
+                else if (typeof data.numeros === 'string') {
+                    // Truco Forense: Reemplazar comillas simples de Python por dobles de JSON
+                    let cleanString = data.numeros.replace(/'/g, '"');
+                    numerosArr = JSON.parse(cleanString);
+                } 
+                else {
+                    // Caso 3: Datos corruptos o nulos
+                    numerosArr = ["ERR", "00"];
+                }
+            } catch (e) {
+                console.error("⚠️ Error parseando números para sorteo:", data.sorteo_objetivo, e);
+                numerosArr = ["?", "?", "?", "?", "?", "?"]; // Fallback visual para no romper la web
+            }
+            // --- FIN DE LA REPARACIÓN ---
+
             const isDisident = data.nota_especial === 'ALERTA_DISIDENCIA';
             const status = getStatusInfo(data.score_afinidad, isDisident);
             
             let cardClass = "card";
             if (isDisident) cardClass += " disident-card";
             else if (data.score_afinidad > 60) cardClass += " high-conf";
+
+            // Formateo seguro de fechas
+            const fechaGen = data.fecha_generacion || "Desconocida";
+            const fechaLanz = data.fecha_lanzamiento || "Pendiente";
 
             const html = `
                 <div class="${cardClass}">
@@ -168,10 +193,10 @@
                     <div class="time-box">
                         <div class="time-row">
                             <span class="time-label">📅 Lanzamiento:</span>
-                            <span class="time-value">${data.fecha_lanzamiento || 'Pendiente'}</span>
+                            <span class="time-value">${fechaLanz}</span>
                         </div>
                         <div class="generation-info">
-                            🤖 <strong>Soñado el:</strong> ${data.fecha_generacion}
+                            🤖 <strong>Soñado el:</strong> ${fechaGen}
                         </div>
                     </div>
 
@@ -190,12 +215,14 @@
                         </div>
                         <div style="text-align:right">
                             <small style="color:#64748b; font-size: 0.6rem;">ALGORITMO</small>
-                            <small style="color:#94a3b8; display:block; font-size:0.7rem;">${data.algoritmo}</small>
+                            <small style="color:#94a3b8; display:block; font-size:0.7rem;">${data.algoritmo || 'General'}</small>
                         </div>
                     </div>
                 </div>
             `;
-            document.getElementById(containerId).innerHTML += html;
+            
+            // Inyectar al final del contenedor sin borrar lo anterior
+            document.getElementById(containerId).insertAdjacentHTML('beforeend', html);
         }
 
         loadPredictions();

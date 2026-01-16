@@ -519,12 +519,13 @@ def soñar():
                 json.dump(fila_limpia, f, ensure_ascii=False, indent=2)
 
         # 2. ¡EL CIERRE DEL CÍRCULO! 
-        # Importamos y ejecutamos la consolidación híbrida inmediatamente
+        print("🔄 Forzando sincronización del laboratorio...")
         try:
             from consolidar_laboratorio import ejecutar_consolidacion_hibrida
             ejecutar_consolidacion_hibrida()
-        except ImportError:
-            print("⚠️ No se pudo importar el consolidador.")
+            print("✅ Dashboard sincronizado correctamente.")
+        except Exception as e:
+            print(f"❌ Error fatal sincronizando dashboard: {e}")
 
     print("\n✨ PROCESO DEL SOÑADOR TERMINADO.")
 
