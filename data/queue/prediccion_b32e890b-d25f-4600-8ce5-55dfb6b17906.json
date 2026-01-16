@@ -1,0 +1,18 @@
+{
+  "id": 1768586089,
+  "fecha_generacion": "2026-01-16 14:46:29",
+  "fecha_lanzamiento": "16/01/2026 18:00",
+  "juego": "LOTO3",
+  "numeros": [
+    4,
+    5,
+    8
+  ],
+  "sorteo_objetivo": 23996,
+  "estado": "PENDIENTE",
+  "aciertos": 0,
+  "score_afinidad": 0.0,
+  "hora_dia": 14,
+  "algoritmo": "forense_biometrico_v1",
+  "nota_especial": "NORMAL"
+}
