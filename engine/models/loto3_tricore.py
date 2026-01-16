@@ -8,18 +8,14 @@ from datetime import datetime
 # ==========================================
 # 🧭 NAVEGACIÓN DE RUTAS ABSOLUTA
 # ==========================================
-# Obtenemos la ruta absoluta de ESTE archivo (engine/models/loto3_tricore.py)
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-
-# Retrocedemos 2 niveles para llegar a la raíz del proyecto (engine -> models -> raiz)
 PROJECT_ROOT = os.path.dirname(os.path.dirname(CURRENT_DIR))
 
-# Definimos las rutas exactas usando la raíz calculada
 RUTA_DATA = os.path.join(PROJECT_ROOT, "data", "LOTO3_MAESTRO.csv")
 RUTA_DASHBOARD = os.path.join(PROJECT_ROOT, "dashboard_data.json")
 
 # ==========================================
-# LÓGICA TRI-CORE
+# LÓGICA TRI-CORE (CORREGIDA PARA TUS HEADERS)
 # ==========================================
 class CerebroPosicional:
     """Un mini-modelo dedicado exclusivamente a UNA posición vertical"""
@@ -28,11 +24,18 @@ class CerebroPosicional:
         self.model = RandomForestClassifier(n_estimators=200, max_depth=10, random_state=42)
     
     def preparar_features(self, df):
-        col_name = f'LOTO3_n{self.pos_id}'
+        # --- CORRECCIÓN CRÍTICA AQUÍ ---
+        # Tu CSV tiene columnas 'n1', 'n2', 'n3', NO 'LOTO3_n1'
+        col_name = f'n{self.pos_id}'
         
-        # Validar que la columna exista
+        # Validación de seguridad
         if col_name not in df.columns:
-            raise ValueError(f"Columna {col_name} no encontrada en CSV.")
+            # Fallback: A veces pandas agrega espacios o cambia mayúsculas
+            cols_limpias = [c.strip().lower() for c in df.columns]
+            if col_name in cols_limpias:
+                col_name = col_name # Está ok pero sucio en el origen
+            else:
+                raise ValueError(f"Columna '{col_name}' no encontrada. Cabeceras disponibles: {list(df.columns)}")
 
         df = df.copy()
         
@@ -45,23 +48,23 @@ class CerebroPosicional:
         
         # 3. Fecha (Ciclos temporales)
         if 'fecha' in df.columns:
-            df['fecha'] = pd.to_datetime(df['fecha'])
+            # Manejo robusto de fechas (tu CSV a veces usa formatos distintos)
+            df['fecha'] = pd.to_datetime(df['fecha'], errors='coerce') 
             df['dia_semana'] = df['fecha'].dt.dayofweek
             df['dia_mes'] = df['fecha'].dt.day
         else:
             df['dia_semana'] = df.index % 7
             df['dia_mes'] = df.index % 30
             
-        return df.dropna()
+        return df.dropna(), col_name
 
     def entrenar(self, df):
-        df_proc = self.preparar_features(df)
+        df_proc, target_col = self.preparar_features(df)
         
         features = [c for c in df_proc.columns if 'lag_' in c or 'dia_' in c or 'rolling' in c]
-        target = f'LOTO3_n{self.pos_id}'
         
         X = df_proc[features]
-        y = df_proc[target].astype(int)
+        y = df_proc[target_col].astype(int)
         
         self.model.fit(X, y)
         self.last_X = X.iloc[[-1]] 
@@ -90,8 +93,11 @@ def ejecutar_sistema_tricore():
         return
 
     try:
+        # Cargamos el CSV. OJO: header=0 asume que la primera fila son los nombres
         df = pd.read_csv(RUTA_DATA)
         print(f"✅ Datos cargados: {len(df)} sorteos históricos.")
+        # Debug rápido para ver qué columnas leyó realmente
+        print(f"   ℹ️ Columnas detectadas: {list(df.columns[:10])}...") 
     except Exception as e:
         print(f"❌ Error cargando CSV: {e}")
         return
@@ -116,10 +122,15 @@ def ejecutar_sistema_tricore():
     # 3. Consolidar Resultado
     score_final = int((confianza_total / 3) * 100)
     
+    # Calcular sorteo objetivo
+    ultimo_sorteo = 0
+    if 'sorteo' in df.columns:
+        ultimo_sorteo = int(df['sorteo'].iloc[-1])
+    
     nueva_jugada = {
         "fecha_generacion": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "fecha_lanzamiento": "Próximo Sorteo",
-        "sorteo_objetivo": int(df['sorteo'].iloc[-1]) + 1 if 'sorteo' in df.columns else 0,
+        "sorteo_objetivo": ultimo_sorteo + 1,
         "juego": "LOTO3_TRICORE",
         "numeros": prediccion_final, 
         "algoritmo": "Tri-Core (RF Independiente)",
@@ -142,7 +153,7 @@ def guardar_en_dashboard(jugada):
     
     # Insertar al principio
     data.insert(0, jugada)
-    data = data[:200] # Limpieza
+    data = data[:200] # Buffer de memoria
     
     try:
         with open(RUTA_DASHBOARD, 'w', encoding='utf-8') as f:
