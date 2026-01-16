@@ -7,14 +7,14 @@
       "forense_biometrico_v1": 0.26,
       "gaussiano_tactico_v1": 0.66,
       "markov_chain_v1": 0.51,
-      "oraculo_neural_v3": 0.56,
-      "oraculo_neural_v4": 0.93
+      "oraculo_neural_v3": 0.62,
+      "oraculo_neural_v4": 0.88
     },
     "LOTO3": {
       "consenso_meritocratico_v2": 22.35,
       "forense_biometrico_v1": 18.9,
-      "oraculo_neural_v3": 20.26,
-      "oraculo_neural_v4": 20.11
+      "oraculo_neural_v3": 19.25,
+      "oraculo_neural_v4": 20.77
     },
     "LOTO4": {
       "consenso_meritocratico_v2": 0.04,
@@ -25,55 +25,55 @@
     "RACHA": {
       "consenso_meritocratico_v2": 17.19,
       "forense_biometrico_v1": 15.69,
-      "oraculo_neural_v3": 17.83,
-      "oraculo_neural_v4": 10.81
+      "oraculo_neural_v3": 17.19,
+      "oraculo_neural_v4": 10.52
     }
   },
   "metadata": {
-    "updated_at": "2026-01-15 21:35:39",
-    "last_trained_id": 1768512875494,
+    "updated_at": "2026-01-15 22:58:50",
+    "last_trained_id": 1768528729700,
     "total_casos_estudiados": 11889,
-    "total_estudiados": 241
+    "total_estudiados": 247
   },
   "morphology": {
     "LOTO": {
       "ideal_sum_range": [
-        50,
-        633
+        58,
+        583
       ],
-      "ideal_even_count": 2.55,
-      "ideal_consecutivos": 0.74,
-      "ideal_bajos_altos": 3.09,
-      "ideal_terminaciones": 4.65,
-      "ideal_primos": 2.6,
-      "ideal_multiples_3": 1.8,
-      "ideal_avg_delta": 6.39
+      "ideal_even_count": 2.6,
+      "ideal_consecutivos": 0.67,
+      "ideal_bajos_altos": 2.98,
+      "ideal_terminaciones": 4.69,
+      "ideal_primos": 2.54,
+      "ideal_multiples_3": 1.82,
+      "ideal_avg_delta": 6.29
     },
     "LOTO3": {
       "ideal_sum_range": [
         7,
-        18
+        17
       ],
-      "ideal_even_count": 1.46,
-      "ideal_consecutivos": 0.63,
-      "ideal_bajos_altos": 1.52,
-      "ideal_terminaciones": 2.9,
-      "ideal_primos": 1.2,
-      "ideal_multiples_3": 1.25,
-      "ideal_avg_delta": 2.76
+      "ideal_even_count": 1.51,
+      "ideal_consecutivos": 0.57,
+      "ideal_bajos_altos": 1.57,
+      "ideal_terminaciones": 2.91,
+      "ideal_primos": 1.18,
+      "ideal_multiples_3": 1.32,
+      "ideal_avg_delta": 2.93
     },
     "RACHA": {
       "ideal_sum_range": [
-        89,
-        122
+        88,
+        118
       ],
-      "ideal_even_count": 4.69,
-      "ideal_consecutivos": 4.49,
-      "ideal_bajos_altos": 5.25,
-      "ideal_terminaciones": 7.69,
-      "ideal_primos": 4.37,
-      "ideal_multiples_3": 2.87,
-      "ideal_avg_delta": 1.94
+      "ideal_even_count": 4.72,
+      "ideal_consecutivos": 4.64,
+      "ideal_bajos_altos": 5.43,
+      "ideal_terminaciones": 7.77,
+      "ideal_primos": 4.33,
+      "ideal_multiples_3": 2.93,
+      "ideal_avg_delta": 1.92
     },
     "LOTO4": {
       "ideal_sum_range": [
@@ -90,10 +90,10 @@
     }
   },
   "last_processed": {
-    "LOTO3": 23993,
-    "LOTO4": 11564,
-    "LOTO": 5373,
-    "RACHA": 10297
+    "LOTO3": 23994,
+    "LOTO4": 11565,
+    "LOTO": 5374,
+    "RACHA": 10298
   },
   "algo_ranking_hourly": {
     "LOTO3": {
@@ -118,7 +118,7 @@
       },
       "20": {
         "oraculo_neural_v3": 1.45,
-        "oraculo_neural_v4": 4.28
+        "oraculo_neural_v4": 5.73
       }
     },
     "RACHA": {
@@ -135,8 +135,8 @@
         "oraculo_neural_v4": 1.39
       },
       "21": {
-        "oraculo_neural_v3": 2.95,
-        "oraculo_neural_v4": 1.7
+        "oraculo_neural_v3": 3.05,
+        "oraculo_neural_v4": 1.86
       }
     },
     "LOTO4": {
@@ -153,6 +153,9 @@
       "20.0": {
         "oraculo_neural_v3": 0.98,
         "oraculo_neural_v4": 1.06
+      },
+      "20": {
+        "oraculo_neural_v3": 1.03
       }
     }
   }

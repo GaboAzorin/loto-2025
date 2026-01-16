@@ -1,1 +1,1 @@
-{"algos": {"forense_biometrico_v1": 0, "consenso_meritocratico_v2": 1, "oraculo_neural_v3": 2, "oraculo_neural_v4": 3}, "juegos": {"LOTO3": 0, "LOTO4": 1, "RACHA": 2}}
+{"algos": {"forense_biometrico_v1": 0, "markov_chain_v1": 1, "consenso_meritocratico_v2": 2, "gaussiano_inteligente_v1": 3, "delta_dna_v1": 4, "oraculo_neural_v3": 5, "oraculo_neural_v4": 6}, "juegos": {"LOTO3": 0, "LOTO": 1, "LOTO4": 2, "RACHA": 3}}
