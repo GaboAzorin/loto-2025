@@ -145,28 +145,39 @@
         }
 
         function renderCard(data, containerId) {
-            // --- INICIO DE LA REPARACIÓN DE DATOS ---
+            // --- 🧠 PARSEO INTELIGENTE DE NÚMEROS ---
             let numerosArr;
-            try {
-                // Caso 1: Python lo guardó como lista real (Array)
-                if (Array.isArray(data.numeros)) {
-                    numerosArr = data.numeros;
-                } 
-                // Caso 2: Python lo guardó como Texto (String)
-                else if (typeof data.numeros === 'string') {
-                    // Truco Forense: Reemplazar comillas simples de Python por dobles de JSON
-                    let cleanString = data.numeros.replace(/'/g, '"');
-                    numerosArr = JSON.parse(cleanString);
-                } 
-                else {
-                    // Caso 3: Datos corruptos o nulos
-                    numerosArr = ["ERR", "00"];
+            
+            // Caso 1: Ya es un Array (Lista limpia de Python)
+            if (Array.isArray(data.numeros)) {
+                numerosArr = data.numeros;
+            } 
+            // Caso 2: Es un String (Texto que parece lista)
+            else if (typeof data.numeros === 'string') {
+                try {
+                    // Limpiamos comillas simples de Python (') por dobles de JSON (")
+                    // y limpiamos espacios extra
+                    let cleanStr = data.numeros.replace(/'/g, '"').trim();
+                    
+                    // Si empieza con corchete, intentamos parseo JSON estándar
+                    if (cleanStr.startsWith('[')) {
+                        numerosArr = JSON.parse(cleanStr);
+                    } else {
+                        // Si no tiene corchetes (ej: "1, 2, 3"), separamos por comas
+                        numerosArr = cleanStr.split(',').map(n => parseInt(n.trim()));
+                    }
+                } catch (e) {
+                    console.warn("⚠️ Fallo parseo estricto, usando extracción bruta para:", data.numeros);
+                    // ULTIMO RECURSO: Extraer solo los dígitos con Regex (ignora cualquier basura)
+                    let matches = data.numeros.match(/\d+/g);
+                    numerosArr = matches ? matches.map(Number) : [0,0,0,0,0,0];
                 }
-            } catch (e) {
-                console.error("⚠️ Error parseando números para sorteo:", data.sorteo_objetivo, e);
-                numerosArr = ["?", "?", "?", "?", "?", "?"]; // Fallback visual para no romper la web
+            } 
+            // Caso 3: Es null, undefined u otra cosa
+            else {
+                numerosArr = [0, 0, 0, 0, 0, 0]; 
             }
-            // --- FIN DE LA REPARACIÓN ---
+            // ------------------------------------------
 
             const isDisident = data.nota_especial === 'ALERTA_DISIDENCIA';
             const status = getStatusInfo(data.score_afinidad, isDisident);
@@ -175,9 +186,11 @@
             if (isDisident) cardClass += " disident-card";
             else if (data.score_afinidad > 60) cardClass += " high-conf";
 
-            // Formateo seguro de fechas
             const fechaGen = data.fecha_generacion || "Desconocida";
             const fechaLanz = data.fecha_lanzamiento || "Pendiente";
+
+            // Unir números con guión
+            const numerosLegibles = Array.isArray(numerosArr) ? numerosArr.join(' - ') : "Error Formato";
 
             const html = `
                 <div class="${cardClass}">
@@ -200,7 +213,7 @@
                         </div>
                     </div>
 
-                    <p class="numbers">${numerosArr.join(' - ')}</p>
+                    <p class="numbers">${numerosLegibles}</p>
 
                     <div class="confidence-bar">
                         <div class="confidence-fill" 
@@ -221,7 +234,6 @@
                 </div>
             `;
             
-            // Inyectar al final del contenedor sin borrar lo anterior
             document.getElementById(containerId).insertAdjacentHTML('beforeend', html);
         }
 
