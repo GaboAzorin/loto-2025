@@ -1,0 +1,14 @@
+{
+  "id": 1768571061,
+  "fecha_generacion": "2026-01-16 10:25:32",
+  "fecha_lanzamiento": "16/01/2026 15:00",
+  "juego": "RACHA",
+  "numeros": [],
+  "sorteo_objetivo": 11566,
+  "estado": "PENDIENTE",
+  "aciertos": 0,
+  "score_afinidad": 53.41,
+  "hora_dia": 10,
+  "algoritmo": "consenso_meritocratico_v2",
+  "nota_especial": "NORMAL"
+}
