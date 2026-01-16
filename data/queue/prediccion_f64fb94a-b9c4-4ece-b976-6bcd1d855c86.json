@@ -1,0 +1,18 @@
+{
+  "id": 1768552247,
+  "fecha_generacion": "2026-01-16 05:22:27",
+  "fecha_lanzamiento": "16/01/2026 14:00",
+  "juego": "LOTO3",
+  "numeros": [
+    0,
+    6,
+    7
+  ],
+  "sorteo_objetivo": 23995,
+  "estado": "PENDIENTE",
+  "aciertos": 0,
+  "score_afinidad": 0.0,
+  "hora_dia": 5,
+  "algoritmo": "forense_biometrico_v1",
+  "nota_especial": "NORMAL"
+}
