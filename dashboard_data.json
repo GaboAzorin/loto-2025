@@ -1,13 +1,13 @@
 [
     {
-        "fecha_generacion": "2026-01-16 17:01:25",
+        "fecha_generacion": "2026-01-16 17:26:35",
         "fecha_lanzamiento": "Próximo Sorteo",
         "sorteo_objetivo": 23995,
         "juego": "LOTO3_TRICORE",
         "numeros": [
-            6,
+            8,
             7,
-            5
+            2
         ],
         "algoritmo": "Tri-Core (RF Independiente)",
         "score_afinidad": 37,
