@@ -22,12 +22,19 @@ jobs:
         python-version: '3.11'
 
     - name: Install dependencies
+      # Las dependencias son las mismas para ambos scripts, así que no hay que agregar nada extra.
       run: |
         pip install pandas numpy scikit-learn scipy
 
+    # --- MOTOR 1: LOTO CLÁSICO / RACHA ---
     - name: Ejecutar Bot Dreamer
       run: python engine/models/bot_dreamer.py
 
+    # --- MOTOR 2: NUEVO TRI-CORE LOTO 3 (Agregado) ---
+    - name: Ejecutar Tri-Core (Loto 3)
+      run: python engine/models/loto3_tricore.py
+
+    # --- FASE DE SINCRONIZACIÓN ---
     - name: Sincronizar y Guardar (Retry Logic Blindado)
       run: |
         git config --global user.name 'LotoAI Bot'
@@ -35,8 +42,7 @@ jobs:
         
         # --- FASE 1: COMMIT LOCAL (Asegurar el trabajo) ---
         
-        # CAMBIO CLAVE AQUÍ: Usamos 'git add .' para agregar TODO (nuevos, modificados, borrados).
-        # Esto evita que queden archivos "sueltos" (unstaged) que rompan el rebase.
+        # Agrega cambios de AMBOS scripts (Dreamer y Tri-Core)
         git add .
         
         # Verificamos si hay cambios reales
@@ -44,7 +50,7 @@ jobs:
           echo "💤 Nada nuevo que guardar."
           exit 0
         else
-          git commit -m "🧠 Bot: Predicción + Auto-ajuste"
+          git commit -m "🧠 Bot: Predicción Multiverso (Loto + TriCore)"
         fi
 
         # --- FASE 2: SINCRONIZACIÓN (El Bucle de la Perseverancia) ---
@@ -71,8 +77,7 @@ jobs:
             echo "⚠️ Conflicto en Pull/Rebase. Abortando rebase..."
             git rebase --abort
             
-            # CRÍTICO: Si falla el rebase por algo raro, hacemos stash por si acaso
-            # (Aunque con el 'git add .' de arriba no debería ser necesario, es doble seguridad)
+            # CRÍTICO: Si falla el rebase, guardamos cambios locales
             git stash || true
           fi
           
